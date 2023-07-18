@@ -1,0 +1,17 @@
+
+
+
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
+
+
+:root {
+    --DoctorWhite: #F9F9F9;
+    --IcebergLightBlue: #DDE4EF;
+    --GreekSeaBlue: #779FE5;
+    --RhapsodyGrey: #3D4756;
+    --DiamondBlack: #28303C;
+}
+
+body {
+    font-family: Ubuntu;
+}

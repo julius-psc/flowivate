@@ -1,0 +1,41 @@
+
+
+.navbar-container {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 20px;
+}
+
+.navbar-left, .navbar-right {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.navbar-left h1 {
+    font-size: 1.3rem;
+    margin: 0 8px;
+    color: var(--DoctorWhite);
+    line-height: normal;
+    font-weight: 500;
+}
+
+.navbar-right ul {
+    display: flex;
+    list-style-type: none;
+    padding: 10px;
+    background-color: var(--RhapsodyGrey);
+    color: var(--DoctorWhite);
+    font-weight: 400;
+    border-radius: 0.5rem;
+}
+
+.navbar-right li:nth-child(1) {
+    margin-right: 10px;
+    margin-left: 5px;
+}
+
+.navbar-right li:nth-child(2) {
+    margin-left: 10px;
+    margin-right: 5px;
+}
