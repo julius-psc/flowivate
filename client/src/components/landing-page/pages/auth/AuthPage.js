@@ -15,6 +15,7 @@ function LoginPage() {
 
   const handleRegister = () => {
     setShowRegister(true);
+    setLoginStatus('');
   };
 
   const handleLogin = (status) => {
@@ -26,10 +27,11 @@ function LoginPage() {
       {!showRegister ? (
         <>
           <Login onLogin={handleLogin} />
-          <p>Don't have an account? <button onClick={handleRegister}>Register</button></p>
         </>
       ) : (
-        <Register onRegister={handleRegister} />
+        <>
+          <Register onRegister={handleRegister} />
+        </>
       )}
       <h1>{loginStatus}</h1>
     </div>

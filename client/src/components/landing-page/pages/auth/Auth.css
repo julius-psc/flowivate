@@ -1,0 +1,107 @@
+
+
+
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+}
+
+.auth-page {
+    background-color: var(--RhapsodyGrey);
+    text-align: center;
+    border-radius: 0.2rem;
+    width: 400px;
+}
+
+.auth-page h1 {
+    color: var(--DoctorWhite);
+    font-weight: 500;
+    font-size: 2.25rem;
+    margin-bottom: 2px;
+}
+
+.auth-page button {
+    cursor: pointer;
+}
+
+.auth-page span {
+    color: var(--LilacBlue);
+    display: block;
+}
+
+.auth-page label {
+    color: var(--LilacBlue);
+    font-weight: 500;
+    text-align: start;
+    margin-bottom: 10px;
+}
+
+.auth-page input {
+    border: 2px solid var(--LilacBlue);
+    background-color: transparent;
+    outline: none;
+    border-radius: 0.4rem;
+    color: var(--LilacBlue);
+    height: 40px;
+    font-size: 1rem;
+}
+
+.auth-page input:focus{
+    color: var(--AngelicBlue);
+    border: 2px solid var(--AngelicBlue);
+}
+
+.auth-page input[type=text], .auth-page input[type=password] {
+    padding: 0 10px;
+}
+
+.auth-page p {
+    color: var(--DoctorWhite);
+    font-weight: 300;
+}
+
+.auth-page .confirmBtn {
+    outline: none;
+    background-color: transparent;
+    border: none;
+    background-color: var(--GreekSeaBlue);
+    color: var(--DoctorWhite);
+    border-radius: 0.2rem;
+    font-weight: 700;
+    width: 80%;
+    padding: 14px;
+    font-size: 1rem;
+}
+
+.auth-page button:nth-child(1) {
+    outline: none;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--GreekSeaBlue);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.auth-page .input-section {
+    display: flex;
+    flex-direction: column;
+    padding: 30px 40px;
+    margin-bottom: 80px;
+}
+
+#username-input {
+    margin-bottom: 48px;
+}
+
+.auth-page p {
+    margin-top: 24px;
+    margin-bottom: 34px;
+}
+
+.auth-page .input-error {
+    border: 3px solid #EC9393;
+}

@@ -7,7 +7,7 @@ import './LandingPage.css';
 
 import Navbar from "../../common/navbar/Navbar";
 
-const Welcome = () => {
+const LandingPage = () => {
     return(
         <>
             <Navbar />
@@ -15,4 +15,4 @@ const Welcome = () => {
     )
 }
 
-export default Welcome;
+export default LandingPage;

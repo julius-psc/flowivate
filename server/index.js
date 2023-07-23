@@ -38,20 +38,39 @@ const db = mysql.createConnection({
 })
 
 app.post('/register', (req, res) => {
-
     const username = req.body.username;
     const password = req.body.password;
 
-    bcrypt.hash(password, saltRounds, (err, hash) => {
-        if(err) {
-            console.log(err);
+    // First, check if the username already exists in the database
+    db.query("SELECT * FROM users WHERE username = ?;", [username], (err, result) => {
+        if (err) {
+            res.send({ err: err });
+        } else {
+            // If the username already exists, send an error response
+            if (result.length > 0) {
+                res.send({ message: "Username already taken. Please choose a different username." });
+            } else {
+                // If the username is available, hash the password and insert the new user into the database
+                bcrypt.hash(password, saltRounds, (hashErr, hash) => {
+                    if (hashErr) {
+                        console.log(hashErr);
+                        res.send({ message: "Error creating user." });
+                    } else {
+                        db.query("INSERT INTO users (username, password) VALUES (?,?);", [username, hash], (insertErr, insertResult) => {
+                            if (insertErr) {
+                                console.log(insertErr);
+                                res.send({ message: "Error creating user." });
+                            } else {
+                                res.send({ message: "User registered successfully." });
+                            }
+                        });
+                    }
+                });
+            }
         }
+    });
+});
 
-        db.query("INSERT INTO users (username, password) VALUES (?,?);", [username, hash], (err, result)=>{
-            console.log(err);
-        })
-    })
-})
 
 app.get('/login', (req, res)=> {
     if(req.session.user){

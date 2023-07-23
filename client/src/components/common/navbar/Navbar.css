@@ -30,6 +30,10 @@
     border-radius: 0.5rem;
 }
 
+.navbar-right li a {
+    color: var(--DoctorWhite);
+}
+
 .navbar-right li:nth-child(1) {
     margin-right: 10px;
     margin-left: 5px;
