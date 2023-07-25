@@ -38,15 +38,10 @@ function Register({ onRegister }) {
         if (response.data.message === "Username already taken. Please choose a different username.") {
           toast.error(response.data.message);
         } else {
-          // Registration successful, you can perform any additional actions here if needed
-          // For example, you might want to redirect the user to the login page after successful registration
-          // You can do that by using the 'onRegister' prop or any other method you have in your application
-          // For now, let's just show a success message
-          toast.success('Successfully logged in!');
+          toast.success('Successfully created an account!');
         }
       })
       .catch((error) => {
-        // Handle any other errors that might occur during the registration process
         toast.error('An error occurred. Please try again later.');
       });
   };

@@ -1,17 +1,14 @@
 
 
 
-import Axios from 'axios';
 import React, { useState } from 'react';
-
 import Login from './Login';
 import Register from './Register';
+import Home from '../../../dashboard/home/Home';
 
 function LoginPage() {
   const [loginStatus, setLoginStatus] = useState('');
   const [showRegister, setShowRegister] = useState(false);
-
-  Axios.defaults.withCredentials = true;
 
   const handleRegister = () => {
     setShowRegister(true);
@@ -24,16 +21,13 @@ function LoginPage() {
 
   return (
     <div>
-      {!showRegister ? (
-        <>
-          <Login onLogin={handleLogin} />
-        </>
+      {loginStatus === 'success' ? (
+        <Home /> // Render Home component when logged in
+      ) : showRegister ? (
+        <Register onRegister={handleRegister} />
       ) : (
-        <>
-          <Register onRegister={handleRegister} />
-        </>
+        <Login onLogin={handleLogin} />
       )}
-      <h1>{loginStatus}</h1>
     </div>
   );
 }

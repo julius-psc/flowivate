@@ -26,9 +26,12 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        expires: 60 * 60 * 24
-    }
-}))
+        httpOnly: true, // Set HttpOnly to prevent client-side access to the cookie
+        secure: true, // Set 'secure' to true if using HTTPS (recommended for production)
+        sameSite: 'strict', // Enforce the same-site policy to prevent CSRF attacks
+        maxAge: 60 * 60 * 24 * 1000, // Set the cookie expiration time (in milliseconds)
+    },
+}));
 
 const db = mysql.createConnection({
     user: 'root',
