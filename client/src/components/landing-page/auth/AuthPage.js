@@ -4,9 +4,9 @@
 import React, { useState } from 'react';
 import Login from './Login';
 import Register from './Register';
-import Home from '../../../dashboard/home/Home';
+import Home from '../../dashboard/Dash';
 
-function LoginPage() {
+function AuthPage() {
   const [loginStatus, setLoginStatus] = useState('');
   const [showRegister, setShowRegister] = useState(false);
 
@@ -32,4 +32,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default AuthPage;

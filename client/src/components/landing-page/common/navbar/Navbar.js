@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 
 import './Navbar.css';
 
-import navLogo from '../../../assets/images/navbar-temporary-logo.svg';
+import navLogo from '../../../../assets/images/navbar-temporary-logo.svg';
 
 const Navbar = () => {
     return (

@@ -6,7 +6,7 @@ import toast, { Toaster } from 'react-hot-toast';
 
 import './Auth.css';
 
-import Navbar from '../../../common/navbar/Navbar';
+import Navbar from '../common/navbar/Navbar';
 
 function Register({ onRegister }) {
   const [username, setUsername] = useState('');

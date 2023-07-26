@@ -26,10 +26,10 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        httpOnly: true, // Set HttpOnly to prevent client-side access to the cookie
-        secure: true, // Set 'secure' to true if using HTTPS (recommended for production)
-        sameSite: 'strict', // Enforce the same-site policy to prevent CSRF attacks
-        maxAge: 60 * 60 * 24 * 1000, // Set the cookie expiration time (in milliseconds)
+        httpOnly: true,
+        secure: true, 
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 24 * 1000,
     },
 }));
 

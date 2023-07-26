@@ -8,7 +8,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import Cookies from 'js-cookie';
 
 import './Auth.css';
-import Navbar from '../../../common/navbar/Navbar';
+import Navbar from '../common/navbar/Navbar';
 
 function Login({ onLogin }) {
   const [username, setUsername] = useState('');

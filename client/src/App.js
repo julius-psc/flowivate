@@ -7,10 +7,10 @@ import Axios from 'axios';
 
 import './assets/styles/general.css';
 
-import LandingPage from './components/landing-page/pages/LandingPage';
-import Register from './components/landing-page/pages/auth/Register';
-import AuthPage from './components/landing-page/pages/auth/AuthPage';
-import Home from './components/dashboard/home/Home';
+import LandingPage from './components/landing-page/welcome/LandingPage';
+import Register from './components/landing-page/auth/Register';
+import AuthPage from './components/landing-page/auth/AuthPage';
+import Dash from './components/dashboard/Dash';
 
 Axios.defaults.withCredentials = true;
 
@@ -20,10 +20,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<AuthPage />} />
       <Route path="/register" element={<Register />} />
-      <Route
-        path="/dashboard"
-        element={<Home />}
-      />
+      <Route path="/dashboard" element={<Dash />} />
     </Routes>
   );
 }

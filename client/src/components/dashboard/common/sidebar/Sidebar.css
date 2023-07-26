@@ -1,0 +1,80 @@
+
+
+
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+}
+
+.sidebar {
+    padding-top: 40px;
+    display: flex;
+    flex-direction: column;
+    width: 400px;
+    border-right: 1px solid red;
+}
+
+.sidebar-brand {
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-brand h1 {
+    margin: 0 8px;
+    color: var(--DoctorWhite);
+}
+
+.sidebar-nav {
+    flex: 1;
+    margin: 60px 0;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar-nav li {
+    color: var(--DoctorWhite);
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    text-align: start;
+    height: 24px;
+    margin: 16px 20px;
+}
+
+.sidebar-nav a.active li {
+    background-color: var(--RhapsodyGrey);
+    border-radius: 0.4rem;
+}
+
+
+.sidebar-nav p {
+    margin: 0 10px;
+    flex-grow: 1;
+}
+
+.tasks-p {
+    padding-left: 6px;
+}
+
+.sidebar-logout {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin: 16px 20px;
+    padding: 8px 10px;
+}
+
+.sidebar-logout button {
+    background-color: transparent;
+    border: none;
+    color: var(--DoctorWhite);
+    font-size: 1rem;
+    margin-left: 6px;
+    cursor: pointer;
+}
