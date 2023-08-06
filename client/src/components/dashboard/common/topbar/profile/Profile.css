@@ -1,0 +1,36 @@
+
+
+
+.profile {
+    position: relative;
+    margin: 0 10px;
+  }
+  
+  .dropdown {
+    position: absolute;
+    margin: 10px 0;
+    left: 50%;
+    transform: translateX(-50%); 
+    background-color: var(--RhapsodyGrey);
+    z-index: 1;
+    padding: 6px 8px;
+    border-radius: 8px;
+  }  
+
+  .dropdown span {
+    color: var(--LilacBlue);
+    margin-right: 2px;
+  }
+
+  .dropdown p {
+    margin: 0;
+    color: var(--AngelicBlue);
+  }
+
+.profile-icon {
+    display: inline-flex;
+    background-color: var(--RhapsodyGrey);
+    padding: 6px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+}

@@ -9,65 +9,98 @@ body,
 }
 
 .sidebar {
-    padding-top: 40px;
+    padding-top: 30px;
     display: flex;
     flex-direction: column;
-    width: 400px;
-    border-right: 1px solid red;
+    width: 140px;
+    position: relative;
+  }
+  
+
+.sidebar::before {
+    content: "";
+    position: absolute;
+    top: 40px;
+    bottom: 40px;
+    right: 0;
+    width: 2px;
+    background-color: var(--RhapsodyGrey);
 }
+  
 
 .sidebar-brand {
     padding: 0 20px;
     display: flex;
     align-items: center;
-}
-
-.sidebar-brand h1 {
-    margin: 0 8px;
-    color: var(--DoctorWhite);
+    justify-content: center;
 }
 
 .sidebar-nav {
     flex: 1;
-    margin: 60px 0;
+    margin: 20px 0;
+}
+
+.sidebar img {
+    height: 24px;
+    width: 24px;
 }
 
 .sidebar-nav ul {
     list-style: none;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .sidebar-nav li {
-    color: var(--DoctorWhite);
-    display: flex;
-    align-items: center;
-    padding: 8px 10px;
-    text-align: start;
-    height: 24px;
-    margin: 16px 20px;
+    margin: 10px 0;
 }
 
 .sidebar-nav a.active li {
+    display: inline-flex;
     background-color: var(--RhapsodyGrey);
     border-radius: 0.4rem;
+    padding: 10px;
+    z-index: 1;
 }
-
-
-.sidebar-nav p {
-    margin: 0 10px;
-    flex-grow: 1;
-}
-
-.tasks-p {
-    padding-left: 6px;
-}
+  
+.sidebar-item {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .sidebar-item::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 8px);
+    padding: 4px 8px;
+    background-color: var(--RhapsodyGrey);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    transform: translateY(-50%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+  
+  .sidebar-item:hover::after {
+    opacity: 1;
+    visibility: visible;
+  }
+  
 
 .sidebar-logout {
     display: flex;
     align-items: center;
     cursor: pointer;
-    margin: 16px 20px;
-    padding: 8px 10px;
+    justify-content: center;
+    margin: 20px 0;
 }
 
 .sidebar-logout button {

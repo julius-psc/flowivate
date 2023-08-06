@@ -8,7 +8,7 @@ import './Auth.css';
 
 import Navbar from '../common/navbar/Navbar';
 
-function Register({ onRegister }) {
+function Register() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [inputError, setInputError] = useState(false);

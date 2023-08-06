@@ -1,0 +1,43 @@
+
+
+
+.daytime {
+    display: flex;
+    align-items: center;
+    color: var(--LilacBlue);
+    background-color: var(--RhapsodyGrey);
+    padding: 8px 12px;
+    border-radius: 10px;
+}
+
+.daytime p {
+    margin: 0;
+}
+
+.daytime-left {
+    display: flex;
+    margin: 0 38px;
+    position: relative;
+}
+
+.daytime-left::after {
+    content: '';
+    position: absolute;
+    right: -40px;
+    top: 1px;
+    height: 90%;
+    border-left: 1px solid var(--LilacBlue);
+}
+
+.daytime-left p {
+    margin-left: 8px;
+}
+
+.daytime-right, .daytime-left {
+    margin: 0 34px;
+    display: flex;
+} 
+
+.daytime-right p {
+    margin-left: 4px;
+}

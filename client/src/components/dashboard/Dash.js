@@ -10,8 +10,8 @@ import Home from './home/Home';
 import './Dash.css';
 
 function Dash() {
-  const username = Cookies.get('username');
   const navigate = useNavigate();
+  const username = Cookies.get('username');
 
   const handleLogout = () => {
     Cookies.remove('username');
@@ -27,7 +27,7 @@ function Dash() {
   return (
     <div className='dashboard'>
       <Sidebar  handleLogout={handleLogout} />
-      <Home username={username} />
+      <Home />
     </div>
   );
 }

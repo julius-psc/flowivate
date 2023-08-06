@@ -4,38 +4,40 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import "./Sidebar.css";
-import navLogo from "../../../../assets/images/navbar-temporary-logo.svg";
-import icon1 from "../../../../assets/images/sidebar-icon1.svg";
-import icon2 from "../../../../assets/images/sidebar-icon2.svg";
-import icon3 from "../../../../assets/images/sidebar-icon3.svg";
-import icon4 from "../../../../assets/images/sidebar-icon4.svg";
-import icon5 from "../../../../assets/images/sidebar-icon5.svg";
+
+import logo from "../../../../assets/images/temporary-logo.svg";
+
+import home from '../../../../assets/images/sidebar/sidebar-home.svg';
+import journal from '../../../../assets/images/sidebar/sidebar-journal.svg';
+import personal from '../../../../assets/images/sidebar/sidebar-personal.svg';
+import tasks from '../../../../assets/images/sidebar/sidebar-tasks.svg';
+import logout from "../../../../assets/images/sidebar/sidebar-logout.svg";
+
 
 const Sidebar = ({ handleLogout }) => {
     const sidebarItems = [
-        { icon: icon4, label: "Home", path: "/dashboard", id: "home" },
-        { icon: icon2, label: "Tasks", path: "/tasks", id: "tasks" },
-        { icon: icon3, label: "Personal", path: "/personal", id: "personal" },
-        { icon: icon1, label: "Journal", path: "/journal", id: "journal" },
+        { icon: home, path: "/dashboard", id: "Home" },
+        { icon: tasks, path: "/tasks", id: "Tasks" },
+        { icon: personal, path: "/personal", id: "Personal" },
+        { icon: journal, path: "/journal", id: "Journal" },
     ];
 
     return (
         <aside className="sidebar">
             <div className="sidebar-brand">
-                <img id="navbar-logo" alt="Flowivate temporary logo" src={navLogo} />
-                <h1>Flowivate</h1>
+                <img id="navbar-logo" alt="Flowivate temporary logo" src={logo} />
             </div>
 
             <nav className="sidebar-nav">
                 <ul>
                     {sidebarItems.map((item) => (
                         <NavLink
-                            exact
                             to={item.path}
+                            key={item.id}
                         >
-                            <li key={item.id}>
-                                <img alt={`Flowivate navbar icon`} src={item.icon} />
-                                <p className={item.label === "Tasks" ? "tasks-p" : ""}>{item.label}</p>
+                            <li className="sidebar-item" data-tooltip={item.id}>
+                                <img alt={`Flowivate navbar icon`} src={item.icon} className={item.id} />
+
                             </li>
                         </NavLink>
                     ))}
@@ -43,8 +45,7 @@ const Sidebar = ({ handleLogout }) => {
             </nav>
 
             <div onClick={handleLogout} className="sidebar-logout">
-                <img alt="Flowivate logout icon" src={icon5} />
-                <button>Logout</button>
+                <button><img alt="Flowivate logout icon" src={logout} /></button>
             </div>
         </aside>
     );

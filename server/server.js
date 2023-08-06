@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql'); 
 const cors = require('cors');
+const axios = require('axios');
 
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
@@ -107,6 +108,31 @@ app.post('/login', (req, res) => {
         }
     })
 })
+
+// const weatherAPIKey = 'a5d499bce9f924908dd0964201858037';
+// const weatherAPIUrl = 'https://api.openweathermap.org/data/2.5/weather';
+
+// app.get('/weather', (req, res) => {
+//   const { lat, lon } = req.query;
+//   const params = {
+//     lat: parseFloat(lat),
+//     lon: parseFloat(lon),
+//     appid: weatherAPIKey,
+//     units: 'metric', // You can change to 'imperial' for Fahrenheit
+//   };
+
+//   // Fetch weather data from OpenWeather API
+//   axios.get(weatherAPIUrl, { params })
+//     .then((response) => {
+//       // Assuming the temperature data is in 'main.temp' field
+//       const temperature = response.data.main.temp;
+//       res.json({ temperature });
+//     })
+//     .catch((error) => {
+//       console.error('Error fetching weather data:', error);
+//       res.status(500).json({ error: 'Error fetching weather data' });
+//     });
+// });
 
 app.listen(3001, () => {
     console.log('Running on port 3001.')

@@ -6,13 +6,13 @@ import { Link } from 'react-router-dom';
 
 import './Navbar.css';
 
-import navLogo from '../../../../assets/images/navbar-temporary-logo.svg';
+import logo from '../../../../assets/images/temporary-logo.svg';
 
 const Navbar = () => {
     return (
         <div className='navbar-container'>
             <div className='navbar-left'>
-                <img id="navbar-logo" alt="Flowivate temporary logo" src={navLogo} />
+                <img id="navbar-logo" alt="Flowivate temporary logo" src={logo} />
                 <Link to="/">
                     <h1>Flowivate</h1>
                 </Link>
