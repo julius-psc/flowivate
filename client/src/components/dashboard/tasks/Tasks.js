@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useEffect } from "react";
 import Topbar from "../common/topbar/Topbar";
 import './Tasks.css';
@@ -15,8 +14,15 @@ const Tasks = () => {
         setIsCreatingTask(true);
     }
 
-    const handleTaskNameChange = (event) => {
-        setNewTaskName(event.target.value);
+    const handleTaskNameChange = (event, taskId) => {
+        const updatedTasks = tasks.map(task => {
+            if (task.id === taskId) {
+                return { ...task, name: event.target.value };
+            }
+            return task;
+        });
+
+        setTasks(updatedTasks);
     }
 
     const handleTaskCreation = async () => {
@@ -28,10 +34,9 @@ const Tasks = () => {
                     withCredentials: true
                 });
 
-                // Assuming your backend responds with a success message
                 if (response.data.message === "Task added successfully") {
                     const newTask = {
-                        id: response.data.taskId, // Assuming the backend returns the new task's ID
+                        id: response.data.taskId,
                         name: newTaskName,
                         completed: false
                     };
@@ -39,6 +44,7 @@ const Tasks = () => {
                     setTasks([...tasks, newTask]);
                     setNewTaskName("");
                     setIsCreatingTask(false);
+                    fetchTasks();
                 } else {
                     console.error("Task creation failed:", response.data.message);
                 }
@@ -48,26 +54,51 @@ const Tasks = () => {
         }
     };
 
-    const handleCheckboxChange = (taskId) => {
-        const updatedTasks = tasks.map(task => {
-            if (task.id === taskId) {
-                return { ...task, completed: !task.completed };
-            }
-            return task;
-        });
+    const fetchTasks = async () => {
+        try {
+            const response = await axios.get("http://localhost:3001/tasks", {
+                withCredentials: true // Ensure credentials are sent with the request
+            });
 
-        setTasks(updatedTasks);
-    }
+            // Assuming the response contains tasks data
+            const tasksData = response.data;
+            setTasks(tasksData);
+        } catch (error) {
+            console.error("Error fetching tasks:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchTasks(); // Fetch tasks when the component mounts
+    }, []);
+
+    const handleCheckboxChange = async (taskId) => {
+        try {
+            // Send a request to update task completion status in the database
+            await axios.put(`http://localhost:3001/tasks/${taskId}`, null, {
+                withCredentials: true
+            });
+    
+            // Update the local state to reflect the change
+            setTasks(prevTasks => prevTasks.map(task => {
+                if (task.task_id === taskId) {
+                    return { ...task, completed: !task.completed }; // Toggle the completed status
+                }
+                return task;
+            }));
+        } catch (error) {
+            console.error("Error updating task:", error);
+        }
+    }    
+    
 
     const handleBlur = (taskId) => {
-        const updatedTasks = tasks.map(task => {
+        setTasks(prevTasks => prevTasks.map(task => {
             if (task.id === taskId) {
-                return { ...task, editing: false, name: newTaskName };
+                return { ...task, editing: false };
             }
             return task;
-        });
-
-        setTasks(updatedTasks);
+        }));
     }
 
     const handleKeyDown = (event, taskId) => {
@@ -75,25 +106,6 @@ const Tasks = () => {
             handleBlur(taskId);
         }
     }
-
-    useEffect(() => {
-        // Fetch user's tasks from the backend
-        const fetchTasks = async () => {
-          try {
-            const response = await axios.get("http://localhost:3001/tasks", {
-              withCredentials: true
-            });
-    
-            if (response.data && response.data.tasks) {
-              setTasks(response.data.tasks);
-            }
-          } catch (error) {
-            console.error("Error fetching tasks:", error);
-          }
-        };
-    
-        fetchTasks();
-    }, []);
 
     const incompleteTasks = tasks.filter(task => !task.completed);
 
@@ -103,14 +115,14 @@ const Tasks = () => {
             <div className="today-container">
                 <h1>Today - <span>{incompleteTasks.length}</span></h1>
                 {tasks.map(task => (
-                    <div key={task.id} className="task-div">
+                    <div key={task.task_id} className="task-div">
                         {task.editing ? (
                             <input
                                 type="text"
-                                value={newTaskName}
-                                onChange={handleTaskNameChange}
-                                onBlur={() => handleBlur(task.id)}
-                                onKeyDown={(e) => handleKeyDown(e, task.id)}
+                                value={task.name}
+                                onChange={(e) => handleTaskNameChange(e, task.task_id)}
+                                onBlur={() => handleBlur(task.task_id)}
+                                onKeyDown={(e) => handleKeyDown(e, task.task_id)}
                                 autoFocus
                             />
                         ) : (
@@ -118,11 +130,11 @@ const Tasks = () => {
                                 <input
                                     type="checkbox"
                                     checked={task.completed}
-                                    onChange={() => handleCheckboxChange(task.id)}
+                                    onChange={() => handleCheckboxChange(task.task_id)}
                                     className="task-checkbox"
                                 />
                                 <div className="checkmark"></div>
-                                {task.name}
+                                {task.task} {/* Use task.task for the task name */}
                             </label>
                         )}
                     </div>
@@ -134,7 +146,7 @@ const Tasks = () => {
                                 type="text"
                                 placeholder="Type and press Enter..."
                                 value={newTaskName}
-                                onChange={handleTaskNameChange}
+                                onChange={(e) => setNewTaskName(e.target.value)}
                                 onBlur={handleTaskCreation}
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {

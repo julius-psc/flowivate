@@ -142,6 +142,63 @@ app.post('/tasks', (req, res) => {
     }
 });
 
+app.get('/tasks', (req, res) => {
+    const username = req.cookies.username; // Get the username from the cookie
+
+    if (username) {
+        // Find the user's ID based on the username
+        db.query("SELECT id FROM users WHERE username = ?;", [username], (err, result) => {
+            if (err) {
+                res.status(500).json({ error: 'Failed to fetch user' });
+            } else if (result.length > 0) {
+                const userId = result[0].id;
+
+                // Retrieve tasks for the user from the tasks table
+                db.query("SELECT * FROM tasks WHERE user_id = ?;", [userId], (err, result) => {
+                    if (err) {
+                        res.status(500).json({ error: 'Failed to fetch tasks' });
+                    } else {
+                        res.status(200).json(result);
+                    }
+                });
+            } else {
+                res.status(404).json({ error: 'User not found' });
+            }
+        });
+    } else {
+        res.status(403).json({ message: "Unauthorized" });
+    }
+});
+
+app.put('/tasks/:taskId', (req, res) => {
+    const taskId = req.params.taskId;
+
+    // Get the current completion status of the task
+    db.query("SELECT completed FROM tasks WHERE task_id = ?;", [taskId], (err, result) => {
+        if (err) {
+            res.status(500).json({ error: 'Failed to fetch task' });
+        } else {
+            const currentStatus = result[0].completed;
+
+            // Toggle the completion status and update it in the database
+            const newStatus = currentStatus === 0 ? 1 : 0;
+            db.query("UPDATE tasks SET completed = ? WHERE task_id = ?;", [newStatus, taskId], (updateErr, updateResult) => {
+                if (updateErr) {
+                    res.status(500).json({ error: 'Failed to update task' });
+                } else {
+                    res.status(200).json({ message: 'Task updated successfully' });
+                }
+            });
+        }
+    });
+});
+
+
+
+
+
+
+
 
 
 
