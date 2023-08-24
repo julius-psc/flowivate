@@ -3,9 +3,9 @@
 
 import React, { useEffect } from 'react';
 import Cookies from 'js-cookie';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Outlet } from 'react-router-dom';
 import Sidebar from './common/sidebar/Sidebar';
-import Home from './home/Home';
+
 
 import './Dash.css';
 
@@ -27,9 +27,12 @@ function Dash() {
   return (
     <div className='dashboard'>
       <Sidebar  handleLogout={handleLogout} />
-      <Home />
+      <Outlet />
     </div>
   );
 }
 
 export default Dash;
+
+
+

@@ -16,14 +16,13 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(4, 1fr);
-    grid-column-gap: 40px;
-    grid-row-gap: 40px;
+    grid-column-gap: 10px;
+    grid-row-gap: 10px;
     flex: 1;
 }
 
 .div1 {
     grid-area: 1 / 1 / 2 / 3;
-    background-color: red;
 }
 
 .div2 {

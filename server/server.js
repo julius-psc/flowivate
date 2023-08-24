@@ -15,7 +15,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({
     origin: ['http://localhost:3000'],
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
 app.use(cookieParser());
@@ -108,6 +108,43 @@ app.post('/login', (req, res) => {
         }
     })
 })
+
+
+app.post('/tasks', (req, res) => {
+    const username = req.cookies.username;
+    if (username) {
+        // Find the user's ID based on the username
+        db.query("SELECT id FROM users WHERE username = ?;", [username], (err, result) => {
+            if (err) {
+                res.status(500).json({ error: 'Failed to fetch user' });
+            } else if (result.length > 0) {
+                const userId = result[0].id;
+                const { task } = req.body;
+
+                // Insert the task into the tasks table
+                db.query("INSERT INTO tasks (user_id, task, completed) VALUES (?, ?, 0);", [userId, task], (err, result) => {
+                    if (err) {
+                        res.status(500).json({ error: 'Failed to create task' });
+                    } else {
+                        // Get the inserted task's ID
+                        const taskId = result.insertId;
+
+                        // Return success response along with the inserted task's ID
+                        res.status(201).json({ message: 'Task added successfully', taskId });
+                    }
+                });
+            } else {
+                res.status(404).json({ error: 'User not found' });
+            }
+        });
+    } else {
+        res.status(403).json({ message: "Unauthorized" });
+    }
+});
+
+
+
+
 
 // const weatherAPIKey = 'a5d499bce9f924908dd0964201858037';
 // const weatherAPIUrl = 'https://api.openweathermap.org/data/2.5/weather';

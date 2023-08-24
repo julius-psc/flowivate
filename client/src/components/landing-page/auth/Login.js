@@ -59,9 +59,11 @@ function Login({ onLogin }) {
           Cookies.set('username', loggedInUsername, { expires: 1 });
           setUsername(loggedInUsername);
           onLogin('success', loggedInUsername);
-          navigate('/dashboard');
+          navigate('/dashboard/home');
         }
       });
+
+      
   };
 
   const handleInputChange = (e) => {
@@ -72,6 +74,8 @@ function Login({ onLogin }) {
       setPassword(e.target.value);
     }
   };
+
+  
 
   return (
     <>

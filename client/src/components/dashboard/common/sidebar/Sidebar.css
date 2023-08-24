@@ -58,14 +58,6 @@ body,
     margin: 10px 0;
 }
 
-.sidebar-nav a.active li {
-    display: inline-flex;
-    background-color: var(--RhapsodyGrey);
-    border-radius: 0.4rem;
-    padding: 10px;
-    z-index: 1;
-}
-  
 .sidebar-item {
     position: relative;
     display: inline-block;

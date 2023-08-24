@@ -16,8 +16,8 @@ import logout from "../../../../assets/images/sidebar/sidebar-logout.svg";
 
 const Sidebar = ({ handleLogout }) => {
     const sidebarItems = [
-        { icon: home, path: "/dashboard", id: "Home" },
-        { icon: tasks, path: "/tasks", id: "Tasks" },
+        { icon: home, path: "/dashboard/home", id: "Home" },
+        { icon: tasks, path: "/dashboard/tasks", id: "Tasks" },
         { icon: personal, path: "/personal", id: "Personal" },
         { icon: journal, path: "/journal", id: "Journal" },
     ];
