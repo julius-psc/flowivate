@@ -12,7 +12,8 @@ body,
     padding-top: 30px;
     display: flex;
     flex-direction: column;
-    width: 140px;
+    padding-left: 34px;
+    padding-right: 34px;
     position: relative;
   }
   

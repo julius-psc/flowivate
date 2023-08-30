@@ -5,6 +5,8 @@ import Topbar from "../common/topbar/Topbar";
 import './Tasks.css';
 import axios from "axios";
 
+import binClosed from '../../../assets/images/dashboard/tasks/tasks-bin-closed.svg';
+
 const Tasks = () => {
     const [tasks, setTasks] = useState([]);
     const [newTaskName, setNewTaskName] = useState("");
@@ -78,7 +80,7 @@ const Tasks = () => {
             await axios.put(`http://localhost:3001/tasks/${taskId}`, null, {
                 withCredentials: true
             });
-    
+
             // Update the local state to reflect the change
             setTasks(prevTasks => prevTasks.map(task => {
                 if (task.task_id === taskId) {
@@ -89,8 +91,8 @@ const Tasks = () => {
         } catch (error) {
             console.error("Error updating task:", error);
         }
-    }    
-    
+    }
+
 
     const handleBlur = (taskId) => {
         setTasks(prevTasks => prevTasks.map(task => {
@@ -107,7 +109,23 @@ const Tasks = () => {
         }
     }
 
+    const handleTaskDeletion = async (taskId) => {
+        try {
+            // Send a request to delete the task from the database
+            await axios.delete(`http://localhost:3001/tasks/${taskId}`, {
+                withCredentials: true
+            });
+
+            // Update the local state to remove the deleted task
+            setTasks(prevTasks => prevTasks.filter(task => task.task_id !== taskId));
+        } catch (error) {
+            console.error("Error deleting task:", error);
+        }
+    }
+
+
     const incompleteTasks = tasks.filter(task => !task.completed);
+
 
     return (
         <div className="tasks">
@@ -127,14 +145,21 @@ const Tasks = () => {
                             />
                         ) : (
                             <label className={`task-checkbox-container ${task.completed ? "completed" : ""}`}>
-                                <input
-                                    type="checkbox"
-                                    checked={task.completed}
-                                    onChange={() => handleCheckboxChange(task.task_id)}
-                                    className="task-checkbox"
-                                />
-                                <div className="checkmark"></div>
-                                {task.task} {/* Use task.task for the task name */}
+                                <div className="task-left">
+                                    <input
+                                        type="checkbox"
+                                        checked={task.completed}
+                                        onChange={() => handleCheckboxChange(task.task_id)}
+                                        className="task-checkbox"
+                                    />
+                                    <div className="checkmark"></div>
+                                    <div>{task.task}</div>
+                                </div>
+                                <div className="task-right">
+                                    <button onClick={() => handleTaskDeletion(task.task_id)}>
+                                        <img src={binClosed} alt="Delete task icon" />
+                                    </button>
+                                </div>
                             </label>
                         )}
                     </div>

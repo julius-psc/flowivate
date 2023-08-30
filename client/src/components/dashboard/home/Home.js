@@ -5,6 +5,8 @@ import React from 'react';
 import './Home.css';
 import Topbar from '../common/topbar/Topbar';
 import Message from './message/Message';
+import MiniTasks from './mini-tasks/MiniTasks';
+import Pomodoro from './pomodoro/Pomodoro';
 
 function Home() {
     return (
@@ -13,8 +15,8 @@ function Home() {
             <div className='parent'>
                 <div className='div1'><Message /></div>
                 <div className='div2'></div>
-                <div className='div3'></div>
-                <div className='div4'></div>
+                <div className='div3'><MiniTasks /></div>
+                <div className='div4'><Pomodoro /></div>
                 <div className='div5'></div>
                 <div className='div6'></div>
             </div>

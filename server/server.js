@@ -193,6 +193,75 @@ app.put('/tasks/:taskId', (req, res) => {
     });
 });
 
+app.delete('/tasks/:taskId', (req, res) => {
+    const taskId = req.params.taskId;
+
+    // Delete the task from the database
+    db.query("DELETE FROM tasks WHERE task_id = ?;", [taskId], (err, result) => {
+        if (err) {
+            res.status(500).json({ error: 'Failed to delete task' });
+        } else {
+            res.status(200).json({ message: 'Task deleted successfully' });
+        }
+    });
+});
+
+
+app.get('/mini', (req, res) => {
+    const username = req.cookies.username; // Get the username from the cookie
+
+    if (username) {
+        // Find the user's ID based on the username
+        db.query("SELECT id FROM users WHERE username = ?;", [username], (err, result) => {
+            if (err) {
+                res.status(500).json({ error: 'Failed to fetch user' });
+            } else if (result.length > 0) {
+                const userId = result[0].id;
+
+                // Retrieve the first 4 tasks for the user from the tasks table
+                db.query("SELECT * FROM tasks WHERE user_id = ? LIMIT 4;", [userId], (err, result) => {
+                    if (err) {
+                        res.status(500).json({ error: 'Failed to fetch tasks' });
+                    } else {
+                        res.status(200).json(result);
+                    }
+                });
+            } else {
+                res.status(404).json({ error: 'User not found' });
+            }
+        });
+    } else {
+        res.status(403).json({ message: "Unauthorized" });
+    }
+});
+
+app.delete('/mini/:taskId', (req, res) => {
+    const taskId = req.params.taskId;
+
+    // Delete the mini task from the database
+    db.query("DELETE FROM tasks WHERE task_id = ?;", [taskId], (err, result) => {
+        if (err) {
+            res.status(500).json({ error: 'Failed to delete mini task' });
+        } else {
+            res.status(200).json({ message: 'Mini task deleted successfully' });
+        }
+    });
+});
+
+app.put('/mini/:taskId', (req, res) => {
+    const taskId = req.params.taskId;
+    const newStatus = req.body.completed ? 1 : 0;
+
+    // Update the completion status of the mini task in the database
+    db.query("UPDATE tasks SET completed = ? WHERE task_id = ?;", [newStatus, taskId], (err, result) => {
+        if (err) {
+            res.status(500).json({ error: 'Failed to update mini task' });
+        } else {
+            res.status(200).json({ message: 'Mini task updated successfully' });
+        }
+    });
+});
+
 
 
 

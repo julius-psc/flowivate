@@ -1,20 +1,33 @@
 
 
 
-.tasks {
-    flex: 1;
-    background-image: url('../../../assets/images/dashboard/dashboard-bg.svg');
-    display: flex;
-    flex-direction: column;
+.mini-tasks {
+    background-color: var(--RhapsodyGrey);
     color: var(--DoctorWhite);
+    padding: 8px 24px;
+    width: 80%;
+    border-radius: 12px;
+    margin: 0 10px;
 }
 
-.today-container {
-  margin: 0 340px;
+.mini-tasks ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.see-more {
+    background-color: transparent;
+    border: none;
+    font-size: 1rem;
+    margin: 0;
+    cursor: pointer;
+    color: var(--MoreThanAWeek);
+    margin-top: 4px;
+    margin-bottom: 16px;
 }
 
 /* Hide the default checkbox */
-.task-checkbox {
+.mini-task-checkbox {
   position: absolute;
   opacity: 0;
   cursor: pointer;
@@ -22,7 +35,7 @@
   width: 0;
 }
 
-.task-checkbox-container {
+.mini-task-checkbox-container {
   display: flex;
   position: relative;
   align-items: center;
@@ -30,18 +43,18 @@
   cursor: pointer;
   font-size: 18px;
   user-select: none;
-  margin: 14px 0;
-  background-color: var(--RhapsodyGrey);
+  margin: 6px 0;
+  background-color: var(--DiamondBlack);
   padding: 10px;
   border-radius: 8px;
 }
 
-.task-left {
+.mini-task-left {
   display: flex;
   align-items: center;
 }
 
-.task-right button {
+.mini-task-right button {
   background-color: transparent;
   border: none;
   margin: 0;
@@ -49,7 +62,7 @@
 }
 
 /* Create a custom checkbox */
-.checkmark {
+.mini-checkmark {
   position: relative;
   top: 0;
   left: 0;
@@ -63,26 +76,26 @@
 }
 
 /* When the checkbox is checked, add a blue background */
-.task-checkbox:checked ~ .checkmark {
+.mini-task-checkbox:checked ~ .mini-checkmark {
   background-color: var(--GreekSeaBlue);
   animation: pop 0.5s;
   animation-direction: alternate;
 }
 
 /* Create the checkmark/indicator (hidden when not checked) */
-.checkmark:after {
+.mini-checkmark:after {
   content: "";
   position: absolute;
   display: none;
 }
 
 /* Show the checkmark when checked */
-.task-checkbox:checked ~ .checkmark:after {
+.mini-task-checkbox:checked ~ .mini-checkmark:after {
   display: block;
 }
 
 /* Style the checkmark/indicator */
-.task-checkbox-container .checkmark:after {
+.mini-task-checkbox-container .mini-checkmark:after {
   left: 0.45em;
   top: 0.25em;
   width: 0.25em;
@@ -92,7 +105,7 @@
   transform: rotate(45deg);
 }
 
-.new-task button {
+.mini-new-task button {
   background-color: transparent;
   border: none;
   font-size: 1.2rem;
@@ -100,13 +113,19 @@
   color: var(--MoreThanAWeek);
 }
 
-.new-task input {
+.mini-new-task input {
   background-color: transparent;
   outline: none;
   border: none;
   font-size: 1.2rem;
   color: var(--MoreThanAWeek);
 }
+
+.mini-bottom {
+    display: flex;
+    justify-content: space-between;
+}
+  
 
 @keyframes pop {
   0% {
