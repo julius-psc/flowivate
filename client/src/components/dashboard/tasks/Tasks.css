@@ -7,6 +7,7 @@
     display: flex;
     flex-direction: column;
     color: var(--DoctorWhite);
+    padding: 0 20px;
 }
 
 .today-container {

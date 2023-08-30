@@ -10,6 +10,7 @@
     display: flex;
     flex-direction: column;
     background-image: url('../../../assets/images/dashboard/dashboard-bg.svg');
+    padding: 0 20px;
 }
 
 .home .parent {
@@ -36,7 +37,6 @@
 
 .div4 {
     grid-area: 4 / 1 / 5 / 3;
-    background-color: yellow;
 }
 
 .div5 {

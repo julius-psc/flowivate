@@ -1,0 +1,16 @@
+
+
+
+.mini-pomo {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    color: var(--DoctorWhite);
+    background-color: var(--GreekSeaBlue);
+    border-radius: 8px;
+}
+
+.mini-pomo h2 {
+    margin: 0;
+    padding: 6px 8px;
+}

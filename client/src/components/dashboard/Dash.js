@@ -4,8 +4,9 @@
 import React, { useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { useNavigate, Outlet } from 'react-router-dom';
+import MiniPomo from './common/mini-pomo/MiniPomo';
 import Sidebar from './common/sidebar/Sidebar';
-
+import { PomodoroProvider } from './home/pomodoro/PomodoroContext';
 
 import './Dash.css';
 
@@ -25,14 +26,14 @@ function Dash() {
   }, [username, navigate]);
 
   return (
-    <div className='dashboard'>
-      <Sidebar  handleLogout={handleLogout} />
-      <Outlet />
-    </div>
+    <PomodoroProvider>
+      <div className='dashboard'>
+        <Sidebar handleLogout={handleLogout} />
+        <MiniPomo />
+        <Outlet />
+      </div>
+    </PomodoroProvider>
   );
 }
 
 export default Dash;
-
-
-

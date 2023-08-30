@@ -19,15 +19,15 @@ Axios.defaults.withCredentials = true;
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<AuthPage />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/dashboard/*" element={<Dash />}> {/* Nested route */}
-        <Route path="home" index element={<Home />} /> {/* Default child */}
-        <Route path="tasks" element={<Tasks />} /> {/* Tab route */}
-      </Route>
-    </Routes>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard/*" element={<Dash />}> {/* Nested route */}
+          <Route path="home" index element={<Home />} /> {/* Default child */}
+          <Route path="tasks" element={<Tasks />} /> {/* Tab route */}
+        </Route>
+      </Routes>
   );
 }
 
