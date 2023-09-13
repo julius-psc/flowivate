@@ -1,0 +1,39 @@
+
+
+
+.hero {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 50px;
+}
+
+.hero h1 {
+    color: var(--DoctorWhite);
+    font-size: 3.4rem;
+    text-align: center;
+    margin: 14px 0;
+}
+
+.hero .update {
+    display: flex;
+    color: var(--DoctorWhite);
+    align-items: center;
+    background-color: var(--RhapsodyGrey);
+    padding: 10px 8px;
+    border-radius: 4px;
+}
+
+.hero .update #square {
+    width: 20px;
+    height: 20px;
+    background-color: var(--GreekSeaBlue);
+    border-radius: 2px;
+    margin-right: 10px;
+}
+
+.hero .update p {
+    margin: 0;
+    font-size: 0.9rem;
+}

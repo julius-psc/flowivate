@@ -14,7 +14,7 @@
     background-color: var(--RhapsodyGrey);
     z-index: 1;
     padding: 6px 8px;
-    border-radius: 8px;
+    border-radius: 4px;
   }  
 
   .dropdown span {
@@ -30,7 +30,7 @@
 .profile-icon {
     display: inline-flex;
     background-color: var(--RhapsodyGrey);
-    padding: 6px 8px;
-    border-radius: 10px;
+    padding: 7px 8px;
+    border-radius: 4px;
     cursor: pointer;
 }

@@ -7,7 +7,7 @@
     color: var(--LilacBlue);
     background-color: var(--RhapsodyGrey);
     padding: 8px 12px;
-    border-radius: 10px;
+    border-radius: 4px;
 }
 
 .daytime p {

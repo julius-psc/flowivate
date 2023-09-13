@@ -1,0 +1,22 @@
+
+
+
+/* Floaty component styles */
+.floaty {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Ensure circles stay within the container */
+    background-color: var(--RhapsodyGrey);
+    border-radius: 4px;
+}
+
+/* Circle styles */
+.circle {
+    position: absolute;
+    background-color: #779FE5; /* Blue glowing color */
+    border-radius: 50%; /* Create a circle shape */
+    transform: translate(-50%, -50%); /* Center the circles */
+    fill: #78A6DD;
+    filter: drop-shadow(0px 0px 0.4136005640029907px #78A6DD) drop-shadow(0px 0px 0.8272011280059814px #78A6DD) drop-shadow(0px 0px 2.8952040672302246px #78A6DD) drop-shadow(0px 0px 5.790408134460449px #78A6DD) drop-shadow(0px 0px 9.926413536071777px #78A6DD) drop-shadow(0px 0px 17.37122344970703px #78A6DD);
+}

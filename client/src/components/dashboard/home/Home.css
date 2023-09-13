@@ -2,9 +2,6 @@
 
 
 
-
-
-
 .home {
     width: 100%;
     display: flex;
@@ -41,7 +38,7 @@
 
 .div5 {
     grid-area: 3 / 3 / 4 / 5;
-    background-color: green;
+    position: relative;
 }
 
 .div6 {

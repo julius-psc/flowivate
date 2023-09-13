@@ -6,11 +6,13 @@ import './Tasks.css';
 import axios from "axios";
 
 import binClosed from '../../../assets/images/dashboard/tasks/tasks-bin-closed.svg';
+import binOpened from '../../../assets/images/dashboard/tasks/tasks-bin-opened.svg';
 
 const Tasks = () => {
     const [tasks, setTasks] = useState([]);
     const [newTaskName, setNewTaskName] = useState("");
     const [isCreatingTask, setIsCreatingTask] = useState(false);
+    const [hoveredTaskId, setHoveredTaskId] = useState(null);
 
     const handleNewTask = () => {
         setIsCreatingTask(true);
@@ -156,8 +158,19 @@ const Tasks = () => {
                                     <div>{task.task}</div>
                                 </div>
                                 <div className="task-right">
-                                    <button onClick={() => handleTaskDeletion(task.task_id)}>
-                                        <img src={binClosed} alt="Delete task icon" />
+                                    <button
+                                        onMouseEnter={() => setHoveredTaskId(task.task_id)}
+                                        onMouseLeave={() => setHoveredTaskId(null)}
+                                        onClick={() => handleTaskDeletion(task.task_id)}
+                                    >
+                                        <img
+                                            src={
+                                                hoveredTaskId === task.task_id
+                                                    ? binOpened
+                                                    : binClosed
+                                            }
+                                            alt="Delete task icon"
+                                        />
                                     </button>
                                 </div>
                             </label>

@@ -7,9 +7,11 @@ import './MiniTasks.css';
 import { NavLink } from "react-router-dom";
 
 import binClosed from '../../../../assets/images/dashboard/tasks/tasks-bin-closed.svg';
+import binOpened from '../../../../assets/images/dashboard/tasks/tasks-bin-opened.svg';
 
 const MiniTasks = () => {
     const [tasks, setTasks] = useState([]);
+    const [hoveredTaskId, setHoveredTaskId] = useState(null);
 
     useEffect(() => {
         fetchMiniTasks();
@@ -88,9 +90,20 @@ const MiniTasks = () => {
                                 <span className="mini-task-text">{task.task}</span>
                             </div>
                             <div className="mini-task-right">
-                                <button onClick={() => handleTaskDeletion(task.task_id)}>
-                                    <img src={binClosed} alt="Delete task icon" />
-                                </button>
+                            <button
+                                        onMouseEnter={() => setHoveredTaskId(task.task_id)}
+                                        onMouseLeave={() => setHoveredTaskId(null)}
+                                        onClick={() => handleTaskDeletion(task.task_id)}
+                                    >
+                                        <img
+                                            src={
+                                                hoveredTaskId === task.task_id
+                                                    ? binOpened
+                                                    : binClosed
+                                            }
+                                            alt="Delete task icon"
+                                        />
+                                    </button>
                             </div>
                         </label>
                     </li>

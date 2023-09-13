@@ -6,7 +6,7 @@
     color: var(--DoctorWhite);
     padding: 8px 24px;
     width: 80%;
-    border-radius: 12px;
+    border-radius: 4px;
 }
 
 .mini-tasks ul {
@@ -45,7 +45,7 @@
   margin: 6px 0;
   background-color: var(--DiamondBlack);
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .mini-task-left {
@@ -65,12 +65,12 @@
   position: relative;
   top: 0;
   left: 0;
-  height: 1.3em;
-  width: 1.3em;
+  height: 1.1em;
+  width: 1.1em;
   background-color: transparent;
-  border: 3px solid var(--GreekSeaBlue);
+  border: 2.8px solid var(--GreekSeaBlue);
   transition: all 0.3s;
-  border-radius: 8px;
+  border-radius: 4px;
   margin-right: 8px;
 }
 
@@ -81,28 +81,6 @@
   animation-direction: alternate;
 }
 
-/* Create the checkmark/indicator (hidden when not checked) */
-.mini-checkmark:after {
-  content: "";
-  position: absolute;
-  display: none;
-}
-
-/* Show the checkmark when checked */
-.mini-task-checkbox:checked ~ .mini-checkmark:after {
-  display: block;
-}
-
-/* Style the checkmark/indicator */
-.mini-task-checkbox-container .mini-checkmark:after {
-  left: 0.45em;
-  top: 0.25em;
-  width: 0.25em;
-  height: 0.6em;
-  border: solid var(--RhapsodyGrey);
-  border-width: 0 0.15em 0.15em 0;
-  transform: rotate(45deg);
-}
 
 .mini-new-task button {
   background-color: transparent;

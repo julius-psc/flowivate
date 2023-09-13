@@ -34,7 +34,7 @@
   margin: 14px 0;
   background-color: var(--RhapsodyGrey);
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .task-left {
@@ -54,12 +54,12 @@
   position: relative;
   top: 0;
   left: 0;
-  height: 1.3em;
-  width: 1.3em;
+  height: 1.1em;
+  width: 1.1em;
   background-color: transparent;
-  border: 3px solid var(--GreekSeaBlue);
+  border: 2.8px solid var(--GreekSeaBlue);
   transition: all 0.3s;
-  border-radius: 8px;
+  border-radius: 4px;
   margin-right: 8px;
 }
 
@@ -68,29 +68,6 @@
   background-color: var(--GreekSeaBlue);
   animation: pop 0.5s;
   animation-direction: alternate;
-}
-
-/* Create the checkmark/indicator (hidden when not checked) */
-.checkmark:after {
-  content: "";
-  position: absolute;
-  display: none;
-}
-
-/* Show the checkmark when checked */
-.task-checkbox:checked ~ .checkmark:after {
-  display: block;
-}
-
-/* Style the checkmark/indicator */
-.task-checkbox-container .checkmark:after {
-  left: 0.45em;
-  top: 0.25em;
-  width: 0.25em;
-  height: 0.6em;
-  border: solid var(--RhapsodyGrey);
-  border-width: 0 0.15em 0.15em 0;
-  transform: rotate(45deg);
 }
 
 .new-task button {
