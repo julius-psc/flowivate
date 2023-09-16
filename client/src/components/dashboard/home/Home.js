@@ -11,7 +11,7 @@ import Pomodoro from './pomodoro/Pomodoro';
 import Floaty from './floaty-balls/Floaty';
 
 function Home() {
-    
+
     return (
         <div className='home'>
             <Topbar />

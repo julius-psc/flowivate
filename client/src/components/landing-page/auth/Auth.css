@@ -75,6 +75,10 @@
     font-size: 1rem;
 }
 
+.auth-page .confirmBtn:hover {
+    background-color: #5C7DB3;
+}
+
 .auth-page button:nth-child(1) {
     outline: none;
     background-color: transparent;
@@ -83,6 +87,10 @@
     color: var(--GreekSeaBlue);
     font-size: 1rem;
     font-weight: 700;
+}
+
+.auth-page button:nth-child(1):hover {
+    color: #5C7DB3;
 }
 
 .auth-page .input-section {

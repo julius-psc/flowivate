@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import './MiniTasks.css';
 import { NavLink } from "react-router-dom";
+import Skeleton from '@mui/material/Skeleton';
 
 import binClosed from '../../../../assets/images/dashboard/tasks/tasks-bin-closed.svg';
 import binOpened from '../../../../assets/images/dashboard/tasks/tasks-bin-opened.svg';
@@ -12,6 +13,7 @@ import binOpened from '../../../../assets/images/dashboard/tasks/tasks-bin-opene
 const MiniTasks = () => {
     const [tasks, setTasks] = useState([]);
     const [hoveredTaskId, setHoveredTaskId] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         fetchMiniTasks();
@@ -25,8 +27,10 @@ const MiniTasks = () => {
 
             const miniTasks = response.data;
             setTasks(miniTasks);
+            setIsLoading(false); // Set isLoading to false after successful data fetch
         } catch (error) {
             console.error("Error fetching mini tasks:", error);
+            setIsLoading(false); // Set isLoading to false on error as well
         }
     };
 
@@ -70,27 +74,34 @@ const MiniTasks = () => {
             console.error("Error deleting task:", error);
         }
     };
-    
-    
+
     return (
-<div className="mini-tasks">
+        <div className="mini-tasks">
             <h1>Tasks</h1>
             <ul className="mini-tasks-list">
-                {tasks.map(task => (
-                    <li key={task.task_id} className={`mini-task-item ${task.completed ? "completed" : ""}`}>
-                        <label className="mini-task-checkbox-container">
-                            <div className="mini-task-left">
-                                <input
-                                    type="checkbox"
-                                    checked={task.completed}
-                                    onChange={() => handleCheckboxChange(task.task_id)}
-                                    className="mini-task-checkbox"
-                                />
-                                <div className="mini-checkmark"></div>
-                                <span className="mini-task-text">{task.task}</span>
-                            </div>
-                            <div className="mini-task-right">
-                            <button
+                {isLoading || tasks.length === 0 ? (
+                    // Render Skeleton placeholders while loading or when there are no tasks
+                    <>
+                        <Skeleton height={60}  animation="wave" />
+                        <Skeleton height={60} animation="wave" />
+                    </>
+                ) : (
+                    // Render the actual tasks when loading is complete and tasks are available
+                    tasks.map(task => (
+                        <li key={task.task_id} className={`mini-task-item ${task.completed ? "completed" : ""}`}>
+                            <label className="mini-task-checkbox-container">
+                                <div className="mini-task-left">
+                                    <input
+                                        type="checkbox"
+                                        checked={task.completed}
+                                        onChange={() => handleCheckboxChange(task.task_id)}
+                                        className="mini-task-checkbox"
+                                    />
+                                    <div className="mini-checkmark"></div>
+                                    <span className="mini-task-text">{task.task}</span>
+                                </div>
+                                <div className="mini-task-right">
+                                    <button
                                         onMouseEnter={() => setHoveredTaskId(task.task_id)}
                                         onMouseLeave={() => setHoveredTaskId(null)}
                                         onClick={() => handleTaskDeletion(task.task_id)}
@@ -104,10 +115,11 @@ const MiniTasks = () => {
                                             alt="Delete task icon"
                                         />
                                     </button>
-                            </div>
-                        </label>
-                    </li>
-                ))}
+                                </div>
+                            </label>
+                        </li>
+                    ))
+                )}
             </ul>
             <div className="mini-bottom">
                 <NavLink to="/dashboard/tasks"><button className="see-more">+ See more</button></NavLink>
