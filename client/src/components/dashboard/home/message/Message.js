@@ -13,7 +13,7 @@ const Message = () => {
     return (
         <div className="message">
                 <div>
-                    <h1>Hey, {username}!</h1>
+                    <h1>Hello, {username}</h1>
                     <p>"Embrace discomfort"</p>
                 </div>
                 <div className="daily-streaks">

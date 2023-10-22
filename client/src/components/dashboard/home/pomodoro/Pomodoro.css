@@ -8,10 +8,8 @@
     color: var(--DoctorWhite);
     background-color: var(--GreekSeaBlue);
     border-radius: 4px;
-    width: 60%;
     padding: 0 20px;
     font-size: 1.4rem;
-
 }
 
 .pomodoro button {
@@ -22,3 +20,4 @@
     margin: 0 8px;
     padding: 0;
 }
+

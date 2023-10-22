@@ -262,7 +262,54 @@ app.put('/mini/:taskId', (req, res) => {
     });
 });
 
-
+app.post('/saveWaterIntake', (req, res) => {
+    const { username, count } = req.body;
+  
+    // Find the user ID based on the username from the users table
+    db.query("SELECT id FROM users WHERE username = ?;", [username], (err, result) => {
+      if (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal Server Error' });
+      } else if (result.length > 0) {
+        const userId = result[0].id;
+  
+        // Check if a record for the current date already exists for the user
+        db.query("SELECT * FROM water_intake WHERE user_id = ? AND DATE(date) = CURDATE();", [userId], (selectErr, selectResult) => {
+          if (selectErr) {
+            console.error(selectErr);
+            res.status(500).json({ error: 'Internal Server Error' });
+          } else {
+            if (selectResult.length > 0) {
+              // If a record for the current date exists, update the existing record
+              const existingRecordId = selectResult[0].id;
+              const updateSql = `UPDATE water_intake SET count = ? WHERE id = ?`;
+              db.query(updateSql, [count, existingRecordId], (updateError, updateResult) => {
+                if (updateError) {
+                  console.error(updateError);
+                  res.status(500).json({ error: 'Internal Server Error' });
+                } else {
+                  res.status(200).json({ message: 'Water intake count updated successfully' });
+                }
+              });
+            } else {
+              // If no record for the current date exists, create a new record
+              const insertSql = `INSERT INTO water_intake (user_id, count, date) VALUES (?, ?, CURDATE())`;
+              db.query(insertSql, [userId, count], (insertError, insertResult) => {
+                if (insertError) {
+                  console.error(insertError);
+                  res.status(500).json({ error: 'Internal Server Error' });
+                } else {
+                  res.status(200).json({ message: 'Water intake count saved successfully' });
+                }
+              });
+            }
+          }
+        });
+      } else {
+        res.status(404).json({ error: 'User not found' });
+      }
+    });
+});
 
 
 

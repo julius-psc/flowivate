@@ -3,7 +3,8 @@
 
 .tasks {
     flex: 1;
-    background-image: url('../../../assets/images/dashboard/dashboard-bg.svg');
+    background-image: url('../../../assets/images/dashboard/dashboard-pattern-bg.svg');
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     color: var(--DoctorWhite);

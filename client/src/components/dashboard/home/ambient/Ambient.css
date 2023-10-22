@@ -1,0 +1,26 @@
+.ambient {
+    padding: 20px 20px;
+    background-color: var(--RhapsodyGrey);
+    border-radius: 4px;
+}
+
+/* Hide the default dropdown arrow */
+.ambient select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100%;
+    padding: 20px 40px 20px 20px;
+    border-radius: 4px;
+    background-color: var(--DiamondBlack);
+    color: var(--LilacBlue);
+    border: none;
+    font-size: 1rem;
+    border-right: 10px solid transparent;
+    background-image: url('../../../../assets/images/dashboard/home/ambient/ambient-dropdown.svg');
+    background-size: 14px 14px;
+    background-position: right center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    outline: none;
+}

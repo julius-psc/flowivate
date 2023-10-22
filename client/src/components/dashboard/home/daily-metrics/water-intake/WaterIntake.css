@@ -1,0 +1,64 @@
+
+
+
+.water {
+    height: 100%;
+    width: 100%;
+    background-color: var(--DiamondBlack);
+    border-radius: 2px;
+}
+
+.water span {
+    color: var(--DoctorWhite);
+}
+
+.water .water-buttons {
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.water-buttons button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+} 
+
+.water-buttons button img {
+    width: 10px;
+}
+
+.water-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 4px;
+}
+
+.water-wrapper p {
+    color: var(--LilacBlue);
+    margin: 0;
+}
+
+.water-wrapper span {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+#metric-icon {
+    background-color: var(--RhapsodyGrey);
+    padding: 10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 2px;
+    margin: 10px;
+}
+
+#water-save {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px;
+}
+
+#number-of-glasses {
+    padding-right: 4px;
+}
