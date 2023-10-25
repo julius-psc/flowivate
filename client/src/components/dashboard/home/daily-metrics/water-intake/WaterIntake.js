@@ -1,9 +1,9 @@
 
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Cookies from 'js-cookie'; // Import js-cookie library to handle cookies
+import Cookies from 'js-cookie';
 
 import './WaterIntake.css';
 import waterIcon from '../../../../../assets/images/dashboard/home/metrics/icons/metric-drop.svg';
@@ -14,8 +14,22 @@ import glass from '../../../../../assets/images/dashboard/home/metrics/icons/met
 const WaterIntake = () => {
     const [counter, setCounter] = useState(0);
 
+    useEffect(() => {
+        const username = Cookies.get('username');
+        if (username) {
+            axios.get('http://localhost:3001/getWaterIntake')
+                .then(response => {
+                    setCounter(response.data.count);
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+    }, []);
+
     const handleIncrement = () => {
-        setCounter(counter + 1);
+        const newCounter = counter + 1;
+        setCounter(newCounter);
     };
 
     const handleDecrement = () => {
@@ -25,7 +39,6 @@ const WaterIntake = () => {
     };
 
     const handleSave = () => {
-        // Get the username from the cookie
         const username = Cookies.get('username');
         axios.post('http://localhost:3001/saveWaterIntake', {
             username: username,
@@ -41,7 +54,10 @@ const WaterIntake = () => {
 
     return (
         <div className="water">
-            <img id="metric-icon" src={waterIcon} alt="Water metric icon" />
+            <div id="water-head">
+                <img id="metric-icon" src={waterIcon} alt="Water metric icon" />
+                <button onClick={handleSave}>Save</button>
+            </div>
             <div className="scale">
                 <div className='water-wrapper'>
                     <div className='water-buttons'>
@@ -52,7 +68,6 @@ const WaterIntake = () => {
                     <img alt="Glass of water" src={glass} />
                     <p>glasses<br /> of water</p>
                 </div>
-                <div id="water-save"><button onClick={handleSave}>Save</button></div>
             </div>
         </div>
     );

@@ -1,3 +1,6 @@
+
+
+
 const express = require('express');
 const mysql = require('mysql'); 
 const cors = require('cors');
@@ -310,6 +313,132 @@ app.post('/saveWaterIntake', (req, res) => {
       }
     });
 });
+
+app.get('/getWaterIntake', (req, res) => {
+    const username = req.cookies.username;
+    db.query("SELECT count FROM water_intake WHERE user_id = (SELECT id FROM users WHERE username = ?) AND DATE(date) = CURDATE();", [username], (err, result) => {
+        if (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            if (result.length > 0) {
+                res.status(200).json({ count: result[0].count });
+            } else {
+                res.status(200).json({ count: 0 }); // If no record found for today, return 0
+            }
+        }
+    });
+});
+
+app.post('/saveSleepData', (req, res) => {
+    const { hours, date } = req.body;
+    const username = req.cookies.username; // Retrieve the username from the cookie
+
+    // Find the user ID based on the username from the users table
+    db.query("SELECT id FROM users WHERE username = ?;", [username], (err, result) => {
+        if (err) {
+            res.status(500).json({ error: 'Failed to fetch user' });
+        } else if (result.length > 0) {
+            const userId = result[0].id;
+
+            // Check if a record for the current date already exists for the user
+            db.query(
+                "SELECT id FROM sleep_data WHERE user_id = ? AND date = ?;",
+                [userId, date],
+                (selectErr, selectResult) => {
+                    if (selectErr) {
+                        res.status(500).json({ error: 'Failed to check for existing data' });
+                    } else {
+                        if (selectResult.length > 0) {
+                            // If a record for the current date exists, update the existing record
+                            const existingRecordId = selectResult[0].id;
+                            db.query(
+                                "UPDATE sleep_data SET hours = ? WHERE id = ?",
+                                [hours, existingRecordId],
+                                (updateErr, updateResult) => {
+                                    if (updateErr) {
+                                        res.status(500).json({ error: 'Failed to update sleep data' });
+                                    } else {
+                                        res.status(200).json({ message: 'Sleep data updated successfully' });
+                                    }
+                                }
+                            );
+                        } else {
+                            // If no record for the current date exists, create a new record
+                            db.query(
+                                "INSERT INTO sleep_data (user_id, hours, date) VALUES (?, ?, ?);",
+                                [userId, hours, date],
+                                (insertErr, insertResult) => {
+                                    if (insertErr) {
+                                        res.status(500).json({ error: 'Failed to save sleep data' });
+                                    } else {
+                                        res.status(201).json({ message: 'Sleep data saved successfully' });
+                                    }
+                                }
+                            );
+                        }
+                    }
+                }
+            );
+        } else {
+            res.status(404).json({ error: 'User not found' });
+        }
+    });
+});
+
+
+app.get('/getSleepData', (req, res) => {
+    const username = req.cookies.username; // Retrieve the username from the cookie
+
+    // Find the user ID based on the username
+    db.query("SELECT id FROM users WHERE username = ?;", [username], (err, result) => {
+        if (err) {
+            console.error('Error fetching user ID:', err);
+            res.status(500).json({ error: 'Failed to fetch user' });
+        } else if (result.length > 0) {
+            const userId = result[0].id;
+
+            // Modify the SQL query to generate the date range for the last 7 days without using the 'numbers' table
+            db.query(
+                `SELECT dates.date, IFNULL(sleep_data.hours, 0) as hours 
+                 FROM (
+                    SELECT DATE_SUB(CURDATE(), INTERVAL 6 DAY) as date 
+                    UNION
+                    SELECT DATE_SUB(CURDATE(), INTERVAL 5 DAY) 
+                    UNION
+                    SELECT DATE_SUB(CURDATE(), INTERVAL 4 DAY) 
+                    UNION
+                    SELECT DATE_SUB(CURDATE(), INTERVAL 3 DAY) 
+                    UNION
+                    SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY) 
+                    UNION
+                    SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY) 
+                    UNION
+                    SELECT CURDATE()
+                 ) AS dates
+                 LEFT JOIN sleep_data 
+                 ON dates.date = sleep_data.date AND sleep_data.user_id = ?
+                 ORDER BY dates.date;`,
+                [userId],
+                (sleepErr, sleepResult) => {
+                    if (sleepErr) {
+                        console.error('Error fetching sleep data:', sleepErr);
+                        res.status(500).json({ error: 'Failed to fetch sleep data' });
+                    } else {
+                        const sleepData = sleepResult.map((row) => row.hours);
+                        console.log('Sleep data fetched successfully:', sleepData);
+                        res.status(200).json(sleepData);
+                    }
+                }
+            );
+        } else {
+            console.error('User not found:', username);
+            res.status(404).json({ error: 'User not found' });
+        }
+    });
+});
+
+
 
 
 

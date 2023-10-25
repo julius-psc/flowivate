@@ -1,0 +1,88 @@
+
+
+
+#metric-icon {
+    background-color: var(--RhapsodyGrey);
+    padding: 10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 2px;
+    margin: 10px;
+}
+
+.sleep {
+    height: 100%;
+    width: 100%;
+    background-color: var(--DiamondBlack);
+    border-radius: 2px;
+}
+
+#sleep-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sleep-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sleep-buttons button {
+    color: var(--GreekSeaBlue);
+    border: none;
+    background-color: transparent;
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 0;
+}
+
+#save-btn {
+    margin: 0 10px;
+}
+
+.sleep-buttons p {
+    color: var(--DoctorWhite);
+    font-weight: 500;
+    padding: 0 6px;
+    font-size: 1.8rem;
+    margin: 4px;
+}
+
+.sleep-graph {
+    height: 80px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 0 100px;
+    padding-bottom: 20px;
+}
+
+.no-sleep {
+    height: 10px;
+    width: 10px;
+    border-radius: 100%;
+    background-color: var(--RhapsodyGrey);
+}
+
+.little-sleep {
+    height: 20px;
+    width: 7px;
+    border-radius: 8px;
+    background-color: var(--GreekSeaBlue);
+}
+
+.decent-sleep {
+    height: 40px;
+    width: 7px;
+    border-radius: 8px;
+    background-color: var(--GreekSeaBlue);
+}
+
+.optimal-sleep {
+    height: 70px;
+    width: 7px;
+    border-radius: 8px;
+    background-color: var(--GreekSeaBlue);
+}
