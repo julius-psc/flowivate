@@ -164,16 +164,16 @@ const Sidebar: React.FC = () => {
         {isExpanded ? (
           <div className="flex justify-between items-center px-1">
             <button className="cursor-pointer">
-              <IconLogout2 className="w-6 h-6 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
+              <IconLogout2 className="w-4 h-4 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
             </button>
             <button className=" cursor-pointer">
-              <IconSettings className="w-6 h-6 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
+              <IconSettings className="w-4 h-4 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
             </button>
           </div>
         ) : (
           <div className="flex justify-center">
             <button className="pr-1 cursor-pointer">
-              <IconLogout2 className="w-6 h-6 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
+              <IconLogout2 className="w-4 h-4 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
             </button>
           </div>
         )}

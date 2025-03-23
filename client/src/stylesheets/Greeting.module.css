@@ -1,0 +1,21 @@
+.container {
+    position: relative;
+    max-width: 40rem;
+    padding: 1rem; 
+    background-color: white;
+    border-radius: 0.75rem; 
+  }
+  
+  .background {
+    position: absolute;
+    inset: 0;
+    background-image: url('/assets/illustrations/topographic-bg.svg');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.2;
+  }
+  
+  .content {
+    position: relative;
+    z-index: 10;
+  }
