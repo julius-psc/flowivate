@@ -3,6 +3,7 @@ import Sidebar from '../components/dashboard/navigation/Sidebar';
 import Navbar from '../components/dashboard/navigation/Navbar';
 
 import Greeting from '../components/dashboard/features/Greeting';
+import Tasks from '../components/dashboard/features/Tasks';
 
 export default function Home() {
   return (
@@ -12,8 +13,9 @@ export default function Home() {
       </div>
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 p-4">
+        <main className="flex-1">
           <Greeting/>
+          <Tasks />
           <h1>Hello</h1>
         </main>
       </div>
