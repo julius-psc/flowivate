@@ -88,9 +88,9 @@ const Tasks: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-160 my-2 bg-white rounded-xl relative">
+    <div className="p-4 max-w-160 my-2 bg-white rounded-xl relative">
       <div className="flex justify-end">
-        <p className="bg-primary-white text-primary-black font-medium opacity-60 px-3 mb-6 rounded-md">My tasks</p>
+        <p className="bg-primary-white text-primary-black font-medium opacity-60 mb-6  px-3 rounded-md">My tasks</p>
       </div>
 
       <div className={`max-h-96 overflow-y-auto pr-2 ${styles.customScrollbar}`}>

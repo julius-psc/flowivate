@@ -11,3 +11,34 @@
 
 }
 
+@layer utilities {
+  .spin-slow {
+    animation: spin 4s linear infinite;
+  }
+
+  .animate-note1 {
+    animation: noteFloat 2s infinite ease-in-out;
+  }
+
+  .animate-note2 {
+    animation: noteFloat 1.8s infinite ease-in-out 0.2s;
+  }
+
+  .animate-note3 {
+    animation: noteFloat 2.2s infinite ease-in-out 0.4s;
+  }
+
+  @keyframes noteFloat {
+    0% {
+      opacity: 0;
+      transform: translateY(0);
+    }
+    50% {
+      opacity: 0.7;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+  }
+}

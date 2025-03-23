@@ -2,6 +2,7 @@
 import Greeting from '../../components/dashboard/features/Greeting';
 import Tasks from '../../components/dashboard/features/Tasks';
 import Pomodoro from '../../components/dashboard/features/Pomodoro';
+import Ambient from '../../components/dashboard/features/Ambient';
 
 export default function Dashboard() {
   return (
@@ -12,6 +13,7 @@ export default function Dashboard() {
       </div>
       <div className="col-span-2">
         <Pomodoro />
+        <Ambient />
       </div>
     </div>
   );
