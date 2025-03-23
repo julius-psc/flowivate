@@ -50,7 +50,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="flex items-center justify-between px-6 py-3 mx-2 my-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200/50 dark:border-gray-800/50 transition-all duration-200">
+    <nav className="flex items-center justify-between px-6 py-3 mx-2 my-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200/50 dark:border-gray-800/50 transition-all duration-200">
       {/* Left side - Time and Search */}
       <div className="flex items-center space-x-8">
         <span className="text-gray-700 dark:text-gray-300 font-medium text-sm">

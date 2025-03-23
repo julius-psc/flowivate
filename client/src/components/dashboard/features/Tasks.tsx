@@ -88,22 +88,26 @@ const Tasks: React.FC = () => {
   };
 
   return (
-    <div className="p-4 max-w-160 my-2 bg-white rounded-xl relative">
+    <div className="p-4 max-w-160 my-2 bg-white dark:bg-gray-800 rounded-xl relative border border-gray-100 dark:border-gray-700">
       <div className="flex justify-end">
-        <p className="bg-primary-white text-primary-black font-medium opacity-60 mb-6  px-3 rounded-md">My tasks</p>
+        <p className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 font-medium opacity-60 mb-6 px-3 rounded-md">
+          My tasks
+        </p>
       </div>
 
       <div className={`max-h-96 overflow-y-auto pr-2 ${styles.customScrollbar}`}>
         {categories.map((category, categoryIndex) => (
           <div key={categoryIndex} className="mb-8">
             <div className="flex items-center justify-between mb-3 group">
-              <h2 className="text-lg font-semibold text-gray-700">{category.name}</h2>
-              <div className="flex-1 mx-3 border-t border-gray-200"></div>
+              <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                {category.name}
+              </h2>
+              <div className="flex-1 mx-3 border-t border-gray-200 dark:border-gray-600"></div>
               <div className="flex items-center">
-                <span className="text-sm font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded-full mr-2">
+                <span className="text-sm font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full mr-2">
                   {getCompletionRatio(category.tasks)}
                 </span>
-                <button 
+                <button
                   onClick={() => deleteCategory(categoryIndex)}
                   className="opacity-0 group-hover:opacity-70 hover:opacity-100 transition-opacity duration-200 text-red-500"
                 >
@@ -115,7 +119,7 @@ const Tasks: React.FC = () => {
             {category.tasks.map((task, taskIndex) => (
               <div
                 key={taskIndex}
-                className="flex items-center p-3 bg-primary-white rounded-lg mb-3 duration-200 group"
+                className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg mb-3 duration-200 group border border-gray-100 dark:border-gray-700"
               >
                 <div className="flex-grow">
                   <Checkbox
@@ -124,7 +128,7 @@ const Tasks: React.FC = () => {
                     label={task.name}
                   />
                 </div>
-                <button 
+                <button
                   onClick={() => deleteTask(categoryIndex, taskIndex)}
                   className="opacity-0 group-hover:opacity-70 hover:opacity-100 transition-opacity duration-200 text-red-500"
                 >
@@ -137,7 +141,7 @@ const Tasks: React.FC = () => {
               <input
                 type="text"
                 onKeyPress={(e) => saveNewTask(categoryIndex, e.currentTarget.value, e)}
-                className="w-full p-3 mb-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:border-gray-400 transition-colors duration-200"
+                className="w-full p-3 mb-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors duration-200 text-gray-900 dark:text-gray-200"
                 placeholder="Enter new task (press Enter to save)..."
                 autoFocus
               />
@@ -145,7 +149,7 @@ const Tasks: React.FC = () => {
 
             <button
               onClick={() => toggleTaskInput(categoryIndex)}
-              className="flex items-center text-gray-600 text-sm mt-2 group"
+              className="flex items-center text-gray-600 dark:text-gray-400 text-sm mt-2 group"
             >
               <div className="cursor-pointer flex items-center opacity-30 group-hover:opacity-80 transition-all duration-200">
                 <IconCopyPlus className="h-5 w-5 mr-1 transform group-hover:scale-110 transition-transform duration-200" />
@@ -164,12 +168,14 @@ const Tasks: React.FC = () => {
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 onKeyDown={addCategory}
-                className="text-lg font-semibold text-gray-700 bg-transparent border-b-2 border-gray-300 focus:outline-none transition-colors duration-200 w-full"
+                className="text-lg font-semibold text-gray-700 dark:text-gray-300 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none transition-colors duration-200 w-full"
                 placeholder="New category name..."
                 autoFocus
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">Press Enter to save or Escape to cancel</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Press Enter to save or Escape to cancel
+            </p>
           </div>
         )}
       </div>
@@ -178,7 +184,7 @@ const Tasks: React.FC = () => {
       {!isAddingCategory && (
         <button
           onClick={() => setIsAddingCategory(true)}
-          className="cursor-pointer flex items-center p-3 mb-4 w-[97%] bg-gray-50 rounded-lg border border-dashed border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors duration-200"
+          className="cursor-pointer flex items-center p-3 mb-4 w-[97%] bg-gray-50 dark:bg-gray-700 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200"
         >
           <IconSquareRoundedPlus2 className="h-5 opacity-70 w-5 mr-2" />
           <span className="font-medium opacity-70">Add new category</span>

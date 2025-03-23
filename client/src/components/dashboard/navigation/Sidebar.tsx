@@ -9,13 +9,12 @@ import {
   IconNotes,
   IconChevronDown,
   IconLogout2,
-  IconSettings
+  IconSettings,
 } from "@tabler/icons-react";
 import logo from "../../../assets/brand/logo-v1.0.svg";
 
 const Sidebar: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
-  console.log("Sidebar rendered, isExpanded:", isExpanded);
   const [activeLink, setActiveLink] = useState("Home");
   const [status, setStatus] = useState("Active");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -31,11 +30,15 @@ const Sidebar: React.FC = () => {
 
   return (
     <div
-      className={`bg-white dark:bg-gray-900 p-5 mb-2 mx-2 rounded-xl transition-all duration-300 ease-in-out flex flex-col items-center ${
+      className={`bg-white dark:bg-gray-800 p-5 mb-2 mx-2 rounded-xl transition-all duration-300 ease-in-out flex flex-col items-center ${
         isExpanded ? "w-[320px]" : "w-[80px]"
       }`}
     >
-      <div className={`mb-6 flex-shrink-0 w-full ${isExpanded ? 'flex justify-end' : 'flex justify-center'}`}>
+      <div
+        className={`mb-6 flex-shrink-0 w-full ${
+          isExpanded ? "flex justify-end" : "flex justify-center"
+        }`}
+      >
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 cursor-pointer"
@@ -49,14 +52,14 @@ const Sidebar: React.FC = () => {
       </div>
 
       <div className="mb-8 flex-shrink-0">
-      <Image
-  className="w-12 h-auto"
-  src={logo}
-  alt="Flowivate's logo"
-  width={48}
-  height={48}
-  priority
-/>
+        <Image
+          className="w-12 h-auto"
+          src={logo}
+          alt="Flowivate's logo"
+          width={48}
+          height={48}
+          priority
+        />
       </div>
 
       <div className="flex-grow overflow-y-auto w-full">
@@ -79,7 +82,7 @@ const Sidebar: React.FC = () => {
               <item.icon
                 className={`w-6 h-6 flex-shrink-0 ${
                   activeLink === item.name
-                    ? "text-gray-900 dark:text-gray-100"
+                    ? "text-gray-900 dark:text-white"
                     : "text-gray-600 dark:text-gray-300"
                 } transition-colors duration-200`}
               />
@@ -87,7 +90,7 @@ const Sidebar: React.FC = () => {
                 <span
                   className={`ml-3 font-medium whitespace-nowrap ${
                     activeLink === item.name
-                      ? "text-gray-900 dark:text-gray-100"
+                      ? "text-gray-900 dark:text-white"
                       : "text-gray-600 dark:text-gray-300"
                   } transition-opacity duration-200`}
                 >
@@ -125,7 +128,7 @@ const Sidebar: React.FC = () => {
               className={`absolute bottom-full left-0 w-full mb-1 transition-all duration-200 ease-in-out transform ${
                 isDropdownOpen
                   ? "opacity-100 translate-y-0"
-                  : "opacity-0 -translate-y-2 pointer-events-none"
+                  : "opacity-0 -translate-y-2 pointer-events personally-none"
               }`}
             >
               <div className="bg-white dark:bg-gray-900 shadow-sm rounded-lg border border-gray-100 dark:border-gray-700 py-1">
@@ -137,7 +140,9 @@ const Sidebar: React.FC = () => {
                       setIsDropdownOpen(false);
                     }}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 cursor-pointer ${
-                      status === option.name ? "bg-gray-50 dark:bg-gray-800" : ""
+                      status === option.name
+                        ? "bg-gray-50 dark:bg-gray-800"
+                        : ""
                     }`}
                   >
                     <div
@@ -166,7 +171,7 @@ const Sidebar: React.FC = () => {
             <button className="cursor-pointer">
               <IconLogout2 className="w-4 h-4 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
             </button>
-            <button className=" cursor-pointer">
+            <button className="cursor-pointer">
               <IconSettings className="w-4 h-4 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
             </button>
           </div>

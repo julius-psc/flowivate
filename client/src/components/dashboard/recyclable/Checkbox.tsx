@@ -22,7 +22,7 @@ const Checkbox: React.FC<CheckboxProps> = ({ checked, onChange, label, disabled 
           relative inline-block w-5 h-5 mr-3
           border-2 border-[#3A6EC8] rounded
           transition-all duration-300
-          ${checked ? 'bg-[#2A4E8F]' : 'bg-white'}
+          ${checked ? 'bg-[#2A4E8F]' : 'bg-transparent'}
           peer-focus:ring-2 peer-focus:ring-[#3a6ec865]
           group-hover:border-[#5B8CEB]
           ${disabled ? 'opacity-50 cursor-not-allowed group-hover:border-[#3A6EC8]' : ''}
