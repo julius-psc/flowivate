@@ -133,7 +133,7 @@ const Pomodoro: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center ml-2 w-96 p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+    <div className="flex flex-col items-center w-96 p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
       {/* Mode Selector */}
       <div className="flex w-full rounded-lg bg-gray-100 dark:bg-gray-700 p-1 mb-6">
         <button
