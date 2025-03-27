@@ -5,6 +5,7 @@ import Pomodoro from "../../components/dashboard/features/Pomodoro";
 import Ambient from "../../components/dashboard/features/Ambient";
 import Mood from "../../components/dashboard/features/Mood";
 import Assistant from "../../components/dashboard/features/Assistant";
+import Meditation from '../../components/dashboard/features/Meditation';
 
 export default function Dashboard() {
   return (
@@ -20,6 +21,9 @@ export default function Dashboard() {
       <div className="md:col-start-3 flex flex-col gap-2">
         <Mood />
         <Assistant />
+      </div>
+      <div className="md:col-start-4 flex flex-col gap-2">
+        <Meditation />
       </div>
     </div>
   );
