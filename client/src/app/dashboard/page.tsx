@@ -4,6 +4,7 @@ import Tasks from "../../components/dashboard/features/Tasks";
 import Pomodoro from "../../components/dashboard/features/Pomodoro";
 import Ambient from "../../components/dashboard/features/Ambient";
 import Mood from "../../components/dashboard/features/Mood";
+import Assistant from "../../components/dashboard/features/Assistant";
 
 export default function Dashboard() {
   return (
@@ -18,6 +19,7 @@ export default function Dashboard() {
       </div>
       <div className="md:col-start-3 flex flex-col gap-2">
         <Mood />
+        <Assistant />
       </div>
     </div>
   );
