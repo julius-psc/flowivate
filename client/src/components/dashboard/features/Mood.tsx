@@ -160,7 +160,7 @@ const MoodPicker: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-2">
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-2">
       <div className="flex justify-between mt-2 relative">
         <h2 className="text-lg font-semibold text-gray-900 pl-2 dark:text-gray-200">
           How do you feel today?

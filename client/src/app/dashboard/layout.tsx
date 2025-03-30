@@ -12,9 +12,9 @@ export default function DashboardLayout({
       <div className="flex-shrink-0">
         <Navbar />
       </div>
-      <div className="flex flex-1  overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="">{children}</main>
+        <main className="pr-2">{children}</main>
       </div>
     </div>
   );

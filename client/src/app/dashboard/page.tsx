@@ -7,6 +7,8 @@ import Mood from "../../components/dashboard/features/Mood";
 import Assistant from "../../components/dashboard/features/Assistant";
 import Meditation from '../../components/dashboard/features/Meditation';
 import Water from '../../components/dashboard/features/Water';
+import Books from '../../components/dashboard/features/Books';
+import Sleep from '../../components/dashboard/features/Sleep';
 
 export default function Dashboard() {
   return (
@@ -26,6 +28,8 @@ export default function Dashboard() {
       </div>
       <div className="md:col-start-4 f w-full flex flex-col gap-2">
         <Meditation />
+        <Books />
+        <Sleep />
       </div>
     </div>
   );

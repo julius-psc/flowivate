@@ -30,7 +30,7 @@ const Sidebar: React.FC = () => {
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 p-5 mb-2 mx-2 rounded-xl transition-all duration-300 ease-in-out flex flex-col items-center ${
+      className={`bg-white dark:bg-gray-800 p-5 mb-2 mx-2 rounded-lg transition-all duration-300 ease-in-out flex flex-col items-center ${
         isExpanded ? "w-[320px]" : "w-[80px]"
       }`}
     >

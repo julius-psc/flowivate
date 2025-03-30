@@ -95,7 +95,7 @@ const Tasks: React.FC = () => {
         </p>
       </div>
 
-      <div className={`max-h-96 overflow-y-auto pr-2 ${styles.customScrollbar}`}>
+      <div className={`max-h-94 overflow-y-auto pr-2 ${styles.customScrollbar}`}>
         {categories.map((category, categoryIndex) => (
           <div key={categoryIndex} className="mb-8">
             <div className="flex items-center justify-between mb-3 group">
