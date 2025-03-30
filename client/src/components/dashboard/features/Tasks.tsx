@@ -88,7 +88,7 @@ const Tasks: React.FC = () => {
   };
 
   return (
-    <div className="p-4 max-w-160 bg-white dark:bg-gray-800 rounded-xl relative border border-gray-100 dark:border-gray-700">
+    <div className="p-4  bg-white dark:bg-gray-800 rounded-lg relative border border-gray-100 dark:border-gray-700">
       <div className="flex justify-end">
         <p className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 font-medium opacity-60 mb-6 px-3 rounded-md">
           My tasks

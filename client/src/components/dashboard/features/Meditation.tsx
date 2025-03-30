@@ -165,7 +165,7 @@ const Meditation = () => {
   };
 
   return (
-    <div className="flex flex-col items-center bg-white dark:bg-gray-800 rounded-lg p-4 mr-2 min-h-[360px] w-64">
+    <div className="flex flex-col items-center bg-white dark:bg-gray-800 rounded-lg p-4">
       {!isMeditating ? (
         <div className="flex flex-col items-center gap-6 py-8 w-full">
           <div className="flex flex-col items-center gap-2">
@@ -191,7 +191,7 @@ const Meditation = () => {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-between h-full w-full">
+        <div className="flex flex-col items-center justify-between  ">
           <button
             onClick={exitSession}
             className="self-start p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"

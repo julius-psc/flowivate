@@ -67,7 +67,7 @@ const Assistant: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 relative ml-1 flex flex-col">
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 relative flex flex-col">
       <div className="w-full flex justify-center items-center mb-4">
         <Image className="w-24 h-auto" src={logo} alt="Flowivate's logo" priority />
       </div>

@@ -86,7 +86,7 @@ const MoodInsights: React.FC<{
   const nextYear = nextMonthDate.getFullYear();
 
   return (
-    <div className="bg-white dark:bg-gray-800 ml-1 text-primary-black dark:text-gray-200 rounded-xl w-96 h-68 p-4 flex flex-col">
+    <div className="bg-white dark:bg-gray-800 text-primary-black dark:text-gray-200 rounded-lg w-96 h-68 p-4 flex flex-col">
       <div className="flex items-center mb-4">
         <button onClick={onBack} className="mr-2">
           <IconChevronLeft size={24} className="text-gray-800 dark:text-gray-200" />
@@ -160,7 +160,7 @@ const MoodPicker: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 ml-1 rounded-xl p-2">
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-2">
       <div className="flex justify-between mt-2 relative">
         <h2 className="text-lg font-semibold text-gray-900 pl-2 dark:text-gray-200">
           How do you feel today?
