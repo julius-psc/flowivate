@@ -1,4 +1,3 @@
-// app/api/auth/[...nextauth]/route.ts
 import NextAuth, { NextAuthOptions, Session, User } from "next-auth";
 import { JWT, JWT as JWTType } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -35,13 +34,13 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<User | null> {
         if (!credentials?.email || !credentials?.password) {
+          console.log("Missing credentials");
           throw new Error("Missing credentials");
         }
 
         const client: MongoClient = await clientPromise;
         const db = client.db("Flowivate");
 
-        // Define the expected user shape from MongoDB
         const user = await db.collection("users").findOne<{
           _id: ObjectId;
           email: string;
@@ -49,16 +48,19 @@ export const authOptions: NextAuthOptions = {
         }>({ email: credentials.email });
 
         if (!user) {
+          console.log("No user found for email:", credentials.email);
           throw new Error("No user found");
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) {
+          console.log("Invalid password for email:", credentials.email);
           throw new Error("Invalid password");
         }
 
-        // Return user object compatible with NextAuth
-        return { id: user._id.toString(), email: user.email };
+        const userData = { id: user._id.toString(), email: user.email };
+        console.log("User authenticated:", userData); // Debug: Confirm user is returned
+        return userData;
       },
     }),
   ],
@@ -73,16 +75,19 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }: { token: JWTType; user?: User }): Promise<JWTType> {
       if (user) {
         token.id = user.id;
+        console.log("JWT callback - Token after adding user data:", token); // Debug: Log token
       }
       return token;
     },
     async session({ session, token }: { session: Session; token: JWT }): Promise<Session> {
+      console.log("Session callback - Token:", token); // Debug: Log token in session callback
       if (token.id) {
         session.user = {
           ...session.user,
-          id: token.id, // TypeScript now knows `id` is a string
+          id: token.id,
         };
       }
+      console.log("Session callback - Session:", session); // Debug: Log session
       return session;
     },
   },

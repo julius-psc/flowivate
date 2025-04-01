@@ -1,6 +1,7 @@
 "use client";
-import Sidebar from '../../components/dashboard/navigation/Sidebar';
-import Navbar from '../../components/dashboard/navigation/Navbar';
+import ClientProvider from "../ClientProvider";
+import Sidebar from "../../components/dashboard/navigation/Sidebar";
+import Navbar from "../../components/dashboard/navigation/Navbar";
 
 export default function DashboardLayout({
   children,
@@ -14,7 +15,9 @@ export default function DashboardLayout({
       </div>
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="pr-2">{children}</main>
+        <main className="pr-2">
+          <ClientProvider>{children}</ClientProvider>;
+        </main>
       </div>
     </div>
   );

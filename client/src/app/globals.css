@@ -2,13 +2,18 @@
 
 @theme {
   --font-display: "Sans Pro 3", "sans-serif";
-  --color-primary-black: #242A31;
+  --color-primary-black: #11151c;
+  --color-primary-black-dark: #272d35; /* Hover */
   --color-primary-blue: #3A6EC8;
+  --color-primary-blue-dark: #2E589F; /* Hover */
   --color-primary-red: #ED6D68;
+  --color-primary-red-dark: #C75954; /* Hover */
   --color-primary-white: #F6F6F6;
-  --color-secondary-white: #E8E8E8;
   --color-primary-green: #48AC5C;
-
+  --color-primary-green-dark: #3A8A4A; /* Hover */
+  --color-secondary-white: #E8E8E8;
+  --color-bg-light: #F7FAFC; /* Light mode background */
+  --color-bg-dark: #0f1520;  /* Dark mode background */
 }
 
 @layer utilities {

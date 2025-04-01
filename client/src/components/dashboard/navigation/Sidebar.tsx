@@ -1,189 +1,263 @@
+"use client";
+
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { signOut } from "next-auth/react";
+
+import Settings from '../privacy/Settings';
+
 import {
   IconChevronsRight,
   IconChevronsLeft,
   IconLayoutDashboard,
   IconStack2,
-  IconMoodSmile,
   IconNotes,
   IconChevronDown,
   IconLogout2,
   IconSettings,
+  IconUser,
+  IconFocus,
+  IconClock,
+  IconBellOff,
 } from "@tabler/icons-react";
-import logo from "../../../assets/brand/logo-v1.0.svg";
+import logo from "../../../assets/brand/logo-v1.4.png";
 
 const Sidebar: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeLink, setActiveLink] = useState("Home");
   const [status, setStatus] = useState("Active");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const statusOptions = [
-    { name: "Active", color: "bg-emerald-500", bgColor: "bg-emerald-500/10" },
-    { name: "Focusing", color: "bg-blue-500", bgColor: "bg-blue-500/10" },
-    { name: "Idle", color: "bg-amber-500", bgColor: "bg-amber-500/10" },
-    { name: "DND", color: "bg-rose-500", bgColor: "bg-rose-500/10" },
+    { 
+      name: "Active", 
+      color: "bg-emerald-500", 
+      bgColor: "bg-emerald-500/10",
+      icon: IconUser
+    },
+    { 
+      name: "Focusing", 
+      color: "bg-blue-500", 
+      bgColor: "bg-blue-500/10",
+      icon: IconFocus
+    },
+    { 
+      name: "Idle", 
+      color: "bg-amber-500", 
+      bgColor: "bg-amber-500/10",
+      icon: IconClock
+    },
+    { 
+      name: "DND", 
+      color: "bg-rose-500", 
+      bgColor: "bg-rose-500/10",
+      icon: IconBellOff
+    },
   ];
 
   const currentStatus = statusOptions.find((opt) => opt.name === status);
+  const StatusIcon = currentStatus?.icon || IconUser;
+
+  const navItems = [
+    { name: "Home", icon: IconLayoutDashboard, path: "/dashboard" },
+    { name: "Personal", icon: IconStack2, path: "/dashboard/personal" },
+    { name: "Journal", icon: IconNotes, path: "/dashboard/journal" },
+  ];
 
   return (
-    <div
-      className={`bg-white dark:bg-gray-800 p-5 mb-2 mx-2 rounded-lg transition-all duration-300 ease-in-out flex flex-col items-center ${
-        isExpanded ? "w-[320px]" : "w-[80px]"
-      }`}
-    >
+    <>
       <div
-        className={`mb-6 flex-shrink-0 w-full ${
-          isExpanded ? "flex justify-end" : "flex justify-center"
+        className={`bg-bg-light dark:bg-bg-dark p-5 mb-2 mx-2 rounded-lg transition-all duration-300 ease-in-out flex flex-col items-center ${
+          isExpanded ? "w-[320px]" : "w-[80px]"
         }`}
       >
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 cursor-pointer"
+        <div
+          className={`mb-6 flex-shrink-0 w-full ${
+            isExpanded ? "flex justify-end" : "flex justify-center"
+          }`}
         >
-          {isExpanded ? (
-            <IconChevronsLeft className="w-5 h-5 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
-          ) : (
-            <IconChevronsRight className="w-5 h-5 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
-          )}
-        </button>
-      </div>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1.5 rounded-full hover:bg-secondary-white dark:hover:bg-primary-black transition-all duration-200 cursor-pointer active:scale-95"
+            aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {isExpanded ? (
+              <IconChevronsLeft className="w-5 h-5 text-primary-black dark:text-primary-white dark:opacity-20 opacity-80 hover:opacity-100 transition-colors duration-200" />
+            ) : (
+              <IconChevronsRight className="w-5 h-5 text-primary-black dark:text-primary-white dark:opacity-20 opacity-80 hover:opacity-100 transition-colors duration-200" />
+            )}
+          </button>
+        </div>
 
-      <div className="mb-8 flex-shrink-0">
-        <Image
-          className="w-12 h-auto"
-          src={logo}
-          alt="Flowivate's logo"
-          width={48}
-          height={48}
-          priority
-        />
-      </div>
+        <div className="mb-8 flex-shrink-0 transition-transform duration-200 hover:scale-105">
+          <Image
+            className="w-12 h-auto"
+            src={logo}
+            alt="Flowivate's logo"
+            width={48}
+            height={48}
+            priority
+          />
+        </div>
 
-      <div className="flex-grow overflow-y-auto w-full">
-        <ul className="space-y-2">
-          {[
-            { name: "Home", icon: IconLayoutDashboard },
-            { name: "Tasks", icon: IconStack2 },
-            { name: "Personal", icon: IconMoodSmile },
-            { name: "Journal", icon: IconNotes },
-          ].map((item) => (
-            <li
-              key={item.name}
-              className={`flex items-center p-2 rounded-lg cursor-pointer transition-all duration-200 w-full ${
-                activeLink === item.name
-                  ? "bg-gray-100 dark:bg-gray-800"
-                  : "hover:bg-gray-100 dark:hover:bg-gray-800"
-              }`}
-              onClick={() => setActiveLink(item.name)}
-            >
-              <item.icon
-                className={`w-6 h-6 flex-shrink-0 ${
-                  activeLink === item.name
-                    ? "text-gray-900 dark:text-white"
-                    : "text-gray-600 dark:text-gray-300"
-                } transition-colors duration-200`}
-              />
-              {isExpanded && (
-                <span
-                  className={`ml-3 font-medium whitespace-nowrap ${
-                    activeLink === item.name
-                      ? "text-gray-900 dark:text-white"
-                      : "text-gray-600 dark:text-gray-300"
-                  } transition-opacity duration-200`}
-                >
-                  {item.name}
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="mt-6 flex-shrink-0 w-full">
-        {isExpanded ? (
-          <div className="relative group">
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 transition-all duration-200 cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-2 h-2 rounded-full ${currentStatus?.color}`}
-                />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {status}
-                </span>
-              </div>
-              <IconChevronDown
-                className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
-                  isDropdownOpen ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            <div
-              className={`absolute bottom-full left-0 w-full mb-1 transition-all duration-200 ease-in-out transform ${
-                isDropdownOpen
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 -translate-y-2 pointer-events personally-none"
-              }`}
-            >
-              <div className="bg-white dark:bg-gray-900 shadow-sm rounded-lg border border-gray-100 dark:border-gray-700 py-1">
-                {statusOptions.map((option) => (
-                  <button
-                    key={option.name}
-                    onClick={() => {
-                      setStatus(option.name);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 cursor-pointer ${
-                      status === option.name
-                        ? "bg-gray-50 dark:bg-gray-800"
-                        : ""
+        <div className="flex-grow overflow-y-auto w-full">
+          <ul className="space-y-2">
+            {navItems.map((item) => (
+              <li key={item.name}>
+                <Link href={item.path}>
+                  <div
+                    className={`flex items-center p-2 rounded-xl cursor-pointer transition-all duration-200 w-full group ${
+                      activeLink === item.name
+                        ? "bg-blue-500/10"
+                        : "hover:bg-blue-500/10"
                     }`}
+                    onClick={() => setActiveLink(item.name)}
                   >
-                    <div
-                      className={`w-2 h-2 rounded-full ${option.color}`}
+                    <item.icon
+                      className={`w-6 h-6 flex-shrink-0 ${
+                        activeLink === item.name
+                          ? "text-primary-blue"
+                          : "text-primary-black opacity-20 dark:text-primary-white group-hover:text-blue-500 dark:group-hover:text-blue-400"
+                      } transition-colors duration-200`}
                     />
-                    {option.name}
-                  </button>
-                ))}
+                    {isExpanded && (
+                      <span
+                        className={`ml-3 font-medium whitespace-nowrap ${
+                          activeLink === item.name
+                            ? "text-primary-white"
+                            : "text-primary-black dark:text-primary-white opacity-20 group-hover:text-blue-500 dark:group-hover:text-blue-400"
+                        } transition-opacity duration-200`}
+                      >
+                        {item.name}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-6 flex-shrink-0 w-full">
+          {isExpanded ? (
+            <div className="relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 transition-all duration-200 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                aria-expanded={isDropdownOpen}
+                aria-haspopup="true"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className={`w-8 h-8 rounded-full ${currentStatus?.bgColor} flex items-center justify-center`}>
+                      <StatusIcon className={`w-4 h-4 ${currentStatus?.color.replace('bg-', 'text-')}`} />
+                    </div>  
+                    <div
+                      className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${currentStatus?.color} ring-2 ring-white dark:ring-gray-900`}
+                    />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-xs font-medium text-gray-400">Status</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {status}
+                    </span>
+                  </div>
+                </div>
+                <IconChevronDown
+                  className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
+                    isDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              <div
+                className={`absolute bottom-full left-0 w-full mb-1 transition-all duration-200 ease-in-out transform z-10 ${
+                  isDropdownOpen
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 -translate-y-2 pointer-events-none"
+                }`}
+              >
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 py-1 overflow-hidden">
+                  {statusOptions.map((option) => (
+                    <button
+                      key={option.name}
+                      onClick={() => {
+                        setStatus(option.name);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 cursor-pointer ${
+                        status === option.name ? option.bgColor : ""
+                      }`}
+                    >
+                      <div className={`w-6 h-6 rounded-full ${option.bgColor} flex items-center justify-center`}>
+                        <option.icon className={`w-3.5 h-3.5 ${option.color.replace('bg-', 'text-')}`} />
+                      </div>
+                      {option.name}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="flex justify-center">
-            <div className="p-2 bg-white dark:bg-gray-900 rounded-full border border-gray-100 dark:border-gray-700">
+          ) : (
+            <div className="flex justify-center">
               <div
-                className={`w-3 h-3 rounded-full ${currentStatus?.color}`}
-              />
+                className="p-2 bg-white dark:bg-gray-900 rounded-full border border-gray-100 dark:border-gray-700 cursor-pointer transition-all duration-200 relative hover:bg-gray-50 dark:hover:bg-gray-800"
+                onClick={() => setIsExpanded(true)}
+                title={status}
+              >
+                <div className={`w-5 h-5 rounded-full ${currentStatus?.bgColor} flex items-center justify-center`}>
+                  <StatusIcon className={`w-3 h-3 ${currentStatus?.color.replace('bg-', 'text-')}`} />
+                </div>
+                <div
+                  className={`absolute bottom-0 right-0 w-2 h-2 rounded-full ${currentStatus?.color} ring-1 ring-white dark:ring-gray-900`}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
+        <div className="pt-8 pb-2 w-full">
+          {isExpanded ? (
+            <div className="flex justify-between items-center px-1">
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="p-2 rounded-full hover:bg-primary-white dark:hover:bg-primary-black cursor-pointer transition-all duration-200 active:scale-95"
+              >
+                <IconLogout2 className="w-4 h-4 text-primary-black dark:text-primary-white opacity-70 hover:opacity-100 transition-colors duration-200" />
+              </button>
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="p-2 rounded-full hover:bg-primary-white dark:hover:bg-primary-black cursor-pointer transition-all duration-200 active:scale-95"
+              >
+                <IconSettings className="w-4 h-4 text-primary-black dark:text-primary-white opacity-70 hover:opacity-100 transition-colors duration-200" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-4">
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="p-2 rounded-full hover:bg-primary-white dark:hover:bg-primary-black cursor-pointer transition-all duration-200 active:scale-95"
+              >
+                <IconLogout2 className="w-4 h-4 text-primary-black dark:text-primary-white opacity-70 hover:opacity-100 transition-colors duration-200" />
+              </button>
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="p-2 rounded-full hover:bg-primary-white dark:hover:bg-primary-black cursor-pointer transition-all duration-200 active:scale-95"
+              >
+                <IconSettings className="w-4 h-4 text-primary-black dark:text-primary-white opacity-70 hover:opacity-100 transition-colors duration-200" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="pt-8 pb-2 w-full">
-        {isExpanded ? (
-          <div className="flex justify-between items-center px-1">
-            <button className="cursor-pointer">
-              <IconLogout2 className="w-4 h-4 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
-            </button>
-            <button className="cursor-pointer">
-              <IconSettings className="w-4 h-4 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex justify-center">
-            <button className="pr-1 cursor-pointer">
-              <IconLogout2 className="w-4 h-4 text-gray-600 dark:text-gray-300 opacity-60 hover:opacity-100 transition-colors duration-200" />
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+      <Settings
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+    </>
   );
 };
 
