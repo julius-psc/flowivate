@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
@@ -29,32 +28,13 @@ const Sidebar: React.FC = () => {
   const [status, setStatus] = useState("Active");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const statusOptions = [
-    { 
-      name: "Active", 
-      color: "bg-emerald-500", 
-      bgColor: "bg-emerald-500/10",
-      icon: IconUser
-    },
-    { 
-      name: "Focusing", 
-      color: "bg-blue-500", 
-      bgColor: "bg-blue-500/10",
-      icon: IconFocus
-    },
-    { 
-      name: "Idle", 
-      color: "bg-amber-500", 
-      bgColor: "bg-amber-500/10",
-      icon: IconClock
-    },
-    { 
-      name: "DND", 
-      color: "bg-rose-500", 
-      bgColor: "bg-rose-500/10",
-      icon: IconBellOff
-    },
+    { name: "Active", color: "bg-emerald-500", bgColor: "bg-emerald-500/10", icon: IconUser },
+    { name: "Focusing", color: "bg-blue-500", bgColor: "bg-blue-500/10", icon: IconFocus },
+    { name: "Idle", color: "bg-amber-500", bgColor: "bg-amber-500/10", icon: IconClock },
+    { name: "DND", color: "bg-rose-500", bgColor: "bg-rose-500/10", icon: IconBellOff },
   ];
 
   const currentStatus = statusOptions.find((opt) => opt.name === status);
@@ -66,10 +46,61 @@ const Sidebar: React.FC = () => {
     { name: "Journal", icon: IconNotes, path: "/dashboard/journal" },
   ];
 
+  // Fetch initial status
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/features/status', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch status');
+        }
+
+        const data = await response.json();
+        setStatus(data.status);
+      } catch (error) {
+        console.error('Error fetching status:', error);
+        setStatus('Active'); // Fallback to default status
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStatus();
+  }, []);
+
+  // Update status
+  const updateStatus = async (newStatus: string) => {
+    try {
+      const response = await fetch('/api/features/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      setStatus(newStatus);
+      setIsDropdownOpen(false);
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
   return (
     <>
       <div
-        className={`bg-bg-light dark:bg-bg-dark p-5 mb-2 mx-2 rounded-lg transition-all duration-300 ease-in-out flex flex-col items-center ${
+        className={`bg-bg-light dark:bg-bg-dark border-gray-100 dark:border-gray-800 p-5 mb-2 mx-2 rounded-lg transition-all duration-300 ease-in-out flex flex-col items-center ${
           isExpanded ? "w-[320px]" : "w-[80px]"
         }`}
       >
@@ -108,7 +139,7 @@ const Sidebar: React.FC = () => {
               <li key={item.name}>
                 <Link href={item.path}>
                   <div
-                    className={`flex items-center p-2 rounded-xl cursor-pointer transition-all duration-200 w-full group ${
+                    className={`flex items-center p-2 rounded-md cursor-pointer transition-all duration-200 w-full group ${
                       activeLink === item.name
                         ? "bg-blue-500/10"
                         : "hover:bg-blue-500/10"
@@ -126,7 +157,7 @@ const Sidebar: React.FC = () => {
                       <span
                         className={`ml-3 font-medium whitespace-nowrap ${
                           activeLink === item.name
-                            ? "text-primary-white"
+                            ? "text-primary-blue"
                             : "text-primary-black dark:text-primary-white opacity-20 group-hover:text-blue-500 dark:group-hover:text-blue-400"
                         } transition-opacity duration-200`}
                       >
@@ -148,12 +179,13 @@ const Sidebar: React.FC = () => {
                 className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700 transition-all duration-200 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
                 aria-expanded={isDropdownOpen}
                 aria-haspopup="true"
+                disabled={isLoading}
               >
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <div className={`w-8 h-8 rounded-full ${currentStatus?.bgColor} flex items-center justify-center`}>
                       <StatusIcon className={`w-4 h-4 ${currentStatus?.color.replace('bg-', 'text-')}`} />
-                    </div>  
+                    </div>
                     <div
                       className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${currentStatus?.color} ring-2 ring-white dark:ring-gray-900`}
                     />
@@ -161,7 +193,7 @@ const Sidebar: React.FC = () => {
                   <div className="flex flex-col items-start">
                     <span className="text-xs font-medium text-gray-400">Status</span>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {status}
+                      {isLoading ? 'Loading...' : status}
                     </span>
                   </div>
                 </div>
@@ -173,7 +205,7 @@ const Sidebar: React.FC = () => {
               </button>
 
               <div
-                className={`absolute bottom-full left-0 w-full mb-1 transition-all duration-200 ease-in-out transform z-10 ${
+                className={`absolute bottom-full left-0 w-full mb-1 transition-all duration-200 ease-in-out transformállítás z-10 ${
                   isDropdownOpen
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-2 pointer-events-none"
@@ -183,10 +215,7 @@ const Sidebar: React.FC = () => {
                   {statusOptions.map((option) => (
                     <button
                       key={option.name}
-                      onClick={() => {
-                        setStatus(option.name);
-                        setIsDropdownOpen(false);
-                      }}
+                      onClick={() => updateStatus(option.name)}
                       className={`w-full flex items-center gap-3 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 cursor-pointer ${
                         status === option.name ? option.bgColor : ""
                       }`}
@@ -205,7 +234,7 @@ const Sidebar: React.FC = () => {
               <div
                 className="p-2 bg-white dark:bg-gray-900 rounded-full border border-gray-100 dark:border-gray-700 cursor-pointer transition-all duration-200 relative hover:bg-gray-50 dark:hover:bg-gray-800"
                 onClick={() => setIsExpanded(true)}
-                title={status}
+                title={isLoading ? 'Loading...' : status}
               >
                 <div className={`w-5 h-5 rounded-full ${currentStatus?.bgColor} flex items-center justify-center`}>
                   <StatusIcon className={`w-3 h-3 ${currentStatus?.color.replace('bg-', 'text-')}`} />
