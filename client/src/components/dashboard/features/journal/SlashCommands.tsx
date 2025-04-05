@@ -5,7 +5,6 @@ import { ReactNode, isValidElement, cloneElement, ReactElement } from "react";
 import { Editor } from "@tiptap/react";
 import Suggestion, { SuggestionProps, SuggestionKeyDownProps } from "@tiptap/suggestion";
 import { createRoot, Root } from 'react-dom/client';
-import Picker from 'emoji-picker-react';
 
 export interface CommandItem {
   title: string;
@@ -26,7 +25,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
           char: "$",
           startOfLine: false,
           command: ({ editor, range, props }) => {
-            if (props.title !== 'Emoji') {
+            if (props.command) {
               props.command({ editor });
               editor.chain().focus().deleteRange(range).run();
             }
@@ -40,21 +39,11 @@ export const SlashCommands = (commands: SlashCommandProps) => {
             let popup: HTMLElement | null = null;
             let selectedIndex = 0;
             let currentItems: CommandItem[] = [];
-            let emojiPickerRoot: Root | null = null;
-            let emojiContainer: HTMLElement | null = null;
             const iconRoots: Map<HTMLElement, Root> = new Map();
 
             const cleanupIconRoots = () => {
               iconRoots.forEach(root => root.unmount());
               iconRoots.clear();
-              if (emojiPickerRoot) {
-                emojiPickerRoot.unmount();
-                emojiPickerRoot = null;
-              }
-              if (emojiContainer) {
-                emojiContainer.remove();
-                emojiContainer = null;
-              }
             };
 
             const createPopup = () => {
@@ -149,35 +138,9 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                 button.appendChild(textContainer);
 
                 button.addEventListener("click", () => {
-                  if (item.title === 'Emoji') {
-                    if (emojiContainer) return;
-                    
-                    emojiContainer = document.createElement("div");
-                    emojiContainer.classList.add("absolute", "z-50");
-                    if (popup) {
-                      const rect = popup.getBoundingClientRect();
-                      emojiContainer.style.top = `${rect.top}px`;
-                      emojiContainer.style.left = `${rect.right + 5}px`;
-                    }
-                    
-                    emojiPickerRoot = createRoot(emojiContainer);
-                    emojiPickerRoot.render(
-                      <Picker
-                        onEmojiClick={(emoji) => {
-                          this.editor.chain().focus().insertContent(emoji.emoji).run();
-                          cleanupIconRoots();
-                          if (popup) popup.remove();
-                          popup = null;
-                        }}
-                      />
-                    );
-                    document.body.appendChild(emojiContainer);
-                  } else {
-                    item.command({ editor: this.editor });
-                    this.editor.chain().focus().deleteRange(this.editor.state.selection).run();
-                    if (popup) popup.remove();
-                    popup = null;
-                  }
+                  item.command({ editor: this.editor });
+                  // Call the suggestion command on click as well
+                  this.options.suggestion.command();
                 });
 
                 if (popup) {
@@ -226,33 +189,9 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                 if (event.key === "Enter") {
                   const item = currentItems[selectedIndex];
                   if (item) {
-                    if (item.title === 'Emoji') {
-                      // Same as click handler
-                      emojiContainer = document.createElement("div");
-                      emojiContainer.classList.add("absolute", "z-50");
-                      if (popup) {
-                        const rect = popup.getBoundingClientRect();
-                        emojiContainer.style.top = `${rect.top}px`;
-                        emojiContainer.style.left = `${rect.right + 5}px`;
-                      }
-                      
-                      emojiPickerRoot = createRoot(emojiContainer);
-                      emojiPickerRoot.render(
-                        <Picker
-                          onEmojiClick={(emoji) => {
-                            this.editor.chain().focus().insertContent(emoji.emoji).run();
-                            cleanupIconRoots();
-                            if (popup) popup.remove();
-                            popup = null;
-                          }}
-                        />
-                      );
-                      document.body.appendChild(emojiContainer);
-                    } else {
-                      item.command({ editor: this.editor });
-                      this.editor.commands.focus();
-                      this.editor.commands.deleteRange(props.range);
-                    }
+                    item.command({ editor: this.editor });
+                    this.editor.commands.focus();
+                    this.editor.commands.deleteRange(props.range); // ⬅️ ensure deletion of slash trigger
                   }
                   return true;
                 }

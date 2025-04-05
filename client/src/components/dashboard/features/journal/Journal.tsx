@@ -96,6 +96,7 @@ export const Journal: React.FC<JournalProps> = ({ initialDate = new Date() }) =>
           keepMarks: true,
           keepAttributes: false,
         },
+        codeBlock: false, 
       }),
       Placeholder.configure({
         placeholder: ({ node }) => {
@@ -141,6 +142,13 @@ export const Journal: React.FC<JournalProps> = ({ initialDate = new Date() }) =>
     onUpdate: ({ editor }) => {
       setJournalContent(editor.getHTML());
     },
+    editorProps: {
+      attributes: {
+        class: 'prose focus:outline-none',
+      },
+    },
+    injectCSS: false,
+    immediatelyRender: false,
   });
 
   const handleDateSelect = (date: Date) => {
