@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Editor } from '@tiptap/react';
@@ -13,8 +13,10 @@ import {
   IconH3,
   IconList,
   IconListNumbers,
-  IconGraph
+  IconGraph,
+  IconMoodSmile
 } from '@tabler/icons-react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
 interface ContextMenuProps {
   editor: Editor;
@@ -23,7 +25,9 @@ interface ContextMenuProps {
 export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const editorElement = editor.view.dom;
@@ -37,8 +41,10 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
     };
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node) &&
+          emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
         setMenuVisible(false);
+        setShowEmojiPicker(false);
       }
     };
 
@@ -50,6 +56,15 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
       document.removeEventListener('click', handleClickOutside);
     };
   }, [editor]);
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    editor.chain()
+      .focus()
+      .insertContent(emojiData.emoji)
+      .run();
+    setShowEmojiPicker(false);
+    setMenuVisible(false);
+  };
 
   if (!menuVisible) return null;
 
@@ -99,6 +114,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
         >
           <IconHighlight size={18} className="text-gray-700" />
         </button>
+        <button
+          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          className={`p-1.5 rounded hover:bg-gray-50 ${showEmojiPicker ? 'bg-gray-100' : ''}`}
+          title="Emoji"
+        >
+          <IconMoodSmile size={18} className="text-gray-700" />
+        </button>
       </div>
       <div className="border-t border-gray-200 my-1"></div>
       <div className="flex p-1 space-x-1">
@@ -145,6 +167,19 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           <IconGraph size={18} className="text-gray-700" />
         </button>
       </div>
+
+      {showEmojiPicker && (
+        <div 
+          ref={emojiRef}
+          className="absolute z-50"
+          style={{
+            top: '100%',
+            left: 0,
+          }}
+        >
+          <EmojiPicker onEmojiClick={handleEmojiClick} />
+        </div>
+      )}
     </div>
   );
 };

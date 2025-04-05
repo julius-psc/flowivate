@@ -183,7 +183,7 @@ export const Journal: React.FC<JournalProps> = ({ initialDate = new Date() }) =>
             const isTodayDate = isToday(day);
 
             return (
-              <button
+              <button 
                 key={format(day, 'yyyy-MM-dd')}
                 onClick={() => handleDateSelect(day)}
                 className={`

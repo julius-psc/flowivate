@@ -1,10 +1,11 @@
-"use client"
+"use client";
 
 import { Extension } from "@tiptap/core";
 import { ReactNode, isValidElement, cloneElement, ReactElement } from "react";
 import { Editor } from "@tiptap/react";
 import Suggestion, { SuggestionProps, SuggestionKeyDownProps } from "@tiptap/suggestion";
-import { createRoot, Root } from 'react-dom/client';
+import { createRoot, Root } from "react-dom/client";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 
 export interface CommandItem {
   title: string;
@@ -20,7 +21,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
 
     addProseMirrorPlugins() {
       return [
-        Suggestion({
+        Suggestion<CommandItem>({
           editor: this.editor,
           char: "$",
           startOfLine: false,
@@ -37,18 +38,32 @@ export const SlashCommands = (commands: SlashCommandProps) => {
           },
           render: () => {
             let popup: HTMLElement | null = null;
+            let emojiPicker: HTMLElement | null = null;
             let selectedIndex = 0;
             let currentItems: CommandItem[] = [];
             const iconRoots: Map<HTMLElement, Root> = new Map();
+            let emojiRoot: Root | null = null;
 
-            const cleanupIconRoots = () => {
-              iconRoots.forEach(root => root.unmount());
+            const cleanup = () => {
+              iconRoots.forEach((root) => root.unmount());
               iconRoots.clear();
+              if (emojiRoot) {
+                emojiRoot.unmount();
+                emojiRoot = null;
+              }
+              if (emojiPicker) {
+                emojiPicker.remove();
+                emojiPicker = null;
+              }
+              if (popup) {
+                popup.remove();
+                popup = null;
+              }
             };
 
             const createPopup = () => {
-              popup = document.createElement("div");
-              popup.classList.add(
+              const popupElement = document.createElement("div");
+              popupElement.classList.add(
                 "absolute",
                 "z-50",
                 "bg-white",
@@ -63,15 +78,68 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                 "transition-opacity",
                 "duration-100"
               );
-              popup.style.minWidth = '200px';
-              return popup;
+              popupElement.style.minWidth = "200px";
+              return popupElement;
             };
 
-            const updatePopup = (items: CommandItem[]) => {
+            const showEmojiPicker = (editor: Editor, range: { from: number; to: number }) => {
+              cleanup(); 
+              emojiPicker = document.createElement("div");
+              emojiPicker.classList.add("absolute", "z-50");
+              emojiRoot = createRoot(emojiPicker);
+            
+              const handleEmojiClick = (emojiData: EmojiClickData) => {
+                editor.chain()
+                  .focus()
+                  .deleteRange(range)
+                  .insertContent(emojiData.emoji)
+                  .run();
+                cleanup();
+              };
+            
+              emojiRoot.render(
+                <EmojiPicker onEmojiClick={handleEmojiClick} />
+              );
+            
+              // Get cursor coordinates
+              const coords = editor.view.coordsAtPos(range.from);
+              
+              // Calculate optimal position
+              const pickerHeight = 450; 
+              const pickerWidth = 350;  
+              const padding = 10;
+              
+              let top = coords.bottom + window.scrollY + padding;
+              let left = coords.left + window.scrollX;
+            
+              // Adjust if going off bottom of viewport
+              if (top + pickerHeight > window.innerHeight + window.scrollY) {
+                top = coords.top + window.scrollY - pickerHeight - padding;
+              }
+            
+              // Adjust if going off right of viewport
+              if (left + pickerWidth > window.innerWidth + window.scrollX) {
+                left = window.innerWidth + window.scrollX - pickerWidth - padding;
+              }
+            
+              // Ensure it doesn't go off top or left
+              top = Math.max(padding, top);
+              left = Math.max(padding, left);
+            
+              emojiPicker.style.top = `${top}px`;
+              emojiPicker.style.left = `${left}px`;
+              
+              document.body.appendChild(emojiPicker);
+            };
+
+            const updatePopup = (
+              items: CommandItem[],
+              editor: Editor,
+              range: { from: number; to: number }
+            ) => {
               currentItems = items;
               if (!popup) return;
 
-              cleanupIconRoots();
               popup.innerHTML = "";
 
               if (items.length === 0) {
@@ -119,7 +187,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                     const root = createRoot(iconContainer);
                     root.render(
                       cloneElement(iconElement, {
-                        className: "w-4 h-4"
+                        className: "w-4 h-4",
                       })
                     );
                     iconRoots.set(iconContainer, root);
@@ -127,7 +195,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                     iconContainer.innerHTML = item.icon as string;
                   }
                 } else {
-                  iconContainer.innerHTML = '•';
+                  iconContainer.innerHTML = "•";
                 }
 
                 const textContainer = document.createElement("div");
@@ -138,21 +206,23 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                 button.appendChild(textContainer);
 
                 button.addEventListener("click", () => {
-                  item.command({ editor: this.editor });
-                  // Call the suggestion command on click as well
-                  this.options.suggestion.command();
+                  if (item.title === "Emoji") {
+                    showEmojiPicker(editor, range);
+                  } else {
+                    item.command({ editor });
+                    editor.chain().focus().deleteRange(range).run();
+                    cleanup();
+                  }
                 });
 
-                if (popup) {
-                  popup.appendChild(button);
-                }
+                popup?.appendChild(button);
               });
             };
 
             return {
               onStart: (props: SuggestionProps<CommandItem>) => {
                 popup = createPopup();
-                updatePopup(props.items);
+                updatePopup(props.items, this.editor, props.range);
 
                 if (props.clientRect) {
                   const rect = props.clientRect();
@@ -166,46 +236,45 @@ export const SlashCommands = (commands: SlashCommandProps) => {
               },
 
               onUpdate: (props: SuggestionProps<CommandItem>) => {
-                updatePopup(props.items);
+                updatePopup(props.items, this.editor, props.range);
               },
 
               onKeyDown: (props: SuggestionKeyDownProps) => {
                 if (!popup) return false;
-              
+
                 const { event } = props;
-              
+
                 if (event.key === "ArrowDown") {
                   selectedIndex = (selectedIndex + 1) % currentItems.length;
-                  updatePopup(currentItems);
+                  updatePopup(currentItems, this.editor, props.range);
                   return true;
                 }
-              
+
                 if (event.key === "ArrowUp") {
                   selectedIndex = (selectedIndex - 1 + currentItems.length) % currentItems.length;
-                  updatePopup(currentItems);
+                  updatePopup(currentItems, this.editor, props.range);
                   return true;
                 }
-              
+
                 if (event.key === "Enter") {
                   const item = currentItems[selectedIndex];
                   if (item) {
-                    item.command({ editor: this.editor });
-                    this.editor.commands.focus();
-                    this.editor.commands.deleteRange(props.range); // ⬅️ ensure deletion of slash trigger
+                    if (item.title === "Emoji") {
+                      showEmojiPicker(this.editor, props.range);
+                    } else {
+                      item.command({ editor: this.editor });
+                      this.editor.chain().focus().deleteRange(props.range).run();
+                      cleanup();
+                    }
                   }
                   return true;
                 }
-              
+
                 return false;
               },
 
               onExit: () => {
-                if (popup) {
-                  popup.remove();
-                  popup = null;
-                }
-                currentItems = [];
-                cleanupIconRoots();
+                cleanup();
               },
             };
           },
