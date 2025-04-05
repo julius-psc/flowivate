@@ -3,9 +3,12 @@
 import React, { useState } from 'react';
 import { IconSend2, IconFlameFilled } from '@tabler/icons-react';
 import styles from '../../../stylesheets/Greeting.module.css';
+import ChatPanel from './ChatPanel'; // New component for the chat
 
 const Greeting: React.FC = () => {
   const [searchValue, setSearchValue] = useState('');
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatQuery, setChatQuery] = useState('');
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -16,6 +19,14 @@ const Greeting: React.FC = () => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
+  };
+
+  const handleSubmit = () => {
+    if (searchValue.trim()) {
+      setChatQuery(searchValue);
+      setIsChatOpen(true);
+      setSearchValue(''); // Clear input after submission
+    }
   };
 
   return (
@@ -35,10 +46,12 @@ const Greeting: React.FC = () => {
               placeholder="What do you need help with?"
               value={searchValue}
               onChange={handleSearchChange}
+              onKeyPress={(e) => e.key === 'Enter' && handleSubmit()} // Submit on Enter
               className="w-full px-4 py-2 pr-12 border-none bg-primary-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 ease-in-out placeholder-gray-400 dark:placeholder-gray-300 dark:text-white"
               aria-label="Search input"
             />
             <button
+              onClick={handleSubmit}
               className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 transition-colors duration-150 disabled:text-gray-300 dark:disabled:text-gray-500"
               disabled={!searchValue.trim()}
               aria-label="Submit search"
@@ -58,6 +71,11 @@ const Greeting: React.FC = () => {
           </div>
         </div>
       </div>
+      <ChatPanel 
+        isOpen={isChatOpen} 
+        setIsOpen={setIsChatOpen} 
+        initialQuery={chatQuery} 
+      />
     </div>
   );
 };

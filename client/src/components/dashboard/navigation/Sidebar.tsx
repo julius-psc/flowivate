@@ -3,9 +3,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-
-import Settings from '../privacy/Settings';
-
+import Settings from "../privacy/Settings";
 import {
   IconChevronsRight,
   IconChevronsLeft,
@@ -22,25 +20,37 @@ import {
 } from "@tabler/icons-react";
 import logo from "../../../assets/brand/logo-v1.4.png";
 
+// Define types for status options
+interface StatusOption {
+  name: string;
+  color: string;
+  bgColor: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+// Define types for nav items
+interface NavItem {
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  path: string;
+}
+
 const Sidebar: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeLink, setActiveLink] = useState("Home");
-  const [status, setStatus] = useState("Active");
+  const [status, setStatus] = useState<string | null>(null); // Start with null for loading state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const statusOptions = [
+  const statusOptions: StatusOption[] = [
     { name: "Active", color: "bg-emerald-500", bgColor: "bg-emerald-500/10", icon: IconUser },
     { name: "Focusing", color: "bg-blue-500", bgColor: "bg-blue-500/10", icon: IconFocus },
     { name: "Idle", color: "bg-amber-500", bgColor: "bg-amber-500/10", icon: IconClock },
     { name: "DND", color: "bg-rose-500", bgColor: "bg-rose-500/10", icon: IconBellOff },
   ];
 
-  const currentStatus = statusOptions.find((opt) => opt.name === status);
-  const StatusIcon = currentStatus?.icon || IconUser;
-
-  const navItems = [
+  const navItems: NavItem[] = [
     { name: "Home", icon: IconLayoutDashboard, path: "/dashboard" },
     { name: "Personal", icon: IconStack2, path: "/dashboard/personal" },
     { name: "Journal", icon: IconNotes, path: "/dashboard/journal" },
@@ -51,22 +61,22 @@ const Sidebar: React.FC = () => {
     const fetchStatus = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/features/status', {
-          method: 'GET',
+        const response = await fetch("/api/features/status", {
+          method: "GET",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch status');
+          throw new Error("Failed to fetch status");
         }
 
         const data = await response.json();
         setStatus(data.status);
       } catch (error) {
-        console.error('Error fetching status:', error);
-        setStatus('Active'); // Fallback to default status
+        console.error("Error fetching status:", error);
+        setStatus("Active"); // Fallback to default status
       } finally {
         setIsLoading(false);
       }
@@ -75,32 +85,55 @@ const Sidebar: React.FC = () => {
     fetchStatus();
   }, []);
 
-  // Update status
+  // Update status with explicit typing
   const updateStatus = async (newStatus: string) => {
     try {
-      const response = await fetch('/api/features/status', {
-        method: 'POST',
+      const response = await fetch("/api/features/status", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ status: newStatus }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update status');
+        throw new Error("Failed to update status");
       }
 
       setStatus(newStatus);
       setIsDropdownOpen(false);
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error("Error updating status:", error);
     }
   };
+
+  // Loading state UI
+  if (isLoading || status === null) {
+    return (
+      <div className="w-[80px] dark:bg-bg-dark border border-gray-200/50 dark:border-gray-800/50 p-5 mb-2 mx-2 rounded-lg flex flex-col items-center">
+        <div className="mb-8 flex-shrink-0 transition-transform duration-200 hover:scale-105">
+          <Image
+            className="w-12 h-auto"
+            src={logo}
+            alt="Flowivate's logo"
+            width={48}
+            height={48}
+            priority
+          />
+        </div>
+        <div className="text-gray-500 dark:text-gray-400 text-sm">Loading...</div>
+      </div>
+    );
+  }
+
+  // Full UI once loaded
+  const currentStatus = statusOptions.find((opt) => opt.name === status) || statusOptions[0];
+  const StatusIcon = currentStatus.icon;
 
   return (
     <>
       <div
-        className={`bg-bg-light dark:bg-bg-dark border-gray-100 dark:border-gray-800 p-5 mb-2 mx-2 rounded-lg transition-all duration-300 ease-in-out flex flex-col items-center ${
+        className={`dark:bg-bg-dark border border-gray-200/50 dark:border-gray-800/50 p-5 mb-2 mx-2 rounded-lg transition-all duration-300 ease-in-out flex flex-col items-center ${
           isExpanded ? "w-[320px]" : "w-[80px]"
         }`}
       >
@@ -183,17 +216,26 @@ const Sidebar: React.FC = () => {
               >
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <div className={`w-8 h-8 rounded-full ${currentStatus?.bgColor} flex items-center justify-center`}>
-                      <StatusIcon className={`w-4 h-4 ${currentStatus?.color.replace('bg-', 'text-')}`} />
+                    <div
+                      className={`w-8 h-8 rounded-full ${currentStatus.bgColor} flex items-center justify-center`}
+                    >
+                      <StatusIcon
+                        className={`w-4 h-4 ${currentStatus.color.replace(
+                          "bg-",
+                          "text-"
+                        )}`}
+                      />
                     </div>
                     <div
-                      className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${currentStatus?.color} ring-2 ring-white dark:ring-gray-900`}
+                      className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${currentStatus.color} ring-2 ring-white dark:ring-gray-900`}
                     />
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-xs font-medium text-gray-400">Status</span>
+                    <span className="text-xs font-medium text-gray-400">
+                      Status
+                    </span>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {isLoading ? 'Loading...' : status}
+                      {status}
                     </span>
                   </div>
                 </div>
@@ -205,7 +247,7 @@ const Sidebar: React.FC = () => {
               </button>
 
               <div
-                className={`absolute bottom-full left-0 w-full mb-1 transition-all duration-200 ease-in-out transformállítás z-10 ${
+                className={`absolute bottom-full left-0 w-full mb-1 transition-all duration-200 ease-in-out transform z-10 ${
                   isDropdownOpen
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-2 pointer-events-none"
@@ -220,8 +262,15 @@ const Sidebar: React.FC = () => {
                         status === option.name ? option.bgColor : ""
                       }`}
                     >
-                      <div className={`w-6 h-6 rounded-full ${option.bgColor} flex items-center justify-center`}>
-                        <option.icon className={`w-3.5 h-3.5 ${option.color.replace('bg-', 'text-')}`} />
+                      <div
+                        className={`w-6 h-6 rounded-full ${option.bgColor} flex items-center justify-center`}
+                      >
+                        <option.icon
+                          className={`w-3.5 h-3.5 ${option.color.replace(
+                            "bg-",
+                            "text-"
+                          )}`}
+                        />
                       </div>
                       {option.name}
                     </button>
@@ -232,15 +281,22 @@ const Sidebar: React.FC = () => {
           ) : (
             <div className="flex justify-center">
               <div
-                className="p-2 bg-white dark:bg-gray-900 rounded-full border border-gray-100 dark:border-gray-700 cursor-pointer transition-all duration-200 relative hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="rounded-full border border-gray-100 dark:border-gray-700 cursor-pointer transition-all duration-200 relative"
                 onClick={() => setIsExpanded(true)}
-                title={isLoading ? 'Loading...' : status}
+                title={status}
               >
-                <div className={`w-5 h-5 rounded-full ${currentStatus?.bgColor} flex items-center justify-center`}>
-                  <StatusIcon className={`w-3 h-3 ${currentStatus?.color.replace('bg-', 'text-')}`} />
+                <div
+                  className={`w-6 h-6 rounded-full ${currentStatus.bgColor} flex items-center justify-center`}
+                >
+                  <StatusIcon
+                    className={`w-3 h-3 ${currentStatus.color.replace(
+                      "bg-",
+                      "text-"
+                    )}`}
+                  />
                 </div>
                 <div
-                  className={`absolute bottom-0 right-0 w-2 h-2 rounded-full ${currentStatus?.color} ring-1 ring-white dark:ring-gray-900`}
+                  className={`absolute bottom-0 right-0 w-2 h-2 rounded-full ${currentStatus.color} ring-1 ring-white dark:ring-gray-900`}
                 />
               </div>
             </div>
@@ -251,31 +307,31 @@ const Sidebar: React.FC = () => {
           {isExpanded ? (
             <div className="flex justify-between items-center px-1">
               <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="p-2 rounded-full hover:bg-primary-white dark:hover:bg-primary-black cursor-pointer transition-all duration-200 active:scale-95"
-              >
-                <IconLogout2 className="w-4 h-4 text-primary-black dark:text-primary-white opacity-70 hover:opacity-100 transition-colors duration-200" />
-              </button>
-              <button
                 onClick={() => setIsSettingsOpen(true)}
                 className="p-2 rounded-full hover:bg-primary-white dark:hover:bg-primary-black cursor-pointer transition-all duration-200 active:scale-95"
               >
                 <IconSettings className="w-4 h-4 text-primary-black dark:text-primary-white opacity-70 hover:opacity-100 transition-colors duration-200" />
+              </button>
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="p-2 rounded-full hover:bg-primary-white dark:hover:bg-primary-black cursor-pointer transition-all duration-200 active:scale-95"
+              >
+                <IconLogout2 className="w-4 h-4 text-primary-black dark:text-primary-white opacity-70 hover:opacity-100 transition-colors duration-200" />
               </button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4">
               <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="p-2 rounded-full hover:bg-primary-white dark:hover:bg-primary-black cursor-pointer transition-all duration-200 active:scale-95"
-              >
-                <IconLogout2 className="w-4 h-4 text-primary-black dark:text-primary-white opacity-70 hover:opacity-100 transition-colors duration-200" />
-              </button>
-              <button
                 onClick={() => setIsSettingsOpen(true)}
                 className="p-2 rounded-full hover:bg-primary-white dark:hover:bg-primary-black cursor-pointer transition-all duration-200 active:scale-95"
               >
                 <IconSettings className="w-4 h-4 text-primary-black dark:text-primary-white opacity-70 hover:opacity-100 transition-colors duration-200" />
+              </button>
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="p-2 rounded-full hover:bg-primary-white dark:hover:bg-primary-black cursor-pointer transition-all duration-200 active:scale-95"
+              >
+                <IconLogout2 className="w-4 h-4 text-primary-black dark:text-primary-white opacity-70 hover:opacity-100 transition-colors duration-200" />
               </button>
             </div>
           )}
