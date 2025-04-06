@@ -1,15 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { IconSend2, IconFlameFilled } from "@tabler/icons-react";
 import styles from "../../../stylesheets/Greeting.module.css";
 import ChatPanel from "./ChatPanel";
+import { motivationalQuotes } from "../../../app/data/quotes";
 
 const Greeting: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatQuery, setChatQuery] = useState("");
-  const [streak, setStreak] = useState(0); // Add streak state
+  const [streak, setStreak] = useState(0);
+  const [quote, setQuote] = useState("");
+  const { data: session } = useSession();
+  const username = session?.user?.username;
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -18,8 +23,13 @@ const Greeting: React.FC = () => {
     return "Good evening";
   };
 
-  // Fetch streak on mount
+  // Get random quote and fetch streak on mount
   useEffect(() => {
+    // Set random quote
+    const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+    setQuote(motivationalQuotes[randomIndex]);
+    
+    // Fetch streak
     const fetchStreak = async () => {
       try {
         const response = await fetch("/api/features/streaks", {
@@ -55,11 +65,11 @@ const Greeting: React.FC = () => {
     <div className={styles.container}>
       <div className={styles.background} />
       <div className={styles.content}>
-        <h2 className="text-4xl font-semibold text-primary-black dark:text-white py-2">
-          {`${getGreeting()}, Julius`}
+        <h2 className="text-3xl font-semibold text-primary-black dark:text-white py-2">
+          {`${getGreeting()}, ${username || 'there'}`}
         </h2>
-        <p className="text-primary-blue font-medium text-lg mb-14 tracking-tight dark:text-blue-300">
-          &#34;Embrace discomfort&#34;
+        <p className="text-primary-blue font-medium text-sm mb-10 tracking-tight dark:text-blue-300">
+          &#34;{quote || "Embrace discomfort"}&#34;
         </p>
         <div className="flex justify-between items-center gap-4">
           <div className="relative flex-grow">
@@ -70,6 +80,7 @@ const Greeting: React.FC = () => {
               onChange={handleSearchChange}
               className="w-full px-4 pr-10 py-2 border rounded-md focus:outline-none border-gray-200/50 dark:border-gray-700/50 focus:border-primary-blue focus:ring-3 focus:ring-blue-200 text-sm text-dark:text-gray-300 placeholder-gray-400 bg-transparent dark:placeholder-primary-white/30 dark:focus:border-primary-blue-dark dark:focus:ring-primary-blue-dark/50"
               aria-label="Search input"
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             />
             <button
               onClick={handleSubmit}
@@ -87,7 +98,7 @@ const Greeting: React.FC = () => {
               aria-hidden="true"
             />
             <span className="text-sm font-medium text-primary-blue dark:text-blue-300 tabular-nums">
-              {streak} {/* Display dynamic streak */}
+              {streak} 
             </span>
           </div>
         </div>

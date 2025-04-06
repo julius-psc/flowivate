@@ -6,20 +6,22 @@ import clientPromise from "@/lib/mongodb";
 import bcrypt from "bcrypt";
 import { MongoClient, ObjectId } from "mongodb";
 
-// Extend the default Session type to include user.id
+// Extend the default Session type to include user.id and username
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
       email?: string | null;
+      username?: string | null;
     };
   }
 }
 
-// Extend the JWT type to include id
+// Extend the JWT type to include id and username
 declare module "next-auth/jwt" {
   interface JWT {
     id?: string;
+    username?: string;
   }
 }
 
@@ -45,6 +47,7 @@ export const authOptions: NextAuthOptions = {
           _id: ObjectId;
           email: string;
           password: string;
+          username?: string;
         }>({ email: credentials.email });
 
         if (!user) {
@@ -58,8 +61,12 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid password");
         }
 
-        const userData = { id: user._id.toString(), email: user.email };
-        console.log("User authenticated:", userData); // Debug: Confirm user is returned
+        const userData = { 
+          id: user._id.toString(), 
+          email: user.email,
+          username: user.username || null // Include username in the user data
+        };
+        console.log("User authenticated:", userData);
         return userData;
       },
     }),
@@ -75,19 +82,21 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }: { token: JWTType; user?: User }): Promise<JWTType> {
       if (user) {
         token.id = user.id;
-        console.log("JWT callback - Token after adding user data:", token); // Debug: Log token
+        token.username = (user as { id: string; username?: string }).username; // Add username to the token
+        console.log("JWT callback - Token after adding user data:", token);
       }
       return token;
     },
     async session({ session, token }: { session: Session; token: JWT }): Promise<Session> {
-      console.log("Session callback - Token:", token); // Debug: Log token in session callback
-      if (token.id) {
+      console.log("Session callback - Token:", token);
+      if (token) {
         session.user = {
           ...session.user,
-          id: token.id,
+          id: token.id as string,
+          username: token.username as string | null,
         };
       }
-      console.log("Session callback - Session:", session); // Debug: Log session
+      console.log("Session callback - Session:", session);
       return session;
     },
   },
