@@ -1,4 +1,3 @@
-// lib/mongodb.ts
 import { MongoClient, MongoClientOptions } from "mongodb";
 
 // Define the type for the global object extension

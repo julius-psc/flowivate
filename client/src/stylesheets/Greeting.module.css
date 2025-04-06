@@ -1,14 +1,15 @@
 .container {
   position: relative;
   padding: 1rem;
-  background-color: white; /* Light mode default */
+  background-color: #FFF;
   border-radius: 0.5rem;
+  border: 1px solid rgba(229, 229, 229, 0.5);
 }
 
 /* Dark mode styles */
 @media (prefers-color-scheme: dark) {
   .container {
-    background-color: #1f2937; /* Tailwind gray-800 or similar dark shade */
+    background-color: #0f1520; 
   }
 }
 
@@ -24,7 +25,7 @@
 /* Optional: Adjust background opacity or image for dark mode */
 @media (prefers-color-scheme: dark) {
   .background {
-    opacity: 0.3; /* Slightly more visible in dark mode, adjust as needed */
+    opacity: 0.2; /* Slightly more visible in dark mode, adjust as needed */
   }
 }
 

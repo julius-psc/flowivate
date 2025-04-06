@@ -33,34 +33,71 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, setIsOpen, initialQuery }
   };
 
   return (
-    <div
-      className={`fixed top-0 z-1000 right-0 h-full w-80 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}
-    >
-      <div className="p-4">
-        <button
+    <>
+      {/* Overlay with blur effect */}
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {/* Background blur overlay */}
+        <div
+          className="absolute inset-0 bg-black/30 backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
-          className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+        ></div>
+
+        {/* Chat panel */}
+        <div
+          className={`relative w-full max-w-md h-[80vh] bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-2xl transform transition-all duration-300 ${
+            isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+          }`}
         >
-          Close
-        </button>
-        <div className="mt-4">
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`mb-2 p-2 rounded-lg ${
-                msg.sender === 'user'
-                  ? 'bg-blue-100 text-right'
-                  : 'bg-gray-100 text-left'
-              }`}
-            >
-              {msg.text}
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                Chat
+              </h2>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition-colors"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
-          ))}
+
+            {/* Messages */}
+            <div className="flex-1 p-4 overflow-y-auto">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`mb-3 p-3 rounded-lg max-w-[80%] ${
+                    msg.sender === 'user'
+                      ? 'bg-blue-500 text-white ml-auto'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 mr-auto'
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
