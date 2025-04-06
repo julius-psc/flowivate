@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
-import { IconSquareRoundedPlus2, IconCopyPlus, IconTrash } from '@tabler/icons-react';
-import Checkbox from '../recyclable/Checkbox';
-import styles from '../../../stylesheets/Tasks.module.css';
+import React, { useState, useEffect } from "react";
+import {
+  IconSquareRoundedPlus2,
+  IconCopyPlus,
+  IconTrash,
+} from "@tabler/icons-react";
+import Checkbox from "../recyclable/Checkbox";
+import styles from "../../../stylesheets/Tasks.module.css";
 
 interface Task {
   name: string;
@@ -9,76 +13,153 @@ interface Task {
 }
 
 interface Category {
+  _id?: string; // Added for MongoDB document ID
   name: string;
   tasks: Task[];
   isAddingTask?: boolean;
 }
 
 const Tasks: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([
-    {
-      name: 'Work',
-      tasks: [
-        { name: 'Task 1', completed: true },
-        { name: 'Task 2', completed: false },
-        { name: 'Task 3', completed: false },
-      ],
-    },
-    {
-      name: 'Personal',
-      tasks: [
-        { name: 'Task 1', completed: true },
-        { name: 'Task 2', completed: false },
-        { name: 'Task 3', completed: false },
-      ],
-    },
-  ]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const addCategory = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && newCategoryName.trim()) {
-      setCategories([...categories, { name: newCategoryName.trim(), tasks: [] }]);
-      setNewCategoryName('');
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch("/api/features/tasks");
+        const data = await res.json();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const addCategory = async (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && newCategoryName.trim()) {
+      const newCategory = { name: newCategoryName.trim(), tasks: [] };
+      try {
+        const res = await fetch("/api/features/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newCategory),
+        });
+        if (!res.ok) throw new Error("Failed to add category");
+        const { id } = await res.json();
+        setCategories([...categories, { ...newCategory, _id: id }]);
+        setNewCategoryName("");
+        setIsAddingCategory(false);
+      } catch (error) {
+        console.error("Error adding category:", error);
+      }
+    } else if (e.key === "Escape") {
       setIsAddingCategory(false);
-    } else if (e.key === 'Escape') {
-      setIsAddingCategory(false);
-      setNewCategoryName('');
+      setNewCategoryName("");
     }
   };
 
-  const deleteCategory = (categoryIndex: number) => {
+  const deleteCategory = async (categoryIndex: number) => {
+    const categoryId = categories[categoryIndex]._id;
     const updatedCategories = [...categories];
     updatedCategories.splice(categoryIndex, 1);
-    setCategories(updatedCategories);
+    setCategories(updatedCategories); // Optimistic update
+    try {
+      const res = await fetch("/api/features/tasks", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: categoryId }),
+      });
+      if (!res.ok) throw new Error("Failed to delete category");
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      // Optionally rollback if delete fails
+      setCategories(categories);
+    }
   };
 
-  const deleteTask = (categoryIndex: number, taskIndex: number) => {
+  const deleteTask = async (categoryIndex: number, taskIndex: number) => {
     const updatedCategories = [...categories];
     updatedCategories[categoryIndex].tasks.splice(taskIndex, 1);
-    setCategories(updatedCategories);
+    setCategories(updatedCategories); // Optimistic update
+    try {
+      const res = await fetch("/api/features/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: categories[categoryIndex]._id,
+          tasks: updatedCategories[categoryIndex].tasks,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update tasks");
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      setCategories(categories); // Rollback on failure
+    }
   };
 
   const toggleTaskInput = (categoryIndex: number) => {
     const updatedCategories = [...categories];
-    updatedCategories[categoryIndex].isAddingTask = !updatedCategories[categoryIndex].isAddingTask;
+    updatedCategories[categoryIndex].isAddingTask =
+      !updatedCategories[categoryIndex].isAddingTask;
     setCategories(updatedCategories);
   };
 
-  const saveNewTask = (categoryIndex: number, value: string, e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && value.trim()) {
+  const saveNewTask = async (
+    categoryIndex: number,
+    value: string,
+    e: React.KeyboardEvent
+  ) => {
+    if (e.key === "Enter" && value.trim()) {
       const updatedCategories = [...categories];
-      updatedCategories[categoryIndex].tasks.push({ name: value.trim(), completed: false });
+      const newTask = { name: value.trim(), completed: false };
+      updatedCategories[categoryIndex].tasks.push(newTask);
       updatedCategories[categoryIndex].isAddingTask = false;
-      setCategories(updatedCategories);
+      setCategories(updatedCategories); // Optimistic update
+      try {
+        const res = await fetch("/api/features/tasks", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: categories[categoryIndex]._id,
+            tasks: updatedCategories[categoryIndex].tasks,
+          }),
+        });
+        if (!res.ok) throw new Error("Failed to save task");
+      } catch (error) {
+        console.error("Error saving task:", error);
+        setCategories(categories); // Rollback on failure
+      }
     }
   };
 
-  const toggleTaskCompletion = (categoryIndex: number, taskIndex: number) => {
+  const toggleTaskCompletion = async (
+    categoryIndex: number,
+    taskIndex: number
+  ) => {
     const updatedCategories = [...categories];
     updatedCategories[categoryIndex].tasks[taskIndex].completed =
       !updatedCategories[categoryIndex].tasks[taskIndex].completed;
-    setCategories(updatedCategories);
+    setCategories(updatedCategories); // Optimistic update
+    try {
+      const res = await fetch("/api/features/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: categories[categoryIndex]._id,
+          tasks: updatedCategories[categoryIndex].tasks,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update task completion");
+    } catch (error) {
+      console.error("Error toggling task completion:", error);
+      setCategories(categories); // Rollback on failure
+    }
   };
 
   const getCompletionRatio = (tasks: Task[]): string => {
@@ -87,24 +168,28 @@ const Tasks: React.FC = () => {
     return `${completedTasks}/${totalTasks}`;
   };
 
+  if (loading) return <div>Loading...</div>;
+
   return (
-    <div className="p-4  bg-white dark:bg-gray-800 rounded-lg relative border border-gray-100 dark:border-gray-700">
+    <div className="p-4 bg-white dark:bg-bg-dark rounded-lg relative border border-gray-100 dark:border-gray-700">
       <div className="flex justify-end">
-        <p className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 font-medium opacity-60 mb-6 px-3 rounded-md">
+        <p className="bg-primary-white dark:bg-primary-black-dark text-gray-900 dark:text-gray-200 font-medium opacity-60 mb-6 px-3 rounded-md">
           My tasks
         </p>
       </div>
 
-      <div className={`max-h-94 overflow-y-auto pr-2 ${styles.customScrollbar}`}>
+      <div
+        className={`max-h-130 overflow-y-auto pr-2 ${styles.customScrollbar}`}
+      >
         {categories.map((category, categoryIndex) => (
           <div key={categoryIndex} className="mb-8">
             <div className="flex items-center justify-between mb-3 group">
               <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
                 {category.name}
               </h2>
-              <div className="flex-1 mx-3 border-t border-gray-200 dark:border-gray-600"></div>
+              <div className="flex-1 mx-3 border-t border-gray-200 dark:border-gray-800"></div>
               <div className="flex items-center">
-                <span className="text-sm font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full mr-2">
+                <span className="text-sm font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full mr-2">
                   {getCompletionRatio(category.tasks)}
                 </span>
                 <button
@@ -119,12 +204,14 @@ const Tasks: React.FC = () => {
             {category.tasks.map((task, taskIndex) => (
               <div
                 key={taskIndex}
-                className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg mb-3 duration-200 group border border-gray-100 dark:border-gray-700"
+                className="flex items-center p-3 bg-white dark:bg-transparent rounded-lg mb-3 duration-200 group border border-gray-100 dark:border-gray-800"
               >
                 <div className="flex-grow">
                   <Checkbox
                     checked={task.completed}
-                    onChange={() => toggleTaskCompletion(categoryIndex, taskIndex)}
+                    onChange={() =>
+                      toggleTaskCompletion(categoryIndex, taskIndex)
+                    }
                     label={task.name}
                   />
                 </div>
@@ -140,8 +227,10 @@ const Tasks: React.FC = () => {
             {category.isAddingTask && (
               <input
                 type="text"
-                onKeyPress={(e) => saveNewTask(categoryIndex, e.currentTarget.value, e)}
-                className="w-full p-3 mb-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors duration-200 text-gray-900 dark:text-gray-200"
+                onKeyDown={(e) =>
+                  saveNewTask(categoryIndex, e.currentTarget.value, e)
+                }
+                className="w-full p-3 mb-3 bg-gray-50 dark:bg-bg-dark rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors duration-200 text-gray-900 dark:text-gray-200"
                 placeholder="Enter new task (press Enter to save)..."
                 autoFocus
               />
@@ -159,7 +248,6 @@ const Tasks: React.FC = () => {
           </div>
         ))}
 
-        {/* Inline Add Category Input */}
         {isAddingCategory && (
           <div className="mb-8 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
@@ -180,11 +268,10 @@ const Tasks: React.FC = () => {
         )}
       </div>
 
-      {/* Add Category Button */}
       {!isAddingCategory && (
         <button
           onClick={() => setIsAddingCategory(true)}
-          className="cursor-pointer flex items-center p-3 mb-4 w-[97%] bg-gray-50 dark:bg-gray-700 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200"
+          className="cursor-pointer flex items-center p-3 mb-4 w-[97%] bg-gray-50 dark:bg-transparent rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-primary-black transition-colors duration-200"
         >
           <IconSquareRoundedPlus2 className="h-5 opacity-70 w-5 mr-2" />
           <span className="font-medium opacity-70">Add new category</span>

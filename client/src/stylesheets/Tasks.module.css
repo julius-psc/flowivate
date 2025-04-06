@@ -1,21 +1,41 @@
+/* Light Mode */
 .customScrollbar {
-    scrollbar-width: thin; 
-    scrollbar-color: #d3d2d2 transparent; 
+  scrollbar-width: thin;
+  scrollbar-color: #d3d2d2 transparent;
+}
+
+.customScrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.customScrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.customScrollbar::-webkit-scrollbar-thumb {
+  background: #d3d2d2;
+  border-radius: 9999px;
+}
+
+.customScrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .customScrollbar {
+      scrollbar-color: #242b37 transparent; 
   }
-  
-  .customScrollbar::-webkit-scrollbar {
-    width: 8px; 
-  }
-  
-  .customScrollbar::-webkit-scrollbar-track {
-    background: transparent; 
-  }
-  
+
   .customScrollbar::-webkit-scrollbar-thumb {
-    background: #d3d2d2;
-    border-radius: 9999px; 
+      background: #242b37; 
   }
-  
+
   .customScrollbar::-webkit-scrollbar-thumb:hover {
-    background: #555; 
+      background: #242b37; 
   }
+
+  .customScrollbar::-webkit-scrollbar-track {
+      background: #242b37;
+  }
+}
