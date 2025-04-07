@@ -1,87 +1,106 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, } from 'react';
 
 export default function Sleep() {
-  const [sleepHours, setSleepHours] = useState(7);
-  const [weeklySleep, setWeeklySleep] = useState<(number | null)[]>([null, null, null, null, null, null, null]);
+  const [sleepHours, setSleepHours] = useState(8);
+  const [weeklySleep, setWeeklySleep] = useState<number[]>([0,0,0,0,0,0,0]);
+  const [loading, ] = useState(false);
 
   const handleIncrement = () => {
     if (sleepHours < 12) setSleepHours(sleepHours + 1);
   };
 
   const handleDecrement = () => {
-    if (sleepHours > 1) setSleepHours(sleepHours - 1);
+    if (sleepHours > 0) setSleepHours(sleepHours - 1);
   };
 
   const handleSave = () => {
     const newWeeklySleep = [...weeklySleep];
-    newWeeklySleep[6] = sleepHours;
+    newWeeklySleep[6] = sleepHours; // Update the last day with current value
     setWeeklySleep(newWeeklySleep);
+    // You would add your API call here
   };
 
-  const getBarHeight = (hours: number | null) => {
-    if (hours === null) return 'h-2 w-2 rounded-full';
-    if (hours <= 4) return 'h-4 w-3 rounded-lg';
-    if (hours <= 7) return 'h-8 w-3 rounded-lg';
-    return 'h-12 w-3 rounded-lg';
+  // Function to determine the height and color class for sleep bars
+  const getSleepBarStyle = (value: number | null) => {
+    if (!value) return { height: '10px', colorClass: 'bg-primary-black-dark' }; // no-sleep equivalent
+    
+    if (value >= 8) return { height: '70px', colorClass: 'bg-primary-blue' }; // optimal-sleep
+    if (value >= 4) return { height: '40px', colorClass: 'bg-primary-blue' }; // decent-sleep
+    if (value >= 1) return { height: '20px', colorClass: 'bg-primary-blue' }; // little-sleep
+    
+    return { height: '10px', colorClass: 'bg-gray-500' }; // no-sleep
   };
 
   return (
-    <div className="bg-white dark:bg-bg-black border border-gray-200 p-4 rounded-lg h-full w-full">
-      <h2 className="text-md font-semibold mb-2 text-gray-800 dark:text-gray-200 tracking-tight">Sleep</h2>
-      
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-2 mb-2">
-        <button
-          onClick={handleDecrement}
-          className="w-6 h-6 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200 hover:shadow-md"
-        >
-          <span className="text-lg text-gray-700 dark:text-gray-300">-</span>
-        </button>
-        <div className="text-2xl font-bold text-gray-900 dark:text-white w-8 text-center rounded-md py-1">
-          {sleepHours}
+    <div className="bg-white border border-gray-200 dark:bg-bg-dark rounded-lg p-6 h-full w-full">
+      {/* Header with controls */}
+      <div className="">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-lg font-normal text-gray-800 dark:text-gray-100">
+          How much did you sleep  ?
+        </h2>
+        <div className="flex items-center gap-4">
+          <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            My sleep
+          </span>
         </div>
+      </div>
+        
+        {/* Sleep Counter Controls */}
+        <div className="flex items-center justify-center">
+          <button 
+            onClick={handleDecrement}
+            className="text-primary-blue text-2xl font-bold bg-transparent border-none cursor-pointer"
+          >
+            -
+          </button>
+          <p className="text-primary-black dark:text-primary-white font-medium text-2xl mx-1.5 my-1">
+            {sleepHours}
+          </p>
+          <button 
+            onClick={handleIncrement}
+            className="text-primary-blue text-2xl font-bold bg-transparent border-none cursor-pointer"
+          >
+            +
+          </button>
+        </div>
+      
+      </div>
+      
+      {/* Sleep Graph */}
+      <div className="h-20 flex justify-around items-center mx-24 pb-5">
+        {loading ? (
+          <p className="text-white">Loading sleep data...</p>
+        ) : (
+          weeklySleep.map((value, index) => {
+            const { height, colorClass } = getSleepBarStyle(value);
+            
+            return value === 0 ? (
+              // No sleep - render a circle
+              <div 
+                key={index}
+                className={`h-2.5 w-2.5 rounded-full ${colorClass}`}
+              ></div>
+            ) : (
+              // Sleep - render a rounded bar
+              <div 
+                key={index}
+                className={`w-2 rounded-lg ${colorClass}`}
+                style={{ height }}
+              ></div>
+            );
+          })
+        )}
+      </div>
+      <div className="flex justify-center">
         <button
-          onClick={handleIncrement}
-          className="w-6 h-6 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200 hover:shadow-md"
-        >
-          <span className="text-lg text-gray-700 dark:text-gray-300">+</span>
-        </button>
-      </div>
-
-      <div className="flex justify-center items-center my-2">
-        {/* Save Button */}
-        <button
-          onClick={handleSave}
-          className="w-full max-w-[180px] bg-primary-blue dark:bg-primary-blue text-white text-sm py-2 px-4 rounded-md hover:bg-blue-700 dark:hover:bg-blue-500 transition-all duration-200 shadow-md"
-        >
-          Save
-        </button>
-      </div>
-
-      {/* Bar Chart */}
-      <div className="flex justify-between items-center h-12 mt-3 gap-1">
-        {weeklySleep.map((hours, index) => (
-          <div key={index} className="flex-1 flex flex-col items-center">
-            <div
-              className={`bg-primary-blue dark:bg-primary-blue transform transition-all duration-300 ease-in-out ${
-                getBarHeight(hours)
-              } ${hours === null ? 'opacity-20' : 'opacity-100'}`}
-            ></div>
-          </div>
-        ))}
-      </div>
-
-      {/* Day Labels */}
-      <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium gap-1">
-        <span className="flex-1 text-center">M</span>
-        <span className="flex-1 text-center">T</span>
-        <span className="flex-1 text-center">W</span>
-        <span className="flex-1 text-center">T</span>
-        <span className="flex-1 text-center">F</span>
-        <span className="flex-1 text-center">S</span>
-        <span className="flex-1 text-center">S</span>
+            className="dark:bg-primary-black-dark text-primary-black dark:text-primary-white mx-2.5 px-6 py-2 rounded-full text-sm font-normal transition-colors duration-200"
+            onClick={handleSave}
+          >
+            Log sleep
+          </button>
       </div>
     </div>
   );

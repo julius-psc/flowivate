@@ -28,9 +28,9 @@ export default function Dashboard() {
         <Water />
       </div>
       <div className="md:col-start-4 w-full flex flex-col gap-2">
+        <Sleep />
         <Meditation />
         <Books />
-        <Sleep />
       </div>
     </div>
   );
