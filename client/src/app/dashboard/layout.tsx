@@ -9,14 +9,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col h-screen w-screen">
+    <div className="flex flex-col h-screen w-screen overflow-y-auto">
       <div className="flex-shrink-0">
         <Navbar />
       </div>
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="pr-2">
-          <ClientProvider>{children}</ClientProvider>;
+        <main className="pb-2">
+          <ClientProvider>{children}</ClientProvider>
         </main>
       </div>
     </div>

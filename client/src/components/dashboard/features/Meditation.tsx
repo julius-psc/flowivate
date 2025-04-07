@@ -165,7 +165,7 @@ const Meditation = () => {
   };
 
   return (
-    <div className="flex flex-col items-center bg-white dark:bg-gray-800 rounded-lg p-4">
+    <div className="flex flex-col w-full h-full items-center bg-white dark:bg-gray-800 rounded-lg p-4">
       {!isMeditating ? (
         <div className="flex flex-col items-center gap-6 py-8 w-full">
           <div className="flex flex-col items-center gap-2">

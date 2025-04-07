@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import {
   IconCoffee,
   IconTarget,
@@ -16,11 +17,29 @@ interface PomodoroSettings {
   longBreakAfter: number;
 }
 
+const ProgressCircle = React.memo(
+  ({ progress, color, applyTransition }: { progress: number; color: string; applyTransition: boolean }) => (
+    <circle
+      cx="50"
+      cy="50"
+      r="45"
+      className={`fill-none stroke-[6] ${
+        applyTransition ? "transition-[stroke-dashoffset] duration-1000 ease-linear" : ""
+      }`}
+      stroke={color}
+      strokeDasharray="283"
+      strokeDashoffset={283 - (283 * progress) / 100}
+      transform="rotate(-90 50 50)"
+    />
+  )
+);
+ProgressCircle.displayName = "ProgressCircle";
+
 const Pomodoro: React.FC = () => {
   const [settings, setSettings] = useState<PomodoroSettings>({
-    focusTime: 10,
-    shortBreakTime: 3,
-    longBreakTime: 4,
+    focusTime: 25 * 60,
+    shortBreakTime: 5 * 60,
+    longBreakTime: 15 * 60,
     longBreakAfter: 4,
   });
 
@@ -29,6 +48,7 @@ const Pomodoro: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const [sessions, setSessions] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const { data: session } = useSession();
 
   const getTotalTime = useCallback(() => {
     switch (mode) {
@@ -43,9 +63,33 @@ const Pomodoro: React.FC = () => {
     }
   }, [mode, settings]);
 
+  // Fetch settings and sessions on mount
+  useEffect(() => {
+    const fetchPomodoroData = async () => {
+      if (session?.user?.email) {
+        try {
+          const response = await fetch("/api/features/pomodoro", {
+            credentials: "include",
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setSettings(data.settings);
+            setSessions(data.focusSessions);
+          } else {
+            console.error("Failed to fetch pomodoro data");
+          }
+        } catch (error) {
+          console.error("Error fetching pomodoro data:", error);
+        }
+      }
+    };
+
+    fetchPomodoroData();
+  }, [session?.user?.email]);
+
+  // Update timeLeft when mode or settings change
   useEffect(() => {
     setTimeLeft(getTotalTime());
-    setIsActive(false);
   }, [mode, settings, getTotalTime]);
 
   useEffect(() => {
@@ -58,26 +102,28 @@ const Pomodoro: React.FC = () => {
       if (mode === "focus") {
         const newSessions = sessions + 1;
         setSessions(newSessions);
-        setMode(
-          newSessions % settings.longBreakAfter === 0
-            ? "longBreak"
-            : "shortBreak"
-        );
+        setMode(newSessions % settings.longBreakAfter === 0 ? "longBreak" : "shortBreak");
+
+        // Increment focus session count on the server
+        if (session?.user?.email) {
+          fetch("/api/features/pomodoro", {
+            method: "PUT",
+            credentials: "include",
+          }).catch((error) => console.error("Error incrementing focus session:", error));
+        }
       } else {
         setMode("focus");
       }
       setIsActive(false);
     }
     return () => interval && clearInterval(interval);
-  }, [isActive, timeLeft, mode, sessions, settings]);
+  }, [isActive, timeLeft, mode, sessions, settings, session?.user?.email]);
 
   const toggleTimer = () => setIsActive(!isActive);
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
   const resetTimer = () => {
     setIsActive(false);
@@ -86,6 +132,7 @@ const Pomodoro: React.FC = () => {
   const switchMode = (newMode: PomodoroMode) => {
     setMode(newMode);
     setIsActive(false);
+    setTimeLeft(settings[newMode === "focus" ? "focusTime" : newMode === "shortBreak" ? "shortBreakTime" : "longBreakTime"]);
   };
 
   const progress = (timeLeft / getTotalTime()) * 100;
@@ -120,16 +167,36 @@ const Pomodoro: React.FC = () => {
 
   const currentColor = modeColors[mode];
 
-  const handleSettingsSave = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSettingsSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
-    setSettings({
-      focusTime: parseInt(form.focusTime.value) * 60,
-      shortBreakTime: parseInt(form.shortBreakTime.value) * 60,
-      longBreakTime: parseInt(form.longBreakTime.value) * 60,
-      longBreakAfter: parseInt(form.longBreakAfter.value),
-    });
+    const newSettings = {
+      focusTime: Math.min(60, Math.max(1, parseInt(form.focusTime.value))) * 60,
+      shortBreakTime: Math.min(30, Math.max(1, parseInt(form.shortBreakTime.value))) * 60,
+      longBreakTime: Math.min(60, Math.max(5, parseInt(form.longBreakTime.value))) * 60,
+      longBreakAfter: Math.min(10, Math.max(1, parseInt(form.longBreakAfter.value))),
+    };
+    setSettings(newSettings);
+    setTimeLeft(newSettings[mode === "focus" ? "focusTime" : mode === "shortBreak" ? "shortBreakTime" : "longBreakTime"]);
     setShowSettings(false);
+
+    if (session?.user?.email) {
+      try {
+        const response = await fetch("/api/features/pomodoro", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ settings: newSettings }),
+          credentials: "include",
+        });
+        if (!response.ok) {
+          console.error("Failed to save pomodoro settings on the server");
+        }
+      } catch (error) {
+        console.error("Error saving pomodoro settings:", error);
+      }
+    }
   };
 
   return (
@@ -172,7 +239,7 @@ const Pomodoro: React.FC = () => {
       {!showSettings ? (
         <>
           {/* Timer */}
-          <div className="relative w-64 h-64 mb-6">
+          <div key={`timer-${mode}`} className="relative w-64 h-64 mb-6">
             <svg className="w-full h-full" viewBox="0 0 100 100">
               <circle
                 cx="50"
@@ -180,16 +247,7 @@ const Pomodoro: React.FC = () => {
                 r="45"
                 className="fill-none stroke-gray-100 dark:stroke-gray-700 stroke-[6]"
               />
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                className="fill-none stroke-[6] transition-all duration-400 ease-linear"
-                stroke={currentColor.progress}
-                strokeDasharray="283"
-                strokeDashoffset={283 - (283 * progress) / 100}
-                transform="rotate(-90 50 50)"
-              />
+              <ProgressCircle progress={progress} color={currentColor.progress} applyTransition={isActive} />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-5xl font-bold text-gray-800 dark:text-gray-200">
@@ -204,11 +262,7 @@ const Pomodoro: React.FC = () => {
                   <IconCoffee className="w-4 h-4 mr-1 text-primary-green" />
                 )}
                 <span className={`text-sm font-medium ${currentColor.text}`}>
-                  {mode === "focus"
-                    ? "Focus"
-                    : mode === "shortBreak"
-                    ? "Short Break"
-                    : "Long Break"}
+                  {mode === "focus" ? "Focus" : mode === "shortBreak" ? "Short Break" : "Long Break"}
                 </span>
               </div>
             </div>
@@ -220,74 +274,37 @@ const Pomodoro: React.FC = () => {
               <div
                 key={i}
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  i < currentPomo ||
-                  (sessions > 0 && i === 0 && currentPomo === 0)
+                  i < currentPomo || (sessions > 0 && i === 0 && currentPomo === 0)
                     ? currentColor.main
                     : "bg-gray-200 dark:bg-gray-600"
-                } ${
-                  i === currentPomo && mode === "focus" && isActive
-                    ? "animate-pulse"
-                    : ""
-                }`}
+                } ${i === currentPomo && mode === "focus" && isActive ? "animate-pulse" : ""}`}
               />
             ))}
           </div>
         </>
       ) : (
-        /* Settings Form */
-        <form onSubmit={handleSettingsSave} className="w-full space-y-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Focus Time (minutes)
-            </label>
-            <input
-              type="number"
-              name="focusTime"
-              defaultValue={settings.focusTime / 60}
-              min="1"
-              max="60"
-              className="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-200"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Short Break (minutes)
-            </label>
-            <input
-              type="number"
-              name="shortBreakTime"
-              defaultValue={settings.shortBreakTime / 60}
-              min="1"
-              max="30"
-              className="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-200"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Long Break (minutes)
-            </label>
-            <input
-              type="number"
-              name="longBreakTime"
-              defaultValue={settings.longBreakTime / 60}
-              min="5"
-              max="60"
-              className="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-200"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Long Break After (sessions)
-            </label>
-            <input
-              type="number"
-              name="longBreakAfter"
-              defaultValue={settings.longBreakAfter}
-              min="1"
-              max="10"
-              className="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-200"
-            />
-          </div>
+        /* Modern Settings Form */
+        <form id="settingsForm" onSubmit={handleSettingsSave} className="w-full space-y-6 mb-6">
+          {[
+            { name: "focusTime", label: "Focus Time (min)", value: settings.focusTime / 60, min: 1, max: 60 },
+            { name: "shortBreakTime", label: "Short Break (min)", value: settings.shortBreakTime / 60, min: 1, max: 30 },
+            { name: "longBreakTime", label: "Long Break (min)", value: settings.longBreakTime / 60, min: 5, max: 60 },
+            { name: "longBreakAfter", label: "Long Break After", value: settings.longBreakAfter, min: 1, max: 10 },
+          ].map((field) => (
+            <div key={field.name} className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                {field.label}
+              </label>
+              <input
+                type="number"
+                name={field.name}
+                defaultValue={field.value}
+                min={field.min}
+                max={field.max}
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all duration-200"
+              />
+            </div>
+          ))}
         </form>
       )}
 
@@ -299,11 +316,7 @@ const Pomodoro: React.FC = () => {
               onClick={toggleTimer}
               className={`p-4 text-white cursor-pointer ${currentColor.main} ${currentColor.hover} rounded-full transition-colors ${currentColor.ring} focus:outline-none focus:ring-2 focus:ring-opacity-50`}
             >
-              {isActive ? (
-                <IconPlayerPause className="w-6 h-6" />
-              ) : (
-                <IconPlayerPlay className="w-6 h-6" />
-              )}
+              {isActive ? <IconPlayerPause className="w-6 h-6" /> : <IconPlayerPlay className="w-6 h-6" />}
             </button>
             <button
               onClick={resetTimer}
@@ -318,14 +331,14 @@ const Pomodoro: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowSettings(false)}
-              className="p-2 text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              className="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               form="settingsForm"
-              className=" P-2 text-white cursor-pointer bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 rounded-md transition-colors"
+              className="px-4 py-2 text-white bg-primary-blue hover:bg-primary-blue-dark dark:bg-primary-blue-dark dark:hover:bg-primary-blue rounded-lg transition-colors"
             >
               Save
             </button>

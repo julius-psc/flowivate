@@ -1,83 +1,123 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
 export async function GET() {
   try {
+    const session = await getServerSession();
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const email = session.user.email;
     const client = await clientPromise;
     const db = client.db("Flowivate");
-    const categories = await db.collection("categories").find({}).toArray();
-    return NextResponse.json(categories);
+    const categoriesCollection = db.collection("categories");
+
+    const categories = await categoriesCollection.find({ userEmail: email }).toArray();
+    return NextResponse.json(categories, { status: 200 });
   } catch (error) {
-    console.error("GET Error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch categories" },
-      { status: 500 }
-    );
+    console.error("Error in GET /api/features/tasks:", error);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
+    const session = await getServerSession();
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const email = session.user.email;
+    const { name, tasks } = await request.json();
+
+    if (!name || !Array.isArray(tasks)) {
+      return NextResponse.json({ message: "Name and tasks are required" }, { status: 400 });
+    }
+
     const client = await clientPromise;
     const db = client.db("Flowivate");
-    const data = await req.json();
-    const result = await db.collection("categories").insertOne(data);
+    const categoriesCollection = db.collection("categories");
+
+    const result = await categoriesCollection.insertOne({
+      name,
+      tasks,
+      userEmail: email,
+    });
+
     return NextResponse.json({ id: result.insertedId.toString() }, { status: 201 });
   } catch (error) {
-    console.error("POST Error:", error);
-    return NextResponse.json(
-      { error: "Failed to save category" },
-      { status: 500 }
-    );
+    console.error("Error in POST /api/features/tasks:", error);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function PUT(req: NextRequest) {
+export async function PUT(request: Request) {
   try {
+    const session = await getServerSession();
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const email = session.user.email;
+    const { id, tasks } = await request.json();
+
+    if (!id || !ObjectId.isValid(id) || !Array.isArray(tasks)) {
+      return NextResponse.json({ message: "Invalid ID or tasks" }, { status: 400 });
+    }
+
     const client = await clientPromise;
     const db = client.db("Flowivate");
-    const { id, tasks } = await req.json();
-    if (!id || !ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
-    }
-    const result = await db.collection("categories").updateOne(
-      { _id: new ObjectId(id) },
+    const categoriesCollection = db.collection("categories");
+
+    const result = await categoriesCollection.updateOne(
+      { _id: new ObjectId(id), userEmail: email },
       { $set: { tasks } }
     );
+
     if (result.matchedCount === 0) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+      return NextResponse.json({ message: "Category not found" }, { status: 404 });
     }
-    return NextResponse.json({ modified: result.modifiedCount });
+
+    return NextResponse.json({ modified: result.modifiedCount }, { status: 200 });
   } catch (error) {
-    console.error("PUT Error:", error);
-    return NextResponse.json(
-      { error: "Failed to update category" },
-      { status: 500 }
-    );
+    console.error("Error in PUT /api/features/tasks:", error);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE(request: Request) {
   try {
+    const session = await getServerSession();
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const email = session.user.email;
+    const { id } = await request.json();
+
+    if (!id || !ObjectId.isValid(id)) {
+      return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
+    }
+
     const client = await clientPromise;
     const db = client.db("Flowivate");
-    const { id } = await req.json();
-    if (!id || !ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
-    }
-    const result = await db.collection("categories").deleteOne({
+    const categoriesCollection = db.collection("categories");
+
+    const result = await categoriesCollection.deleteOne({
       _id: new ObjectId(id),
+      userEmail: email,
     });
+
     if (result.deletedCount === 0) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+      return NextResponse.json({ message: "Category not found" }, { status: 404 });
     }
-    return NextResponse.json({ deleted: result.deletedCount });
+
+    return NextResponse.json({ deleted: result.deletedCount }, { status: 200 });
   } catch (error) {
-    console.error("DELETE Error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete category" },
-      { status: 500 }
-    );
+    console.error("Error in DELETE /api/features/tasks:", error);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
 }

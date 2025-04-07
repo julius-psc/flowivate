@@ -68,7 +68,7 @@ const Greeting: React.FC = () => {
         <h2 className="text-3xl font-semibold text-primary-black dark:text-white py-2">
           {`${getGreeting()}, ${username || 'there'}`}
         </h2>
-        <p className="text-primary-blue font-medium text-sm mb-10 tracking-tight dark:text-blue-300">
+        <p className="text-primary-blue font-medium text- mb-10 tracking-tight dark:text-blue-300">
           &#34;{quote || "Embrace discomfort"}&#34;
         </p>
         <div className="flex justify-between items-center gap-4">

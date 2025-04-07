@@ -1,9 +1,12 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import {
   IconSquareRoundedPlus2,
   IconCopyPlus,
   IconTrash,
 } from "@tabler/icons-react";
+import { useSession } from "next-auth/react";
 import Checkbox from "../recyclable/Checkbox";
 import styles from "../../../stylesheets/Tasks.module.css";
 
@@ -13,7 +16,7 @@ interface Task {
 }
 
 interface Category {
-  _id?: string; // Added for MongoDB document ID
+  _id?: string;
   name: string;
   tasks: Task[];
   isAddingTask?: boolean;
@@ -24,12 +27,18 @@ const Tasks: React.FC = () => {
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [loading, setLoading] = useState(true);
+  const { data: session, status } = useSession();
 
-  // Fetch categories on component mount
+  // Fetch categories on component mount, filtered by user ID
   useEffect(() => {
     const fetchCategories = async () => {
+      if (status === "loading" || !session?.user?.id) return;
+
       try {
-        const res = await fetch("/api/features/tasks");
+        const res = await fetch("/api/features/tasks", {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch categories");
         const data = await res.json();
         setCategories(data);
       } catch (error) {
@@ -39,16 +48,17 @@ const Tasks: React.FC = () => {
       }
     };
     fetchCategories();
-  }, []);
+  }, [session, status]);
 
   const addCategory = async (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && newCategoryName.trim()) {
+    if (e.key === "Enter" && newCategoryName.trim() && session?.user?.id) {
       const newCategory = { name: newCategoryName.trim(), tasks: [] };
       try {
         const res = await fetch("/api/features/tasks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newCategory),
+          credentials: "include",
         });
         if (!res.ok) throw new Error("Failed to add category");
         const { id } = await res.json();
@@ -74,12 +84,12 @@ const Tasks: React.FC = () => {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: categoryId }),
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to delete category");
     } catch (error) {
       console.error("Error deleting category:", error);
-      // Optionally rollback if delete fails
-      setCategories(categories);
+      setCategories(categories); // Rollback on failure
     }
   };
 
@@ -95,6 +105,7 @@ const Tasks: React.FC = () => {
           id: categories[categoryIndex]._id,
           tasks: updatedCategories[categoryIndex].tasks,
         }),
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to update tasks");
     } catch (error) {
@@ -129,6 +140,7 @@ const Tasks: React.FC = () => {
             id: categories[categoryIndex]._id,
             tasks: updatedCategories[categoryIndex].tasks,
           }),
+          credentials: "include",
         });
         if (!res.ok) throw new Error("Failed to save task");
       } catch (error) {
@@ -154,6 +166,7 @@ const Tasks: React.FC = () => {
           id: categories[categoryIndex]._id,
           tasks: updatedCategories[categoryIndex].tasks,
         }),
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to update task completion");
     } catch (error) {
@@ -168,10 +181,12 @@ const Tasks: React.FC = () => {
     return `${completedTasks}/${totalTasks}`;
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (status === "loading") return <div>Loading session...</div>;
+  if (!session) return <div>Please sign in to view tasks</div>;
+  if (loading) return <div>Loading tasks...</div>;
 
   return (
-    <div className="p-4 bg-white dark:bg-bg-dark rounded-lg relative border border-gray-100 dark:border-gray-700">
+    <div className="p-4 bg-white dark:bg-bg-dark rounded-lg relative border border-gray-100 dark:border-gray-700 flex flex-col h-full">
       <div className="flex justify-end">
         <p className="bg-primary-white dark:bg-primary-black-dark text-gray-900 dark:text-gray-200 font-medium opacity-60 mb-6 px-3 rounded-md">
           My tasks
@@ -179,7 +194,7 @@ const Tasks: React.FC = () => {
       </div>
 
       <div
-        className={`max-h-130 overflow-y-auto pr-2 ${styles.customScrollbar}`}
+        className={`flex-1 overflow-y-auto pr-2 max-h-148 ${styles.customScrollbar}`}
       >
         {categories.map((category, categoryIndex) => (
           <div key={categoryIndex} className="mb-8">
@@ -271,7 +286,7 @@ const Tasks: React.FC = () => {
       {!isAddingCategory && (
         <button
           onClick={() => setIsAddingCategory(true)}
-          className="cursor-pointer flex items-center p-3 mb-4 w-[97%] bg-gray-50 dark:bg-transparent rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-primary-black transition-colors duration-200"
+          className="mt-4 cursor-pointer flex items-center p-3 w-[97%] bg-gray-50 dark:bg-transparent rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-primary-black transition-colors duration-200"
         >
           <IconSquareRoundedPlus2 className="h-5 opacity-70 w-5 mr-2" />
           <span className="font-medium opacity-70">Add new category</span>
