@@ -29,7 +29,7 @@ const Water = () => {
   const remainingWater = dailyGoal - waterAmount;
 
   return (
-    <div className="p-6 bg-white dark:bg-gray-800 rounded-lg w-full h-full">
+    <div className="p-6 bg-white dark:bg-bg-dark border border-gray-200 rounded-lg w-full h-full">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <IconDropletFilled className="w-6 h-6 fill-primary-blue" />

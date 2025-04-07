@@ -110,7 +110,7 @@ const Sidebar: React.FC = () => {
   // Loading state UI
   if (isLoading || status === null) {
     return (
-      <div className="w-[80px] dark:bg-bg-dark border border-gray-200/50 dark:border-gray-800/50 p-5 rounded-lg flex flex-col items-center">
+      <div className="w-[80px] dark:bg-bg-dark border border-gray-200 dark:border-gray-800/50 p-5 rounded-lg flex flex-col items-center">
         <div className="mb-8 flex-shrink-0 transition-transform duration-200 hover:scale-105">
           <Image
             className="w-12 h-auto"

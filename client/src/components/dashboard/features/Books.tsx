@@ -8,7 +8,7 @@ const BookTracker = () => {
   ];
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full p-4 border border-gray-200 bg-white dark:bg-bg-dark rounded-lg">
       <h3>My Books</h3>
       <ul>
         {books.map((book) => (

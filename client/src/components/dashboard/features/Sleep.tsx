@@ -28,7 +28,7 @@ export default function Sleep() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg h-full w-full">
+    <div className="bg-white dark:bg-bg-black border border-gray-200 p-4 rounded-lg h-full w-full">
       <h2 className="text-md font-semibold mb-2 text-gray-800 dark:text-gray-200 tracking-tight">Sleep</h2>
       
       {/* Controls */}
