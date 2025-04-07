@@ -12,7 +12,7 @@ const BreathMessage = React.memo(({ phase }: { phase: string }) => {
     'hold-exhale': 'Hold after exhale...'
   };
 
-  return <p className="text-sm font-medium text-primary-black dark:text-white">{phaseMessages[phase] || 'Breathing...'}</p>;
+  return <p className="text-sm mt-5 font-medium text-primary-black dark:text-white">{phaseMessages[phase] || 'Breathing...'}</p>;
 });
 
 BreathMessage.displayName = 'BreathMessage';
@@ -32,7 +32,7 @@ const Meditation = () => {
   // More complex meditation times with specific breathing patterns
   const meditationTimes = useMemo(() => [
     { 
-      label: 'Quick Reset', 
+      label: 'Quick Reset - 1min', 
       seconds: 60, // 1 minute
       pattern: [
         { phase: 'inhale', duration: 4 },
@@ -40,7 +40,7 @@ const Meditation = () => {
       ]
     },
     { 
-      label: 'Short Break', 
+      label: 'Short Break - 3min', 
       seconds: 180, // 3 minutes
       pattern: [
         { phase: 'inhale', duration: 4 },
@@ -50,7 +50,7 @@ const Meditation = () => {
       ]
     },
     { 
-      label: 'Deep Calm', 
+      label: 'Deep Calm - 10min', 
       seconds: 600, // 10 minutes
       pattern: [
         { phase: 'inhale', duration: 4 },
@@ -170,7 +170,7 @@ const Meditation = () => {
         <div className="flex flex-col items-center gap-6 py-8 w-full">
           <div className="flex flex-col items-center gap-2">
             <div className="relative flex items-center justify-center w-12 h-12">
-              <div className="absolute w-12 h-12 rounded-full bg-primary-white dark:bg-gray-700" />
+              <div className="absolute w-12 h-12 rounded-full bg-primary-white dark:bg-primary-black-dark" />
               <IconWind className="w-6 h-6 text-primary-black dark:text-white z-10" />
             </div>
             <h3 className="text-lg font-medium text-primary-black dark:text-white">Mindful Breathing</h3>
@@ -183,7 +183,7 @@ const Meditation = () => {
               <button
                 key={time.label}
                 onClick={() => startMeditation(time.seconds)}
-                className="w-full max-w-[180px] px-3 py-2 bg-primary-black dark:bg-gray-700 text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-600"
+                className="w-full max-w-[180px] px-3 py-2 bg-primary-black dark:bg-primary-black-dark text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-600"
               >
                 {time.label}
               </button>
@@ -191,7 +191,7 @@ const Meditation = () => {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-between  ">
+        <div className="flex w-full h-full flex-col items-center justify-between  ">
           <button
             onClick={exitSession}
             className="self-start p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
