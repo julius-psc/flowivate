@@ -81,7 +81,7 @@ const Ambient: React.FC = () => {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-full bg-white dark:bg-bg-dark rounded-lg border border-gray-200 dark:border-gray-800/50">
+    <div className="relative flex flex-col p-34 items-center justify-center bg-white dark:bg-bg-dark rounded-lg border border-gray-200 dark:border-gray-800/50">
       <p className="absolute top-4 right-4 bg-primary-white dark:bg-gray-700 text-primary-black dark:text-gray-200 font-medium opacity-60 px-3 rounded-md">
         Ambient sounds
       </p>
