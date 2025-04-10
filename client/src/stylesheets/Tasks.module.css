@@ -4,10 +4,6 @@
   scrollbar-color: #d3d2d2 transparent;
 }
 
-.customScrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
 .customScrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
@@ -24,18 +20,18 @@
 /* Dark Mode */
 @media (prefers-color-scheme: dark) {
   .customScrollbar {
-      scrollbar-color: #242b37 transparent; 
+      scrollbar-color: #3a4454 transparent; 
   }
 
   .customScrollbar::-webkit-scrollbar-thumb {
-      background: #242b37; 
+      background: #3a4454; 
   }
 
-  .customScrollbar::-webkit-scrollbar-thumb:hover {
-      background: #242b37; 
+  .customScrollbar::-webkit-scrollbar-thumb:hover { 
+      background: #3a4454; 
   }
 
   .customScrollbar::-webkit-scrollbar-track {
-      background: #242b37;
+      background: #3a4454;
   }
 }

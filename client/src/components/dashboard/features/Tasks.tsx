@@ -186,7 +186,7 @@ const Tasks: React.FC = () => {
   if (loading) return <div>Loading tasks...</div>;
 
   return (
-    <div className="p-4 bg-white dark:bg-bg-dark rounded-lg relative border border-gray-200 dark:border-gray-700 flex flex-col h-full">
+    <div className="p-4 bg-white dark:bg-bg-dark rounded-lg relative border border-gray-200 dark:border-gray-800/50 flex flex-col">
       <div className="flex justify-end">
         <p className="bg-primary-white dark:bg-primary-black-dark text-gray-900 dark:text-gray-200 font-medium opacity-60 mb-6 px-3 rounded-md">
           My tasks

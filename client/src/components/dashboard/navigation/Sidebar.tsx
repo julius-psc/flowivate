@@ -134,7 +134,7 @@ const Sidebar: React.FC = () => {
     <>
       <div
         className={`dark:bg-bg-dark border border-gray-200/50 dark:border-gray-800/50 p-5 mb-2 mx-2 rounded-lg transition-all duration-300 ease-in-out flex flex-col items-center ${
-          isExpanded ? "w-[320px]" : "w-[80px]"
+          isExpanded ? "min-w-[320px]" : "w-[80px]"
         }`}
       >
         <div

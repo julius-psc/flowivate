@@ -175,7 +175,7 @@ const MoodPicker: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-bg-dark rounded-lg p-6 w-full h-full border border-gray-200 dark:border-gray-800">
+    <div className="bg-white dark:bg-bg-dark rounded-lg p-6 w-full h-full border border-gray-200 dark:border-gray-800/50">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-lg font-normal text-gray-800 dark:text-gray-100">
           How do you feel today?

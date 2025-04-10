@@ -27,7 +27,7 @@ const Water = () => {
   const remainingWater = dailyGoal - waterAmount;
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 bg-white dark:bg-bg-dark rounded-lg w-full max-w-md mx-auto border border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col items-center justify-center p-8 bg-white dark:bg-bg-dark rounded-lg w-full max-w-md mx-auto border border-gray-200 dark:border-gray-800/50">
       {/* Header with water icon and amount */}
       <div className="flex flex-col items-center mb-6">
         <div className="relative mb-3">

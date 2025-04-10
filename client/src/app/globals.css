@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+:root {
+  button {
+    cursor: pointer;
+  }
+}
+
 @theme {
   --font-display: "Sans Pro 3", "sans-serif";
   --color-primary-black: #11151c;
@@ -110,4 +116,43 @@
   color: #adb5bd;
   pointer-events: none;
   height: 0;
+}
+
+/* Base scrollbar styles */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #888 transparent; /* Thumb color, transparent track (light mode default) */
+}
+
+/* Webkit scrollbar styles (light mode default) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* No background for the track */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888; /* Light mode thumb color */
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Hover color in light mode */
+}
+
+/* Dark mode adjustments using prefers-color-scheme */
+@media (prefers-color-scheme: dark) {
+  .custom-scrollbar {
+    scrollbar-color: #626161 transparent; /* Lighter thumb color for dark mode */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #bbb; /* Dark mode thumb color */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #ddd; /* Hover color in dark mode */
+  }
 }

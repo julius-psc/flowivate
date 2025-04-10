@@ -84,7 +84,7 @@ const Navbar: React.FC = () => {
   }, [showNotifications, showProfile]);
 
   return (
-    <nav className="flex items-center justify-between px-6 py-3 mx-2 my-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200/50 dark:border-gray-800/50 transition-all duration-200">
+    <nav className="flex items-center justify-between px-6 py-3 mx-2 my-2 rounded-lg bg-white dark:bg-bg-dark border border-gray-200 dark:border-gray-800/50 transition-all duration-200">
       {/* Left side - Time and Search */}
       <div className="flex items-center space-x-8">
         <span className="text-gray-700 dark:text-gray-300 font-medium text-sm">
@@ -95,7 +95,7 @@ const Navbar: React.FC = () => {
           <input
             type="text"
             placeholder="Search..."
-            className="w-80 pl-9 pr-12 py-2 bg-gray-100/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 rounded-md focus:outline-none focus:border-primary-blue focus:ring-3 focus:ring-blue-200 text-sm text-gray-600 dark:text-gray-300 placeholder-gray-400 transition-all duration-200"
+            className="w-80 pl-9 pr-12 py-2 bg-gray-100/50 dark:bg-transparent border border-gray-200/50 dark:border-gray-700/50 rounded-md focus:outline-none focus:border-primary-blue focus:ring-3 focus:ring-blue-200 text-sm text-gray-600 dark:text-gray-300 placeholder-gray-400 transition-all duration-200"
           />
           <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center bg-gray-200/50 dark:bg-gray-700/50 px-1.5 py-0.5 rounded-sm">
             <IconCommand className="text-gray-500 w-4 h-4" />

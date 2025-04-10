@@ -9,7 +9,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col h-screen w-screen overflow-y-auto">
+    <div 
+      className="flex flex-col h-screen w-screen dark:bg-[#151E2F]"
+      style={{
+        backgroundImage: `url('/assets/illustrations/gradient-bg.svg')`,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <div className="flex-shrink-0">
         <Navbar />
       </div>

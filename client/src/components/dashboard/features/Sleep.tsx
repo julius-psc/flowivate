@@ -86,7 +86,7 @@ export default function Sleep() {
   if (!session) return <div>Please sign in to track your sleep</div>;
 
   return (
-    <div className="bg-white border border-gray-200 dark:bg-bg-dark rounded-lg p-6 h-full w-full">
+    <div className="bg-white border border-gray-200 dark:border-gray-800/50 dark:bg-bg-dark rounded-lg p-6 h-full w-full">
       <div className="">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-lg font-normal text-gray-800 dark:text-gray-100">
@@ -128,7 +128,7 @@ export default function Sleep() {
               return (
                 <div key={index} className="flex flex-col items-center">
                   {value === 0 ? (
-                    <div className={`h-2.5 w-2.5 rounded-full ${colorClass}`}></div>
+                    <div className={`h-2.5 w-2.5 rounded-full opacity-20 ${colorClass}`}></div>
                   ) : (
                     <div
                       className={`w-2 rounded-lg ${colorClass}`}
