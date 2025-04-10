@@ -24,18 +24,18 @@ export type FeatureKey =
   | 'Sleep';
 
 // Define the structure of the feature map
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const featureComponents: Record<FeatureKey, React.ComponentType<any>> = {
-  Tasks: Tasks,
-  Pomodoro: Pomodoro,
-  Ambient: Ambient,
-  Mood: Mood,
-  Assistant: Assistant,
-  Meditation: Meditation,
-  Water: Water,
-  Books: Books, // Use the component directly
-  Sleep: Sleep,
+export const featureComponents: Record<FeatureKey, React.FC> = {
+  Tasks,
+  Pomodoro,
+  Ambient,
+  Mood,
+  Assistant,
+  Meditation,
+  Water,
+  Books,
+  Sleep,
 };
+
 
 // Optional: Get an array of available feature keys if needed elsewhere
 export const availableFeatureKeys = Object.keys(featureComponents) as FeatureKey[];
