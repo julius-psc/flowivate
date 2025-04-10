@@ -64,7 +64,7 @@ export default function Dashboard() {
             </p>
             <Link
               href="/dashboard/personal"
-              className="text-blue-500 hover:underline mt-2 inline-block"
+              className="text-primary-blue hover:underline mt-2 inline-block"
             >
               Add features
             </Link>

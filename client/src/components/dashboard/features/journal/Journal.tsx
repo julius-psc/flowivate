@@ -171,7 +171,7 @@ export const Journal: React.FC<JournalProps> = ({ initialDate = new Date() }) =>
   if (!editor) return <div className="flex items-center justify-center h-screen">Loading editor...</div>;
 
   return (
-    <div className="flex h-screen gap-4 p-4 bg-gray-50">
+    <div className="flex h-screen gap-4 p-4">
       <div className="flex flex-col w-16">
         <h3 className="text-sm font-medium text-gray-500 opacity-50 mb-4">
           {format(selectedDate, 'MMMM')}

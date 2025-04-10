@@ -84,7 +84,7 @@ const Navbar: React.FC = () => {
   }, [showNotifications, showProfile]);
 
   return (
-    <nav className="flex items-center justify-between px-6 py-3 mx-2 my-2 rounded-lg bg-white dark:bg-bg-dark border border-gray-200 dark:border-gray-800/50 transition-all duration-200">
+    <nav className="flex items-center justify-between z-100 px-6 py-3 mx-2 my-2 rounded-lg bg-transparent dark:bg-transparent border border-gray-200 dark:border-gray-800/50 transition-all duration-200">
       {/* Left side - Time and Search */}
       <div className="flex items-center space-x-8">
         <span className="text-gray-700 dark:text-gray-300 font-medium text-sm">
@@ -207,7 +207,7 @@ const Navbar: React.FC = () => {
             }}
             className="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium text-sm">
+            <div className="w-6 h-6 rounded-full bg-primary-green flex items-center justify-center text-white font-medium text-sm">
               J
             </div>
             <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
@@ -217,12 +217,12 @@ const Navbar: React.FC = () => {
           {showProfile && (
             <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-3 z-100">
               <div className="flex items-center space-x-3 pb-2 border-b border-gray-200 dark:border-gray-800">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
+                <div className="w-8 h-8 rounded-full bg-primary-green flex items-center justify-center text-white font-medium">
                   J
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Julius Reade
+                    Julius Peschard
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     julius@example.com

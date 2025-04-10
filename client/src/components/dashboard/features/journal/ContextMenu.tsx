@@ -71,7 +71,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
   return (
     <div
       ref={menuRef}
-      className="fixed bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 opacity-95 backdrop-blur-sm"
+      className="fixed  rounded-md shadow-lg border border-gray-200 py-1 z-50 opacity-95 backdrop-blur-sm"
       style={{ 
         top: `${position.y}px`, 
         left: `${position.x}px`,

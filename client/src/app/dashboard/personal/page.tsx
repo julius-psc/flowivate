@@ -17,9 +17,9 @@ export default function Personal() {
   const { addFeature, isFeatureSelected } = useDashboard();
 
   return (
-    <div className="min-h-screen p-6 bg-gray-100 dark:bg-gray-950">
+    <div className="min-h-screen p-6">
       <h2 className="text-2xl font-semibold mb-8 text-gray-900 dark:text-gray-100">
-        Customize Your Dashboard
+        Tailor Your Dashboard
       </h2>
 
       {/* Render features by category */}
