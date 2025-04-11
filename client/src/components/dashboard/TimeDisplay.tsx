@@ -3,42 +3,77 @@
 import { useState, useEffect } from 'react';
 
 interface TimeDisplayProps {
-  isCenteredFullScreen?: boolean; // Optional prop for styling
+  isCenteredFullScreen?: boolean;
+  quote?: string;
 }
 
-export default function TimeDisplay({ isCenteredFullScreen = false }: TimeDisplayProps) {
+export default function TimeDisplay({ 
+  isCenteredFullScreen = false,
+  quote = "embrace discomfort"
+}: TimeDisplayProps) {
   const [time, setTime] = useState<Date | null>(null);
+  const [greeting, setGreeting] = useState<string>("");
 
   useEffect(() => {
     // Set initial time immediately on client mount
-    setTime(new Date());
+    const now = new Date();
+    setTime(now);
+    setGreeting(getGreeting(now));
+    
     const timer = setInterval(() => {
-      setTime(new Date());
+      const newTime = new Date();
+      setTime(newTime);
+      setGreeting(getGreeting(newTime));
     }, 1000); // Update every second
+    
     return () => clearInterval(timer); // Cleanup on unmount
   }, []);
 
+  const getGreeting = (date: Date): string => {
+    const hour = date.getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
+  // Format date
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString(undefined, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   // Render placeholder or null until time is available
   if (!time) {
-    // Optional: Add a subtle loading indicator or just render nothing
-    return <div className={isCenteredFullScreen ? "h-20" : "h-16"}></div>; // Reserve space
+    return <div className={isCenteredFullScreen ? "h-24" : "h-20"}></div>; // Reserve space
   }
 
   const containerClasses = isCenteredFullScreen
     ? "min-h-screen flex flex-col items-center justify-center text-center"
-    : "text-center mb-8"; // Center text, add margin bottom if not full screen
+    : "text-center px-4 py-4";
 
   return (
     <div className={containerClasses}>
-      <h1 className="text-6xl font-bold text-primary-black dark:text-primary-white">
-        {time.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
-      </h1>
-      <p className="text-xl text-primary-black dark:text-primary-white opacity-50 font-medium mt-1">
-        embrace discomfort
-      </p>
+      <div className="flex flex-col items-center">
+        <p className="text-gray-600 dark:text-gray-400 font-medium mb-1">
+          {greeting} • {formatDate(time)}
+        </p>
+        
+        <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+          {time.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </h1>
+        
+        <div className="mt-3 max-w-md">
+          <p className="text-lg text-gray-600 dark:text-gray-400 font-medium italic">
+            &#34;{quote}&#34;
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

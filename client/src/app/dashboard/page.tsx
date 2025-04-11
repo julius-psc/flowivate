@@ -5,7 +5,12 @@ import { useDashboard } from "@/context/DashboardContext";
 import { featureComponents } from "@/components/dashboard/features/featureMap";
 import TimeDisplay from "@/components/dashboard/TimeDisplay";
 import Link from "next/link";
-import { IconEyeOff, IconGripVertical } from "@tabler/icons-react";
+import Particles from "@/components/dashboard/recyclable/Particles";
+import {
+  IconEyeOff,
+  IconGripVertical,
+  IconCubePlus,
+} from "@tabler/icons-react";
 import {
   DndContext,
   closestCenter,
@@ -24,10 +29,12 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import Masonry from "react-masonry-css";
 import type { FeatureKey } from "@/components/dashboard/features/featureMap";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const { selectedFeatures, removeFeature, reorderFeatures } = useDashboard();
   const [activeId, setActiveId] = useState<FeatureKey | null>(null);
+  const router = useRouter();
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -55,18 +62,21 @@ export default function Dashboard() {
 
   return (
     <div className="w-full h-full flex-1 flex flex-col">
+      <Particles count={60} speed={0.4} />
+      
       {selectedFeatures.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1">
           <TimeDisplay isCenteredFullScreen={false} />
-          <div className="mt-8 text-center p-6 border border-dashed border-gray-400 dark:border-gray-700 rounded-lg">
-            <p className="text-gray-600 dark:text-gray-400">
-              Your dashboard is empty.
+          <div className="mt-8 flex flex-col items-center justify-center p-8 rounded-lg">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              Your dashboard is empty
             </p>
             <Link
               href="/dashboard/personal"
-              className="text-primary-blue hover:underline mt-2 inline-block"
+              className="flex items-center gap-2 px-6 transition-colors text-primary-white hover:text-primary-black focus:outline-none"
             >
-              Add features
+              <span className="font-medium">Add features</span>
+              <IconCubePlus size={20} />
             </Link>
           </div>
         </div>
@@ -88,8 +98,8 @@ export default function Dashboard() {
             >
               <Masonry
                 breakpointCols={breakpointColumnsObj}
-                className="flex gap-4 p-4"
-                columnClassName="flex flex-col gap-4"
+                className="flex p-4"
+                columnClassName="flex flex-col"
               >
                 {selectedFeatures.map((featureKey) => {
                   const FeatureComponent = featureComponents[featureKey];
@@ -114,6 +124,15 @@ export default function Dashboard() {
               ) : null}
             </DragOverlay>
           </DndContext>
+
+          {selectedFeatures.length > 0 && (
+            <button
+              onClick={() => router.push("/dashboard/personal")}
+              className="absolute bottom-2 right-6 bg-primary-blue text-white rounded-full shadow-lg hover:bg-primary-blue-dark focus:outline-none focus:ring-2 focus:ring-primary-blue focus:ring-offset-1 p-3 flex items-center"
+            >
+              <IconCubePlus size={20} />
+            </button>
+          )}
         </div>
       )}
     </div>
