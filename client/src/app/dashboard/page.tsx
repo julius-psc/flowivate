@@ -193,6 +193,7 @@ function SortableFeature({
       <div className="p-2">
         <FeatureComponent />
       </div>
+
     </div>
   );
 }

@@ -8,7 +8,7 @@ import Mood from "./Mood";
 import Assistant from "./Assistant";
 import Meditation from "./Meditation";
 import Water from "./Water";
-import Books from "./Books";
+import Books from "./books/Books";
 import Sleep from "./Sleep";
 
 // Define the type for the keys of our feature map
