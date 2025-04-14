@@ -1,10 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IconBook2, IconPlus, IconStarFilled, IconX, IconSearch, IconEdit, IconTrash } from "@tabler/icons-react";
+import { EditorContent, useEditor, Editor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import Highlight from '@tiptap/extension-highlight';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { createLowlight } from 'lowlight';
+import typescript from 'highlight.js/lib/languages/typescript';
+import javascript from 'highlight.js/lib/languages/javascript';
+import { SlashCommands } from '../../recyclable/markdown/SlashCommands';
+import { ContextMenu } from '../../recyclable/markdown/ContextMenu';
 
 interface Book {
-  id: string;
+  _id: string;
   title: string;
   author: string;
   status: "not-started" | "in-progress" | "completed";
@@ -12,49 +22,18 @@ interface Book {
   genre?: string;
   notes?: string;
   coverUrl?: string;
-  dateAdded: Date;
-  dateCompleted?: Date;
+  dateAdded: string | Date;
+  dateCompleted?: string | Date;
 }
 
+const lowlight = createLowlight();
+lowlight.register('typescript', typescript);
+lowlight.register('javascript', javascript);
+
 const BookLogger: React.FC = () => {
-  const [books, setBooks] = useState<Book[]>([
-    { 
-      id: "1", 
-      title: "Atomic Habits", 
-      author: "James Clear",
-      status: "completed", 
-      rating: 5,
-      genre: "Self-Help",
-      notes: "Great book about building good habits and breaking bad ones.",
-      dateAdded: new Date('2023-12-10'),
-      dateCompleted: new Date('2024-01-05')
-    },
-    { 
-      id: "2", 
-      title: "The Psychology of Money", 
-      author: "Morgan Housel",
-      status: "in-progress", 
-      genre: "Finance",
-      notes: "Interesting perspectives on how people think about money.",
-      dateAdded: new Date('2024-01-15') 
-    },
-    { 
-      id: "3", 
-      title: "Deep Work", 
-      author: "Cal Newport",
-      status: "not-started", 
-      genre: "Productivity",
-      dateAdded: new Date('2024-02-20') 
-    },
-    { 
-      id: "4", 
-      title: "Designing Data-Intensive Applications", 
-      author: "Martin Kleppmann",
-      status: "not-started", 
-      genre: "Technology",
-      dateAdded: new Date('2024-03-05') 
-    }
-  ]);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -69,6 +48,139 @@ const BookLogger: React.FC = () => {
     notes: "",
     rating: 0
   });
+
+  const slashCommandItems = [
+    {
+      title: 'Heading 1',
+      command: ({ editor }: { editor: Editor }) => {
+        editor.chain().focus().toggleHeading({ level: 1 }).run();
+      },
+      icon: <span className="text-xl font-bold">H1</span>,
+    },
+    {
+      title: 'Heading 2',
+      command: ({ editor }: { editor: Editor }) => {
+        editor.chain().focus().toggleHeading({ level: 2 }).run();
+      },
+      icon: <span className="text-lg font-bold">H2</span>,
+    },
+    {
+      title: 'Heading 3',
+      command: ({ editor }: { editor: Editor }) => {
+        editor.chain().focus().toggleHeading({ level: 3 }).run();
+      },
+      icon: <span className="text-base font-bold">H3</span>,
+    },
+    {
+      title: 'Bullet List',
+      command: ({ editor }: { editor: Editor }) => {
+        editor.chain().focus().toggleBulletList().run();
+      },
+      icon: <span className="text-sm">•</span>,
+    },
+    {
+      title: 'Numbered List',
+      command: ({ editor }: { editor: Editor }) => {
+        editor.chain().focus().toggleOrderedList().run();
+      },
+      icon: <span className="text-sm">1.</span>,
+    },
+    {
+      title: 'Paragraph',
+      command: ({ editor }: { editor: Editor }) => {
+        editor.chain().focus().setParagraph().run();
+      },
+      icon: <span className="text-sm">P</span>,
+    },
+    {
+      title: 'Emoji',
+      command: ({ }: { editor: Editor }) => {
+        // This will be handled in SlashCommands render
+      },
+      icon: <span>😊</span>,
+    },
+  ];
+
+  const notesEditor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        codeBlock: false, 
+      }),
+      Placeholder.configure({
+        placeholder: ({ node }) => {
+          if (node.type.name === 'heading') {
+            return `Heading ${node.attrs.level}`;
+          }
+          if (node.type.name === 'bulletList') {
+            return 'List item';
+          }
+          if (node.type.name === 'orderedList') {
+            return 'List item';
+          }
+          return 'Type $ for commands or start writing your notes...';
+        },
+        showOnlyWhenEditable: true,
+        showOnlyCurrent: true,
+      }),
+      Highlight,
+      CodeBlockLowlight.configure({ lowlight }),
+      SlashCommands(slashCommandItems),
+    ],
+    content: formData.notes || '',
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      setFormData(prev => ({ ...prev, notes: html }));
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose focus:outline-none min-h-[200px] w-full dark:text-primary-white',
+      },
+    },
+    injectCSS: false,
+  });
+
+  // Fetch books on component mount
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  // Update editor content when selected book changes or editing mode changes
+  useEffect(() => {
+    if (notesEditor && isEditing) {
+      notesEditor.commands.setContent(formData.notes || '');
+    }
+  }, [isEditing, formData.notes, notesEditor]);
+
+  const fetchBooks = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/features/books');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch books');
+      }
+      
+      const data = await response.json();
+      setBooks(data.books);
+      setError(null);
+    } catch (err) {
+      setError('Error loading books. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status: Book["status"]) => {
     switch (status) {
@@ -107,6 +219,9 @@ const BookLogger: React.FC = () => {
       notes: "",
       rating: 0
     });
+    if (notesEditor) {
+      notesEditor.commands.setContent('');
+    }
   };
 
   const handleSelectBook = (book: Book) => {
@@ -118,41 +233,83 @@ const BookLogger: React.FC = () => {
     if (selectedBook) {
       setFormData(selectedBook);
       setIsEditing(true);
+      if (notesEditor) {
+        notesEditor.commands.setContent(selectedBook.notes || '');
+      }
     }
   };
 
-  const handleSaveBook = () => {
-    if (isEditing) {
+  const handleSaveBook = async () => {
+    if (!formData.title || !formData.author) {
+      setError('Title and author are required');
+      return;
+    }
+
+    try {
       if (selectedBook) {
         // Update existing book
+        const response = await fetch(`/api/features/books/${selectedBook._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update book');
+        }
+
+        const data = await response.json();
         setBooks(books.map(book => 
-          book.id === selectedBook.id ? { ...book, ...formData } : book
+          book._id === selectedBook._id ? data.book : book
         ));
+        setSelectedBook(data.book);
       } else {
         // Create new book
-        const newBook: Book = {
-          id: Date.now().toString(), // Simple ID generation
-          title: formData.title || "Untitled Book",
-          author: formData.author || "Unknown Author",
-          status: formData.status || "not-started",
-          rating: formData.rating,
-          genre: formData.genre,
-          notes: formData.notes,
-          dateAdded: new Date()
-        };
-        
-        setBooks([...books, newBook]);
-        setSelectedBook(newBook);
+        const response = await fetch('/api/features/books', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to add book');
+        }
+
+        const data = await response.json();
+        setBooks([...books, data.book]);
+        setSelectedBook(data.book);
       }
       setIsEditing(false);
+      setError(null);
+    } catch (err) {
+      setError('Error saving book. Please try again.');
+      console.error(err);
     }
   };
 
-  const handleDeleteBook = () => {
+  const handleDeleteBook = async () => {
     if (selectedBook) {
-      setBooks(books.filter(book => book.id !== selectedBook.id));
-      setSelectedBook(null);
-      setIsEditing(false);
+      try {
+        const response = await fetch(`/api/features/books/${selectedBook._id}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete book');
+        }
+
+        setBooks(books.filter(book => book._id !== selectedBook._id));
+        setSelectedBook(null);
+        setIsEditing(false);
+        setError(null);
+      } catch (err) {
+        setError('Error deleting book. Please try again.');
+        console.error(err);
+      }
     }
   };
 
@@ -170,6 +327,18 @@ const BookLogger: React.FC = () => {
     book.author.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Format date display helper
+  const formatDate = (dateString: string | Date) => {
+    if (!dateString) return "Not specified";
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString();
+  };
+
+  // Render notes content using dangerouslySetInnerHTML
+  const renderNotesContent = (notes: string) => {
+    return { __html: notes };
+  };
+
   return (
     <div className="flex flex-col md:flex-row gap-4 w-full">
       {/* Left Panel - Book List */}
@@ -181,7 +350,7 @@ const BookLogger: React.FC = () => {
             </h3>
             <button 
               onClick={handleAddNewBook}
-              className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md dark:hover:text-gray-100"
+              className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 bg-gray-100 dark:bg-gray-800 px-2 py-1times rounded-md dark:hover:text-gray-100"
             >
               <IconPlus size={14} />
               <span>Add Book</span>
@@ -199,46 +368,61 @@ const BookLogger: React.FC = () => {
           </div>
         </div>
         <div className="max-h-[70vh] overflow-y-auto">
-          <ul className="divide-y divide-gray-200 dark:divide-gray-800">
-            {filteredBooks.map((book) => (
-              <li 
-                key={book.id}
-                onClick={() => handleSelectBook(book)}
-                className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 ${selectedBook?.id === book.id ? 'bg-gray-100 dark:bg-gray-800/70' : ''}`}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${getStatusColor(book.status)}`} title={getStatusLabel(book.status)}></span>
-                      <h4 className="font-medium text-gray-900 dark:text-gray-100">{book.title}</h4>
+          {loading ? (
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              Loading books...
+            </div>
+          ) : error ? (
+            <div className="p-4 text-center text-red-500 dark:text-red-400">
+              {error}
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-200 dark:divide-gray-800">
+              {filteredBooks.length > 0 ? filteredBooks.map((book) => (
+                <li 
+                  key={book._id}
+                  onClick={() => handleSelectBook(book)}
+                  className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 ${selectedBook?._id === book._id ? 'bg-gray-100 dark:bg-gray-800/70' : ''}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${getStatusColor(book.status)}`} title={getStatusLabel(book.status)}></span>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{book.title}</h4>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{book.author}</p>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{book.author}</p>
+                    {book.rating && (
+                      <div className="flex items-center">
+                        <span className="text-amber-500 text-sm mr-1">{book.rating}</span>
+                        <IconStarFilled size={14} className="text-amber-500" />
+                      </div>
+                    )}
                   </div>
-                  {book.rating && (
-                    <div className="flex items-center">
-                      <span className="text-amber-500 text-sm mr-1">{book.rating}</span>
-                      <IconStarFilled size={14} className="text-amber-500" />
-                    </div>
+                  {book.genre && (
+                    <span className="inline-block text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded mt-2">
+                      {book.genre}
+                    </span>
                   )}
-                </div>
-                {book.genre && (
-                  <span className="inline-block text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded mt-2">
-                    {book.genre}
-                  </span>
-                )}
-              </li>
-            ))}
-            {filteredBooks.length === 0 && (
-              <li className="p-4 text-center text-gray-500 dark:text-gray-400">
-                No books found
-              </li>
-            )}
-          </ul>
+                </li>
+              )) : (
+                <li className="p-4 text-center text-gray-500 dark:text-gray-400">
+                  No books found
+                </li>
+              )}
+            </ul>
+          )}
         </div>
       </div>
 
       {/* Right Panel - Book Details / Edit Form */}
       <div className="md:w-2/3 border border-gray-200 dark:border-gray-800/50 bg-white dark:bg-bg-dark rounded-lg p-4">
+        {error && !loading && !isEditing && (
+          <div className="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+        
         {selectedBook && !isEditing ? (
           <div>
             <div className="flex justify-between items-start mb-4">
@@ -298,15 +482,27 @@ const BookLogger: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Date Added</p>
                 <p className="text-gray-900 dark:text-gray-100 mt-1">
-                  {selectedBook.dateAdded.toLocaleDateString()}
+                  {formatDate(selectedBook.dateAdded)}
                 </p>
               </div>
+              
+              {selectedBook.status === "completed" && selectedBook.dateCompleted && (
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Date Completed</p>
+                  <p className="text-gray-900 dark:text-gray-100 mt-1">
+                    {formatDate(selectedBook.dateCompleted)}
+                  </p>
+                </div>
+              )}
             </div>
 
             {selectedBook.notes && (
               <div className="mt-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Notes</p>
-                <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{selectedBook.notes}</p>
+                <div 
+                  className="text-gray-900 dark:text-gray-100 prose prose-sm dark:prose-invert max-w-none" 
+                  dangerouslySetInnerHTML={renderNotesContent(selectedBook.notes)}
+                />
               </div>
             )}
           </div>
@@ -319,6 +515,7 @@ const BookLogger: React.FC = () => {
               <button
                 onClick={() => {
                   setIsEditing(false);
+                  setError(null);
                   if (!selectedBook) setSelectedBook(null);
                 }}
                 className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -326,6 +523,12 @@ const BookLogger: React.FC = () => {
                 <IconX size={18} className="text-gray-600 dark:text-gray-400" />
               </button>
             </div>
+
+            {error && (
+              <div className="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded mb-4">
+                {error}
+              </div>
+            )}
 
             <div className="space-y-4">
               <div>
@@ -401,14 +604,12 @@ const BookLogger: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                <textarea
-                  name="notes"
-                  value={formData.notes || ""}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  placeholder="Your thoughts about this book..."
-                />
+                {notesEditor && (
+                  <div className="border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-white dark:bg-gray-800">
+                    <EditorContent editor={notesEditor} />
+                    {notesEditor && <ContextMenu editor={notesEditor} />}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end">

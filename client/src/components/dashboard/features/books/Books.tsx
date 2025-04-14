@@ -1,51 +1,49 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { IconArrowUpRight, IconBook2 } from "@tabler/icons-react";
 import Link from "next/link";
 
 interface Book {
-  id: string;
+  _id: string;
   title: string;
   author: string;
   status: "not-started" | "in-progress" | "completed";
   coverUrl?: string;
-  dateAdded: Date;
+  dateAdded: string;
 }
 
 const Books: React.FC = () => {
-  // Mock data - in a real app, you would fetch this from your MongoDB
-  const books: Book[] = [
-    { 
-      id: "1", 
-      title: "Atomic Habits", 
-      author: "James Clear",
-      status: "completed", 
-      dateAdded: new Date('2023-12-10') 
-    },
-    { 
-      id: "2", 
-      title: "The Psychology of Money", 
-      author: "Morgan Housel",
-      status: "in-progress", 
-      dateAdded: new Date('2024-01-15') 
-    },
-    { 
-      id: "3", 
-      title: "Deep Work", 
-      author: "Cal Newport",
-      status: "not-started", 
-      dateAdded: new Date('2024-02-20') 
-    },
-    { 
-      id: "4", 
-      title: "Designing Data-Intensive Applications", 
-      author: "Martin Kleppmann",
-      status: "not-started", 
-      dateAdded: new Date('2024-03-05') 
-    }
-  ];
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/features/books");
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch books");
+        }
+        
+        const data = await response.json();
+        setBooks(data.books || []);
+        setError(null);
+      } catch (err) {
+        setError("Error loading books");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
 
   // Get last 4 books
-  const recentBooks = books.slice(-4);
+  const recentBooks = books.slice(0, 4);
 
   const getStatusColor = (status: Book["status"]) => {
     switch (status) {
@@ -73,6 +71,35 @@ const Books: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="w-full p-4 border border-gray-200 dark:border-gray-800/50 bg-white dark:bg-bg-dark rounded-lg">
+        <div className="animate-pulse">
+          <div className="flex justify-between items-center mb-3">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+          </div>
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex justify-between items-center">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full p-4 border border-gray-200 dark:border-gray-800/50 bg-white dark:bg-bg-dark rounded-lg">
+        <div className="text-center text-red-500">{error}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full p-4 border border-gray-200 dark:border-gray-800/50 bg-white dark:bg-bg-dark rounded-lg">
       <div className="flex justify-between items-center mb-3">
@@ -86,32 +113,40 @@ const Books: React.FC = () => {
           </div>
         </Link>
       </div>
-      <ul className="space-y-2">
-        {recentBooks.map((book, index) => (
-          <React.Fragment key={book.id}>
-            <li className="flex items-center justify-between text-sm text-gray-800 dark:text-gray-200">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`w-2 h-2 rounded-full ${getStatusColor(book.status)}`}
-                  title={getStatusLabel(book.status)}
-                ></span>
-                <span className="truncate max-w-[180px]" title={book.title}>
-                  {book.title}
-                </span>
-              </div>
-              <Link href={`/dashboard/books/${book.id}`}>
-                <IconArrowUpRight
-                  size={14}
-                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer"
-                />
-              </Link>
-            </li>
-            {index < recentBooks.length - 1 && (
-              <hr className="border-t border-gray-300 dark:border-gray-800" />
-            )}
-          </React.Fragment>
-        ))}
-      </ul>
+      
+      {recentBooks.length === 0 ? (
+        <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+          No books added yet
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {recentBooks.map((book, index) => (
+            <React.Fragment key={book._id}>
+              <li className="flex items-center justify-between text-sm text-gray-800 dark:text-gray-200">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-2 h-2 rounded-full ${getStatusColor(book.status)}`}
+                    title={getStatusLabel(book.status)}
+                  ></span>
+                  <span className="truncate max-w-[180px]" title={book.title}>
+                    {book.title}
+                  </span>
+                </div>
+                <Link href={`/dashboard/books/${book._id}`}>
+                  <IconArrowUpRight
+                    size={14}
+                    className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer"
+                  />
+                </Link>
+              </li>
+              {index < recentBooks.length - 1 && (
+                <hr className="border-t border-gray-300 dark:border-gray-800" />
+              )}
+            </React.Fragment>
+          ))}
+        </ul>
+      )}
+      
       <div className="mt-3 text-center">
         <Link href="/dashboard/books" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
           View all books

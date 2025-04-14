@@ -11,8 +11,8 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { createLowlight } from 'lowlight';
 import typescript from 'highlight.js/lib/languages/typescript';
 import javascript from 'highlight.js/lib/languages/javascript';
-import { SlashCommands } from './SlashCommands';
-import { ContextMenu } from './ContextMenu';
+import { SlashCommands } from '../../recyclable/markdown/SlashCommands';
+import { ContextMenu } from '../../recyclable/markdown/ContextMenu';
 
 interface JournalProps {
   initialDate?: Date;
