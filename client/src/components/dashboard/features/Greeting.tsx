@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { IconSend2, IconFlameFilled } from "@tabler/icons-react";
 import styles from "../../../stylesheets/Greeting.module.css";
-import ChatPanel from "./ChatPanel";
+import ChatPanel from "./ai/ChatPanel";
 import { motivationalQuotes } from "../../../app/data/quotes";
 
 const Greeting: React.FC = () => {

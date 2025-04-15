@@ -5,7 +5,7 @@ import Tasks from "./Tasks";
 import Pomodoro from "./Pomodoro";
 import Ambient from "./Ambient";
 import Mood from "./Mood";
-import Assistant from "./Assistant";
+import Assistant from "./ai/Assistant";
 import Meditation from "./Meditation";
 import Water from "./Water";
 import Books from "./books/Books";
