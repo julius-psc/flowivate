@@ -6,6 +6,8 @@
   }
 }
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-display: "Sans Pro 3", "sans-serif";
   --color-primary-black: #11151c;
@@ -118,41 +120,48 @@
   height: 0;
 }
 
-/* Base scrollbar styles */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #888 transparent; /* Thumb color, transparent track (light mode default) */
+/* Light Mode Scrollbar with margin */
+::-webkit-scrollbar {
+  width: 10px; /* Slightly wider for better visibility */
+  height: 10px; /* Consistent height for horizontal scrollbars */
 }
 
-/* Webkit scrollbar styles (light mode default) */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
+::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.5); /* Semi-transparent gray for a modern look */
+  border-radius: 10px; /* More rounded corners */
+  border: 2px solid white; /* Creates margin effect in light mode */
+  transition: background-color 0.3s ease; /* Smooth transition for hover effect */
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent; /* No background for the track */
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(128, 128, 128, 0.8); /* Darker on hover */
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #888; /* Light mode thumb color */
-  border-radius: 4px;
+::-webkit-scrollbar-track {
+  background-color: transparent; /* Keeps track transparent */
+  border-radius: 10px; /* Matching radius */
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #555; /* Hover color in light mode */
-}
-
-/* Dark mode adjustments using prefers-color-scheme */
+/* Dark Mode Scrollbar */
 @media (prefers-color-scheme: dark) {
-  .custom-scrollbar {
-    scrollbar-color: #626161 transparent; /* Lighter thumb color for dark mode */
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(240, 240, 240, 0.5); /* Semi-transparent light color */
+    border: 2px solid #121212; /* Creates margin effect in dark mode using a dark background */
   }
 
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #bbb; /* Dark mode thumb color */
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(240, 240, 240, 0.8); /* Lighter on hover */
   }
+}
 
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #ddd; /* Hover color in dark mode */
+/* For Firefox support */
+html {
+  scrollbar-width: thin; /* "thin" or "auto" */
+  scrollbar-color: #808080 transparent; /* thumb and track color */
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    scrollbar-color: #f0f0f0 transparent;
   }
 }

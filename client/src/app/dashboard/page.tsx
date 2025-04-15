@@ -10,7 +10,6 @@ import {
   IconEyeOff,
   IconGripVertical,
   IconCubePlus,
-  IconLoader2,
 } from "@tabler/icons-react";
 import {
   DndContext,
@@ -33,7 +32,7 @@ import type { FeatureKey } from "@/components/dashboard/features/featureMap";
 import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
-  const { selectedFeatures, removeFeature, reorderFeatures, isLoading } = useDashboard();
+  const { selectedFeatures, removeFeature, reorderFeatures } = useDashboard();
   const [activeId, setActiveId] = useState<FeatureKey | null>(null);
   const router = useRouter();
 
@@ -60,14 +59,6 @@ export default function Dashboard() {
     1024: 2,
     640: 1,
   };
-
-  if (isLoading) {
-    return (
-      <div className="w-full h-full flex-1 flex items-center justify-center">
-        <IconLoader2 className="animate-spin text-primary-blue" size={36} />
-      </div>
-    );
-  }
 
   return (
     <div className="w-full h-full flex-1 flex flex-col">
@@ -202,6 +193,7 @@ function SortableFeature({
       <div className="p-2">
         <FeatureComponent />
       </div>
+
     </div>
   );
 }
