@@ -6,6 +6,7 @@ import { featureComponents } from "@/components/dashboard/features/featureMap";
 import TimeDisplay from "@/components/dashboard/TimeDisplay";
 import Link from "next/link";
 import Particles from "@/components/dashboard/recyclable/Particles";
+
 import {
   IconEyeOff,
   IconGripVertical,
@@ -32,6 +33,7 @@ import type { FeatureKey } from "@/components/dashboard/features/featureMap";
 import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
+
   const { selectedFeatures, removeFeature, reorderFeatures } = useDashboard();
   const [activeId, setActiveId] = useState<FeatureKey | null>(null);
   const router = useRouter();

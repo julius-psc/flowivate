@@ -17,6 +17,7 @@ import {
   IconFocus,
   IconClock,
   IconBellOff,
+  IconBook
 } from "@tabler/icons-react";
 import logo from "../../../assets/brand/logo-v1.4.png";
 
@@ -54,6 +55,7 @@ const Sidebar: React.FC = () => {
     { name: "Home", icon: IconLayoutDashboard, path: "/dashboard" },
     { name: "Personal", icon: IconStack2, path: "/dashboard/personal" },
     { name: "Journal", icon: IconNotes, path: "/dashboard/journal" },
+    { name: "Books", icon: IconBook, path: "/dashboard/books" },
   ];
 
   // Fetch initial status

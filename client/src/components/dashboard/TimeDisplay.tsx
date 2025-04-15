@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useSession } from "next-auth/react";
 
 interface TimeDisplayProps {
   isCenteredFullScreen?: boolean;
@@ -13,6 +14,9 @@ export default function TimeDisplay({
 }: TimeDisplayProps) {
   const [time, setTime] = useState<Date | null>(null);
   const [greeting, setGreeting] = useState<string>("");
+
+    const { data: session } = useSession();
+    const username = session?.user?.username || "User";
 
   useEffect(() => {
     // Set initial time immediately on client mount
@@ -58,7 +62,7 @@ export default function TimeDisplay({
     <div className={containerClasses}>
       <div className="flex flex-col items-center">
         <p className="text-gray-600 dark:text-gray-400 font-medium mb-1">
-          {greeting} • {formatDate(time)}
+          {greeting}, {username} • {formatDate(time)}
         </p>
         
         <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
