@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 export default function Sleep() {
   const [sleepHours, setSleepHours] = useState(8);
   const [weeklySleep, setWeeklySleep] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { data: session, status } = useSession();
 
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
@@ -82,7 +82,40 @@ export default function Sleep() {
     return { height: "10px", colorClass: "bg-gray-500" };
   };
 
-  if (status === "loading") return <div>Loading session...</div>;
+  // Skeleton Loader
+  if (loading || status === "loading") {
+    return (
+      <div className="bg-white border border-gray-200 dark:border-gray-800/50 dark:bg-bg-dark rounded-lg p-6 h-full w-full">
+        <div className="animate-pulse">
+          <div className="flex justify-between items-center mb-8">
+            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+          </div>
+          <div className="flex items-center justify-center mb-8">
+            <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="w-12 h-8 bg-gray-200 dark:bg-gray-700 rounded mx-4"></div>
+            <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
+          <div className="flex flex-col mx-24 pb-5">
+            <div className="h-20 flex justify-around items-end">
+              {[...Array(7)].map((_, index) => (
+                <div key={index} className="w-2 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              ))}
+            </div>
+            <div className="flex justify-around items-center mt-2">
+              {[...Array(7)].map((_, index) => (
+                <div key={index} className="w-5 h-3 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-center">
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!session) return <div>Please sign in to track your sleep</div>;
 
   return (
@@ -120,25 +153,21 @@ export default function Sleep() {
 
       <div className="flex flex-col mx-24 pb-5">
         <div className="h-20 flex justify-around items-center">
-          {loading ? (
-            <p className="text-white">Loading sleep data...</p>
-          ) : (
-            weeklySleep.map((value, index) => {
-              const { height, colorClass } = getSleepBarStyle(value);
-              return (
-                <div key={index} className="flex flex-col items-center">
-                  {value === 0 ? (
-                    <div className={`h-2.5 w-2.5 rounded-full opacity-20 ${colorClass}`}></div>
-                  ) : (
-                    <div
-                      className={`w-2 rounded-lg ${colorClass}`}
-                      style={{ height }}
-                    ></div>
-                  )}
-                </div>
-              );
-            })
-          )}
+          {weeklySleep.map((value, index) => {
+            const { height, colorClass } = getSleepBarStyle(value);
+            return (
+              <div key={index} className="flex flex-col items-center">
+                {value === 0 ? (
+                  <div className={`h-2.5 w-2.5 rounded-full opacity-20 ${colorClass}`}></div>
+                ) : (
+                  <div
+                    className={`w-2 rounded-lg ${colorClass}`}
+                    style={{ height }}
+                  ></div>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div className="flex justify-around items-center">
           {dayLabels.map((day, index) => (

@@ -166,9 +166,36 @@ const MoodPicker: React.FC = () => {
     setShowInsights(!showInsights);
   };
 
-  if (status === "loading") return <div>Loading session...</div>;
+  // Skeleton Loader
+  if (loading || status === "loading") {
+    return (
+      <div className="bg-white dark:bg-bg-dark rounded-lg p-6 w-full h-full border border-gray-200 dark:border-gray-800/50">
+        <div className="animate-pulse">
+          <div className="flex justify-between items-center mb-8">
+            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+            <div className="flex items-center gap-4">
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+            </div>
+          </div>
+          <div className="flex justify-between mb-10">
+            {Array(7).fill(null).map((_, index) => (
+              <div key={index} className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-center items-center gap-4">
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!session) return <div>Please sign in to track your mood</div>;
-  if (loading) return <div>Loading mood history...</div>;
 
   if (showInsights) {
     return <MoodInsights moodHistory={moodHistory} onBack={handleToggleInsights} />;

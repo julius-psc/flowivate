@@ -78,7 +78,7 @@ const Tasks: React.FC = () => {
     const categoryId = categories[categoryIndex]._id;
     const updatedCategories = [...categories];
     updatedCategories.splice(categoryIndex, 1);
-    setCategories(updatedCategories); // Optimistic update
+    setCategories(updatedCategories);
     try {
       const res = await fetch("/api/features/tasks", {
         method: "DELETE",
@@ -89,14 +89,14 @@ const Tasks: React.FC = () => {
       if (!res.ok) throw new Error("Failed to delete category");
     } catch (error) {
       console.error("Error deleting category:", error);
-      setCategories(categories); // Rollback on failure
+      setCategories(categories);
     }
   };
 
   const deleteTask = async (categoryIndex: number, taskIndex: number) => {
     const updatedCategories = [...categories];
     updatedCategories[categoryIndex].tasks.splice(taskIndex, 1);
-    setCategories(updatedCategories); // Optimistic update
+    setCategories(updatedCategories);
     try {
       const res = await fetch("/api/features/tasks", {
         method: "PUT",
@@ -110,7 +110,7 @@ const Tasks: React.FC = () => {
       if (!res.ok) throw new Error("Failed to update tasks");
     } catch (error) {
       console.error("Error deleting task:", error);
-      setCategories(categories); // Rollback on failure
+      setCategories(categories);
     }
   };
 
@@ -131,7 +131,7 @@ const Tasks: React.FC = () => {
       const newTask = { name: value.trim(), completed: false };
       updatedCategories[categoryIndex].tasks.push(newTask);
       updatedCategories[categoryIndex].isAddingTask = false;
-      setCategories(updatedCategories); // Optimistic update
+      setCategories(updatedCategories);
       try {
         const res = await fetch("/api/features/tasks", {
           method: "PUT",
@@ -145,7 +145,7 @@ const Tasks: React.FC = () => {
         if (!res.ok) throw new Error("Failed to save task");
       } catch (error) {
         console.error("Error saving task:", error);
-        setCategories(categories); // Rollback on failure
+        setCategories(categories);
       }
     }
   };
@@ -157,7 +157,7 @@ const Tasks: React.FC = () => {
     const updatedCategories = [...categories];
     updatedCategories[categoryIndex].tasks[taskIndex].completed =
       !updatedCategories[categoryIndex].tasks[taskIndex].completed;
-    setCategories(updatedCategories); // Optimistic update
+    setCategories(updatedCategories);
     try {
       const res = await fetch("/api/features/tasks", {
         method: "PUT",
@@ -171,7 +171,7 @@ const Tasks: React.FC = () => {
       if (!res.ok) throw new Error("Failed to update task completion");
     } catch (error) {
       console.error("Error toggling task completion:", error);
-      setCategories(categories); // Rollback on failure
+      setCategories(categories);
     }
   };
 
@@ -181,9 +181,45 @@ const Tasks: React.FC = () => {
     return `${completedTasks}/${totalTasks}`;
   };
 
-  if (status === "loading") return <div>Loading session...</div>;
+  // Skeleton Loader
+  if (loading || status === "loading") {
+    return (
+      <div className="p-4 bg-white dark:bg-bg-dark rounded-lg border border-gray-200 dark:border-gray-800/50 flex flex-col">
+        <div className="animate-pulse">
+          <div className="flex justify-end mb-6">
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+          </div>
+          <div className="space-y-8">
+            {[1, 2].map((category) => (
+              <div key={category}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                  <div className="flex-1 mx-3 border-t border-gray-200 dark:border-gray-800"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-10"></div>
+                </div>
+                <div className="space-y-3">
+                  {[1, 2, 3].map((task) => (
+                    <div
+                      key={task}
+                      className="flex items-center p-3 bg-white dark:bg-transparent rounded-lg border border-gray-100 dark:border-gray-800"
+                    >
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5 mr-3"></div>
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 p-3 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!session) return <div>Please sign in to view tasks</div>;
-  if (loading) return <div>Loading tasks...</div>;
 
   return (
     <div className="p-4 bg-white dark:bg-bg-dark rounded-lg relative border border-gray-200 dark:border-gray-800/50 flex flex-col">
