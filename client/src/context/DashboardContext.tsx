@@ -1,29 +1,77 @@
 "use client";
 
-import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
-import { FeatureKey } from '@/components/dashboard/features/featureMap'; // Adjust path if needed
+import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
+import { FeatureKey } from '@/components/dashboard/features/featureMap';
 
-// Define the context type, including the new reorder function
 interface DashboardContextType {
   selectedFeatures: FeatureKey[];
   addFeature: (featureKey: FeatureKey) => void;
   removeFeature: (featureKey: FeatureKey) => void;
   isFeatureSelected: (featureKey: FeatureKey) => boolean;
-  reorderFeatures: (startIndex: number, endIndex: number) => void; // Added for reordering
+  reorderFeatures: (startIndex: number, endIndex: number) => void;
+  isLoading: boolean;
 }
 
-// Create the context
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
-// Create the provider component
 interface DashboardProviderProps {
   children: ReactNode;
 }
 
 export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }) => {
   const [selectedFeatures, setSelectedFeatures] = useState<FeatureKey[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Add a feature (no changes)
+  // Load layout from API when component mounts
+  useEffect(() => {
+    const loadLayout = async () => {
+      try {
+        const response = await fetch('/api/layout', {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setSelectedFeatures(data.features || []);
+        } else {
+          console.error('Failed to load layout:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error loading layout:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadLayout();
+  }, []);
+
+  // Save layout whenever selectedFeatures changes
+  useEffect(() => {
+    // Skip saving during initial load
+    if (isLoading) return;
+    
+    const saveLayout = async () => {
+      try {
+        await fetch('/api/layout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ features: selectedFeatures }),
+          credentials: 'include',
+        });
+      } catch (error) {
+        console.error('Error saving layout:', error);
+      }
+    };
+
+    // Debounce the save operation to prevent too many requests
+    const timeout = setTimeout(saveLayout, 500);
+    
+    return () => clearTimeout(timeout);
+  }, [selectedFeatures, isLoading]);
+
   const addFeature = useCallback((featureKey: FeatureKey) => {
     setSelectedFeatures((prevFeatures) => {
       if (prevFeatures.includes(featureKey)) {
@@ -33,35 +81,32 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
     });
   }, []);
 
-  // Remove a feature (no changes)
   const removeFeature = useCallback((featureKey: FeatureKey) => {
     setSelectedFeatures((prevFeatures) =>
       prevFeatures.filter((key) => key !== featureKey)
     );
   }, []);
 
-  // Check if a feature is selected (no changes)
   const isFeatureSelected = useCallback((featureKey: FeatureKey) => {
-      return selectedFeatures.includes(featureKey);
+    return selectedFeatures.includes(featureKey);
   }, [selectedFeatures]);
 
-  // --- New Function: Reorder Features ---
   const reorderFeatures = useCallback((startIndex: number, endIndex: number) => {
     setSelectedFeatures((prevFeatures) => {
-      const result = Array.from(prevFeatures); // Create a new array copy
-      const [removed] = result.splice(startIndex, 1); // Remove the item from the start index
-      result.splice(endIndex, 0, removed); // Insert the item at the end index
-      return result; // Update state with the new ordered array
+      const result = Array.from(prevFeatures);
+      const [removed] = result.splice(startIndex, 1);
+      result.splice(endIndex, 0, removed);
+      return result;
     });
-  }, []); // No dependencies needed as it only uses the state setter
+  }, []);
 
-  // Value provided by the context
   const value = {
-      selectedFeatures,
-      addFeature,
-      removeFeature,
-      isFeatureSelected,
-      reorderFeatures // Include the reorder function
+    selectedFeatures,
+    addFeature,
+    removeFeature,
+    isFeatureSelected,
+    reorderFeatures,
+    isLoading
   };
 
   return (
@@ -71,7 +116,6 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
   );
 };
 
-// Custom hook for using the context (no changes)
 export const useDashboard = (): DashboardContextType => {
   const context = useContext(DashboardContext);
   if (context === undefined) {
