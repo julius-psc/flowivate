@@ -13,6 +13,7 @@
   --color-primary-blue: #0075C4;
   --color-primary-blue-hover: #105C8E; /* Hover */
   --color-primary-blue-ring: #114162;
+  --color-primary-bluelight: #BADEF6;
 
   --color-secondary-black: #141618;
   --color-secondary-black-hover: #020202;
@@ -20,12 +21,16 @@
   --color-secondary-white: #FCFDFF;
   
   --color-accent-grey: #D3D5D7;
-  --color-accent-grey-hover: #515458; /* Hover */
+  --color-accent-grey-hover: #515458;  /* Hover */
+  --color-accent-lightgrey: #DEE2E7;
 
   --color-third-green: #4ED454;
   --color-third-yellow: #FFC107;
   --color-third-red: #FF3D00;
   --color-third-blue: #0494F5;
+
+  --color-bdr-light: #DEE2E7;
+  --color-bdr-dark: #394046;
 }
 
 @layer utilities {
