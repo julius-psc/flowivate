@@ -1,6 +1,8 @@
 import NextAuth, { NextAuthOptions, Session, User } from "next-auth";
 import { JWT, JWT as JWTType } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GitHubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import clientPromise from "@/lib/mongodb";
 import bcrypt from "bcrypt";
@@ -13,6 +15,7 @@ declare module "next-auth" {
       id: string;
       email?: string | null;
       username?: string | null;
+      image?: string | null;
     };
   }
 }
@@ -28,6 +31,14 @@ declare module "next-auth/jwt" {
 export const authOptions: NextAuthOptions = {
   adapter: MongoDBAdapter(clientPromise),
   providers: [
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET!
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -79,10 +90,46 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user }: { token: JWTType; user?: User }): Promise<JWTType> {
+    async jwt({ token, user, account }: { token: JWTType; user?: User; account?: Record<string, unknown> | null }): Promise<JWTType> {
+      // Initial sign in
       if (user) {
         token.id = user.id;
-        token.username = (user as { id: string; username?: string }).username; // Add username to the token
+        
+        // For social logins, create a username if one doesn't exist
+        if (account && (account.provider === 'github' || account.provider === 'google')) {
+          // Check if user already has a username in our database
+          const client: MongoClient = await clientPromise;
+          const db = client.db("Flowivate");
+          
+          const dbUser = await db.collection("users").findOne({ email: user.email });
+          
+          if (dbUser && dbUser.username) {
+            token.username = dbUser.username;
+          } else {
+            // Create a username based on email or name
+            let username = user.email?.split('@')[0] || '';
+            
+            // Make sure username is unique
+            const existingUser = await db.collection("users").findOne({ username });
+            if (existingUser) {
+              // Append random string if username already exists
+              username = `${username}${Math.floor(Math.random() * 1000)}`;
+            }
+            
+            // Update user with username if they don't have one
+            if (dbUser && !dbUser.username) {
+              await db.collection("users").updateOne(
+                { _id: new ObjectId(dbUser._id) },
+                { $set: { username } }
+              );
+            }
+            
+            token.username = username;
+          }
+        } else {
+          token.username = (user as { id: string; username?: string }).username;
+        }
+        
         console.log("JWT callback - Token after adding user data:", token);
       }
       return token;

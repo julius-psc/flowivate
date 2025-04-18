@@ -22,6 +22,25 @@ export async function POST(request: Request) {
     const existingUser = await db.collection("users").findOne({
       $or: [{ email }, { username }],
     });
+    
+    // If user exists by email but doesn't have a password (social login only)
+    if (existingUser && !existingUser.password) {
+      // Update the existing social user with password and username
+      await db.collection("users").updateOne(
+        { _id: existingUser._id },
+        { 
+          $set: {
+            username,
+            password: hashedPassword,
+            updatedAt: new Date()
+          }
+        }
+      );
+      
+      return NextResponse.json({ message: "Account updated successfully" }, { status: 200 });
+    }
+    
+    // If user already exists with password or username conflict
     if (existingUser) {
       return NextResponse.json(
         { error: "User with this email or username already exists" },

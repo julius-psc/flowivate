@@ -10,18 +10,22 @@
 
 @theme {
   --font-display: "Sans Pro 3", "sans-serif";
-  --color-primary-black: #11151c;
-  --color-primary-black-dark: #272d35; /* Hover */
-  --color-primary-blue: #3A6EC8;
-  --color-primary-blue-dark: #2E589F; /* Hover */
-  --color-primary-red: #ED6D68;
-  --color-primary-red-dark: #C75954; /* Hover */
-  --color-primary-white: #F6F6F6;
-  --color-primary-green: #48AC5C;
-  --color-primary-green-dark: #3A8A4A; /* Hover */
-  --color-secondary-white: #E8E8E8;
-  --color-bg-light: #F7FAFC; /* Light mode background */
-  --color-bg-dark: #0f1520;  /* Dark mode background */
+  --color-primary-blue: #0075C4;
+  --color-primary-blue-hover: #105C8E; /* Hover */
+  --color-primary-blue-ring: #114162;
+
+  --color-secondary-black: #141618;
+  --color-secondary-black-hover: #020202;
+
+  --color-secondary-white: #FCFDFF;
+  
+  --color-accent-grey: #D3D5D7;
+  --color-accent-grey-hover: #515458; /* Hover */
+
+  --color-third-green: #4ED454;
+  --color-third-yellow: #FFC107;
+  --color-third-red: #FF3D00;
+  --color-third-blue: #0494F5;
 }
 
 @layer utilities {
