@@ -3,6 +3,15 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 
+function getWeekNumber(date: Date) {
+  const target = new Date(date.valueOf());
+  const dayNr = (date.getDay() + 6) % 7;
+  target.setDate(target.getDate() - dayNr + 3);
+  const firstThursday = new Date(target.getFullYear(), 0, 4);
+  const diff = target.getTime() - firstThursday.getTime();
+  return 1 + Math.round(diff / (7 * 24 * 3600 * 1000));
+}
+
 export default function Sleep() {
   const [sleepHours, setSleepHours] = useState(8);
   const [weeklySleep, setWeeklySleep] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
@@ -10,7 +19,7 @@ export default function Sleep() {
   const { data: session, status } = useSession();
 
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
-  const currentDayIndex = (new Date().getDay() + 6) % 7; // Convert Sunday (0) to 6, Monday (1) to 0, etc.
+  const currentDayIndex = (new Date().getDay() + 6) % 7;
 
   useEffect(() => {
     const fetchSleepData = async () => {
@@ -23,17 +32,23 @@ export default function Sleep() {
         });
         if (!res.ok) throw new Error("Failed to fetch sleep data");
         const data = await res.json();
-        
+
         const sleepArray = Array(7).fill(0);
         const now = new Date();
+        const currentWeek = getWeekNumber(now);
+        const currentYear = now.getFullYear();
+
         data.forEach((entry: { hours: number; timestamp: string }) => {
           const entryDate = new Date(entry.timestamp);
-          const daysDiff = Math.floor((now.getTime() - entryDate.getTime()) / (1000 * 3600 * 24));
-          if (daysDiff >= 0 && daysDiff < 7) {
-            const position = (currentDayIndex - daysDiff + 7) % 7;
-            sleepArray[position] = entry.hours;
+          const entryWeek = getWeekNumber(entryDate);
+          const entryYear = entryDate.getFullYear();
+
+          if (entryWeek === currentWeek && entryYear === currentYear) {
+            const dayIndex = (entryDate.getDay() + 6) % 7;
+            sleepArray[dayIndex] = entry.hours;
           }
         });
+
         setWeeklySleep(sleepArray);
       } catch (error) {
         console.error("Failed to fetch sleep data:", error);
@@ -41,8 +56,9 @@ export default function Sleep() {
         setLoading(false);
       }
     };
+
     fetchSleepData();
-  }, [session, status, currentDayIndex]);
+  }, [session, status]);
 
   const handleIncrement = () => {
     if (sleepHours < 12) setSleepHours(sleepHours + 1);
@@ -82,7 +98,6 @@ export default function Sleep() {
     return { height: "10px", colorClass: "bg-gray-500" };
   };
 
-  // Skeleton Loader
   if (loading || status === "loading") {
     return (
       <div className="bg-white border border-gray-200 dark:border-gray-800/50 dark:bg-bg-dark rounded-lg p-6 h-full w-full">
