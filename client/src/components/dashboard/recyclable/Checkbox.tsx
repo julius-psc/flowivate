@@ -5,9 +5,9 @@ import React from 'react';
 interface CheckboxProps {
   checked: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  label: string; // Kept original label prop
+  label: string;
   disabled?: boolean;
-  variant?: 'default' | 'subtask'; // Added variant prop
+  variant?: 'default' | 'subtask';
 }
 
 const Checkbox: React.FC<CheckboxProps> = ({
@@ -15,39 +15,37 @@ const Checkbox: React.FC<CheckboxProps> = ({
   onChange,
   label,
   disabled = false,
-  variant = 'default' // Default to 'default' (blue)
+  variant = 'default'
 }) => {
 
-  // Define color classes based on variant
-  // Original blue colors
+  // Updated blue palette - more cohesive and slightly softer
   const defaultColors = `
-    border-[#3A6EC8] dark:border-[#4F8EDB]
-    ${checked ? 'bg-[#2A4E8F] dark:bg-[#3A6EC8]' : 'bg-transparent'}
-    peer-focus:ring-[#3a6ec865] dark:peer-focus:ring-[#4f8edb65]
-    group-hover:border-[#5B8CEB] dark:group-hover:border-[#6FA5F5]
-    ${disabled ? 'group-hover:border-[#3A6EC8] dark:group-hover:border-[#4F8EDB]' : ''}
+    border-[#4675D5] dark:border-[#5B8AE5]
+    ${checked ? 'bg-[#3B68C2] dark:bg-[#4675D5]' : 'bg-transparent'}
+    peer-focus:ring-[#4675D580] dark:peer-focus:ring-[#5B8AE580]
+    group-hover:border-[#6B9AF0] dark:group-hover:border-[#7BACFF]
+    ${disabled ? 'group-hover:border-[#4675D5] dark:group-hover:border-[#5B8AE5]' : ''}
   `;
-  // Pink variant colors
+  
+  // Updated pink palette - more vibrant but balanced
   const subtaskColors = `
-    border-pink-400 dark:border-pink-500
-    ${checked ? 'bg-pink-500 dark:bg-pink-600' : 'bg-transparent'}
-    peer-focus:ring-pink-300/70 dark:peer-focus:ring-pink-400/50
-    group-hover:border-pink-500 dark:group-hover:border-pink-400
-    ${disabled ? 'group-hover:border-pink-400 dark:group-hover:border-pink-500' : ''}
+    border-[#E56BBF] dark:border-[#F07DD0]
+    ${checked ? 'bg-[#D04FAF] dark:bg-[#E56BBF]' : 'bg-transparent'}
+    peer-focus:ring-[#E56BBF80] dark:peer-focus:ring-[#F07DD080]
+    group-hover:border-[#F383CF] dark:group-hover:border-[#FF9AE2]
+    ${disabled ? 'group-hover:border-[#E56BBF] dark:group-hover:border-[#F07DD0]' : ''}
   `;
 
   return (
-    // Original label wrapper structure
     <label className="flex items-center cursor-pointer select-none group">
       <input
         type="checkbox"
         checked={checked}
-        onChange={onChange} // Directly use the passed onChange handler
+        onChange={onChange}
         disabled={disabled}
-        className="absolute opacity-0 w-0 h-0 peer" // Original hidden input
-        aria-labelledby={`checkbox-label-${label.replace(/\s+/g, '-')}`} // Link input to label text for accessibility
+        className="absolute opacity-0 w-0 h-0 peer"
+        aria-labelledby={`checkbox-label-${label.replace(/\s+/g, '-')}`}
       />
-      {/* Original visual span - applies variant colors */}
       <span
         className={`
           relative inline-block w-5 h-5 mr-3 flex-shrink-0
@@ -57,21 +55,19 @@ const Checkbox: React.FC<CheckboxProps> = ({
           ${variant === 'subtask' ? subtaskColors : defaultColors}
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
-        aria-hidden="true" // Hide visual element from screen readers
+        aria-hidden="true"
       >
-        {/* Original checkmark span */}
         {checked && (
           <span className="absolute top-[2px] left-[6px] w-1 h-2.5 border-r-2 border-b-2 border-white transform rotate-45" />
         )}
       </span>
-      {/* Original label text span */}
       <span
-        id={`checkbox-label-${label.replace(/\s+/g, '-')}`} // ID for aria-labelledby
+        id={`checkbox-label-${label.replace(/\s+/g, '-')}`}
         className={`text-base text-[#777777] dark:text-gray-400 ${
           checked ? 'line-through text-gray-400 dark:text-gray-500' : ''
         }`}
       >
-        {label} {/* Use the label prop */}
+        {label}
       </span>
     </label>
   );
