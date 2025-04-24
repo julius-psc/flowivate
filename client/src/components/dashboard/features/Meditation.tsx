@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { IconWind, IconChevronLeft } from '@tabler/icons-react';
+import { motion } from 'framer-motion';
 
 // Separate component for the breath message to avoid re-rendering
 const BreathMessage = React.memo(({ phase }: { phase: string }) => {
@@ -165,12 +166,16 @@ const Meditation = () => {
   };
 
   return (
-    <div className="flex flex-col w-full h-full items-center bg-white dark:bg-bg-dark border border-gray-200 dark:border-gray-800/50 rounded-lg p-4">
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+      {/* Header Section */}
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
+        <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">BREATHING</h1>
+      </div>
       {!isMeditating ? (
         <div className="flex flex-col items-center gap-6 py-8 w-full">
           <div className="flex flex-col items-center gap-2">
             <div className="relative flex items-center justify-center w-12 h-12">
-              <div className="absolute w-12 h-12 rounded-full bg-primary-white dark:bg-primary-black-dark" />
+              <div className="absolute w-12 h-12 rounded-full bg-secondary-white dark:bg-primary-black-dark" />
               <IconWind className="w-6 h-6 text-primary-black dark:text-white z-10" />
             </div>
             <h3 className="text-lg font-medium text-primary-black dark:text-white">Mindful Breathing</h3>
@@ -183,15 +188,18 @@ const Meditation = () => {
               <button
                 key={time.label}
                 onClick={() => startMeditation(time.seconds)}
-                className="w-full max-w-[180px] px-3 py-2 bg-primary-black dark:bg-primary-black-dark text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-600"
+                className="w-full max-w-[220px] px-4 py-3 flex items-center justify-between bg-secondary-black dark:bg-secondary-white text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-600"
               >
-                {time.label}
+                <span>{time.label}</span>
+                <span className="text-xs opacity-70">
+                  {time.pattern.map(p => p.phase.split('-')[0].charAt(0).toUpperCase()).join(' · ')}
+                </span>
               </button>
             ))}
           </div>
         </div>
       ) : (
-        <div className="flex w-full h-full flex-col items-center justify-between  ">
+        <div className="flex w-full h-full flex-col items-center justify-between">
           <button
             onClick={exitSession}
             className="self-start p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -199,28 +207,42 @@ const Meditation = () => {
             <IconChevronLeft className="w-5 h-5 text-primary-black dark:text-white" />
           </button>
           
-          <div className="flex-1 flex items-center justify-center">
-            <div 
-              className="relative flex items-center justify-center transition-transform duration-1000 ease-in-out"
-              style={{
-                transform: shouldScale && breathProgress !== undefined 
-                  ? `scale(${1 + breathProgress * 0.5})` 
-                  : 'scale(1)', // Scales from 1 to 1.5
-                width: '80px',
-                height: '80px',
-              }}
-            >
-              <div 
-                className="absolute rounded-full bg-blue-100 dark:bg-blue-900 opacity-50 transition-all duration-1000 ease-in-out"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  transform: shouldScale && breathProgress !== undefined 
-                    ? `scale(${1 + breathProgress * 0.5})` 
-                    : 'scale(1)',
+          <div className="flex-1 flex items-center justify-center my-8">
+            <div className="relative flex items-center justify-center w-44 h-44">
+              {/* Main breathing circle with framer motion */}
+              <motion.div 
+                className="absolute rounded-full bg-blue-100 dark:bg-blue-900/50"
+                initial={{ scale: 0.5 }} // Start with small circle
+                animate={{
+                  scale: shouldScale ? 
+                    (breathPhase === 'exhale' || breathPhase === 'hold-exhale' ? 
+                      0.5 + (breathProgress * 0.8) : // More dramatic scale down during exhale
+                      0.5 + (breathProgress * 0.9)) : // Start from 0.5 and grow to 1.4 for inhale
+                    (breathPhase === 'hold-exhale' ? 0.5 : 1.4) // Fixed values for hold states
                 }}
+                transition={{
+                  duration: 1,
+                  ease: "easeInOut"
+                }}
+                style={{ width: '100%', height: '100%' }}
               />
-              <IconWind className="w-6 h-6 text-blue-500 dark:text-blue-300 z-10" />
+              
+              {/* Center icon with subtle animation */}
+              <motion.div
+                className="relative z-10 bg-white dark:bg-bg-dark rounded-full p-3"
+                initial={{ scale: 0.85 }} // Small initial scale
+                animate={{
+                  scale: shouldScale ? 
+                    0.85 + (breathProgress * 0.2) : // Subtle scale for the icon
+                    (breathPhase === 'hold-exhale' ? 0.85 : 1.05) // Fixed values for hold states
+                }}
+                transition={{
+                  duration: 1,
+                  ease: "easeInOut"
+                }}
+              >
+                <IconWind className="w-6 h-6 text-blue-500 dark:text-blue-300" />
+              </motion.div>
             </div>
           </div>
           

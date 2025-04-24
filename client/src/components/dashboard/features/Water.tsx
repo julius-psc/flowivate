@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Plus, Minus } from "lucide-react";
-import { IconDropletFilled } from "@tabler/icons-react";
+import { IconBucketDroplet } from "@tabler/icons-react";
 
 const Water = () => {
   const [waterAmount, setWaterAmount] = useState(0);
@@ -142,14 +142,14 @@ const Water = () => {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 bg-white dark:bg-bg-dark rounded-lg w-full max-w-md mx-auto border border-gray-200 dark:border-gray-800/50">
-      {/* Header with water icon and amount */}
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+      {/* Header Section */}
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
+        <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">WATER INTAKE</h1>
+      </div>
       <div className="flex flex-col items-center mb-6">
         <div className="relative mb-3">
-          <IconDropletFilled className="w-10 h-10 text-primary-blue dark:text-primary-blue" />
-          <div className="absolute -bottom-1 -right-1 bg-primary-blue dark:bg-primary-blue text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-            +
-          </div>
+          <IconBucketDroplet className="w-10 h-10 text-primary-blue dark:text-primary-blue" />
         </div>
         <div className="text-center">
           <span className="text-3xl font-bold text-gray-800 dark:text-white">{waterAmount}</span>
