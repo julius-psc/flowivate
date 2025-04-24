@@ -91,7 +91,7 @@ export default function Sleep() {
   };
 
   const getSleepBarStyle = (value: number | null) => {
-    if (!value) return { height: "10px", colorClass: "bg-primary-black-dark" };
+    if (!value) return { height: "10px", colorClass: "bg-secondary-black" };
     if (value >= 8) return { height: "70px", colorClass: "bg-primary-blue" };
     if (value >= 4) return { height: "40px", colorClass: "bg-primary-blue" };
     if (value >= 1) return { height: "20px", colorClass: "bg-primary-blue" };
@@ -134,19 +134,12 @@ export default function Sleep() {
   if (!session) return <div>Please sign in to track your sleep</div>;
 
   return (
-    <div className="bg-white border border-gray-200 dark:border-gray-800/50 dark:bg-bg-dark rounded-lg p-6 h-full w-full">
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+    {/* Header Section */}
+    <div className="flex justify-between items-center mb-4 flex-shrink-0">
+      <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">SLEEP</h1>
+    </div>
       <div className="">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-lg font-normal text-gray-800 dark:text-gray-100">
-            How much did you sleep?
-          </h2>
-          <div className="flex items-center gap-4">
-            <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              My sleep
-            </span>
-          </div>
-        </div>
-
         <div className="flex items-center justify-center">
           <button
             onClick={handleDecrement}
@@ -154,7 +147,7 @@ export default function Sleep() {
           >
             -
           </button>
-          <p className="text-primary-black dark:text-primary-white font-medium text-2xl mx-1.5 my-1">
+          <p className="text-secondary-black dark:text-secondary-white font-medium text-2xl mx-1.5 my-1">
             {sleepHours}
           </p>
           <button
@@ -198,7 +191,7 @@ export default function Sleep() {
 
       <div className="flex justify-center">
         <button
-          className="dark:bg-primary-black-dark text-primary-black dark:text-primary-white mx-2.5 px-6 py-2 rounded-full text-sm font-normal transition-colors duration-200"
+          className="dark:bg-secondary-black bg-secondary-white  dark:text-secondary-white mx-2.5 px-6 py-2 rounded-full text-sm font-normal transition-colors duration-200"
           onClick={handleSave}
         >
           Log sleep

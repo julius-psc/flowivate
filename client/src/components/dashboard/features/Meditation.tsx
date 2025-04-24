@@ -175,8 +175,8 @@ const Meditation = () => {
         <div className="flex flex-col items-center gap-6 py-8 w-full">
           <div className="flex flex-col items-center gap-2">
             <div className="relative flex items-center justify-center w-12 h-12">
-              <div className="absolute w-12 h-12 rounded-full bg-secondary-white dark:bg-primary-black-dark" />
-              <IconWind className="w-6 h-6 text-primary-black dark:text-white z-10" />
+              <div className="absolute w-12 h-12 rounded-full bg-secondary-white dark:bg-secondary-black" />
+              <IconWind className="w-6 h-6 text-secondary-black dark:text-white z-10" />
             </div>
             <h3 className="text-lg font-medium text-primary-black dark:text-white">Mindful Breathing</h3>
             <p className="text-xs text-primary-black dark:text-gray-300 opacity-70 px-2">
@@ -188,7 +188,7 @@ const Meditation = () => {
               <button
                 key={time.label}
                 onClick={() => startMeditation(time.seconds)}
-                className="w-full max-w-[220px] px-4 py-3 flex items-center justify-between bg-secondary-black dark:bg-secondary-white text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-600"
+                className="w-full max-w-[220px] px-4 py-3 flex items-center justify-between bg-secondary-black text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-600"
               >
                 <span>{time.label}</span>
                 <span className="text-xs opacity-70">
@@ -229,7 +229,7 @@ const Meditation = () => {
               
               {/* Center icon with subtle animation */}
               <motion.div
-                className="relative z-10 bg-white dark:bg-bg-dark rounded-full p-3"
+                className="relative z-10 bg-secondary-white dark:bg-secondary-black rounded-full p-3"
                 initial={{ scale: 0.85 }} // Small initial scale
                 animate={{
                   scale: shouldScale ? 

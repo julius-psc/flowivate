@@ -13,6 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
 
+// Define mood icons with associated properties
 const moodIcons = [
   { icon: IconMoodAngry, value: "angry", color: "bg-[#f12828]", hoverColor: "bg-[#f34747]", textColor: "text-[#f12828] dark:text-[#f85c5c]", label: "Angry" },
   { icon: IconMoodCry, value: "miserable", color: "bg-[#FF5151]", hoverColor: "bg-[#ff7070]", textColor: "text-[#FF5151] dark:text-[#ff7b7b]", label: "Miserable" },
@@ -23,170 +24,245 @@ const moodIcons = [
   { icon: IconMoodSmileDizzy, value: "ecstatic", color: "bg-[#186922]", hoverColor: "bg-[#1f8a2c]", textColor: "text-[#186922] dark:text-[#2ea13a]", label: "Ecstatic" },
 ];
 
+// Interface for mood entries
 interface MoodEntry {
   mood: string;
   timestamp: Date;
 }
 
+// Component to display mood insights for the month
 const MoodInsights: React.FC<{ moodHistory: MoodEntry[]; onBack: () => void }> = ({ moodHistory, onBack }) => {
   const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const currentDay = now.getDate();
 
+  // Generate the grid data for the calendar view
   const grid = Array(daysInMonth).fill(null).map((_, index) => {
     const day = index + 1;
+    // Find if there's a mood entry for this specific day in the current month/year
     const moodEntry = moodHistory.find(entry => {
       const entryDate = new Date(entry.timestamp);
-      return entryDate.getDate() === day && entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
+      return entryDate.getDate() === day && entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
     });
 
+    // If an entry exists, use its mood color and mark as logged
     if (moodEntry) {
-      return moodIcons.find(m => m.value === moodEntry.mood)?.color || "bg-gray-200";
+      return {
+        day,
+        color: moodIcons.find(m => m.value === moodEntry.mood)?.color || "bg-gray-500", // Fallback color
+        isLogged: true // Mark as logged
+      };
     }
-    return day < currentDay ? "bg-white border border-gray-200 opacity-50" : "bg-gray-300 border border-gray-200 opacity-50";
+
+    // Determine if the day is in the past and wasn't logged
+    const isPastUnlogged = day < currentDay;
+    // Return data for unlogged days (past or future/current)
+    return {
+      day,
+      // Different styling for past unlogged vs future/current unlogged days
+      color: isPastUnlogged ? "bg-secondary-white opacity-20 dark:bg-zinc-700 dark:opacity-30" : "bg-gray-300 dark:bg-zinc-600 opacity-50",
+      isLogged: false // Mark as not logged
+    };
   });
 
-  const positiveMoods = moodHistory.filter(entry => ["ecstatic", "happy"].includes(entry.mood)).length;
-  const monthlyPercentage = moodHistory.length > 0 ? Math.round((positiveMoods / moodHistory.length) * 100) : 0;
+  // Calculate monthly positivity index (happy or ecstatic moods)
+  const positiveMoods = moodHistory.filter(entry => {
+      const entryDate = new Date(entry.timestamp);
+      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear && ["ecstatic", "happy"].includes(entry.mood);
+  }).length;
+  const entriesThisMonth = moodHistory.filter(entry => {
+      const entryDate = new Date(entry.timestamp);
+      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+  }).length;
+  const monthlyPercentage = entriesThisMonth > 0 ? Math.round((positiveMoods / entriesThisMonth) * 100) : 0;
 
-  const weekHistory = moodHistory.slice(0, 7);
+
+  // Calculate weekly positivity index (last 7 days)
+  const oneWeekAgo = new Date(now);
+  oneWeekAgo.setDate(now.getDate() - 7);
+  const weekHistory = moodHistory.filter(entry => new Date(entry.timestamp) >= oneWeekAgo);
   const weeklyPositive = weekHistory.filter(entry => ["ecstatic", "happy"].includes(entry.mood)).length;
   const weeklyPercentage = weekHistory.length > 0 ? Math.round((weeklyPositive / weekHistory.length) * 100) : 0;
 
-  const currentMonth = now.toLocaleString("default", { month: "long" });
-  const currentYear = now.getFullYear();
+  // Get current month name and year
+  const currentMonthName = now.toLocaleString("default", { month: "long" });
 
   return (
-    <div className="bg-white dark:bg-gray-800 text-primary-black dark:text-gray-200 border border-gray-100 dark:border-gray-800 rounded-lg w-full h-full p-4 flex flex-col">
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+      {/* Back Button */}
       <div className="flex items-center mb-4">
-        <button onClick={onBack} className="mr-2">
-          <IconChevronLeft size={24} className="text-gray-800 dark:text-gray-200" />
+        <button onClick={onBack} className="mr-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors">
+          <IconChevronLeft size={20} className="text-gray-800 dark:text-gray-200" />
         </button>
-        <h2 className="text-lg font-semibold">My Mood Insights</h2>
       </div>
+      {/* Month and Year Display */}
       <div className="mt-1">
         <span className="font-medium text-primary-black dark:text-gray-300 text-sm opacity-60">
-          {`${currentMonth} ${currentYear}`}
+          {`${currentMonthName} ${currentYear}`}
         </span>
       </div>
 
+      {/* Main Content: Calendar Grid and Stats */}
       <div className="flex flex-1 mt-4">
+        {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-x-4 gap-y-3 mr-4">
-          {grid.map((color, index) => (
-            <div key={index} className={`w-4 h-4 rounded-full ${color}`} />
+          {grid.map((item, index) => (
+            <div key={index} className={`w-6 h-6 rounded-full ${item.color} flex items-center justify-center`}>
+              {/* Conditionally render day number: Show if future/current OR if it's a past logged day */}
+              {(item.day >= currentDay || item.isLogged) && (
+                <span className="text-xs font-medium text-black dark:text-white opacity-75">
+                  {item.day}
+                </span>
+              )}
+            </div>
           ))}
         </div>
 
-        <div className="ml-4">
-          <div className="text-3xl font-extrabold">{monthlyPercentage}%</div>
-          <div className="text-sm mt-2">Monthly Positive Mood</div>
-          <div className="text-sm mt-2">Weekly Positive: {weeklyPercentage}%</div>
+        {/* Positivity Index Stats */}
+        <div className="ml-2 text-secondary-black dark:text-secondary-white ">
+          <div className="mb-4">
+            <div className="text-3xl font-extrabold">{monthlyPercentage}%</div>
+            <div className="text-sm opacity-40">Monthly positivity</div>
+          </div>
+          <div>
+            <div className="text-xl font-extrabold">{weeklyPercentage}%</div>
+            <div className="text-xs opacity-40">Weekly positivity</div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
+
+// Main Mood Picker Component
 const MoodPicker: React.FC = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [showInsights, setShowInsights] = useState(false);
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [hoveredMood, setHoveredMood] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { data: session, status } = useSession();
+  const { data: session, status } = useSession(); // Get session status
 
+  // Fetch mood history on component mount or when session changes
   useEffect(() => {
     const fetchMoodHistory = async () => {
-      if (status === "loading" || !session?.user?.email) return;
+      // Don't fetch if loading session or no user email
+      if (status === "loading" || !session?.user?.email) {
+          if (status !== "loading") setLoading(false); // Stop loading if session is loaded but no user
+          return;
+      }
 
+      setLoading(true); // Start loading indicator
       try {
+        // Fetch mood data from API
         const res = await fetch("/api/features/mood", {
-          credentials: "include",
+          credentials: "include", // Include cookies for authentication
         });
         if (!res.ok) throw new Error("Failed to fetch mood history");
         const data = await res.json();
+        // Map data and convert timestamp strings to Date objects
         setMoodHistory(data.map((entry: { mood: string; timestamp: string }) => ({ ...entry, timestamp: new Date(entry.timestamp) })));
       } catch (error) {
         console.error("Failed to fetch mood history:", error);
+        // Optionally: set an error state here
       } finally {
-        setLoading(false);
+        setLoading(false); // Stop loading indicator
       }
     };
     fetchMoodHistory();
-  }, [session, status]);
+  }, [session, status]); // Rerun effect if session or status changes
 
+  // Handle clicking on a mood icon
   const handleMoodClick = (value: string) => {
-    setIsAnimating(true);
-    setSelectedMood(value);
-    setTimeout(() => setIsAnimating(false), 500);
+    setSelectedMood(value); // Set the selected mood value
   };
 
+  // Handle logging the selected mood
   const handleLogMood = async () => {
+    // Ensure a mood is selected and user is logged in
     if (!selectedMood || !session?.user?.email) return;
 
+    // Validate selected mood against defined icons (safety check)
     if (!moodIcons.some(m => m.value === selectedMood)) {
-      console.error("Invalid mood value");
+      console.error("Invalid mood value selected:", selectedMood);
       return;
     }
 
     const now = new Date();
-    const todayMood = moodHistory.find(entry => {
+    // Check if a mood was already logged today
+    const todayMoodIndex = moodHistory.findIndex(entry => {
       const entryDate = new Date(entry.timestamp);
       return entryDate.toDateString() === now.toDateString();
     });
 
     const newMoodEntry = { mood: selectedMood, timestamp: now };
-    let updatedHistory = [...moodHistory];
-    if (todayMood) {
-      updatedHistory = updatedHistory.map(entry =>
-        new Date(entry.timestamp).toDateString() === now.toDateString() ? newMoodEntry : entry
-      );
+    const updatedHistory = [...moodHistory]; // Create a copy of history
+
+    // Optimistic UI update: Update local state immediately
+    if (todayMoodIndex > -1) {
+      // If mood exists for today, replace it
+      updatedHistory[todayMoodIndex] = newMoodEntry;
     } else {
+      // Otherwise, add the new mood entry to the beginning
       updatedHistory.unshift(newMoodEntry);
+      // Sort history by date descending after adding (optional but good practice)
+      updatedHistory.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     }
-    setMoodHistory(updatedHistory);
+    setMoodHistory(updatedHistory); // Update state
 
     try {
+      // Send the new mood entry to the API
       const res = await fetch("/api/features/mood", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mood: selectedMood, timestamp: now }),
+        body: JSON.stringify({ mood: selectedMood, timestamp: now.toISOString() }), // Send ISO string
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to log mood");
+      // If successful, clear the selected mood
       setSelectedMood(null);
     } catch (error) {
       console.error("Error logging mood:", error);
-      setMoodHistory(moodHistory); // Rollback on failure
+      // Rollback UI on failure: Restore previous history state
+      setMoodHistory(moodHistory);
+      // Optionally: show an error message to the user
     }
   };
 
+  // Toggle between mood picker and insights view
   const handleToggleInsights = () => {
     setShowInsights(!showInsights);
   };
 
-  // Skeleton Loader
+  // Skeleton Loader while fetching data or session
   if (loading || status === "loading") {
     return (
-      <div className="bg-white dark:bg-bg-dark rounded-lg p-6 w-full h-full border border-gray-200 dark:border-gray-800/50">
-        <div className="animate-pulse">
-          <div className="flex justify-between items-center mb-8">
-            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-            <div className="flex items-center gap-4">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
-            </div>
-          </div>
-          <div className="flex justify-between mb-10">
-            {Array(7).fill(null).map((_, index) => (
-              <div key={index} className="flex flex-col items-center gap-2">
-                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+      <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+          <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">MOOD</h1>
+        </div>
+        {/* Animated pulse effect for loading state */}
+        <div className="animate-pulse flex-grow flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center mb-8">
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+              <div className="flex items-center gap-4">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
                 <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
               </div>
-            ))}
+            </div>
+            <div className="grid grid-cols-7 gap-2 mb-10">
+              {/* Placeholder mood icons */}
+              {Array(7).fill(null).map((_, index) => (
+                <div key={index} className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg mx-auto"></div>
+              ))}
+            </div>
           </div>
-          <div className="flex justify-center items-center gap-4">
+          <div className="flex justify-center items-center gap-4 mt-auto mb-2">
+            {/* Placeholder button and text */}
             <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
             <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
           </div>
@@ -195,32 +271,39 @@ const MoodPicker: React.FC = () => {
     );
   }
 
-  if (!session) return <div>Please sign in to track your mood</div>;
+  // Prompt user to sign in if not authenticated
+  if (!session) {
+      return (
+        <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full justify-center items-center">
+            <p className="text-center text-gray-600 dark:text-gray-400">Please sign in to track your mood.</p>
+            {/* Optionally add a sign-in button here */}
+        </div>
+      );
+  }
 
+
+  // Render Mood Insights view if showInsights is true
   if (showInsights) {
     return <MoodInsights moodHistory={moodHistory} onBack={handleToggleInsights} />;
   }
 
+  // Render Mood Picker view
   return (
-    <div className="bg-white dark:bg-bg-dark rounded-lg p-6 w-full h-full border border-gray-200 dark:border-gray-800/50">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-lg font-normal text-gray-800 dark:text-gray-100">
-          How do you feel today?
-        </h2>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleToggleInsights}
-            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-          >
-            View Insights
-          </button>
-          <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            My mood
-          </span>
-        </div>
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+      {/* Header Section */}
+      <div className="flex justify-between items-center mb-6 flex-shrink-0">
+        <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">MOOD</h1>
+        {/* Button to toggle insights view */}
+        <button
+          onClick={handleToggleInsights}
+          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+        >
+          View Insights
+        </button>
       </div>
 
-      <div className="flex justify-between mb-10">
+      {/* Mood Icon Grid */}
+      <div className="grid grid-cols-7 gap-2 mb-8">
         {moodIcons.map((mood) => {
           const IconComponent = mood.icon;
           const isSelected = selectedMood === mood.value;
@@ -232,51 +315,46 @@ const MoodPicker: React.FC = () => {
               onClick={() => handleMoodClick(mood.value)}
               onMouseEnter={() => setHoveredMood(mood.value)}
               onMouseLeave={() => setHoveredMood(null)}
-              className="flex flex-col items-center"
+              className="flex flex-col items-center justify-center" // Center icon within its grid cell
             >
+              {/* Mood Icon Container */}
               <div
                 className={`
-                  relative p-2 rounded-full transition-colors duration-200 cursor-pointer 
-                  ${isSelected && isAnimating ? "animate-pulse" : ""}
-                  ${isSelected ? mood.color : isHovered ? mood.hoverColor : "bg-gray-200 dark:bg-gray-700"}
+                  p-2 rounded-full transition-transform duration-200 cursor-pointer
+                  ${isSelected ? mood.color : "bg-gray-200 dark:bg-secondary-black"} {/* Apply mood color only if selected */}
+                  ${isSelected || isHovered ? "transform scale-110" : ""} {/* Scale effect on hover or select */}
                 `}
               >
+                {/* Mood Icon */}
                 <IconComponent
-                  size={28}
-                  className={`transition-colors duration-200 ${isSelected || isHovered ? "text-white" : "text-gray-500 dark:text-gray-400"}`}
+                  size={24}
+                  className={`transition-colors duration-200 ${
+                    isSelected ? "text-white" : // White text when selected (on colored background)
+                    isHovered ? "text-gray-700 dark:text-gray-200" : // Darker/Lighter text on hover (on gray background)
+                    "text-gray-500 dark:text-gray-400" // Default text color
+                  }`}
                 />
-                {isSelected && isAnimating && (
-                  <span
-                    className="absolute inset-0 rounded-full animate-ping opacity-75"
-                    style={{ backgroundColor: mood.textColor.replace("text-", "").split(" ")[0].replace("[", "").replace("]", "") }}
-                  ></span>
-                )}
-              </div>
-              <div className="h-5 mt-1 text-center">
-                {isSelected && (
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                    {mood.label}
-                  </span>
-                )}
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="flex justify-center items-center gap-4">
+      {/* Log Mood Button and Info Text */}
+      <div className="flex justify-center items-center gap-4 mt-auto"> {/* Pushes to bottom */}
         <button
           className={`
-            px-6 py-2 rounded-full text-sm font-normal transition-colors duration-200
+            px-6 py-2 rounded-full text-sm font-normal transition-all duration-200 ease-in-out
             ${selectedMood
-              ? "bg-black cursor-pointer dark:bg-white text-white dark:text-black opacity-100"
+              ? `${moodIcons.find(m => m.value === selectedMood)?.color} text-white cursor-pointer hover:opacity-90 transform active:scale-95` // Use mood color for button, add interactions
               : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-80"}
           `}
           onClick={handleLogMood}
-          disabled={!selectedMood}
+          disabled={!selectedMood} // Disable button if no mood is selected
         >
           Log mood
         </button>
+        {/* Informational text */}
         <span className="text-xs text-gray-500 dark:text-gray-400">
           Mood editable until midnight
         </span>

@@ -593,10 +593,6 @@ const Tasks: React.FC = () => {
     return totalTasks > 0 ? `${completedTasks}/${totalTasks}` : `0/0`; // Format the ratio string
   };
 
-
-  // --- ############################################## ---
-  // --- ###         TASK RENDERING FUNCTION        ### ---
-  // --- ############################################## ---
   // Recursively renders a task and its subtasks.
   // `level` indicates the nesting depth (0 for top-level tasks, 1 for first-level subtasks, etc.)
   const renderTask = (task: Task, listIndex: number, level = 0): React.ReactNode => {
