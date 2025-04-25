@@ -32,34 +32,134 @@
 }
 
 @layer utilities {
-  .spin-slow {
-    animation: spin 4s linear infinite;
-  }
-
-  .animate-note1 {
-    animation: noteFloat 2s infinite ease-in-out;
-  }
-
-  .animate-note2 {
-    animation: noteFloat 1.8s infinite ease-in-out 0.2s;
-  }
-
-  .animate-note3 {
-    animation: noteFloat 2.2s infinite ease-in-out 0.4s;
-  }
-
-  @keyframes noteFloat {
+  /* --- Enhanced Graceful Floating Note Animations --- */
+  
+  /* Base keyframe for floating notes with a more natural path */
+  @keyframes float-note-base {
     0% {
+      transform: translateY(0) translateX(0) rotate(0deg) scale(0.7);
       opacity: 0;
-      transform: translateY(0);
     }
-    50% {
+    10% {
+      transform: translateY(-10px) translateX(-5px) rotate(-5deg) scale(0.8);
+      opacity: 0.7;
+    }
+    40% {
+      transform: translateY(-30px) translateX(8px) rotate(10deg) scale(1);
+      opacity: 1;
+    }
+    70% {
+      transform: translateY(-60px) translateX(-5px) rotate(-5deg) scale(0.95);
       opacity: 0.7;
     }
     100% {
+      transform: translateY(-80px) translateX(3px) rotate(0deg) scale(0.9);
       opacity: 0;
-      transform: translateY(-30px);
     }
+  }
+
+  /* Note 1 - Left-leaning path */
+  @keyframes float-note1 {
+    0% {
+      transform: translateY(0) translateX(0) rotate(0deg) scale(0.7);
+      opacity: 0;
+    }
+    10% {
+      transform: translateY(-12px) translateX(-8px) rotate(-8deg) scale(0.8);
+      opacity: 0.7;
+    }
+    40% {
+      transform: translateY(-35px) translateX(-15px) rotate(5deg) scale(1);
+      opacity: 1;
+    }
+    70% {
+      transform: translateY(-65px) translateX(-10px) rotate(-3deg) scale(0.95);
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateY(-85px) translateX(-5px) rotate(0deg) scale(0.9);
+      opacity: 0;
+    }
+  }
+
+  /* Note 2 - Centered upward path */
+  @keyframes float-note2 {
+    0% {
+      transform: translateY(0) translateX(0) rotate(0deg) scale(0.7);
+      opacity: 0;
+    }
+    10% {
+      transform: translateY(-10px) translateX(2px) rotate(5deg) scale(0.8);
+      opacity: 0.7;
+    }
+    40% {
+      transform: translateY(-40px) translateX(0px) rotate(-5deg) scale(1.05);
+      opacity: 1;
+    }
+    70% {
+      transform: translateY(-70px) translateX(2px) rotate(3deg) scale(0.98);
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateY(-90px) translateX(0px) rotate(0deg) scale(0.9);
+      opacity: 0;
+    }
+  }
+
+  /* Note 3 - Right-leaning path */
+  @keyframes float-note3 {
+    0% {
+      transform: translateY(0) translateX(0) rotate(0deg) scale(0.7);
+      opacity: 0;
+    }
+    10% {
+      transform: translateY(-8px) translateX(5px) rotate(8deg) scale(0.8);
+      opacity: 0.7;
+    }
+    40% {
+      transform: translateY(-30px) translateX(12px) rotate(-10deg) scale(0.95);
+      opacity: 1;
+    }
+    70% {
+      transform: translateY(-60px) translateX(8px) rotate(5deg) scale(0.9);
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateY(-80px) translateX(4px) rotate(0deg) scale(0.85);
+      opacity: 0;
+    }
+  }
+
+  /* Apply unique animations with properly staggered timing */
+  .animate-float-note1 {
+    animation: float-note1 4.5s ease-in-out infinite;
+    animation-delay: 0s; /* First note starts the sequence */
+  }
+
+  .animate-float-note2 {
+    animation: float-note2 4.8s ease-in-out infinite;
+    animation-delay: 1.5s; /* Second note starts after first is midway */
+  }
+
+  .animate-float-note3 {
+    animation: float-note3 5s ease-in-out infinite;
+    animation-delay: 3s; /* Third note starts after second is midway */
+  }
+
+  /* Optional 4th note for fuller effect */
+  .animate-float-note4 {
+    animation: float-note1 4.7s ease-in-out infinite;
+    animation-delay: 4.5s; /* Creates a continuous sequence */
+  }
+
+  /* --- Vinyl Spin Animation --- */
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  .animate-spin-slow {
+    animation: spin-slow 15s linear infinite;
   }
 }
 
