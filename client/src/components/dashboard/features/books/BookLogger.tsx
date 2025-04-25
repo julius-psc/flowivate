@@ -145,8 +145,7 @@ const BookLogger: React.FC = () => {
     },
     editorProps: {
       attributes: {
-        // Apply base prose styles, dark mode text handled by parent or prose-invert
-        class: 'prose focus:outline-none min-h-[200px] w-full text-secondary-black dark:text-secondary-white',
+        class: 'focus:outline-none min-h-[200px] w-full text-secondary-black dark:text-secondary-white',
       },
     },
     injectCSS: false,
@@ -334,7 +333,7 @@ const BookLogger: React.FC = () => {
     // Assuming parent container handles overall text color (e.g., on <body> dark:text-secondary-white)
     <div className="flex flex-col md:flex-row gap-2 w-full h-full">
       {/* Left Panel - Book List */}
-      <div className="relative w-1/3 p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full overflow-hidden">
+      <div className="relative w-1/3 p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden">
         {/* Top section with title, button, search, filters remains the same */}
         <div className="p-5">
           {/* ... (Title, Add Book button, Search Input, Status Filters) ... */}
@@ -477,7 +476,7 @@ const BookLogger: React.FC = () => {
       </div>
 
       {/* Right Panel - Book Details / Edit Form */}
-      <div className="relative p-4 w-2/3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full overflow-hidden">
+      <div className="relative p-4 w-2/3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden">
         {error && !loading && !isEditing && (
           // Error message uses red shades
           <div className="mx-5 mt-5 bg-third-red/10 dark:bg-third-red/20 border border-third-red/30 dark:border-third-red/50 text-red-800 dark:text-third-red px-4 py-3 rounded"> {/* Note: red-800 fallback */}

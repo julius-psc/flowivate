@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
   button {
@@ -163,12 +164,15 @@
   }
 }
 
-/* Add these styles to your global CSS file */
+/* --- Base & Light Mode Styles --- */
+
 .ProseMirror {
-  white-space: pre-wrap; 
+  white-space: pre-wrap;
   min-height: 100%;
   outline: none;
   padding: 1rem;
+  /* Define a base text color for light mode if not inherited */
+  /* color: #374151; /* Example: text-gray-700 */
 }
 
 .ProseMirror h1 {
@@ -176,6 +180,7 @@
   font-weight: 600;
   margin: 1rem 0;
   line-height: 1.3;
+  /* Base color (inherited or set explicitly) */
 }
 
 .ProseMirror h2 {
@@ -183,6 +188,7 @@
   font-weight: 600;
   margin: 0.8rem 0;
   line-height: 1.3;
+  /* Base color (inherited or set explicitly) */
 }
 
 .ProseMirror h3 {
@@ -190,9 +196,11 @@
   font-weight: 600;
   margin: 0.6rem 0;
   line-height: 1.3;
+  /* Base color (inherited or set explicitly) */
 }
 
-.ProseMirror ul, .ProseMirror ol {
+.ProseMirror ul,
+.ProseMirror ol {
   padding-left: 1.5rem;
   margin: 0.5rem 0;
 }
@@ -200,33 +208,93 @@
 .ProseMirror li {
   margin: 0.25rem 0;
   position: relative;
+  /* Base color (inherited or set explicitly) */
 }
 
-.ProseMirror li > p {
-  margin: 0;
+/* Ensure list items inherit the correct color */
+.ProseMirror li::marker {
+   /* You might need to explicitly set marker color if it doesn't inherit */
+   /* color: inherit; */
+}
+
+
+.ProseMirror li>p {
+  margin: 0; /* Keep paragraph margin reset inside list items */
 }
 
 .ProseMirror p {
   margin: 0.5rem 0;
   line-height: 1.6;
+  /* Base color (inherited or set explicitly) */
 }
 
-.ProseMirror p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder);
-  float: left;
-  color: #adb5bd;
-  pointer-events: none;
-  height: 0;
-}
-
+/* Light Mode Placeholder */
+.ProseMirror p.is-editor-empty:first-child::before,
 .ProseMirror .is-empty::before {
   content: attr(data-placeholder);
   float: left;
-  color: #adb5bd;
+  color: #adb5bd; /* Default placeholder color (like gray-400/500) */
   pointer-events: none;
   height: 0;
 }
 
+
+/* --- Dark Mode Styles --- */
+/* Assumes Tailwind's class strategy: <html class="dark"> */
+
+/* General text color for editor content in dark mode */
+.dark .ProseMirror {
+  color: #d1d5db; /* Example: text-gray-300 */
+}
+
+/* Dark mode headings */
+.dark .ProseMirror h1,
+.dark .ProseMirror h2,
+.dark .ProseMirror h3 {
+  color: #e5e7eb; /* Example: text-gray-200 (slightly lighter) */
+}
+
+/* Dark mode paragraphs and list items */
+.dark .ProseMirror p,
+.dark .ProseMirror li {
+  color: #d1d5db; /* Example: text-gray-300 */
+}
+
+/* Dark mode list markers */
+.dark .ProseMirror li::marker {
+  color: #d1d5db; /* Example: text-gray-300 */
+}
+
+
+/* Dark mode placeholder text */
+.dark .ProseMirror p.is-editor-empty:first-child::before,
+.dark .ProseMirror .is-empty::before {
+  color: #6b7280; /* Example: text-gray-500 (visible on dark bg) */
+}
+
+/* --- Optional: Add dark styles for other common elements if used --- */
+
+/* Example: Links */
+.dark .ProseMirror a {
+  color: #93c5fd; /* Example: text-blue-300 */
+}
+.dark .ProseMirror a:hover {
+  color: #60a5fa; /* Example: text-blue-400 */
+}
+
+/* Example: Code blocks (if you add the CodeBlock extension back) */
+.dark .ProseMirror pre {
+  background-color: #1f2937; /* Example: bg-gray-800 */
+  color: #d1d5db; /* Example: text-gray-300 */
+}
+
+/* Example: Inline code */
+.dark .ProseMirror code {
+  background-color: rgba(156, 163, 175, 0.2); /* Example: gray-400 with alpha */
+  color: #f3f4f6; /* Example: text-gray-100 */
+  padding: 0.1em 0.3em;
+  border-radius: 0.25em;
+}
 /* Light Mode Scrollbar with margin */
 ::-webkit-scrollbar {
   width: 10px; /* Slightly wider for better visibility */
