@@ -101,18 +101,16 @@ const Books: React.FC = () => {
   }
 
   return (
-    <div className="w-full p-4 border border-gray-200 dark:border-gray-800/50 bg-white dark:bg-bg-dark rounded-lg">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-          Recent Books
-        </h3>
-        <Link href="/dashboard/books/new">
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+    <div className="flex justify-between items-center mb-4 flex-shrink-0">
+      <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">BOOKS</h1>
+      <Link href="/dashboard/books">
           <div className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 bg-primary-white dark:bg-primary-black-dark px-2 py-1 rounded-md dark:hover:text-gray-100 cursor-pointer">
             <span>New Book</span>
             <IconBook2 size={14} />
           </div>
         </Link>
-      </div>
+    </div>
       
       {recentBooks.length === 0 ? (
         <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">

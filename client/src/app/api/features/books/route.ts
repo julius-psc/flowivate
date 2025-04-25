@@ -1,22 +1,23 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import clientPromise from "../../../../lib/mongodb";
+import { ObjectId } from "mongodb";
+import { authOptions } from '../../auth/[...nextauth]/route';
 
-// GET all books for the logged-in user
+// GET all books for the logged‑in user
 export async function GET() {
   try {
-    const session = await getServerSession();
-    if (!session || !session.user?.email) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const email = session.user.email;
+    const userObjectId = new ObjectId(session.user.id);
     const client = await clientPromise;
     const db = client.db("Flowivate");
-    const booksCollection = db.collection("books");
-
-    const books = await booksCollection
-      .find({ email })
+    const books = await db
+      .collection("books")
+      .find({ userId: userObjectId })
       .sort({ dateAdded: -1 })
       .toArray();
 
@@ -30,39 +31,48 @@ export async function GET() {
 // POST a new book
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession();
-    if (!session || !session.user?.email) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const email = session.user.email;
+    const userObjectId = new ObjectId(session.user.id);
     const data = await request.json();
-    
+
     // Validate required fields
     if (!data.title || !data.author) {
       return NextResponse.json(
-        { message: "Title and author are required" },
+        { message: "Title and author are required fields" },
         { status: 400 }
       );
     }
 
-    const client = await clientPromise;
-    const db = client.db("Flowivate");
-    const booksCollection = db.collection("books");
+    const allowedStatus = ["not-started", "in-progress", "completed"];
+    const status = allowedStatus.includes(data.status) ? data.status : "not-started";
+    const rating = typeof data.rating === 'number' && data.rating >= 0 && data.rating <= 5
+      ? data.rating
+      : null;
+    const genre = typeof data.genre === 'string' ? data.genre : null;
+    const notes = typeof data.notes === 'string' ? data.notes : null;
 
     const newBook = {
-      ...data,
-      email,
+      userId: userObjectId,
+      title: data.title,
+      author: data.author,
+      status,
+      rating,
+      genre,
+      notes,
       dateAdded: new Date(),
-      status: data.status || "not-started"
+      dateCompleted: status === 'completed' ? new Date() : null,
     };
 
-    const result = await booksCollection.insertOne(newBook);
+    const client = await clientPromise;
+    const db = client.db("Flowivate");
+    const result = await db.collection("books").insertOne(newBook);
 
-    return NextResponse.json(
-      { book: { ...newBook, _id: result.insertedId } },
-      { status: 201 }
-    );
+    const inserted = await db.collection("books").findOne({ _id: result.insertedId });
+    return NextResponse.json({ book: inserted }, { status: 201 });
   } catch (error) {
     console.error("Error in POST /api/features/books:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });

@@ -1,7 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { IconBook2, IconPlus, IconStarFilled, IconX, IconSearch, IconEdit, IconTrash } from "@tabler/icons-react";
+import {
+  IconBook2,
+  IconPlus,
+  IconStarFilled,
+  IconX,
+  IconSearch,
+  IconEdit,
+  IconTrash,
+  IconChevronRight,
+  IconCalendar,
+  IconBookmark,
+  IconUser,
+  IconTag
+} from "@tabler/icons-react";
 import { EditorContent, useEditor, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -34,11 +47,12 @@ const BookLogger: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
   // For creating/editing a book
   const [formData, setFormData] = useState<Partial<Book>>({
     title: "",
@@ -50,84 +64,71 @@ const BookLogger: React.FC = () => {
   });
 
   const slashCommandItems = [
-    {
-      title: 'Heading 1',
-      command: ({ editor }: { editor: Editor }) => {
-        editor.chain().focus().toggleHeading({ level: 1 }).run();
-      },
-      icon: <span className="text-xl font-bold">H1</span>,
-    },
-    {
-      title: 'Heading 2',
-      command: ({ editor }: { editor: Editor }) => {
-        editor.chain().focus().toggleHeading({ level: 2 }).run();
-      },
-      icon: <span className="text-lg font-bold">H2</span>,
-    },
-    {
-      title: 'Heading 3',
-      command: ({ editor }: { editor: Editor }) => {
-        editor.chain().focus().toggleHeading({ level: 3 }).run();
-      },
-      icon: <span className="text-base font-bold">H3</span>,
-    },
-    {
-      title: 'Bullet List',
-      command: ({ editor }: { editor: Editor }) => {
-        editor.chain().focus().toggleBulletList().run();
-      },
-      icon: <span className="text-sm">•</span>,
-    },
-    {
-      title: 'Numbered List',
-      command: ({ editor }: { editor: Editor }) => {
-        editor.chain().focus().toggleOrderedList().run();
-      },
-      icon: <span className="text-sm">1.</span>,
-    },
-    {
-      title: 'Paragraph',
-      command: ({ editor }: { editor: Editor }) => {
-        editor.chain().focus().setParagraph().run();
-      },
-      icon: <span className="text-sm">P</span>,
-    },
-    {
-      title: 'Emoji',
-      command: ({ }: { editor: Editor }) => {
-        // This will be handled in SlashCommands render
-      },
-      icon: <span>😊</span>,
-    },
+    // ... (slash command items remain the same)
+     {
+       title: 'Heading 1',
+       command: ({ editor }: { editor: Editor }) => {
+         editor.chain().focus().toggleHeading({ level: 1 }).run();
+       },
+       icon: <span className="text-xl font-bold">H1</span>,
+     },
+     {
+       title: 'Heading 2',
+       command: ({ editor }: { editor: Editor }) => {
+         editor.chain().focus().toggleHeading({ level: 2 }).run();
+       },
+       icon: <span className="text-lg font-bold">H2</span>,
+     },
+     {
+       title: 'Heading 3',
+       command: ({ editor }: { editor: Editor }) => {
+         editor.chain().focus().toggleHeading({ level: 3 }).run();
+       },
+       icon: <span className="text-base font-bold">H3</span>,
+     },
+     {
+       title: 'Bullet List',
+       command: ({ editor }: { editor: Editor }) => {
+         editor.chain().focus().toggleBulletList().run();
+       },
+       icon: <span className="text-sm">•</span>,
+     },
+     {
+       title: 'Numbered List',
+       command: ({ editor }: { editor: Editor }) => {
+         editor.chain().focus().toggleOrderedList().run();
+       },
+       icon: <span className="text-sm">1.</span>,
+     },
+     {
+       title: 'Paragraph',
+       command: ({ editor }: { editor: Editor }) => {
+         editor.chain().focus().setParagraph().run();
+       },
+       icon: <span className="text-sm">P</span>,
+     },
+     {
+       title: 'Emoji',
+       command: ({ }: { editor: Editor }) => {
+         // This will be handled in SlashCommands render
+       },
+       icon: <span>😊</span>,
+     },
   ];
 
   const notesEditor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
-        bulletList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
-        orderedList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
-        codeBlock: false, 
+        heading: { levels: [1, 2, 3] },
+        bulletList: { keepMarks: true, keepAttributes: false },
+        orderedList: { keepMarks: true, keepAttributes: false },
+        codeBlock: false,
       }),
       Placeholder.configure({
         placeholder: ({ node }) => {
-          if (node.type.name === 'heading') {
-            return `Heading ${node.attrs.level}`;
-          }
-          if (node.type.name === 'bulletList') {
-            return 'List item';
-          }
-          if (node.type.name === 'orderedList') {
-            return 'List item';
-          }
+          if (node.type.name === 'heading') return `Heading ${node.attrs.level}`;
+          if (node.type.name === 'bulletList') return 'List item';
+          if (node.type.name === 'orderedList') return 'List item';
           return 'Type $ for commands or start writing your notes...';
         },
         showOnlyWhenEditable: true,
@@ -144,7 +145,8 @@ const BookLogger: React.FC = () => {
     },
     editorProps: {
       attributes: {
-        class: 'prose focus:outline-none min-h-[200px] w-full dark:text-primary-white',
+        // Apply base prose styles, dark mode text handled by parent or prose-invert
+        class: 'prose focus:outline-none min-h-[200px] w-full text-secondary-black dark:text-secondary-white',
       },
     },
     injectCSS: false,
@@ -166,11 +168,9 @@ const BookLogger: React.FC = () => {
     try {
       setLoading(true);
       const response = await fetch('/api/features/books');
-      
       if (!response.ok) {
         throw new Error('Failed to fetch books');
       }
-      
       const data = await response.json();
       setBooks(data.books);
       setError(null);
@@ -185,26 +185,25 @@ const BookLogger: React.FC = () => {
   const getStatusColor = (status: Book["status"]) => {
     switch (status) {
       case "not-started":
-        return "bg-red-500";
+        // Using bluelight bg for light mode, slightly transparent blue for dark
+        return "bg-primary-bluelight/60 text-primary-blue dark:bg-primary-blue/20 dark:text-primary-bluelight";
       case "in-progress":
-        return "bg-orange-500";
+        // Using transparent yellow for both, different text color for contrast
+        return "bg-third-yellow/30 text-amber-800 dark:bg-third-yellow/20 dark:text-third-yellow"; // Note: amber-800 is not in config, adjust if needed
       case "completed":
-        return "bg-green-500";
+        // Using transparent green for both, different text color for contrast
+        return "bg-third-green/30 text-green-800 dark:bg-third-green/20 dark:text-third-green"; // Note: green-800 is not in config, adjust if needed
       default:
-        return "bg-gray-500";
+        return "bg-accent-lightgrey text-accent-grey-hover dark:bg-bdr-dark dark:text-accent-lightgrey";
     }
   };
 
   const getStatusLabel = (status: Book["status"]) => {
     switch (status) {
-      case "not-started":
-        return "Not Started";
-      case "in-progress":
-        return "In Progress";
-      case "completed":
-        return "Completed";
-      default:
-        return "Unknown";
+      case "not-started": return "Not Started";
+      case "in-progress": return "Reading";
+      case "completed": return "Finished";
+      default: return "Unknown";
     }
   };
 
@@ -212,12 +211,7 @@ const BookLogger: React.FC = () => {
     setSelectedBook(null);
     setIsEditing(true);
     setFormData({
-      title: "",
-      author: "",
-      status: "not-started",
-      genre: "",
-      notes: "",
-      rating: 0
+      title: "", author: "", status: "not-started", genre: "", notes: "", rating: 0
     });
     if (notesEditor) {
       notesEditor.commands.setContent('');
@@ -244,64 +238,48 @@ const BookLogger: React.FC = () => {
       setError('Title and author are required');
       return;
     }
-
     try {
-      if (selectedBook) {
-        // Update existing book
-        const response = await fetch(`/api/features/books/${selectedBook._id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
+      const url = selectedBook ? `/api/features/books/${selectedBook._id}` : '/api/features/books';
+      const method = selectedBook ? 'PUT' : 'POST';
 
-        if (!response.ok) {
-          throw new Error('Failed to update book');
-        }
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-        const data = await response.json();
-        setBooks(books.map(book => 
-          book._id === selectedBook._id ? data.book : book
-        ));
-        setSelectedBook(data.book);
-      } else {
-        // Create new book
-        const response = await fetch('/api/features/books', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
+      const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error('Failed to add book');
-        }
-
-        const data = await response.json();
-        setBooks([...books, data.book]);
-        setSelectedBook(data.book);
+      if (!response.ok) {
+        // Surface server-provided message if available
+        const message = data.message || `Failed to ${selectedBook ? 'update' : 'add'} book`;
+        setError(message);
+        console.error('Server error:', data);
+        return;
       }
+
+      // On success, update local state
+      if (selectedBook) {
+        setBooks(books.map(book => book._id === selectedBook._id ? data.book : book));
+      } else {
+        setBooks([...books, data.book]);
+      }
+      setSelectedBook(data.book);
       setIsEditing(false);
       setError(null);
     } catch (err) {
       setError('Error saving book. Please try again.');
-      console.error(err);
+      console.error('Fetch error:', err);
     }
   };
 
   const handleDeleteBook = async () => {
     if (selectedBook) {
       try {
-        const response = await fetch(`/api/features/books/${selectedBook._id}`, {
-          method: 'DELETE',
-        });
-
+        const response = await fetch(`/api/features/books/${selectedBook._id}`, { method: 'DELETE' });
         if (!response.ok) {
           throw new Error('Failed to delete book');
         }
-
         setBooks(books.filter(book => book._id !== selectedBook._id));
         setSelectedBook(null);
         setIsEditing(false);
@@ -315,181 +293,276 @@ const BookLogger: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    // Handle potential date completion logic if status changes to completed
+    if (name === 'status' && value === 'completed' && !formData.dateCompleted) {
+        setFormData({ ...formData, [name]: value, dateCompleted: new Date().toISOString() });
+    } else if (name === 'status' && value !== 'completed') {
+         setFormData({ ...formData, [name]: value as Book["status"], dateCompleted: undefined }); // Clear date if moved away from completed
+    } else {
+        setFormData({ ...formData, [name]: value });
+    }
   };
+
 
   const handleRatingChange = (rating: number) => {
     setFormData({ ...formData, rating });
   };
 
-  const filteredBooks = books.filter(book => 
-    book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    book.author.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredBooks = books.filter(book => {
+    const matchesSearch = book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || book.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-  // Format date display helper
   const formatDate = (dateString: string | Date) => {
     if (!dateString) return "Not specified";
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString();
   };
 
-  // Render notes content using dangerouslySetInnerHTML
   const renderNotesContent = (notes: string) => {
     return { __html: notes };
   };
 
+  const getBookCountByStatus = (status: string) => {
+    if (status === 'all') return books.length;
+    return books.filter(book => book.status === status).length;
+  };
+
   return (
-    <div className="flex flex-col md:flex-row gap-4 w-full">
+    // Assuming parent container handles overall text color (e.g., on <body> dark:text-secondary-white)
+    <div className="flex flex-col md:flex-row gap-2 w-full h-full">
       {/* Left Panel - Book List */}
-      <div className="md:w-1/3 border border-gray-200 dark:border-gray-800/50 bg-white dark:bg-bg-dark rounded-lg overflow-hidden">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-              My Books
+      <div className="relative w-1/3 p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full overflow-hidden">
+        {/* Top section with title, button, search, filters remains the same */}
+        <div className="p-5">
+          {/* ... (Title, Add Book button, Search Input, Status Filters) ... */}
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold text-secondary-black dark:text-secondary-white">
+              Library
             </h3>
-            <button 
+            <button
               onClick={handleAddNewBook}
-              className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 bg-gray-100 dark:bg-gray-800 px-2 py-1times rounded-md dark:hover:text-gray-100"
+              className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-secondary-white bg-primary-blue hover:bg-primary-blue-hover transition-colors duration-200 rounded-md"
             >
-              <IconPlus size={14} />
+              <IconPlus size={16} />
               <span>Add Book</span>
             </button>
           </div>
-          <div className="relative">
+          <div className="relative mb-4">
             <input
               type="text"
-              placeholder="Search books..."
+              placeholder="Search books or authors..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full pl-10 pr-4 py-2.5 border border-bdr-light dark:border-bdr-dark rounded-md bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey-hover dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200"
             />
-            <IconSearch size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+            <IconSearch size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-accent-grey-hover dark:text-accent-grey" />
           </div>
+          <div className="flex flex-nowrap -mx-1 pb-1 mb-1">
+            {['all', 'not-started', 'in-progress', 'completed'].map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`flex items-center px-3 py-1.5 mr-2 rounded-md text-sm whitespace-nowrap transition-colors duration-200 ${
+                  statusFilter === status
+                    ? 'bg-primary-bluelight/60 text-primary-blue dark:bg-primary-blue/30 dark:text-primary-bluelight'
+                    : 'bg-accent-lightgrey text-accent-grey-hover dark:bg-bdr-dark dark:text-accent-lightgrey hover:bg-accent-grey/50 dark:hover:bg-bdr-dark/60'
+                }`}
+              >
+                <span className="font-medium">
+                  {status === 'all' ? 'All' : getStatusLabel(status as Book["status"])}
+                </span>
+                <span className="ml-1.5 bg-secondary-white dark:bg-secondary-black text-accent-grey-hover dark:text-accent-grey text-xs rounded-full px-2 py-0.5">
+                  {getBookCountByStatus(status)}
+                </span>
+              </button>
+            ))}
+          </div>
+          {/* --- End of unchanged top section --- */}
         </div>
-        <div className="max-h-[70vh] overflow-y-auto">
+
+        {/* Scrollable Book List Area */}
+        <div className="flex-1 overflow-y-auto"> {/* Use flex-1 to take remaining space */}
           {loading ? (
-            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-              Loading books...
+            <div className="flex flex-col items-center justify-center p-8 text-center text-accent-grey-hover dark:text-accent-grey space-y-3 h-full"> {/* Ensure loading takes space */}
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-blue border-t-transparent"></div>
+              <p>Loading your books...</p>
             </div>
           ) : error ? (
-            <div className="p-4 text-center text-red-500 dark:text-red-400">
-              {error}
+            <div className="p-6 text-center h-full flex flex-col justify-center items-center"> {/* Ensure error takes space */}
+              <div className="inline-flex items-center justify-center p-3 mb-4 rounded-full bg-third-red/10 dark:bg-third-red/20">
+                <IconX size={24} className="text-third-red" />
+              </div>
+              <p className="text-third-red">{error}</p>
+              <button
+                onClick={fetchBooks}
+                className="mt-4 px-4 py-2 border border-bdr-light dark:border-bdr-dark rounded-md text-accent-grey-hover dark:text-accent-lightgrey hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
+              >
+                Try Again
+              </button>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-200 dark:divide-gray-800">
-              {filteredBooks.length > 0 ? filteredBooks.map((book) => (
-                <li 
+            // ***** MODIFIED UL *****
+            // Removed divide-y classes, added padding
+            <ul className="px-2 py-1">
+              {filteredBooks.length > 0 ? filteredBooks.map((book, index) => (
+                // ***** MODIFIED LI *****
+                <li
                   key={book._id}
                   onClick={() => handleSelectBook(book)}
-                  className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 ${selectedBook?._id === book._id ? 'bg-gray-100 dark:bg-gray-800/70' : ''}`}
+                  // - Removed getStatusIndicator()
+                  // - Added rounded-lg, mb-2
+                  // - Set base bg: bg-white dark:bg-secondary-black
+                  // - Adjusted hover/selected states
+                  className={`
+                    pl-4 pr-5 py-4 rounded-lg transition-colors duration-200 cursor-pointer
+                    ${ index < filteredBooks.length - 1 ? 'mb-2' : '' } // Add margin-bottom to all but the last item
+                    ${selectedBook?._id === book._id
+                      ? 'bg-accent-lightgrey dark:bg-bdr-dark' // Selected state: specific background
+                      : 'bg-white dark:bg-secondary-black hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/50' // Default state: base background + hover effect
+                    }
+                  `}
                 >
+                  {/* --- Content of the list item remains the same --- */}
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${getStatusColor(book.status)}`} title={getStatusLabel(book.status)}></span>
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{book.title}</h4>
+                      <h4 className="font-medium text-secondary-black dark:text-secondary-white line-clamp-1">{book.title}</h4>
+                      <div className="flex items-center mt-1 text-sm text-accent-grey-hover dark:text-accent-grey">
+                        <IconUser size={14} className="mr-1" />
+                        <span className="line-clamp-1">{book.author}</span>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{book.author}</p>
+                      <div className="flex items-center mt-3 gap-2">
+                        <span className={`px-2 py-0.5 text-xs rounded-md ${getStatusColor(book.status)}`}>
+                          {getStatusLabel(book.status)}
+                        </span>
+                        {book.genre && (
+                          <span className="flex items-center text-xs px-2 py-0.5 bg-accent-lightgrey/60 dark:bg-bdr-dark text-accent-grey-hover dark:text-accent-lightgrey rounded-md">
+                            <IconTag size={12} className="mr-1" />
+                            {book.genre}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {book.rating && (
-                      <div className="flex items-center">
-                        <span className="text-amber-500 text-sm mr-1">{book.rating}</span>
-                        <IconStarFilled size={14} className="text-amber-500" />
-                      </div>
-                    )}
+                    <div className="flex flex-col items-end">
+                      {book.rating ? (
+                        <div className="flex items-center bg-third-yellow/20 dark:bg-third-yellow/20 px-2 py-1 rounded-md">
+                          <span className="text-amber-800 dark:text-third-yellow font-medium text-sm mr-1">{book.rating}</span>
+                          <IconStarFilled size={14} className="text-third-yellow" />
+                        </div>
+                      ) : <div className="h-[26px]"></div> /* Placeholder for alignment if no rating */}
+                      <IconChevronRight
+                        size={18}
+                        className="text-accent-grey dark:text-bdr-dark mt-4"
+                      />
+                    </div>
                   </div>
-                  {book.genre && (
-                    <span className="inline-block text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded mt-2">
-                      {book.genre}
-                    </span>
-                  )}
+                   {/* --- End of list item content --- */}
                 </li>
               )) : (
-                <li className="p-4 text-center text-gray-500 dark:text-gray-400">
-                  No books found
-                </li>
+                 // Empty state remains the same
+                 <div className="flex flex-col items-center justify-center p-8 text-center text-accent-grey-hover dark:text-accent-grey h-full"> {/* Ensure empty state takes space */}
+                  <div className="p-3 mb-4 rounded-full bg-accent-lightgrey dark:bg-bdr-dark">
+                    <IconSearch size={24} className="text-accent-grey-hover dark:text-accent-lightgrey" />
+                  </div>
+                  <p className="mb-1">No books found</p>
+                  <p className="text-sm">Try changing your search or filters</p>
+                </div>
               )}
             </ul>
+             // ***** END MODIFIED UL *****
           )}
         </div>
       </div>
 
       {/* Right Panel - Book Details / Edit Form */}
-      <div className="md:w-2/3 border border-gray-200 dark:border-gray-800/50 bg-white dark:bg-bg-dark rounded-lg p-4">
+      <div className="relative p-4 w-2/3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full overflow-hidden">
         {error && !loading && !isEditing && (
-          <div className="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded mb-4">
+          // Error message uses red shades
+          <div className="mx-5 mt-5 bg-third-red/10 dark:bg-third-red/20 border border-third-red/30 dark:border-third-red/50 text-red-800 dark:text-third-red px-4 py-3 rounded"> {/* Note: red-800 fallback */}
             {error}
           </div>
         )}
-        
+
         {selectedBook && !isEditing ? (
-          <div>
-            <div className="flex justify-between items-start mb-4">
+          <div className="p-6">
+            <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{selectedBook.title}</h2>
-                <p className="text-gray-600 dark:text-gray-400">by {selectedBook.author}</p>
+                <div className="inline-flex items-center gap-2 mb-2">
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${getStatusColor(selectedBook.status)}`}>
+                    {getStatusLabel(selectedBook.status)}
+                  </span>
+                  {selectedBook.genre && (
+                    // Genre tag uses subtle grey
+                    <span className="text-xs bg-accent-lightgrey/60 dark:bg-bdr-dark text-accent-grey-hover dark:text-accent-lightgrey px-2 py-0.5 rounded flex items-center">
+                      <IconTag size={12} className="mr-1" />
+                      {selectedBook.genre}
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-2xl font-bold text-secondary-black dark:text-secondary-white">{selectedBook.title}</h2>
+                <p className="text-accent-grey-hover dark:text-accent-grey text-lg mt-1">by {selectedBook.author}</p>
               </div>
               <div className="flex gap-2">
+                 {/* Edit/Delete buttons are neutral styled */}
                 <button
                   onClick={handleEditBook}
-                  className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="p-2 rounded-md border border-bdr-light dark:border-bdr-dark hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
+                  aria-label="Edit book"
                 >
-                  <IconEdit size={18} className="text-gray-600 dark:text-gray-400" />
+                  <IconEdit size={20} className="text-accent-grey-hover dark:text-accent-lightgrey" />
                 </button>
                 <button
                   onClick={handleDeleteBook}
-                  className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="p-2 rounded-md border border-bdr-light dark:border-bdr-dark hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
+                  aria-label="Delete book"
                 >
-                  <IconTrash size={18} className="text-red-500" />
+                   {/* Delete icon uses red */}
+                  <IconTrash size={20} className="text-third-red" />
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`w-3 h-3 rounded-full ${getStatusColor(selectedBook.status)}`}></span>
-                  <span className="text-gray-900 dark:text-gray-100">{getStatusLabel(selectedBook.status)}</span>
+            {selectedBook.rating ? (
+              <div className="mb-6">
+                <p className="text-sm font-medium text-accent-grey-hover dark:text-accent-grey mb-2">Rating</p>
+                <div className="flex items-center gap-1">
+                  <span className="text-lg font-medium text-secondary-black dark:text-secondary-white">{selectedBook.rating}/5</span>
+                  <div className="flex ml-2">
+                    {[...Array(5)].map((_, i) => (
+                      <IconStarFilled
+                        key={i}
+                        size={18}
+                        // Stars use yellow for filled, specific greys for empty
+                        className={i < (selectedBook.rating || 0) ? "text-third-yellow" : "text-accent-lightgrey dark:text-accent-grey-hover"}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rating</p>
-                <div className="flex items-center gap-1 mt-1">
-                  {selectedBook.rating ? (
-                    <>
-                      <span className="text-gray-900 dark:text-gray-100">{selectedBook.rating}</span>
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <IconStarFilled
-                            key={i}
-                            size={16}
-                            className={i < (selectedBook.rating || 0) ? "text-amber-500" : "text-gray-300 dark:text-gray-600"}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <span className="text-gray-500 dark:text-gray-400">Not rated</span>
-                  )}
+            ) : null}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+               {/* Date info boxes use subtle grey background */}
+              <div className="bg-accent-lightgrey/30 dark:bg-bdr-dark/50 rounded-lg p-4">
+                <div className="flex items-center mb-1">
+                  <IconCalendar size={18} className="text-accent-grey-hover dark:text-accent-grey mr-2" />
+                  <p className="text-sm font-medium text-accent-grey-hover dark:text-accent-grey">Date Added</p>
                 </div>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Genre</p>
-                <p className="text-gray-900 dark:text-gray-100 mt-1">{selectedBook.genre || "Not specified"}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Date Added</p>
-                <p className="text-gray-900 dark:text-gray-100 mt-1">
+                <p className="text-secondary-black dark:text-secondary-white">
                   {formatDate(selectedBook.dateAdded)}
                 </p>
               </div>
-              
+
               {selectedBook.status === "completed" && selectedBook.dateCompleted && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Date Completed</p>
-                  <p className="text-gray-900 dark:text-gray-100 mt-1">
+                <div className="bg-accent-lightgrey/30 dark:bg-bdr-dark/50 rounded-lg p-4">
+                  <div className="flex items-center mb-1">
+                     {/* Completed date uses green icon */}
+                    <IconBookmark size={18} className="text-third-green mr-2" />
+                    <p className="text-sm font-medium text-accent-grey-hover dark:text-accent-grey">Date Completed</p>
+                  </div>
+                  <p className="text-secondary-black dark:text-secondary-white">
                     {formatDate(selectedBook.dateCompleted)}
                   </p>
                 </div>
@@ -497,141 +570,188 @@ const BookLogger: React.FC = () => {
             </div>
 
             {selectedBook.notes && (
-              <div className="mt-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Notes</p>
-                <div 
-                  className="text-gray-900 dark:text-gray-100 prose prose-sm dark:prose-invert max-w-none" 
-                  dangerouslySetInnerHTML={renderNotesContent(selectedBook.notes)}
-                />
+              <div>
+                <h3 className="text-lg font-medium text-secondary-black dark:text-secondary-white mb-3">Notes</h3>
+                 {/* Notes display uses subtle grey background */}
+                <div className="bg-accent-lightgrey/30 dark:bg-bdr-dark/50 rounded-lg p-5">
+                  <div
+                    // Prose handles typography, ensure base text color is correct
+                    className="text-secondary-black dark:text-secondary-white prose prose-sm dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={renderNotesContent(selectedBook.notes)}
+                  />
+                </div>
               </div>
             )}
           </div>
         ) : isEditing ? (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-secondary-black dark:text-secondary-white">
                 {selectedBook ? "Edit Book" : "Add New Book"}
               </h2>
+              {/* Cancel button is neutral styled */}
               <button
                 onClick={() => {
                   setIsEditing(false);
                   setError(null);
-                  if (!selectedBook) setSelectedBook(null);
+                  // Keep selected book if cancelling edit, clear if cancelling add
+                  // setSelectedBook(selectedBook ? selectedBook : null);
                 }}
-                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 rounded-md border border-bdr-light dark:border-bdr-dark hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
+                aria-label="Cancel"
               >
-                <IconX size={18} className="text-gray-600 dark:text-gray-400" />
+                <IconX size={20} className="text-accent-grey-hover dark:text-accent-lightgrey" />
               </button>
             </div>
 
             {error && (
-              <div className="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded mb-4">
+              // Error message uses red shades
+               <div className="bg-third-red/10 dark:bg-third-red/20 border border-third-red/30 dark:border-third-red/50 text-red-800 dark:text-third-red px-4 py-3 rounded mb-6"> {/* Note: red-800 fallback */}
                 {error}
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Form Inputs */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+                <label className="block text-sm font-medium text-accent-grey-hover dark:text-accent-lightgrey mb-2">Title</label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title || ""}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200"
                   placeholder="Book title"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Author</label>
+                <label className="block text-sm font-medium text-accent-grey-hover dark:text-accent-lightgrey mb-2">Author</label>
                 <input
                   type="text"
                   name="author"
                   value={formData.author || ""}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                   className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200"
                   placeholder="Author name"
                   required
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
-                <select
-                  name="status"
-                  value={formData.status || "not-started"}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="not-started">Not Started</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-accent-grey-hover dark:text-accent-lightgrey mb-2">Status</label>
+                  <select
+                    name="status"
+                    value={formData.status || "not-started"}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200 appearance-none" // Added appearance-none for better custom styling potential
+                  >
+                    <option value="not-started">Not Started</option>
+                    <option value="in-progress">Reading</option>
+                    <option value="completed">Finished</option>
+                  </select>
+                  {/* Add a dropdown indicator if needed */}
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Genre</label>
-                <input
-                  type="text"
-                  name="genre"
-                  value={formData.genre || ""}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  placeholder="Fiction, Non-fiction, etc."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rating</label>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((rating) => (
-                    <button
-                      key={rating}
-                      type="button"
-                      onClick={() => handleRatingChange(rating)}
-                      className="focus:outline-none"
-                    >
-                      <IconStarFilled
-                        size={24}
-                        className={rating <= (formData.rating || 0) ? "text-amber-500" : "text-gray-300 dark:text-gray-600"}
-                      />
-                    </button>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-accent-grey-hover dark:text-accent-lightgrey mb-2">Genre</label>
+                  <input
+                    type="text"
+                    name="genre"
+                    value={formData.genre || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200"
+                    placeholder="Fiction, Non-fiction, etc."
+                  />
                 </div>
               </div>
 
+              {/* Rating Input */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                <label className="block text-sm font-medium text-accent-grey-hover dark:text-accent-lightgrey mb-2">Rating</label>
+                <div className="flex items-center gap-2">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <button
+                        key={rating}
+                        type="button"
+                        onClick={() => handleRatingChange(rating)}
+                        className="focus:outline-none p-1 transition-transform duration-200 hover:scale-110"
+                      >
+                        <IconStarFilled
+                          size={26}
+                          // Stars use yellow for filled, specific greys for empty
+                           className={rating <= (formData.rating || 0) ? "text-third-yellow" : "text-accent-lightgrey dark:text-accent-grey-hover"}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  {formData.rating ? (
+                    <span className="text-sm text-accent-grey-hover dark:text-accent-lightgrey ml-2">
+                      {formData.rating}/5
+                    </span>
+                  ) : (
+                    <span className="text-sm text-accent-grey-hover dark:text-accent-grey ml-2">
+                      Not rated yet
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Notes Editor Input */}
+              <div>
+                <label className="block text-sm font-medium text-accent-grey-hover dark:text-accent-lightgrey mb-2">Notes</label>
                 {notesEditor && (
-                  <div className="border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-white dark:bg-gray-800">
+                  // Editor wrapper uses standard input border/bg/focus
+                  <div className="border border-bdr-light dark:border-bdr-dark rounded-lg p-4 bg-secondary-white dark:bg-secondary-black min-h-[200px] focus-within:ring-2 focus-within:ring-primary-blue dark:focus-within:ring-primary-blue focus-within:border-transparent transition-all duration-200">
                     <EditorContent editor={notesEditor} />
                     {notesEditor && <ContextMenu editor={notesEditor} />}
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-3 pt-4">
+                 {/* Cancel Button - neutral style */}
+                <button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setError(null);
+                    // setSelectedBook(selectedBook ? selectedBook : null);
+                  }}
+                  className="px-4 py-2 border border-bdr-light dark:border-bdr-dark text-accent-grey-hover dark:text-accent-lightgrey rounded-md hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                {/* Save Button - primary style */}
                 <button
                   onClick={handleSaveBook}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                  className="px-5 py-2 bg-primary-blue hover:bg-primary-blue-hover text-secondary-white font-medium rounded-md transition-colors duration-200"
                 >
-                  Save Book
+                  {selectedBook ? "Update Book" : "Add Book"}
                 </button>
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-64">
-            <IconBook2 size={48} className="text-gray-400 dark:text-gray-600 mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">Select a book from the list or add a new one</p>
+          // Empty state when no book is selected or being edited
+          <div className="flex flex-col items-center justify-center h-[70vh] p-6 text-center">
+             {/* Empty state uses primary blue for icon background/color */}
+            <div className="bg-primary-bluelight/30 dark:bg-primary-blue/20 p-4 rounded-full mb-4">
+              <IconBook2 size={42} className="text-primary-blue dark:text-primary-bluelight" />
+            </div>
+            <h3 className="text-xl font-semibold text-secondary-black dark:text-secondary-white mb-2">Your Digital Bookshelf</h3>
+            <p className="text-accent-grey-hover dark:text-accent-grey max-w-md mb-6">
+              Track your reading journey, capture your thoughts, and never forget a book you&#39;ve read.
+            </p>
+             {/* Button uses primary style */}
             <button
               onClick={handleAddNewBook}
-              className="flex items-center gap-1 mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+              className="flex items-center gap-2 px-5 py-3 bg-primary-blue hover:bg-primary-blue-hover text-secondary-white font-medium rounded-md transition-colors duration-200"
             >
-              <IconPlus size={16} />
-              <span>Add Book</span>
+              <IconPlus size={18} />
+              <span>Add Your First Book</span>
             </button>
           </div>
         )}

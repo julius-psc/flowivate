@@ -5,7 +5,6 @@ import { useDashboard } from "@/context/DashboardContext";
 import { featureComponents } from "@/components/dashboard/features/featureMap";
 import TimeDisplay from "@/components/dashboard/TimeDisplay";
 import Link from "next/link";
-import Particles from "@/components/dashboard/recyclable/Particles";
 
 import {
   IconEyeOff,
@@ -64,7 +63,6 @@ export default function Dashboard() {
 
   return (
     <div className="w-full h-full flex-1 flex flex-col">
-      <Particles count={60} speed={0.4} />
       
       {selectedFeatures.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1">

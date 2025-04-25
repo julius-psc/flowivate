@@ -65,7 +65,7 @@ const Particles = ({ count = 30, speed = 0.3 }) => {
         this.size = Math.random() * 3 + 1;
         this.speedX = (Math.random() - 0.5) * speed;
         this.speedY = (Math.random() - 0.5) * speed;
-        this.opacity = Math.random() * 0.5 + 0.1;
+        this.opacity = 1.0; // Set full opacity
       }
       
       update() {

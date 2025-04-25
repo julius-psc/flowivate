@@ -176,14 +176,11 @@ const Assistant: React.FC = () => {
   }
 
   return (
-    // --- Structure and Styling from OLD version ---
-    <div className="bg-white dark:bg-bg-dark border border-gray-200 dark:border-gray-800/50 rounded-xl p-4 relative flex flex-col">
-      {/* Header - Simplified like old version or keep new one */}
-      {/* <div className="flex justify-between items-center mb-4 flex-shrink-0">
-         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">MY ASSISTANT</h1>
-      </div> */}
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+    <div className="flex justify-between items-center mb-4 flex-shrink-0">
+      <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">MY ASSISTANT</h1>
+    </div>
       <div className="w-full flex justify-center items-center mb-4">
-        {/* Ensure logo path is correct */}
         <Image className="w-24 h-auto" src={logo} alt="Flowivate's logo" priority />
       </div>
 
