@@ -1,7 +1,7 @@
 import React from 'react';
 
 // Import all your feature components
-import Tasks from "./Tasks";
+import Tasks from "./tasks/Tasks";
 import Pomodoro from "./Pomodoro";
 import Ambient from "./Ambient";
 import Mood from "./Mood";
