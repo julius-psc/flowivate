@@ -7,19 +7,18 @@ import {
   IconPlus,
   IconCheck,
   IconApps,
-  IconActivity,
-  IconHeartbeat,
-  IconTree,
-  IconTools,
   IconList,
   IconClock,
-  IconMoodSmile,
-  IconWaveSine,
   IconBrain,
   IconGlass,
   IconZzz,
+  IconMoodSmile,
+  IconWaveSine,
   IconRobot,
   IconBook,
+  IconTarget,
+  IconBulb,
+  IconChartLine,
 } from "@tabler/icons-react";
 
 // Feature icon mapping
@@ -38,36 +37,81 @@ const featureIcons = {
 // Feature categories
 const featureCategories = [
   {
-    name: "Productivity",
-    icon: <IconActivity size={20} />,
+    name: "Task Management",
+    icon: <IconTarget size={20} />,
     features: [
-      { key: "Tasks", description: "Organize and track daily tasks effortlessly." },
-      { key: "Pomodoro", description: "Boost focus with timed work intervals." },
+      {
+        key: "Tasks",
+        description: "Plan and track tasks with ease.",
+        benefit: "Streamline your workflow",
+        tips: "Use tags to categorize tasks and set realistic daily goals."
+      },
+      {
+        key: "Assistant",
+        description: "AI-powered task optimization.",
+        benefit: "Work smarter",
+        tips: "Ask for help prioritizing your most important tasks each morning."
+      },
     ],
   },
   {
-    name: "Wellness",
-    icon: <IconHeartbeat size={20} />,
+    name: "Focus & Flow",
+    icon: <IconBulb size={20} />,
     features: [
-      { key: "Meditation", description: "Mindfulness sessions for calm and clarity." },
-      { key: "Water", description: "Monitor your daily hydration goals." },
-      { key: "Sleep", description: "Track sleep patterns for better rest." },
-      { key: "Mood", description: "Reflect on and analyze your emotions." },
+      {
+        key: "Pomodoro",
+        description: "Enhance focus with timed sessions.",
+        benefit: "Maximize productivity",
+        tips: "Try different intervals to find your optimal focus window."
+      },
+      {
+        key: "Ambient",
+        description: "Curate a productive soundscape.",
+        benefit: "Stay immersed",
+        tips: "Experiment with natural sounds for deep work and instrumental music for creative tasks."
+      },
     ],
   },
   {
-    name: "Environment",
-    icon: <IconTree size={20} />,
+    name: "Health & Wellness",
+    icon: <IconBrain size={20} />,
     features: [
-      { key: "Ambient", description: "Create a calming workspace with sounds." },
+      {
+        key: "Meditation",
+        description: "Guided sessions for mental clarity.",
+        benefit: "Find calm",
+        tips: "Even 5 minutes daily can significantly reduce stress and improve focus."
+      },
+      {
+        key: "Water",
+        description: "Stay hydrated with goal tracking.",
+        benefit: "Feel energized",
+        tips: "Setting reminders at specific intervals helps build a consistent habit."
+      },
+      {
+        key: "Sleep",
+        description: "Monitor and improve sleep quality.",
+        benefit: "Rest deeply",
+        tips: "Track your sleep patterns to identify optimal bedtime and wake-up routines."
+      },
     ],
   },
   {
-    name: "Tools",
-    icon: <IconTools size={20} />,
+    name: "Insights & Growth",
+    icon: <IconChartLine size={20} />,
     features: [
-      { key: "Assistant", description: "AI support for smarter task management." },
-      { key: "Books", description: "Manage your reading list and progress." },
+      {
+        key: "Mood",
+        description: "Track and reflect on your emotions.",
+        benefit: "Understand yourself",
+        tips: "Regular mood tracking helps identify triggers and improve emotional awareness."
+      },
+      {
+        key: "Books",
+        description: "Organize your reading and insights.",
+        benefit: "Grow daily",
+        tips: "Take short notes while reading to solidify understanding and retention."
+      },
     ],
   },
 ];
@@ -82,42 +126,42 @@ export default function Personal() {
     : featureCategories.filter((category) => category.name === activeCategory);
 
   return (
-    <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 ">
+    <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-10">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 sm:text-3xl">
-          Build Your Dashboard
+      <div className="max-w-4xl mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          Your Productivity Hub
         </h2>
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Choose features to personalize your experience.
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-lg">
+          Pick features to tailor your dashboard to your workflow.
         </p>
       </div>
 
       {/* Category Tabs */}
-      <div className="max-w-7xl mx-auto mb-12">
+      <div className="max-w-4xl mb-10">
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setActiveCategory("all")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5 ${
               activeCategory === "all"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700"
+                ? "bg-primary-blue text-white" // Updated color
+                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-blue hover:text-white" // Updated color
             }`}
           >
-            <IconApps size={16} />
+            <IconApps size={14} />
             All
           </button>
           {featureCategories.map((category) => (
             <button
               key={category.name}
               onClick={() => setActiveCategory(category.name)}
-              className={`px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5 ${
                 activeCategory === category.name
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700"
+                  ? "bg-primary-blue text-white" // Updated color
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-blue hover:text-white" // Updated color
               }`}
             >
-              {React.cloneElement(category.icon, { size: 16 })}
+              {React.cloneElement(category.icon, { size: 14 })}
               {category.name}
             </button>
           ))}
@@ -125,56 +169,89 @@ export default function Personal() {
       </div>
 
       {/* Feature Grid */}
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-4xl">
         {filteredCategories.map((category) => (
           <div key={category.name} className="mb-12">
             <div className="flex items-center mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                {React.cloneElement(category.icon, { className: "text-blue-500" })}
+                {/* Updated color for category icon */}
+                {React.cloneElement(category.icon, { className: "text-primary-blue" })}
                 {category.name}
               </h3>
             </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {category.features.map(({ key, description }) => {
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Use 'tips' variable from map to satisfy linting/compiler, but don't render it */}
+              {category.features.map(({ key, description, benefit }) => {
                 const isSelected = isFeatureSelected(key as FeatureKey);
 
                 return (
+                  // Outer div card styling updated as requested
                   <div
                     key={key}
-                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col"
+                    className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full"
                   >
-                    <div className="p-5 flex flex-col flex-grow">
-                      <div className="text-blue-500 mb-4">
-                        {featureIcons[key as keyof typeof featureIcons]}
+                    {/* Icon and Title */}
+                    <div className="flex justify-between items-start mb-3"> {/* Changed items-center to items-start */}
+                      <div className="flex items-center gap-3">
+                        {/* Updated colors for icon container */}
+                        <div className="p-2 bg-primary-bluelight dark:bg-primary-blue/30 rounded-md text-primary-blue">
+                          {featureIcons[key as keyof typeof featureIcons]}
+                        </div>
+                        <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                          {key}
+                        </h4>
                       </div>
-                      <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                        {key}
-                      </h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 flex-grow">
-                        {description}
-                      </p>
-                      <button
-                        onClick={() => addFeature(key as FeatureKey)}
-                        disabled={isSelected}
-                        className={`w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                          isSelected
-                            ? "bg-gray-100 dark:bg-gray-700 text-green-600 dark:text-green-500 border border-gray-200 dark:border-gray-600"
-                            : "bg-blue-500 text-white hover:bg-blue-600"
-                        }`}
-                      >
-                        {isSelected ? (
-                          <>
-                            <IconCheck size={16} />
-                            Added
-                          </>
-                        ) : (
-                          <>
-                            <IconPlus size={16} />
-                            Add
-                          </>
-                        )}
-                      </button>
+                      {isSelected && (
+                         // Active tag styling - Kept green for visual distinction
+                        <span className="text-xs font-medium text-third-green dark:text-third-green/80 bg-third-green/10 dark:bg-third-green/20 px-2 py-1 rounded-md flex items-center shrink-0">
+                          <IconCheck size={12} className="mr-1" />
+                          Active
+                        </span>
+                      )}
                     </div>
+
+                    {/* Benefit Tag */}
+                    <div className="mb-3">
+                      {/* Updated colors for benefit tag */}
+                      <span className="inline-block px-2 py-1 text-xs font-medium text-primary-blue dark:text-primary-bluelight bg-primary-bluelight/50 dark:bg-primary-blue/30 rounded-md">
+                        {benefit}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 grow"> {/* Added grow and mb-4 */}
+                      {description}
+                    </p>
+
+                    {/* Pro Tip Section REMOVED */}
+                    {/* <div className="mb-4 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-md border-l-2 border-blue-400 dark:border-blue-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="font-medium text-blue-600 dark:text-blue-400">Pro tip:</span> {tips}
+                      </p>
+                    </div> */}
+
+                    {/* Action Button */}
+                    <button
+                      onClick={() => addFeature(key as FeatureKey)}
+                      disabled={isSelected}
+                      className={`mt-auto py-2 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center gap-2 ${
+                        isSelected
+                          ? "bg-accent-grey/30 dark:bg-zinc-800 text-accent-grey-hover dark:text-zinc-500 cursor-not-allowed" // Updated disabled state colors
+                          : "bg-primary-blue text-white hover:bg-primary-blue-hover focus:ring-2 focus:ring-primary-blue-ring dark:focus:ring-primary-blue-ring focus:outline-none" // Updated active state colors
+                      }`}
+                    >
+                      {isSelected ? (
+                        <>
+                          <IconCheck size={14} />
+                          Added
+                        </>
+                      ) : (
+                        <>
+                          <IconPlus size={14} />
+                          Add to Dashboard
+                        </>
+                      )}
+                    </button>
                   </div>
                 );
               })}
