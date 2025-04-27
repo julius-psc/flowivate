@@ -178,7 +178,7 @@ const Navbar: React.FC = () => {
   // --- Render Logic ---
   return (
     <>
-      <nav className="flex items-center justify-between z-40 px-4 py-2 mx-auto my-2 rounded-xl backdrop-blur-sm bg-white/60 dark:bg-black/40 border border-gray-100/60 dark:border-gray-800/60 max-w-[98%]">
+      <nav className="flex items-center justify-between z-40 px-4 py-2 mx-2 mt-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50">
         {/* Left Section: AI Assistant Button */}
         <div className="flex items-center">
           <div className="relative">

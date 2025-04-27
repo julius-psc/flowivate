@@ -12,6 +12,7 @@ import {
   IconLogout2,
   IconSettings,
   IconBook,
+  IconCircleDashedCheck
 } from "@tabler/icons-react";
 import logo from "../../../assets/brand/logo-v1.5.svg";
 
@@ -28,13 +29,14 @@ const Sidebar: React.FC = () => {
   const navItems: NavItem[] = [
     { name: "Home", icon: IconLayoutDashboard, path: "/dashboard" },
     { name: "Personal", icon: IconStack2, path: "/dashboard/personal" },
+    { name: "Tasks", icon: IconCircleDashedCheck, path: "/dashboard/tasks" },
     { name: "Journal", icon: IconNotes, path: "/dashboard/journal" },
     { name: "Books", icon: IconBook, path: "/dashboard/books" },
   ];
 
   return (
     <>
-      <aside className="flex flex-col z-40 px-2 py-4 mx-3 my-1 rounded-xl backdrop-blur-sm bg-white/60 dark:bg-black/40 border border-gray-100/60 dark:border-gray-800/60 w-16">
+      <aside className="flex flex-col z-40 px-2 py-4 ml-2 mx-2 my-1 mb-2 w-16 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50">
         <div className="flex flex-col items-center h-full">
           {/* Logo */}
           <div className="mb-8 flex-shrink-0 transition-transform duration-200 hover:scale-105">

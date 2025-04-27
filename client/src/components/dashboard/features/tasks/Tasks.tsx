@@ -16,7 +16,7 @@ import Link from "next/link";
 import * as tasksApi from "../../../../lib/tasksApi"; // Adjust path as needed
 import type { Task, TaskList } from "@/types/taskTypes"; // Adjust path as needed
 
-// --- Skeleton Loader Component ---
+// --- Skeleton Loader Component (Unchanged) ---
 const TasksSkeleton = () => {
   const numberOfPlaceholderTasks = 3; // Number of skeleton rows to show
 
@@ -39,8 +39,10 @@ const TasksSkeleton = () => {
             key={index}
             className="flex items-center p-2 rounded-lg bg-gray-100/50 dark:bg-zinc-800/50 border border-transparent"
           >
-            <div className="w-5 h-5 bg-gray-300 dark:bg-zinc-600 rounded mr-3 flex-shrink-0"></div>{" "}
+            {/* --- MODIFICATION START: Adjusted placeholder spacing slightly if needed --- */}
+            <div className="w-5 h-5 bg-gray-300 dark:bg-zinc-600 rounded mr-1 flex-shrink-0"></div>{" "}
             {/* Checkbox placeholder */}
+            {/* --- MODIFICATION END --- */}
             <div className="h-4 flex-1 bg-gray-200 dark:bg-zinc-700 rounded"></div>{" "}
             {/* Task Name placeholder */}
           </div>
@@ -54,6 +56,7 @@ const TasksSkeleton = () => {
     </div>
   );
 };
+
 
 // --- Helper Functions (Unchanged) ---
 const priorityLevels = [
@@ -115,7 +118,7 @@ const placeholderTaskLists: TaskList[] = [
   },
 ];
 
-// --- Priority Dropdown Component (Unchanged) ---
+// --- Priority Dropdown Component (MODIFIED POSITIONING) ---
 interface PriorityDropdownProps {
   taskId: string;
   listId: string;
@@ -148,7 +151,9 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-40 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg z-20 py-1.5 transition-all duration-200 ease-out animate-fade-in" // Higher z-index maybe needed
+      // --- MODIFICATION START: Changed positioning from top-full mt-2 to bottom-full mb-2 ---
+      className="absolute right-0 bottom-full mb-2 w-40 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg z-[1000] py-1.5 transition-all duration-200 ease-out animate-fade-in"
+      // --- MODIFICATION END ---
     >
       {priorityLevels.map(({ level, label, icon: Icon, color }) => (
         <button
@@ -211,29 +216,77 @@ const Tasks: React.FC = () => {
       status !== "authenticated" ? placeholderTaskLists : undefined,
   });
 
-  // --- React Query: Mutations (Unchanged) ---
-  const updateListMutation = useMutation({
-    mutationFn: tasksApi.updateTaskList,
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      if (
-        editingTaskId &&
-        variables.tasks &&
-        variables.id ===
-          taskLists.find((list) =>
-            list.tasks?.some((task) => task.id === editingTaskId)
-          )?._id
-      ) {
-        setEditingTaskId(null);
-        setEditingTaskValue("");
-      }
-    },
-    onError: (error, variables) => {
-      console.error(`Error updating list ${variables.id} from preview:`, error);
-    },
-  });
+// --- React Query: Mutations (MODIFIED with Optimistic Updates) ---
+const updateListMutation = useMutation({
+  mutationFn: tasksApi.updateTaskList, // Expects { id: string; tasks?: Task[]; name?: string }
 
-  // --- Task Management Helpers (Unchanged) ---
+  // --- MODIFICATION START: Optimistic Updates Logic with Corrected Types ---
+  onMutate: async (variables: { id: string; tasks?: Task[]; name?: string }) => { // <-- Changed type here
+    // --> Add this check: If 'tasks' isn't part of this specific update, skip optimistic logic
+    if (!variables.tasks) {
+      console.warn(
+        "Skipping optimistic update in preview as 'tasks' were not provided."
+      );
+      // Return minimal context or undefined
+      return { previousTaskLists: undefined };
+    }
+    // <-- End of check
+
+    // Now we know variables.tasks exists
+    const tasksToUpdate = variables.tasks;
+
+    // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+    await queryClient.cancelQueries({ queryKey: ["tasks"] });
+
+    // Snapshot the previous value
+    const previousTaskLists = queryClient.getQueryData<TaskList[]>(["tasks"]);
+
+    // Optimistically update to the new value using tasksToUpdate
+    if (previousTaskLists) {
+      queryClient.setQueryData<TaskList[]>(["tasks"], (old) =>
+        old?.map((list) =>
+          list._id === variables.id
+            ? { ...list, tasks: tasksToUpdate } // Apply the new tasks array directly
+            : list
+        ) ?? []
+      );
+    }
+
+    // Return a context object with the snapshotted value
+    return { previousTaskLists };
+  },
+  // If the mutation fails, use the context returned from onMutate to roll back
+  onError: (err, variables, context) => {
+    console.error("Optimistic update failed in preview:", err);
+    // Use optional chaining for safety
+    if (context?.previousTaskLists) {
+      queryClient.setQueryData(["tasks"], context.previousTaskLists);
+    }
+    // Potentially show an error notification to the user here
+  },
+  // Always refetch after error or success:
+  onSettled: (data, error, variables) => { // Add data, error, variables params
+    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+
+    // Clean up editing state if the mutation involved tasks and finished
+    // Added check to ensure variables.tasks was involved
+    if (
+      variables.tasks && // Only clear if tasks were part of the mutation
+      editingTaskId &&
+      variables.id ===
+        taskLists.find((list) =>
+          list.tasks?.some((task) => task.id === editingTaskId)
+        )?._id
+    ) {
+      setEditingTaskId(null);
+      setEditingTaskValue("");
+    }
+  },
+  // --- MODIFICATION END ---
+});
+
+
+  // --- Task Management Helpers (Unchanged Logic, but benefits from optimistic mutation) ---
   const findAndUpdateTask = (
     tasks: Task[],
     taskId: string,
@@ -261,6 +314,7 @@ const Tasks: React.FC = () => {
   const triggerListUpdate = (listId: string, updatedTasks: Task[]) => {
     const list = taskLists.find((l) => l._id === listId);
     if (list && list._id && !list._id.startsWith("placeholder-")) {
+      // The mutation now handles the optimistic update internally
       updateListMutation.mutate({ id: list._id, tasks: updatedTasks });
     } else {
       console.warn(
@@ -271,19 +325,24 @@ const Tasks: React.FC = () => {
 
   const handleToggleTaskCompletion = (listId: string, taskId: string) => {
     const list = taskLists.find((l) => l._id === listId);
-    if (!list || !list.tasks) return; // Added check for list.tasks
+    if (!list || !list.tasks) return;
+
+    // Calculate the *next* state
     const { updatedTasks, taskFound } = findAndUpdateTask(
-      [...list.tasks],
+      [...list.tasks], // Operate on a copy
       taskId,
       (task) => ({
         ...task,
         completed: !task.completed,
       })
     );
+
+    // Trigger the mutation with the next state. React Query's onMutate will handle the immediate UI update.
     if (taskFound) {
       triggerListUpdate(listId, updatedTasks);
     }
   };
+
 
   const handleSetPriority = (
     listId: string,
@@ -301,7 +360,7 @@ const Tasks: React.FC = () => {
       })
     );
     if (taskFound) {
-      triggerListUpdate(listId, updatedTasks);
+      triggerListUpdate(listId, updatedTasks); // This will also be optimistic if called frequently, but primary request was for checkbox
     }
   };
 
@@ -342,17 +401,25 @@ const Tasks: React.FC = () => {
     );
 
     if (taskFound) {
+      // --- MODIFICATION START: Reset edit state immediately on triggering save ---
+      // This should happen regardless of optimistic success/failure, as the user intent is to finish editing.
+      // The optimistic update handles the data state.
+      setEditingTaskId(null);
+      setEditingTaskValue("");
+      // --- MODIFICATION END ---
       triggerListUpdate(listId, updatedTasks);
     } else {
       handleCancelEditing();
     }
   };
 
+
   const handleEditInputKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
     listId: string
   ) => {
     if (e.key === "Enter") {
+       e.preventDefault(); // Prevent potential form submission if wrapped
       handleSaveEditing(listId);
     } else if (e.key === "Escape") {
       handleCancelEditing();
@@ -383,6 +450,10 @@ const Tasks: React.FC = () => {
     const countIncomplete = (tasks: Task[]) => {
       tasks.forEach((task) => {
         if (!task.completed) count++;
+        // Recursively count incomplete subtasks if needed
+        // if (task.subtasks && task.subtasks.length > 0) {
+        //     countIncomplete(task.subtasks);
+        // }
       });
     };
 
@@ -394,7 +465,7 @@ const Tasks: React.FC = () => {
     return count;
   };
 
-  // --- Render Task Function (Unchanged) ---
+  // --- Render Task Function (MODIFIED PADDING) ---
   const renderTask = (
     task: Task,
     listId: string,
@@ -414,7 +485,9 @@ const Tasks: React.FC = () => {
           className={`relative group/task ${indentationClass}`}
         >
           <div className="flex items-center p-2 rounded-lg">
-            <div className="w-5 flex-shrink-0 flex items-center justify-center mr-2">
+             {/* --- MODIFICATION START: Adjusted placeholder spacing slightly --- */}
+            <div className="w-5 flex-shrink-0 flex items-center justify-center mr-1">
+            {/* --- MODIFICATION END --- */}
               <div className="w-5"></div>
             </div>
             <Checkbox
@@ -436,32 +509,39 @@ const Tasks: React.FC = () => {
           className={`relative ${indentationClass}`}
         >
           <div className="flex items-center p-2 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 transition-all duration-200">
-            <div className="w-5 mr-2 flex-shrink-0" aria-hidden="true"></div>
+            {/* --- MODIFICATION START: Reduced margin for consistency --- */}
+            <div className="w-5 mr-1 flex-shrink-0" aria-hidden="true"></div>
+             {/* --- MODIFICATION END --- */}
             <input
               ref={editInputRef}
               type="text"
               value={editingTaskValue}
               onChange={(e) => setEditingTaskValue(e.target.value)}
               onKeyDown={(e) => handleEditInputKeyDown(e, listId)}
-              onBlur={() => handleSaveEditing(listId)}
+              onBlur={() => handleSaveEditing(listId)} // Consider if blur should always save
               className="flex-1 bg-transparent focus:outline-none text-slate-900 dark:text-slate-200 text-sm font-medium"
               autoFocus
               disabled={updateListMutation.isPending}
             />
-            <div className="w-16 flex-shrink-0" aria-hidden="true"></div>
+            <div className="w-16 flex-shrink-0" aria-hidden="true"></div> {/* Placeholder for icons */}
           </div>
         </div>
       );
     }
 
+    // Normal task rendering
     return (
       <div key={task.id} className={`relative group/task ${indentationClass}`}>
         <div className="flex items-center p-2 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-100/50 dark:border-zinc-700/50 hover:border-slate-200/70 dark:hover:border-zinc-600/70 transition-all duration-200">
-          <div className="w-5 flex-shrink-0 flex items-center justify-center mr-2">
+
+          {/* --- MODIFICATION START: Reduced right margin on icon container --- */}
+          <div className="w-5 flex-shrink-0 flex items-center justify-center mr-1">
+          {/* --- MODIFICATION END --- */}
             {hasSubtasks ? (
               <button
                 onClick={() => toggleTaskExpansion(task.id)}
                 className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
               >
                 {isExpanded ? (
                   <IconChevronDown size={14} />
@@ -470,28 +550,33 @@ const Tasks: React.FC = () => {
                 )}
               </button>
             ) : (
-              <div className="w-5"></div>
+              <div className="w-5"></div> // Keep space consistent
             )}
           </div>
 
           <div
-            className="flex-1 mr-2 cursor-pointer"
+            className="flex-1 mr-2 cursor-pointer" // Keep mr-2 here to space checkbox from icons
             onDoubleClick={() => handleStartEditing(listId, task)}
+            title="Double-click to edit"
           >
             <Checkbox
               checked={task.completed}
               onChange={() => handleToggleTaskCompletion(listId, task.id)}
               label={task.name}
               variant="default"
-              disabled={updateListMutation.isPending}
+              // --- MODIFICATION START: Disable checkbox slightly differently during mutation for better optimistic feel ---
+              // Disable interactions but don't visually change opacity as much, relies on optimistic update
+              disabled={updateListMutation.isPending && updateListMutation.variables?.id === listId } // Disable only if the *current* list is mutating
+              // Consider adding a subtle visual cue like 'cursor-wait' if needed
+              // --- MODIFICATION END ---
             />
           </div>
 
           <div className="flex items-center gap-1 ml-auto pl-2 opacity-0 group-hover/task:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-            <div className="relative z-10">
+            <div className="relative"> {/* Keep relative positioning for the dropdown */}
               <button
                 onClick={(e) => {
-                  e.stopPropagation();
+                  e.stopPropagation(); // Prevent triggering double-click on parent
                   togglePriorityDropdown(task.id);
                 }}
                 title={`Priority: ${
@@ -525,20 +610,29 @@ const Tasks: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Render subtasks (Unchanged) */}
+        {isExpanded && hasSubtasks && (
+          <div className="mt-1 space-y-1">
+            {task.subtasks.map((subtask) =>
+              renderTask(subtask, listId, level + 1)
+            )}
+          </div>
+        )}
       </div>
     );
   };
 
-  // --- Loading State --- (MODIFIED TO USE SKELETON)
-  // Show skeleton if session is loading OR if authenticated but query is loading AND we don't have data yet
+
+  // --- Loading State (Unchanged - Uses Skeleton) ---
   if (
     status === "loading" ||
     (status === "authenticated" && isLoadingLists && !taskLists?.length)
   ) {
-    return <TasksSkeleton />; // <-- Use the skeleton component here
+    return <TasksSkeleton />;
   }
 
-  // Error state (Unchanged)
+  // --- Error state (Unchanged) ---
   if (isErrorLists) {
     return (
       <div className="p-4 text-center text-red-500 dark:text-red-400">
@@ -547,7 +641,7 @@ const Tasks: React.FC = () => {
     );
   }
 
-  // Data for display (Unchanged)
+  // --- Data for display (Unchanged) ---
   const displayList =
     taskLists?.find(
       (list) => list._id && !list._id.startsWith("placeholder-")
@@ -597,7 +691,7 @@ const Tasks: React.FC = () => {
           <>
             {displayTasks.length > 0 ? (
               displayTasks
-                .sort((a, b) => b.priority - a.priority)
+                .sort((a, b) => b.priority - a.priority) // Sort by priority (descending)
                 .map((task) => renderTask(task, displayList._id!, 0))
             ) : (
               <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
@@ -608,6 +702,7 @@ const Tasks: React.FC = () => {
             )}
           </>
         ) : (
+          // Handling case where user is logged in but has no lists
           status === "authenticated" &&
           !isLoadingLists &&
           !isErrorLists &&

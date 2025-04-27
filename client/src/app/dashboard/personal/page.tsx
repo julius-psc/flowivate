@@ -19,6 +19,7 @@ import {
   IconTarget,
   IconBulb,
   IconChartLine,
+  IconDirections,
 } from "@tabler/icons-react";
 
 // Feature icon mapping
@@ -32,6 +33,7 @@ const featureIcons = {
   Ambient: <IconWaveSine size={20} />,
   Assistant: <IconRobot size={20} />,
   Books: <IconBook size={20} />,
+  Affirmations: <IconDirections size={20} />,
 };
 
 // Feature categories
@@ -44,13 +46,11 @@ const featureCategories = [
         key: "Tasks",
         description: "Plan and track tasks with ease.",
         benefit: "Streamline your workflow",
-        tips: "Use tags to categorize tasks and set realistic daily goals."
       },
       {
         key: "Assistant",
         description: "AI-powered task optimization.",
         benefit: "Work smarter",
-        tips: "Ask for help prioritizing your most important tasks each morning."
       },
     ],
   },
@@ -62,13 +62,11 @@ const featureCategories = [
         key: "Pomodoro",
         description: "Enhance focus with timed sessions.",
         benefit: "Maximize productivity",
-        tips: "Try different intervals to find your optimal focus window."
       },
       {
         key: "Ambient",
         description: "Curate a productive soundscape.",
         benefit: "Stay immersed",
-        tips: "Experiment with natural sounds for deep work and instrumental music for creative tasks."
       },
     ],
   },
@@ -80,19 +78,21 @@ const featureCategories = [
         key: "Meditation",
         description: "Guided sessions for mental clarity.",
         benefit: "Find calm",
-        tips: "Even 5 minutes daily can significantly reduce stress and improve focus."
+      },
+      {
+        key: "Affirmations",
+        description: "Attract what you deserve.",
+        benefit: "Be positive",
       },
       {
         key: "Water",
         description: "Stay hydrated with goal tracking.",
         benefit: "Feel energized",
-        tips: "Setting reminders at specific intervals helps build a consistent habit."
       },
       {
         key: "Sleep",
         description: "Monitor and improve sleep quality.",
         benefit: "Rest deeply",
-        tips: "Track your sleep patterns to identify optimal bedtime and wake-up routines."
       },
     ],
   },
@@ -104,13 +104,11 @@ const featureCategories = [
         key: "Mood",
         description: "Track and reflect on your emotions.",
         benefit: "Understand yourself",
-        tips: "Regular mood tracking helps identify triggers and improve emotional awareness."
       },
       {
         key: "Books",
         description: "Organize your reading and insights.",
         benefit: "Grow daily",
-        tips: "Take short notes while reading to solidify understanding and retention."
       },
     ],
   },

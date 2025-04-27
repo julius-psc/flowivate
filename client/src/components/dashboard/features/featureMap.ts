@@ -10,6 +10,7 @@ import Meditation from "./Meditation";
 import Water from "./Water";
 import Books from "./books/Books";
 import Sleep from "./Sleep";
+import Affirmations from "./Affirmations";
 
 // Define the type for the keys of our feature map
 export type FeatureKey =
@@ -21,6 +22,7 @@ export type FeatureKey =
   | 'Meditation'
   | 'Water'
   | 'Books'
+  | 'Affirmations'
   | 'Sleep';
 
 // Define the structure of the feature map
@@ -34,6 +36,7 @@ export const featureComponents: Record<FeatureKey, React.FC> = {
   Water,
   Books,
   Sleep,
+  Affirmations,
 };
 
 

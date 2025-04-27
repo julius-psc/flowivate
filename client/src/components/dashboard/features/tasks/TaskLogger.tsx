@@ -1,4 +1,4 @@
-"use client";
+"use client"; // Ensure this is at the very top
 
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -12,14 +12,19 @@ import {
   IconChevronRight,
 } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Checkbox from "../../recyclable/Checkbox";
-import * as tasksApi from "../../../../lib/tasksApi";
-import type { Task, TaskList } from "@/types/taskTypes";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryKey,
+} from "@tanstack/react-query";
+import Checkbox from "../../recyclable/Checkbox"; // Adjust path if needed
+import * as tasksApi from "../../../../lib/tasksApi"; // Adjust path if needed
+import type { Task, TaskList } from "@/types/taskTypes"; // Adjust path if needed
 
 // --- Helper Functions ---
 const createNewTask = (name: string): Task => ({
-  id: crypto.randomUUID(), // Use crypto.randomUUID for temporary client-side IDs if needed
+  id: crypto.randomUUID(),
   name: name.trim(),
   completed: false,
   priority: 0,
@@ -68,7 +73,6 @@ const PriorityIconDisplay: React.FC<{ level: number }> = ({ level }) => {
   );
 };
 
-// You might not need this if useQuery's placeholder handles the initial state
 const placeholderTaskLists: TaskList[] = [
   {
     _id: "placeholder-1",
@@ -119,7 +123,7 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-40 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg shadow-lg z-10 py-1.5 transition-all duration-200 ease-out animate-fade-in"
+      className="absolute right-0 top-full mt-2 w-40 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg shadow-lg z-[1000] py-1.5 transition-all duration-200 ease-out animate-fade-in" // Increased z-index
     >
       {priorityLevels.map(({ level, label, icon: Icon, color }) => (
         <button
@@ -150,8 +154,9 @@ const TaskLogger: React.FC = () => {
   // --- React Query Client ---
   const queryClient = useQueryClient();
   const { data: session, status } = useSession();
+  const queryKey: QueryKey = ["tasks"]; // Define query key for reuse
 
-  // --- Local UI State (Things not directly part of the fetched data) ---
+  // --- Local UI State ---
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -163,97 +168,144 @@ const TaskLogger: React.FC = () => {
   const [openPriorityDropdown, setOpenPriorityDropdown] = useState<
     string | null
   >(null);
-  // UI state for showing the "add task" input per list
   const [listAddingTaskId, setListAddingTaskId] = useState<string | null>(null);
 
   // --- Refs ---
   const editInputRef = useRef<HTMLInputElement>(null);
   const listNameInputRef = useRef<HTMLInputElement>(null);
   const subtaskInputRef = useRef<HTMLInputElement>(null);
-  const taskInputRefs = useRef<Record<string, HTMLInputElement | null>>({}); // Ref for task inputs per list
+  const taskInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // --- React Query: Fetching Task Lists ---
   const {
-    data: taskLists = [], // Default to empty array while loading/if data is undefined
+    data: taskLists = [],
     isLoading: isLoadingLists,
     isError: isErrorLists,
     error: errorLists,
-    // isFetching, // You can use this for background refresh indicators
   } = useQuery<TaskList[], Error>({
-    // Specify TaskList[] and Error types
-    queryKey: ["tasks"], // Unique key for this query
-    queryFn: tasksApi.getTaskLists, // Function to fetch data from tasksApi.ts
-    enabled: status === "authenticated", // Only run query if user is authenticated
-    staleTime: 1000 * 60 * 1, // Example: 1 minute fresh time
+    queryKey: queryKey,
+    queryFn: tasksApi.getTaskLists,
+    enabled: status === "authenticated",
+    staleTime: 1000 * 60 * 5, // Use a reasonable stale time
     refetchOnWindowFocus: true,
     placeholderData:
-      status !== "authenticated" ? placeholderTaskLists : undefined, // Show placeholders if not logged in
+      status !== "authenticated" ? placeholderTaskLists : undefined,
   });
 
   // --- React Query: Mutations ---
 
-  // Mutation to add a new list
   const addListMutation = useMutation({
     mutationFn: tasksApi.addTaskList,
-    onSuccess: (data, variables) => {
-      console.log(data, variables);
-      queryClient.invalidateQueries({ queryKey: ["tasks"] }); // Refetch lists after adding
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKey });
       setIsAddingList(false);
       setNewListName("");
     },
     onError: (error) => {
       console.error("Error adding list:", error);
-      // Add user feedback (e.g., toast notification)
+      // Consider user feedback (e.g., toast)
     },
   });
 
-  // Mutation to update a task list (e.g., modifying tasks array or name)
   const updateListMutation = useMutation({
     mutationFn: tasksApi.updateTaskList,
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] }); // Refetch lists after update
-
-      // Close editing/adding states if the update was related to them
-      if (editingTaskId && variables.tasks) {
-        setEditingTaskId(null);
-        setEditingTaskValue("");
+    onMutate: async (variables: {
+      id: string;
+      tasks?: Task[];
+      name?: string;
+    }) => {
+      // Handle mutations that might only include 'name' or other fields later
+      if (!variables.tasks) {
+        console.warn("Optimistic update skipped: tasks not provided.");
+        // Still snapshot previous data for potential rollback of other fields
+        const previousTaskLists =
+          queryClient.getQueryData<TaskList[]>(queryKey);
+        return { previousTaskLists };
       }
-      if (listAddingTaskId && variables.tasks) {
-        const inputElement = document.getElementById(
-          `task-input-${listAddingTaskId}`
-        ) as HTMLInputElement;
-        if (inputElement) inputElement.value = ""; // Clear input on success
-        setListAddingTaskId(null);
+      // Proceed with optimistic update for tasks
+      await queryClient.cancelQueries({ queryKey: queryKey });
+      const previousTaskLists = queryClient.getQueryData<TaskList[]>(queryKey);
+      if (previousTaskLists) {
+        queryClient.setQueryData<TaskList[]>(
+          queryKey,
+          (old) =>
+            old?.map((list) =>
+              list._id === variables.id
+                ? { ...list, tasks: variables.tasks as Task[] }
+                : list
+            ) ?? []
+        );
       }
-      if (addingSubtaskTo && variables.tasks) {
-        const inputElement = document.getElementById(
-          `subtask-input-${addingSubtaskTo}`
-        ) as HTMLInputElement;
-        if (inputElement) inputElement.value = ""; // Clear input on success
-        setAddingSubtaskTo(null);
+      return { previousTaskLists };
+    },
+    onError: (err, variables, context) => {
+      console.error(`Error updating list ${variables.id}:`, err);
+      if (context?.previousTaskLists) {
+        queryClient.setQueryData(queryKey, context.previousTaskLists);
+      }
+      // Consider user feedback
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKey });
+      // Clean up UI state *after* mutation settles
+      if (variables.tasks) {
+        const listContext = taskLists.find((l) => l._id === variables.id); // Get current list data
+        const wasEditingThisListTask = listContext?.tasks?.some(
+          (t) => t.id === editingTaskId
+        );
+        if (editingTaskId && wasEditingThisListTask) {
+          setEditingTaskId(null);
+          setEditingTaskValue("");
+        }
+        if (listAddingTaskId === variables.id) {
+          const input = document.getElementById(
+            `task-input-${listAddingTaskId}`
+          ) as HTMLInputElement;
+          if (input) input.value = "";
+          setListAddingTaskId(null);
+        }
+        const wasAddingSubtaskToThisList = listContext?.tasks?.some(
+          (t) =>
+            t.id === addingSubtaskTo ||
+            t.subtasks?.some((st) => st.id === addingSubtaskTo)
+        );
+        if (addingSubtaskTo && wasAddingSubtaskToThisList) {
+          const input = document.getElementById(
+            `subtask-input-${addingSubtaskTo}`
+          ) as HTMLInputElement;
+          if (input) input.value = "";
+          setAddingSubtaskTo(null);
+        }
       }
     },
-    onError: (error, variables) => {
-      console.error(`Error updating list ${variables.id}:`, error);
-      // Add user feedback
-    },
-    // Consider adding onMutate and onError with context for optimistic updates if needed
   });
 
-  // Mutation to delete a task list
   const deleteListMutation = useMutation({
     mutationFn: tasksApi.deleteTaskList,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] }); // Refetch lists after deleting
+    onMutate: async (listIdToDelete) => {
+      await queryClient.cancelQueries({ queryKey: queryKey });
+      const previousTaskLists = queryClient.getQueryData<TaskList[]>(queryKey);
+      if (previousTaskLists) {
+        queryClient.setQueryData(
+          queryKey,
+          previousTaskLists.filter((list) => list._id !== listIdToDelete)
+        );
+      }
+      return { previousTaskLists };
     },
-    onError: (error, listId) => {
-      console.error(`Error deleting list ${listId}:`, error);
-      // Add user feedback
+    onError: (err, listId, context) => {
+      console.error(`Error deleting list ${listId}:`, err);
+      if (context?.previousTaskLists) {
+        queryClient.setQueryData(queryKey, context.previousTaskLists);
+      }
+      // Consider user feedback
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKey });
     },
   });
 
   // --- Task/List Management Helpers (Recursive Functions) ---
-  // These operate on copies of the data before sending to mutation
   const findAndUpdateTask = (
     tasks: Task[],
     taskId: string,
@@ -282,27 +334,6 @@ const TaskLogger: React.FC = () => {
     taskId: string
   ): { updatedTasks: Task[]; taskFound: boolean } => {
     let taskFound = false;
-    const filteredTasks: Task[] = [];
-    for (const task of tasks) {
-      if (task.id === taskId) {
-        taskFound = true;
-        continue; // Skip adding this task
-      }
-      if (task.subtasks?.length > 0) {
-        const result = findAndDeleteTask(task.subtasks, taskId);
-        if (result.taskFound) taskFound = true; // Propagate found status upwards
-        // Add task back with potentially modified subtasks
-        filteredTasks.push({ ...task, subtasks: result.updatedTasks });
-      } else {
-        // Keep task if it's not the one to delete and has no subtasks to check
-        filteredTasks.push(task);
-      }
-    }
-    // This implementation needs careful review if tasks can be nested deeply
-    // A recursive filter might be cleaner for deeply nested deletes.
-    // However, for top-level and one-level subtasks, this should work.
-    // Ensure the final top-level filter is correct.
-    // Let's refine: Filter at each level.
     const finalFiltered = tasks
       .filter((task) => task.id !== taskId) // Filter top level
       .map((task) => {
@@ -317,7 +348,7 @@ const TaskLogger: React.FC = () => {
     return {
       updatedTasks: finalFiltered,
       taskFound: taskFound || tasks.length !== finalFiltered.length,
-    }; // Check if top-level was deleted
+    };
   };
 
   // --- Action Handlers (Use Mutations) ---
@@ -325,7 +356,6 @@ const TaskLogger: React.FC = () => {
   const handleAddList = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && newListName.trim() && session?.user?.id) {
       addListMutation.mutate({ name: newListName.trim() });
-      // onSuccess will clear state
     } else if (e.key === "Escape") {
       setIsAddingList(false);
       setNewListName("");
@@ -334,11 +364,9 @@ const TaskLogger: React.FC = () => {
 
   const handleDeleteList = (listId: string | undefined) => {
     if (!listId || listId.startsWith("placeholder-")) return;
-    // Optional: Add confirmation dialog here
     deleteListMutation.mutate(listId);
   };
 
-  // Helper to find list and trigger update mutation
   const triggerListUpdate = (listId: string, updatedTasks: Task[]) => {
     const list = taskLists.find((l) => l._id === listId);
     if (list && list._id && !list._id.startsWith("placeholder-")) {
@@ -368,20 +396,19 @@ const TaskLogger: React.FC = () => {
         [...list.tasks],
         parentTaskId,
         (task) => ({
-          // Operate on a copy
           ...task,
           subtasks: [...(task.subtasks || []), newTask],
         })
       );
       if (!result.taskFound) return;
       finalTasks = result.updatedTasks;
-      setExpandedTasks((prev) => ({ ...prev, [parentTaskId]: true })); // Keep UI state update
+      setExpandedTasks((prev) => ({ ...prev, [parentTaskId]: true })); // Keep parent expanded
     } else {
       finalTasks = [...list.tasks, newTask];
     }
 
     triggerListUpdate(listId, finalTasks);
-    // Don't clear input or reset state here, let onSuccess handle it
+    // onSettled will clear input
   };
 
   const handleKeyDownTaskInput = (
@@ -395,7 +422,7 @@ const TaskLogger: React.FC = () => {
       if (parentTaskId) {
         setAddingSubtaskTo(null);
       } else {
-        setListAddingTaskId(null); // Hide input on escape
+        setListAddingTaskId(null);
       }
       e.currentTarget.value = "";
       e.currentTarget.blur();
@@ -405,15 +432,13 @@ const TaskLogger: React.FC = () => {
   const handleDeleteTask = (listId: string, taskId: string) => {
     const list = taskLists.find((l) => l._id === listId);
     if (!list) return;
-
     const { updatedTasks, taskFound } = findAndDeleteTask(
       [...list.tasks],
       taskId
-    ); // Operate on a copy
+    );
     if (taskFound) {
       triggerListUpdate(listId, updatedTasks);
       if (openPriorityDropdown === taskId) {
-        // Keep UI state update
         setOpenPriorityDropdown(null);
       }
     }
@@ -422,12 +447,10 @@ const TaskLogger: React.FC = () => {
   const handleToggleTaskCompletion = (listId: string, taskId: string) => {
     const list = taskLists.find((l) => l._id === listId);
     if (!list) return;
-
     const { updatedTasks, taskFound } = findAndUpdateTask(
       [...list.tasks],
       taskId,
       (task) => ({
-        // Operate on a copy
         ...task,
         completed: !task.completed,
       })
@@ -444,32 +467,28 @@ const TaskLogger: React.FC = () => {
   ) => {
     const list = taskLists.find((l) => l._id === listId);
     if (!list) return;
-
     const { updatedTasks, taskFound } = findAndUpdateTask(
       [...list.tasks],
       taskId,
       (task) => ({
-        // Operate on a copy
         ...task,
         priority: newPriority,
       })
     );
     if (taskFound) {
       triggerListUpdate(listId, updatedTasks);
-      // Close dropdown via its own callback in JSX
     }
   };
 
   const handleStartEditing = (listId: string, task: Task) => {
-    if (listId.startsWith("placeholder-")) return; // Don't edit placeholders
-    setEditingTaskId(task.id); // Keep UI state update
+    if (listId.startsWith("placeholder-")) return;
+    setEditingTaskId(task.id);
     setEditingTaskValue(task.name);
-    setOpenPriorityDropdown(null); // Close priority dropdown when editing starts
+    setOpenPriorityDropdown(null);
     setTimeout(() => editInputRef.current?.focus(), 0);
   };
 
   const handleCancelEditing = () => {
-    // Keep UI state update
     setEditingTaskId(null);
     setEditingTaskValue("");
   };
@@ -484,8 +503,8 @@ const TaskLogger: React.FC = () => {
     }
 
     if (!trimmedValue) {
-      handleDeleteTask(listId, editingTaskId); // Reuse delete logic if editing to empty
-      handleCancelEditing(); // This will be reset by mutation success anyway, but good practice
+      handleDeleteTask(listId, editingTaskId);
+      handleCancelEditing(); // Cancel locally
       return;
     }
 
@@ -493,7 +512,6 @@ const TaskLogger: React.FC = () => {
       [...list.tasks],
       editingTaskId,
       (task) => ({
-        // Operate on a copy
         ...task,
         name: trimmedValue,
       })
@@ -501,9 +519,9 @@ const TaskLogger: React.FC = () => {
 
     if (taskFound) {
       triggerListUpdate(listId, updatedTasks);
-      // Let mutation onSuccess handle cancelling edit state
+      // Let onSettled handle cancelling edit state UI
     } else {
-      handleCancelEditing(); // Cancel if task wasn't found (edge case)
+      handleCancelEditing();
     }
   };
 
@@ -547,7 +565,6 @@ const TaskLogger: React.FC = () => {
 
   // --- Focus Management Effects ---
   useEffect(() => {
-    // Focus "Add Task" input when its state changes
     if (listAddingTaskId) {
       const inputElement = document.getElementById(
         `task-input-${listAddingTaskId}`
@@ -557,7 +574,6 @@ const TaskLogger: React.FC = () => {
   }, [listAddingTaskId]);
 
   useEffect(() => {
-    // Focus "Add Subtask" input when its state changes
     if (addingSubtaskTo) {
       const inputElement = document.getElementById(
         `subtask-input-${addingSubtaskTo}`
@@ -566,7 +582,7 @@ const TaskLogger: React.FC = () => {
     }
   }, [addingSubtaskTo]);
 
-  // --- Render Task Function ---
+  // --- Render Task Function (Keeps internal task styling) ---
   const renderTask = (
     task: Task,
     listId: string,
@@ -577,10 +593,13 @@ const TaskLogger: React.FC = () => {
     const hasSubtasks = task.subtasks && task.subtasks.length > 0;
     const isPriorityDropdownOpen = openPriorityDropdown === task.id;
     const isSubtask = level > 0;
-    const indentationClass = level > 0 ? `pl-${level * 6}` : ""; // Tailwind only allows specific values, adjust as needed or use style prop
+    const indentationClass = level > 0 ? `pl-${level * 4}` : ""; // Adjusted indent
     const isPlaceholder = listId.startsWith("placeholder-");
+    const isMutating =
+      updateListMutation.isPending &&
+      updateListMutation.variables?.id === listId;
 
-    // Editing view...
+    // Editing view (Keep internal styling)
     if (isEditing) {
       return (
         <div
@@ -588,26 +607,25 @@ const TaskLogger: React.FC = () => {
           className={`relative ${indentationClass}`}
         >
           <div className="flex items-center p-2 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 shadow-sm transition-all duration-200">
-            <div className="w-5 mr-2 flex-shrink-0" aria-hidden="true"></div>{" "}
-            {/* Expansion Placeholder */}
+            <div className="w-5 mr-2 flex-shrink-0" aria-hidden="true"></div>
             <input
               ref={editInputRef}
               type="text"
               value={editingTaskValue}
               onChange={(e) => setEditingTaskValue(e.target.value)}
               onKeyDown={(e) => handleEditInputKeyDown(e, listId)}
-              onBlur={() => handleSaveEditing(listId)} // Save on blur
+              onBlur={() => handleSaveEditing(listId)} // Save on blur is common
               className="flex-1 bg-transparent focus:outline-none text-slate-900 dark:text-slate-200 text-sm font-medium"
               autoFocus
+              disabled={isMutating}
             />
-            <div className="w-20 flex-shrink-0" aria-hidden="true"></div>{" "}
-            {/* Actions Placeholder */}
+            <div className="w-20 flex-shrink-0" aria-hidden="true"></div>
           </div>
         </div>
       );
     }
 
-    // Normal task view...
+    // Normal task view (Keep internal styling)
     return (
       <div key={task.id} className={`relative group/task ${indentationClass}`}>
         <div className="flex items-center p-2 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-100/50 dark:border-zinc-700/50 hover:border-slate-200/70 dark:hover:border-zinc-600/70 hover:shadow-sm transition-all duration-200">
@@ -622,101 +640,106 @@ const TaskLogger: React.FC = () => {
                 }
                 aria-expanded={isExpanded}
               >
+                {" "}
                 {isExpanded ? (
                   <IconChevronDown size={14} />
                 ) : (
                   <IconChevronRight size={14} />
-                )}
+                )}{" "}
               </button>
             ) : (
-              <div className="w-5" aria-hidden="true"></div> // Keep space consistent
+              <div className="w-5" aria-hidden="true"></div>
             )}
           </div>
 
-          {/* Checkbox and Task Name Area */}
+          {/* Checkbox and Task Name */}
           <div
             className="flex-1 mr-2 cursor-pointer"
             onDoubleClick={() =>
-              !isPlaceholder && handleStartEditing(listId, task)
+              !isPlaceholder && !isMutating && handleStartEditing(listId, task)
             }
+            title={!isPlaceholder ? "Double-click to edit" : ""}
           >
             <Checkbox
               checked={task.completed}
               onChange={() =>
-                !isPlaceholder && handleToggleTaskCompletion(listId, task.id)
+                !isPlaceholder &&
+                !isMutating &&
+                handleToggleTaskCompletion(listId, task.id)
               }
               label={task.name}
               variant={isSubtask ? "subtask" : "default"}
-              disabled={isPlaceholder || updateListMutation.isPending} // Disable if placeholder or updating
+              disabled={isPlaceholder || isMutating}
             />
           </div>
 
-          {/* Action Buttons - Hide/disable on placeholders */}
+          {/* Priority Button (Always Visible) */}
+          {!isPlaceholder && (
+            <div className="relative z-10 mr-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isMutating) togglePriorityDropdown(task.id);
+                }}
+                title={`Priority: ${
+                  priorityLevels.find((p) => p.level === task.priority)
+                    ?.label || "None"
+                }`}
+                className="p-1 rounded hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 text-slate-500 dark:text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-haspopup="true"
+                aria-expanded={isPriorityDropdownOpen}
+                disabled={isMutating}
+              >
+                <PriorityIconDisplay level={task.priority} />
+              </button>
+              {isPriorityDropdownOpen && (
+                <PriorityDropdown
+                  taskId={task.id}
+                  listId={listId}
+                  currentPriority={task.priority}
+                  onSetPriority={handleSetPriority}
+                  onClose={() => setOpenPriorityDropdown(null)}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Action Buttons (Edit/Delete) - Remain Hover-Activated */}
           {!isPlaceholder && (
             <div className="flex items-center gap-1 ml-auto pl-2 opacity-0 group-hover/task:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-              {/* Priority */}
-              <div className="relative z-10">
-                {" "}
-                {/* Ensure dropdown is above sibling elements */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    togglePriorityDropdown(task.id);
-                  }}
-                  title={`Priority: ${
-                    priorityLevels.find((p) => p.level === task.priority)
-                      ?.label || "None"
-                  }`}
-                  className="p-1 rounded hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 text-slate-500 dark:text-slate-400 transition-colors disabled:opacity-50"
-                  aria-haspopup="true"
-                  aria-expanded={isPriorityDropdownOpen}
-                  disabled={updateListMutation.isPending} // Disable if updating
-                >
-                  <PriorityIconDisplay level={task.priority} />
-                </button>
-                {isPriorityDropdownOpen && (
-                  <PriorityDropdown
-                    taskId={task.id}
-                    listId={listId}
-                    currentPriority={task.priority}
-                    onSetPriority={handleSetPriority} // Pass mutation handler
-                    onClose={() => setOpenPriorityDropdown(null)}
-                  />
-                )}
-              </div>
-              {/* Edit */}
               <button
-                onClick={() => handleStartEditing(listId, task)}
+                onClick={() => !isMutating && handleStartEditing(listId, task)}
                 title="Edit task"
-                className="p-1 rounded hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 text-slate-500 dark:text-slate-400 transition-colors disabled:opacity-50"
-                disabled={updateListMutation.isPending} // Disable if updating
+                className="p-1 rounded hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 text-slate-500 dark:text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isMutating}
               >
-                <IconEdit size={14} />
+                {" "}
+                <IconEdit size={14} />{" "}
               </button>
-              {/* Delete */}
               <button
-                onClick={() => handleDeleteTask(listId, task.id)}
+                onClick={() => !isMutating && handleDeleteTask(listId, task.id)}
                 title="Delete task"
-                className="p-1 rounded hover:bg-red-100/80 dark:hover:bg-red-900/50 text-red-500 dark:text-red-400 transition-colors disabled:opacity-50"
-                disabled={updateListMutation.isPending} // Disable if updating
+                className="p-1 rounded hover:bg-red-100/80 dark:hover:bg-red-900/50 text-red-500 dark:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isMutating}
               >
-                <IconTrash size={14} />
+                {" "}
+                <IconTrash size={14} />{" "}
               </button>
             </div>
           )}
         </div>
 
-        {/* Render Subtasks (Recursive Call) */}
+        {/* Render Subtasks */}
         {hasSubtasks && isExpanded && (
           <div className="mt-1 space-y-1 animate-fade-in">
+            {" "}
             {task.subtasks
-              .sort((a, b) => b.priority - a.priority) // Sort subtasks by priority
+              .sort((a, b) => b.priority - a.priority)
               .map((subtask) => renderTask(subtask, listId, level + 1))}{" "}
-            {/* Pass listId down */}
           </div>
         )}
 
-        {/* Add Subtask Input/Button - Disable for placeholders & level > 0 */}
+        {/* Add Subtask Input/Button */}
         {!isPlaceholder && level === 0 && (
           <div className={`mt-1 ${indentationClass}`}>
             {addingSubtaskTo === task.id ? (
@@ -726,7 +749,6 @@ const TaskLogger: React.FC = () => {
                 type="text"
                 onKeyDown={(e) => handleKeyDownTaskInput(e, listId, task.id)}
                 onBlur={(e) => {
-                  // Delay check slightly to allow Enter to process first
                   setTimeout(() => {
                     if (!e.target.value.trim() && addingSubtaskTo === task.id) {
                       setAddingSubtaskTo(null);
@@ -735,18 +757,17 @@ const TaskLogger: React.FC = () => {
                 }}
                 className="w-full p-2 bg-slate-50/90 dark:bg-zinc-800/90 backdrop-blur-md rounded-lg border border-slate-200/50 dark:border-zinc-700/50 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm text-slate-900 dark:text-slate-200 transition-all duration-200 disabled:opacity-50"
                 placeholder="New subtask..."
-                disabled={updateListMutation.isPending} // Disable if updating
-                // Focus handled by useEffect
+                disabled={isMutating}
               />
             ) : (
               <button
-                onClick={() => setAddingSubtaskTo(task.id)}
-                className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 text-sm transition-colors duration-200 py-1 pl-7 opacity-0 group-hover/task:opacity-100 disabled:opacity-50"
+                onClick={() => !isMutating && setAddingSubtaskTo(task.id)}
+                className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 text-sm transition-colors duration-200 py-1 pl-7 opacity-0 group-hover/task:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Add subtask"
-                disabled={updateListMutation.isPending} // Disable if updating
+                disabled={isMutating}
               >
-                <IconCopyPlus size={14} />
-                <span>Add subtask</span>
+                {" "}
+                <IconCopyPlus size={14} /> <span>Add subtask</span>{" "}
               </button>
             )}
           </div>
@@ -756,18 +777,13 @@ const TaskLogger: React.FC = () => {
   }; // --- End of renderTask ---
 
   // --- Loading and Empty States ---
-  if (status === "loading" || (status === "authenticated" && isLoadingLists)) {
+  if (
+    status === "loading" ||
+    (status === "authenticated" && isLoadingLists && !taskLists.length)
+  ) {
     return (
       <div className="p-4 text-center text-slate-500 dark:text-slate-400">
         Loading Tasks...
-      </div>
-    );
-  }
-  if (status === "unauthenticated" && !taskLists.length) {
-    // Show message only if no placeholder data is shown
-    return (
-      <div className="p-4 text-center text-slate-500 dark:text-slate-400">
-        Please sign in to manage your tasks.
       </div>
     );
   }
@@ -779,190 +795,212 @@ const TaskLogger: React.FC = () => {
     );
   }
 
-  // --- Main Component Render ---
-  // Use taskLists directly from useQuery (could be actual data or placeholderData)
-  const listsToDisplay = taskLists;
+  // Determine lists to display (handle unauthenticated state with placeholders)
+  const listsToDisplay =
+    status === "authenticated" ? taskLists : placeholderTaskLists;
+  // Handle case where user is logged in but query returns empty (and not loading)
+  const showNoListsMessage =
+    status === "authenticated" &&
+    !isLoadingLists &&
+    !isErrorLists &&
+    taskLists.length === 0 &&
+    !isAddingList;
+  // Handle case where user is not logged in and there are no placeholders
+  const showSignInMessage =
+    status === "unauthenticated" &&
+    (!placeholderTaskLists || placeholderTaskLists.length === 0);
 
   return (
-    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
+    // Outer container: No background/border, just padding and flex structure
+    <div className="p-4 flex flex-col h-full">
+      {/* Header: Centered with max-width */}
+      <div className="flex justify-between items-center mb-4 flex-shrink-0 max-w-3xl mx-auto w-full px-2">
         <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
           My Tasks
         </h1>
-        {/* Optional: Global mutation loading/error indicator */}
         {updateListMutation.isPending && (
-          <span className="text-xs text-blue-500">Saving...</span>
-        )}
-        {updateListMutation.isError && (
-          <span className="text-xs text-red-500">Save Error!</span>
+          <span className="text-xs text-blue-500 animate-pulse">Saving...</span>
         )}
       </div>
-      {/* Scrollable area for task lists */}
-      <div className="flex-1 overflow-y-auto pr-2 -mr-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-zinc-600 scrollbar-track-transparent">
-        {listsToDisplay.length === 0 &&
-          !isAddingList &&
-          status === "authenticated" &&
-          !isLoadingLists && (
+      {/* Scrollable area: No visible scrollbar styling */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Centering and Max Width Container for Lists */}
+        <div className="max-w-3xl mx-auto w-full px-2">
+          {showNoListsMessage && (
             <div className="text-center text-slate-400 dark:text-slate-500 py-10">
-              No task lists yet. Add one below!
+              {" "}
+              No task lists yet. Add one below!{" "}
             </div>
           )}
-        {/* Map over taskLists from useQuery */}
-        {listsToDisplay.map((list) => (
-          <div key={list._id || list.name} className="mb-6 group/list">
-            {/* List Header (Name, Ratio, Delete Button) */}
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-medium text-slate-700 dark:text-slate-300">
-                {list.name}
-              </h2>
-              <div className="flex-1 mx-3 border-t border-slate-200 dark:border-zinc-700 border-dashed"></div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100/80 dark:bg-zinc-800/80 backdrop-blur-md px-2 py-1 rounded-full">
-                  {getCompletionRatio(list.tasks)}
-                </span>
-                {/* Delete list button */}
-                {!list._id?.startsWith("placeholder-") && (
-                  <button
-                    onClick={() => handleDeleteList(list._id)}
-                    title={`Delete list "${list.name}"`}
-                    className="text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1 opacity-0 group-hover/list:opacity-100 disabled:opacity-50"
-                    disabled={
-                      deleteListMutation.isPending &&
-                      deleteListMutation.variables === list._id
-                    }
-                  >
-                    {deleteListMutation.isPending &&
-                    deleteListMutation.variables === list._id ? (
-                      <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full inline-block"></span>
-                    ) : (
-                      <IconTrash size={16} />
-                    )}
-                  </button>
-                )}
-              </div>
+          {showSignInMessage && (
+            <div className="p-4 text-center text-slate-500 dark:text-slate-400">
+              Please sign in to manage tasks.
             </div>
-            {/* Render Tasks for the current list */}
-            {(list.tasks || []) // Add safety check for tasks array
-              .sort((a, b) => b.priority - a.priority) // Sort top-level tasks
-              .map((task) => renderTask(task, list._id!, 0))}{" "}
-            {/* Pass list._id safely */}
-            {/* Input field for adding a new task to this list */}
-            {listAddingTaskId === list._id &&
-              !list._id?.startsWith("placeholder-") && (
-                <div className="mt-2">
-                  <input
-                    id={`task-input-${list._id}`}
-                    ref={(el) => {
-                      taskInputRefs.current[list._id!] = el;
-                    }}
-                    type="text"
-                    onKeyDown={(e) => handleKeyDownTaskInput(e, list._id!)}
-                    onBlur={(e) => {
-                      setTimeout(() => {
-                        const currentInput = document.getElementById(
-                          `task-input-${list._id}`
-                        );
-                        if (
-                          currentInput &&
-                          !e.target.value.trim() &&
-                          listAddingTaskId === list._id
-                        ) {
-                          setListAddingTaskId(null);
-                        }
-                      }, 150);
-                    }}
-                    className="w-full p-2 bg-slate-50/90 dark:bg-zinc-800/90 backdrop-blur-md rounded-lg border border-slate-200/50 dark:border-zinc-700/50 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm text-slate-900 dark:text-slate-200 transition-all duration-200 disabled:opacity-50"
-                    placeholder="New task..."
-                    disabled={updateListMutation.isPending} // Disable if updating
-                    // Focus handled by useEffect
-                  />
+          )}
+
+          {/* Map over taskLists */}
+          {listsToDisplay.map((list) => (
+            <div key={list._id || list.name} className="mb-6 group/list">
+              {/* List Header */}
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-medium text-slate-700 dark:text-slate-300">
+                  {" "}
+                  {list.name}{" "}
+                </h2>
+                <div className="flex-1 mx-3 border-t border-slate-200 dark:border-zinc-700 border-dashed"></div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100/80 dark:bg-zinc-800/80 backdrop-blur-md px-2 py-1 rounded-full">
+                    {" "}
+                    {getCompletionRatio(list.tasks)}{" "}
+                  </span>
+                  {/* Delete button only if not placeholder */}
+                  {!list._id?.startsWith("placeholder-") && (
+                    <button
+                      onClick={() => handleDeleteList(list._id)}
+                      title={`Delete list "${list.name}"`}
+                      className="text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1 opacity-0 group-hover/list:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={
+                        deleteListMutation.isPending &&
+                        deleteListMutation.variables === list._id
+                      }
+                    >
+                      {deleteListMutation.isPending &&
+                      deleteListMutation.variables === list._id ? (
+                        <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full inline-block"></span>
+                      ) : (
+                        <IconTrash size={16} />
+                      )}
+                    </button>
+                  )}
                 </div>
+              </div>
+              {/* Render Tasks */}
+              {(list.tasks || [])
+                .sort((a, b) => b.priority - a.priority)
+                .map((task) => renderTask(task, list._id!, 0))}
+
+              {/* Add Task Input/Button (only if not placeholder) */}
+              {!list._id?.startsWith("placeholder-") && (
+                <>
+                  {listAddingTaskId === list._id && (
+                    <div className="mt-2">
+                      <input
+                        id={`task-input-${list._id}`}
+                        ref={(el) => {
+                          taskInputRefs.current[list._id!] = el;
+                        }}
+                        type="text"
+                        onKeyDown={(e) => handleKeyDownTaskInput(e, list._id!)}
+                        onBlur={(e) => {
+                          setTimeout(() => {
+                            if (
+                              !e.target.value.trim() &&
+                              listAddingTaskId === list._id
+                            ) {
+                              setListAddingTaskId(null);
+                            }
+                          }, 150);
+                        }}
+                        className="w-full p-2 bg-slate-50/90 dark:bg-zinc-800/90 backdrop-blur-md rounded-lg border border-slate-200/50 dark:border-zinc-700/50 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm text-slate-900 dark:text-slate-200 transition-all duration-200 disabled:opacity-50"
+                        placeholder="New task..."
+                        disabled={updateListMutation.isPending}
+                      />
+                    </div>
+                  )}
+                  {listAddingTaskId !== list._id && (
+                    <button
+                      onClick={() =>
+                        !updateListMutation.isPending &&
+                        setListAddingTaskId(list._id!)
+                      }
+                      className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Add task"
+                      disabled={updateListMutation.isPending}
+                    >
+                      <IconCopyPlus size={14} /> <span>Add task</span>
+                    </button>
+                  )}
+                </>
               )}
-            {/* Button to show the 'Add task' input field */}
-            {listAddingTaskId !== list._id &&
-              !list._id?.startsWith("placeholder-") && (
-                <button
-                  onClick={() => setListAddingTaskId(list._id!)}
-                  className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50"
-                  title="Add task"
-                  disabled={updateListMutation.isPending} // Disable if updating
-                >
-                  <IconCopyPlus size={14} />
-                  <span>Add task</span>
-                </button>
-              )}
-          </div>
-        ))}{" "}
-        {/* End of task list map */}
-        {/* Input field for adding a new list */}
-        {isAddingList && (
-          <div className="mb-6 mt-4">
-            <input
-              ref={listNameInputRef}
-              type="text"
-              value={newListName}
-              onChange={(e) => setNewListName(e.target.value)}
-              onKeyDown={handleAddList} // Uses mutation handler
-              onBlur={() => {
-                // Hide if blurred and empty
-                setTimeout(() => {
-                  if (
-                    listNameInputRef.current &&
-                    !newListName.trim() &&
-                    isAddingList
-                  ) {
-                    setIsAddingList(false);
-                    setNewListName("");
-                  }
-                }, 100);
-              }}
-              className="w-full text-lg font-medium text-slate-700 dark:text-slate-300 bg-transparent border-b-2 border-slate-300/50 dark:border-zinc-600/50 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 disabled:opacity-50"
-              placeholder="New list name..."
-              autoFocus
-              disabled={addListMutation.isPending} // Disable while adding
-            />
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Press Enter to save or Escape to cancel
-            </p>
-            {addListMutation.isError && (
-              <p className="text-xs text-red-500 mt-1">
-                Error: {addListMutation.error.message}
+            </div>
+          ))}
+
+          {/* Add New List Input (only if authenticated) */}
+          {status === "authenticated" && isAddingList && (
+            <div className="mb-6 mt-4">
+              <input
+                ref={listNameInputRef}
+                type="text"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                onKeyDown={handleAddList}
+                onBlur={() => {
+                  setTimeout(() => {
+                    if (
+                      listNameInputRef.current &&
+                      !newListName.trim() &&
+                      isAddingList
+                    ) {
+                      setIsAddingList(false);
+                      setNewListName("");
+                    }
+                  }, 100);
+                }}
+                className="w-full text-lg font-medium text-slate-700 dark:text-slate-300 bg-transparent border-b-2 border-slate-300/50 dark:border-zinc-600/50 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 disabled:opacity-50"
+                placeholder="New list name..."
+                autoFocus
+                disabled={addListMutation.isPending}
+              />
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {" "}
+                Press Enter to save or Escape to cancel{" "}
               </p>
-            )}
-          </div>
-        )}
-      </div>{" "}
-      {/* End of scrollable area */}
-      {/* Footer Section - Button to add a new list */}
-      {!isAddingList && (
-        <button
-          onClick={() => {
-            setIsAddingList(true);
-            setTimeout(() => listNameInputRef.current?.focus(), 0);
-          }}
-          className="mt-4 flex items-center justify-center p-2 w-full bg-slate-50/90 dark:bg-zinc-800/90 backdrop-blur-md rounded-lg border border-slate-200/50 dark:border-zinc-700/50 text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 hover:border-slate-300/70 dark:hover:border-zinc-600/70 transition-all duration-200 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={status !== "authenticated" || addListMutation.isPending}
-          title={
-            status !== "authenticated"
-              ? "Sign in to add lists"
-              : "Add a new task list"
-          }
-        >
-          {addListMutation.isPending ? (
-            <>
-              <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></span>
-              <span>Adding...</span>
-            </>
-          ) : (
-            <>
-              <IconSquareRoundedPlus2 size={18} className="mr-2" />
-              <span className="font-medium">Add new list</span>
-            </>
+              {addListMutation.isError && (
+                <p className="text-xs text-red-500 mt-1">
+                  {" "}
+                  Error: {addListMutation.error.message}{" "}
+                </p>
+              )}
+            </div>
           )}
-        </button>
+        </div>{" "}
+        {/* End Centering Container */}
+      </div>{" "}
+      {/* End Scrollable Area */}
+      {/* Footer Section: Add List Button (Centered, only if authenticated) */}
+      {status === "authenticated" && (
+        <div className="max-w-3xl mx-auto w-full px-2 mt-4 flex-shrink-0">
+          {!isAddingList && (
+            <button
+              onClick={() => {
+                if (!addListMutation.isPending) {
+                  setIsAddingList(true);
+                  setTimeout(() => listNameInputRef.current?.focus(), 0);
+                }
+              }}
+              // Simplified styling
+              className="flex items-center justify-center p-2 w-full rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={addListMutation.isPending}
+              title="Add a new task list"
+            >
+              {addListMutation.isPending ? (
+                <>
+                  {" "}
+                  <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></span>{" "}
+                  <span>Adding...</span>{" "}
+                </>
+              ) : (
+                <>
+                  {" "}
+                  <IconSquareRoundedPlus2 size={18} className="mr-2" />{" "}
+                  <span className="font-medium">Add new list</span>{" "}
+                </>
+              )}
+            </button>
+          )}
+        </div>
       )}
-    </div> // End of outer container
+    </div> // End Outer Container
   );
 };
 

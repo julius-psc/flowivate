@@ -362,11 +362,11 @@ export const Journal: React.FC<JournalProps> = ({
     // Keep updated base text colors
     <div className="flex flex-col h-full w-full overflow-hidden text-secondary-black dark:text-secondary-white">
       {/* Main Content Area */}
-      <div className="flex flex-1 gap-4 p-3 md:p-4 overflow-hidden">
+      <div className="flex flex-1 gap-4 p-3 md:p-4 overflow-hidden mx-auto max-w-4xl w-full">
 
-        {/* === Sidebar Section REVERTED to Original Styling === */}
+        {/* === Sidebar Section === */}
         <div className="flex flex-col w-20 flex-shrink-0">
-          {/* Week Navigation & Month Display - REVERTED */}
+          {/* Week Navigation & Month Display */}
           <div className="flex items-center justify-between w-full my-2 px-1">
             <button
               onClick={handlePreviousWeek}
@@ -411,7 +411,7 @@ export const Journal: React.FC<JournalProps> = ({
                   disabled={isLoading || isSaving || isDeleting}
                   // Original complex className logic REVERTED
                   className={`
-                        flex flex-col items-center p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 dark:focus:ring-offset-zinc-900 focus:ring-black dark:focus:ring-white
+                        flex flex-col items-center p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 dark:focus:ring-offset-zinc-900 focus:ring-black dark:focus:ring-white
                         ${
                           isSelected
                             ? "bg-black text-white dark:bg-white dark:text-black" // Original selected style
@@ -452,7 +452,8 @@ export const Journal: React.FC<JournalProps> = ({
         {/* Editor Area - Keep BookLogger background/border */}
         <div className="relative w-full p-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden">
            {/* Header - Keep updated text color */}
-          <div className="flex items-center justify-between p-4 border-b border-slate-200/50 dark:border-zinc-700/50 flex-shrink-0">
+          <div className="flex items-center justify-between p-4 flex-shrink-0">
+          <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">JOURNAL</h1>
             {/* Keep updated text color */}
             <div className="text-sm text-accent-grey-hover dark:text-accent-grey opacity-90">
               {format(selectedDate, "EEEE, MMMM d, yyyy")} {/* Corrected format string */}

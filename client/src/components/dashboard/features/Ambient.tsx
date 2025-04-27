@@ -161,9 +161,7 @@ const Ambient: React.FC = () => {
     <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full overflow-hidden">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-sm font-medium text-secondary-black dark:text-secondary-white opacity-50 tracking-wider">
-          AMBIENT
-        </h1>
+      <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">AMBIENT</h1>
         <span className="text-xs text-gray-500 dark:text-gray-400 truncate" aria-live="polite">
           {currentSound || 'Select Sound'}
         </span>

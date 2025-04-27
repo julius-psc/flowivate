@@ -320,23 +320,23 @@
 /* Dark Mode Scrollbar */
 @media (prefers-color-scheme: dark) {
   ::-webkit-scrollbar-thumb {
-    background-color: rgba(240, 240, 240, 0.5); /* Semi-transparent light color */
+    background-color: #4C4E50;
     border: 2px solid #121212; /* Creates margin effect in dark mode using a dark background */
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(240, 240, 240, 0.8); /* Lighter on hover */
+    background-color: #949597; /* Lighter on hover */
   }
 }
 
 /* For Firefox support */
 html {
   scrollbar-width: thin; /* "thin" or "auto" */
-  scrollbar-color: #808080 transparent; /* thumb and track color */
+  scrollbar-color: #949597 transparent; /* thumb and track color */
 }
 
 @media (prefers-color-scheme: dark) {
   html {
-    scrollbar-color: #f0f0f0 transparent;
+    scrollbar-color: #4C4E50;
   }
 }
