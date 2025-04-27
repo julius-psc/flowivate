@@ -13,6 +13,59 @@ interface Book {
   dateAdded: string;
 }
 
+// --- New Skeleton Loader Component ---
+const BooksSkeleton = () => {
+  const numberOfPlaceholderBooks = 4; // Number of skeleton rows to match the display limit
+
+  return (
+    // Match outer container style from Books component
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full animate-pulse">
+      {/* Header Skeleton */}
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
+        <div className="h-3 w-12 bg-gray-200 dark:bg-zinc-700 rounded"></div>{" "}
+        {/* "BOOKS" placeholder */}
+        <div className="h-7 w-24 bg-gray-300 dark:bg-zinc-600 rounded-md"></div>{" "}
+        {/* "New Book" button placeholder */}
+      </div>
+
+      {/* Book List Skeleton */}
+      {/* Use flex-grow to ensure content fills space and pushes footer down */}
+      <div className="space-y-2 flex-grow">
+        {[...Array(numberOfPlaceholderBooks)].map((_, index) => (
+          <React.Fragment key={index}>
+            {/* Mimic list item structure and spacing */}
+            <div className="flex items-center justify-between py-1.5">
+              {" "}
+              {/* Adjusted padding slightly */}
+              <div className="flex items-center gap-2 flex-1 min-w-0 mr-4">
+                {" "}
+                {/* Added min-w-0 for flex truncation */}
+                <div className="w-2.5 h-2.5 bg-gray-300 dark:bg-zinc-600 rounded-full flex-shrink-0"></div>{" "}
+                {/* Status circle placeholder */}
+                <div className="h-4 bg-gray-200 dark:bg-zinc-700 rounded w-4/5"></div>{" "}
+                {/* Book title placeholder */}
+              </div>
+              <div className="w-4 h-4 bg-gray-300 dark:bg-zinc-600 rounded flex-shrink-0"></div>{" "}
+              {/* Arrow Icon placeholder */}
+            </div>
+            {/* HR placeholder, skip after last item */}
+            {index < numberOfPlaceholderBooks - 1 && (
+              <div className="h-px bg-gray-200 dark:bg-zinc-700/50"></div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Footer Link Skeleton */}
+      <div className="mt-3 text-center flex-shrink-0">
+        <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded mx-auto"></div>{" "}
+        {/* "View all books" placeholder */}
+      </div>
+    </div>
+  );
+};
+
+// --- Main Books Component ---
 const Books: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,20 +73,26 @@ const Books: React.FC = () => {
 
   useEffect(() => {
     const fetchBooks = async () => {
+      // Reset states for potential refetches
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        const response = await fetch("/api/features/books");
-        
+        const response = await fetch("/api/features/books"); // Ensure this endpoint is correct
+
         if (!response.ok) {
-          throw new Error("Failed to fetch books");
+          const errorData = await response.json().catch(() => ({})); // Try to get error details
+          throw new Error(
+            errorData.message || `Failed to fetch books (${response.status})`
+          );
         }
-        
+
         const data = await response.json();
         setBooks(data.books || []);
-        setError(null);
       } catch (err) {
-        setError("Error loading books");
-        console.error(err);
+        const errorMessage =
+          err instanceof Error ? err.message : "An unknown error occurred";
+        setError(`Error loading books: ${errorMessage}`);
+        console.error("Fetch Books Error:", err);
       } finally {
         setLoading(false);
       }
@@ -42,7 +101,7 @@ const Books: React.FC = () => {
     fetchBooks();
   }, []);
 
-  // Get last 4 books
+  // Get last 4 books (or fewer if less than 4 exist)
   const recentBooks = books.slice(0, 4);
 
   const getStatusColor = (status: Book["status"]) => {
@@ -71,82 +130,99 @@ const Books: React.FC = () => {
     }
   };
 
+  // --- Loading State --- (Uses new Skeleton)
   if (loading) {
-    return (
-      <div className="w-full p-4 border border-gray-200 dark:border-gray-800/50 bg-white dark:bg-bg-dark rounded-lg">
-        <div className="animate-pulse">
-          <div className="flex justify-between items-center mb-3">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-          </div>
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex justify-between items-center">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <BooksSkeleton />;
   }
 
+  // --- Error State ---
   if (error) {
     return (
-      <div className="w-full p-4 border border-gray-200 dark:border-gray-800/50 bg-white dark:bg-bg-dark rounded-lg">
-        <div className="text-center text-red-500">{error}</div>
+      // Use consistent component container for error display
+      <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full items-center justify-center">
+        <p className="text-center text-red-500 dark:text-red-400 text-sm">
+          {error}
+        </p>
+        {/* Optional: Add a retry button here */}
       </div>
     );
   }
 
+  // --- Actual Component Render ---
   return (
     <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
-    <div className="flex justify-between items-center mb-4 flex-shrink-0">
-      <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">BOOKS</h1>
-      <Link href="/dashboard/books">
-          <div className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 bg-primary-white dark:bg-primary-black-dark px-2 py-1 rounded-md dark:hover:text-gray-100 cursor-pointer">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
+        <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
+          BOOKS
+        </h1>
+        {/* Ensure Link usage is correct for your Next.js version/app router */}
+        <Link href="/dashboard/books" passHref legacyBehavior>
+          <a className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 bg-primary-white dark:bg-primary-black-dark px-2 py-1 rounded-md dark:hover:text-gray-100 cursor-pointer border border-slate-200/80 dark:border-zinc-700/80 transition-all">
             <span>New Book</span>
             <IconBook2 size={14} />
-          </div>
+          </a>
         </Link>
-    </div>
-      
-      {recentBooks.length === 0 ? (
-        <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-          No books added yet
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {recentBooks.map((book, index) => (
-            <React.Fragment key={book._id}>
-              <li className="flex items-center justify-between text-sm text-gray-800 dark:text-gray-200">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`w-2 h-2 rounded-full ${getStatusColor(book.status)}`}
-                    title={getStatusLabel(book.status)}
-                  ></span>
-                  <span className="truncate max-w-[180px]" title={book.title}>
-                    {book.title}
-                  </span>
-                </div>
-                <Link href={`/dashboard/books/${book._id}`}>
-                  <IconArrowUpRight
-                    size={14}
-                    className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer"
-                  />
-                </Link>
-              </li>
-              {index < recentBooks.length - 1 && (
-                <hr className="border-t border-gray-300 dark:border-gray-800" />
-              )}
-            </React.Fragment>
-          ))}
-        </ul>
-      )}
-      
-      <div className="mt-3 text-center">
-        <Link href="/dashboard/books" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+      </div>
+
+      {/* Book List or Empty Message */}
+      {/* Use flex-grow to push footer down */}
+      <div className="flex-grow">
+        {recentBooks.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
+              No books added yet
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {recentBooks.map((book, index) => (
+              <React.Fragment key={book._id}>
+                <li className="flex items-center justify-between text-sm text-gray-800 dark:text-gray-200 py-1.5">
+                  {" "}
+                  {/* Added padding */}
+                  <div className="flex items-center gap-2 flex-1 min-w-0 mr-4">
+                    {" "}
+                    {/* Added min-w-0 */}
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${getStatusColor(
+                        book.status
+                      )} flex-shrink-0`} // Added flex-shrink-0
+                      title={getStatusLabel(book.status)}
+                    ></span>
+                    <span className="truncate" title={book.title}>
+                      {book.title}
+                    </span>
+                  </div>
+                  <Link
+                    href={`/dashboard/books/${book._id}`}
+                    passHref
+                    legacyBehavior
+                  >
+                    <a title={`View details for ${book.title}`}>
+                      <IconArrowUpRight
+                        size={16} // Slightly larger for easier click
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors flex-shrink-0"
+                      />
+                    </a>
+                  </Link>
+                </li>
+                {/* Divider */}
+                {index < recentBooks.length - 1 && (
+                  <hr className="border-t border-gray-200 dark:border-zinc-700/50" /> // Adjusted color
+                )}
+              </React.Fragment>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Footer Link */}
+      <div className="mt-3 text-center flex-shrink-0">
+        <Link
+          href="/dashboard/books"
+          className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+        >
           View all books
         </Link>
       </div>

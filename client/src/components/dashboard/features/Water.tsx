@@ -5,28 +5,84 @@ import { useSession } from "next-auth/react";
 import { Plus, Minus } from "lucide-react";
 import { IconBucketDroplet } from "@tabler/icons-react";
 
+// --- New Skeleton Loader Component ---
+const WaterSkeleton = () => {
+  return (
+    // Match outer container style from Water component
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full animate-pulse">
+      {/* Header Skeleton */}
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
+        <div className="h-3 w-24 bg-gray-200 dark:bg-zinc-700 rounded"></div> {/* "WATER INTAKE" placeholder */}
+      </div>
+
+      {/* Main Display Skeleton */}
+      <div className="flex flex-col items-center mb-6">
+        {/* Icon Placeholder */}
+        <div className="w-10 h-10 bg-gray-300 dark:bg-zinc-600 rounded-full mb-3"></div>
+        {/* Amount Text Placeholders */}
+        <div className="flex items-baseline justify-center mb-1">
+          <div className="h-8 w-16 bg-gray-200 dark:bg-zinc-700 rounded mr-1"></div> {/* Current amount */}
+          <div className="h-5 w-16 bg-gray-200 dark:bg-zinc-700 rounded"></div> {/* Total amount */}
+        </div>
+        {/* Remaining Text Placeholder */}
+        <div className="h-4 w-28 bg-gray-200 dark:bg-zinc-700 rounded mt-1"></div> {/* Remaining text */}
+      </div>
+
+      {/* Progress Bar Area Skeleton */}
+      <div className="w-full mb-4">
+        {/* Labels Placeholder */}
+        <div className="flex justify-between mb-1 px-10 text-xs"> {/* Approximate positioning */}
+            <div className="h-3 w-3 bg-gray-200 dark:bg-zinc-700 rounded"></div> {/* 0 */}
+            <div className="h-3 w-4 bg-gray-200 dark:bg-zinc-700 rounded"></div> {/* 1L */}
+            <div className="h-3 w-4 bg-gray-200 dark:bg-zinc-700 rounded"></div> {/* 2L */}
+        </div>
+        {/* Controls + Bar Placeholder */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gray-300 dark:bg-zinc-600 rounded-full flex-shrink-0"></div> {/* Decrement Button */}
+          <div className="h-6 flex-grow bg-gray-200 dark:bg-zinc-700 rounded-full"></div> {/* Progress Bar */}
+          <div className="w-10 h-10 bg-gray-300 dark:bg-zinc-600 rounded-full flex-shrink-0"></div> {/* Increment Button */}
+        </div>
+      </div>
+
+      {/* Status Message Placeholder */}
+      {/* Occupies space roughly equivalent to the status message area height */}
+      <div className="h-6 mb-2 flex justify-center items-center">
+          <div className="h-4 w-1/3 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+      </div>
+
+
+      {/* Save Button Placeholder */}
+      {/* Using mt-auto might be needed if the parent flex container height is fixed/guaranteed */}
+      <div className="flex justify-center mt-auto pt-2"> {/* Added pt-2 for spacing similar to original layout */}
+        <div className="h-10 w-40 bg-gray-300 dark:bg-zinc-600 rounded-full"></div> {/* Save Button */}
+      </div>
+    </div>
+  );
+};
+
+
+// --- Main Water Component ---
 const Water = () => {
   const [waterAmount, setWaterAmount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true); // For loading state
-  const [error, setError] = useState<string | null>(null); // For error messages
-  const [successMessage, setSuccessMessage] = useState<string | null>(null); // For success feedback
-  const { status } = useSession(); // Get session status
+  const [isLoading, setIsLoading] = useState(true); // Used for BOTH initial fetch AND saving
+  const [isFetching, setIsFetching] = useState(true); // Specifically for initial fetch state
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { status } = useSession();
 
-  const dailyGoal = 2000; // 2L daily goal
-  const increment = 250; // 250ml increments
+  const dailyGoal = 2000;
+  const increment = 250;
 
-  // Fetch initial water amount on component mount
+  // Fetch initial water amount
   useEffect(() => {
     const fetchInitialWater = async () => {
       if (status === "authenticated") {
-        setIsLoading(true);
+        setIsFetching(true); // Start fetching state
         setError(null);
         try {
           const response = await fetch("/api/features/water", {
             method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
           });
 
@@ -41,15 +97,27 @@ const Water = () => {
           console.error("Failed to fetch initial water amount:", err);
           setError(err instanceof Error ? err.message : "An unknown error occurred fetching data.");
         } finally {
-          setIsLoading(false);
+          setIsFetching(false); // End fetching state
+          setIsLoading(false); // Also end general loading state after fetch
         }
       } else if (status === "unauthenticated") {
         setWaterAmount(0);
+        setIsFetching(false); // Not fetching if not logged in
+        setIsLoading(false); // Not loading if not logged in
       }
+      // If status is 'loading', we wait for it to resolve, triggering the effect again
     };
 
-    fetchInitialWater();
-  }, [status]);
+    // Only run fetch if authenticated or unauthenticated, wait if 'loading'
+    if (status === "authenticated" || status === "unauthenticated") {
+        fetchInitialWater();
+    } else {
+        // If session status is 'loading', ensure our component state reflects this
+        setIsLoading(true);
+        setIsFetching(true);
+    }
+
+  }, [status]); // Rerun when session status changes
 
   const handleIncrement = () => {
     if (waterAmount < dailyGoal) {
@@ -73,16 +141,14 @@ const Water = () => {
       return;
     }
 
-    setIsLoading(true);
+    setIsLoading(true); // Indicate saving process
     setError(null);
     setSuccessMessage(null);
 
     try {
       const response = await fetch("/api/features/water", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ waterAmount: waterAmount }),
       });
@@ -100,47 +166,22 @@ const Water = () => {
       console.error("Failed to save water amount:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // End saving process
     }
   };
 
   const percentage = Math.min((waterAmount / dailyGoal) * 100, 100);
   const remainingWater = dailyGoal - waterAmount;
-  const isSaveDisabled = waterAmount === 0 || isLoading || status !== "authenticated";
+  // Disable save if: fetching initial data, currently saving, not authenticated, or water amount is 0 (optional, depends if saving 0 is desired)
+  const isSaveDisabled = isFetching || isLoading || status !== "authenticated"; // Simplified: disable if any loading is happening or not logged in.
 
-  // Skeleton Loader
-  if (isLoading || status === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 bg-white dark:bg-bg-dark rounded-lg w-full max-w-md mx-auto border border-gray-200 dark:border-gray-800/50">
-        <div className="animate-pulse">
-          <div className="flex flex-col items-center mb-6">
-            <div className="relative mb-3">
-              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-            </div>
-            <div className="text-center">
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-24 mx-auto"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mx-auto mt-2"></div>
-            </div>
-          </div>
-          <div className="w-full mb-6">
-            <div className="flex justify-between mb-1">
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4"></div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4"></div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4"></div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-              <div className="h-6 flex-grow bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-              <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-            </div>
-          </div>
-          <div className="h-6 mb-2"></div>
-          <div className="w-full h-10 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
-        </div>
-      </div>
-    );
+  // --- Determine when to show Skeleton ---
+  // Show skeleton if session is loading OR if we are fetching initial data
+  if (status === "loading" || isFetching) {
+    return <WaterSkeleton />;
   }
 
+  // --- Actual Component Render ---
   return (
     <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
       {/* Header Section */}
@@ -161,7 +202,7 @@ const Water = () => {
       </div>
 
       {/* Water progress bar with controls */}
-      <div className="w-full mb-6">
+      <div className="w-full">
         <div className="flex justify-between mb-1 text-xs text-gray-400 dark:text-gray-500">
           <span>0</span>
           <span>1L</span>
@@ -170,7 +211,7 @@ const Water = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={handleDecrement}
-            disabled={waterAmount === 0 || isLoading}
+            disabled={waterAmount === 0 || isLoading} // Disable during save
             className={`p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             <Minus size={20} strokeWidth={2.5} />
@@ -193,7 +234,7 @@ const Water = () => {
           </div>
           <button
             onClick={handleIncrement}
-            disabled={waterAmount >= dailyGoal || isLoading}
+            disabled={waterAmount >= dailyGoal || isLoading} // Disable during save
             className={`p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             <Plus size={20} strokeWidth={2.5} />
@@ -203,22 +244,23 @@ const Water = () => {
 
       {/* Status Messages */}
       <div className="h-6 mb-2 text-center">
-        {isLoading && <p className="text-sm text-gray-500 dark:text-gray-400">Saving...</p>}
+        {/* Only show "Saving..." when actively saving, not during initial load */}
+        {isLoading && !isFetching && <p className="text-sm text-gray-500 dark:text-gray-400">Saving...</p>}
         {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
         {successMessage && <p className="text-sm text-green-500 dark:text-green-400">{successMessage}</p>}
       </div>
 
       {/* Save Button */}
-      <button
-        onClick={handleSave}
-        disabled={isSaveDisabled}
-        className={`w-full py-3 px-6 rounded-xl bg-primary-blue dark:bg-primary-blue text-white font-medium transition-all duration-300 hover:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed ${
-          waterAmount >= dailyGoal && !isLoading ? "animate-pulse" : ""
-        }`}
-      >
-        {isLoading ? "Saving..." : waterAmount >= dailyGoal ? "Well Done! Save" : "Save Water Intake"}
-        {status !== "authenticated" && " (Login Required)"}
-      </button>
+      <div className="flex justify-center mt-auto pt-2"> {/* Added pt-2 to push button down slightly */}
+        <button
+          onClick={handleSave}
+          disabled={isSaveDisabled}
+          className={`dark:bg-secondary-black bg-secondary-white dark:text-secondary-white text-primary-black mx-2.5 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${isSaveDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
+        >
+          {isLoading && !isFetching ? "Saving..." : "Save Water Intake"}
+          {status !== "authenticated" && " (Login Required)"}
+        </button>
+      </div>
     </div>
   );
 };

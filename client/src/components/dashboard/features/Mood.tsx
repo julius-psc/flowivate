@@ -13,7 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
 
-// Define mood icons with associated properties
+// --- Mood Icons Definition (Unchanged) ---
 const moodIcons = [
   { icon: IconMoodAngry, value: "angry", color: "bg-[#f12828]", hoverColor: "bg-[#f34747]", textColor: "text-[#f12828] dark:text-[#f85c5c]", label: "Angry" },
   { icon: IconMoodCry, value: "miserable", color: "bg-[#FF5151]", hoverColor: "bg-[#ff7070]", textColor: "text-[#FF5151] dark:text-[#ff7b7b]", label: "Miserable" },
@@ -24,13 +24,13 @@ const moodIcons = [
   { icon: IconMoodSmileDizzy, value: "ecstatic", color: "bg-[#186922]", hoverColor: "bg-[#1f8a2c]", textColor: "text-[#186922] dark:text-[#2ea13a]", label: "Ecstatic" },
 ];
 
-// Interface for mood entries
+// Interface for mood entries (Unchanged)
 interface MoodEntry {
   mood: string;
   timestamp: Date;
 }
 
-// Component to display mood insights for the month
+// --- MoodInsights Component (Unchanged) ---
 const MoodInsights: React.FC<{ moodHistory: MoodEntry[]; onBack: () => void }> = ({ moodHistory, onBack }) => {
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -136,24 +136,64 @@ const MoodInsights: React.FC<{ moodHistory: MoodEntry[]; onBack: () => void }> =
   );
 };
 
+// --- New Skeleton Loader Component ---
+const MoodPickerSkeleton = () => {
+  return (
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+      {/* Header Skeleton (placeholders directly with pulse) */}
+      <div className="flex justify-between items-center mb-4 flex-shrink-0 animate-pulse">
+        <div className="h-3 w-12 bg-gray-200 dark:bg-zinc-700 rounded"></div> {/* "MOOD" placeholder */}
+        <div className="h-4 w-20 bg-gray-200 dark:bg-zinc-700 rounded"></div> {/* "View Insights" placeholder */}
+      </div>
 
-// Main Mood Picker Component
+      {/* Pulsing Content Area */}
+      <div className="animate-pulse flex-grow flex flex-col justify-between pt-2"> {/* Added pt-2 for spacing */}
+        {/* Mood Grid Skeleton */}
+        <div className="grid grid-cols-7 gap-2 mb-8">
+          {Array(7).fill(null).map((_, index) => (
+            <div key={index} className="flex justify-center">
+              {/* Circular placeholder matching approx size */}
+              <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-700 rounded-full"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer Skeleton */}
+        <div className="flex justify-center items-center gap-4 mt-auto mb-2"> {/* Pushes to bottom */}
+          {/* Button placeholder */}
+          <div className="h-9 w-24 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
+          {/* Text placeholder */}
+          <div className="h-3 w-32 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+// --- Main Mood Picker Component ---
 const MoodPicker: React.FC = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [showInsights, setShowInsights] = useState(false);
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
   const [hoveredMood, setHoveredMood] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { data: session, status } = useSession(); // Get session status
+  const { data: session, status } = useSession(); // Unchanged call
 
-  // Fetch mood history on component mount or when session changes
+  // Unchanged useEffect
   useEffect(() => {
     const fetchMoodHistory = async () => {
       // Don't fetch if loading session or no user email
-      if (status === "loading" || !session?.user?.email) {
-          if (status !== "loading") setLoading(false); // Stop loading if session is loaded but no user
+      if (status === "loading") {
+          setLoading(true); // Ensure loading state while session loads
           return;
       }
+       if (!session?.user?.email) {
+          setLoading(false); // Stop loading if session is loaded but no user
+          setMoodHistory([]); // Clear history if logged out
+          return;
+      }
+
 
       setLoading(true); // Start loading indicator
       try {
@@ -163,24 +203,28 @@ const MoodPicker: React.FC = () => {
         });
         if (!res.ok) throw new Error("Failed to fetch mood history");
         const data = await res.json();
-        // Map data and convert timestamp strings to Date objects
-        setMoodHistory(data.map((entry: { mood: string; timestamp: string }) => ({ ...entry, timestamp: new Date(entry.timestamp) })));
+        // Ensure data is an array and map timestamps
+        if (Array.isArray(data)) {
+            setMoodHistory(data.map((entry: { mood: string; timestamp: string }) => ({ ...entry, timestamp: new Date(entry.timestamp) })));
+        } else {
+            setMoodHistory([]); // Set empty array if data is not as expected
+        }
       } catch (error) {
         console.error("Failed to fetch mood history:", error);
+        setMoodHistory([]); // Clear history on error
         // Optionally: set an error state here
       } finally {
         setLoading(false); // Stop loading indicator
       }
     };
     fetchMoodHistory();
-  }, [session, status]); // Rerun effect if session or status changes
+  }, [session, status]); // Unchanged dependencies
 
-  // Handle clicking on a mood icon
+  // Unchanged handlers
   const handleMoodClick = (value: string) => {
     setSelectedMood(value); // Set the selected mood value
   };
 
-  // Handle logging the selected mood
   const handleLogMood = async () => {
     // Ensure a mood is selected and user is logged in
     if (!selectedMood || !session?.user?.email) return;
@@ -199,7 +243,8 @@ const MoodPicker: React.FC = () => {
     });
 
     const newMoodEntry = { mood: selectedMood, timestamp: now };
-    const updatedHistory = [...moodHistory]; // Create a copy of history
+    const previousHistory = [...moodHistory];
+    const updatedHistory = [...moodHistory]; 
 
     // Optimistic UI update: Update local state immediately
     if (todayMoodIndex > -1) {
@@ -221,57 +266,31 @@ const MoodPicker: React.FC = () => {
         body: JSON.stringify({ mood: selectedMood, timestamp: now.toISOString() }), // Send ISO string
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to log mood");
+      if (!res.ok) {
+          // Try to parse error message from response
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || `Failed to log mood (${res.status})`);
+      }
       // If successful, clear the selected mood
       setSelectedMood(null);
     } catch (error) {
       console.error("Error logging mood:", error);
       // Rollback UI on failure: Restore previous history state
-      setMoodHistory(moodHistory);
+      setMoodHistory(previousHistory);
       // Optionally: show an error message to the user
     }
   };
 
-  // Toggle between mood picker and insights view
   const handleToggleInsights = () => {
     setShowInsights(!showInsights);
   };
 
-  // Skeleton Loader while fetching data or session
+  // --- Skeleton Loader Rendering --- (Replaced content)
   if (loading || status === "loading") {
-    return (
-      <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
-        <div className="flex justify-between items-center mb-4 flex-shrink-0">
-          <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">MOOD</h1>
-        </div>
-        {/* Animated pulse effect for loading state */}
-        <div className="animate-pulse flex-grow flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center mb-8">
-              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-              <div className="flex items-center gap-4">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
-              </div>
-            </div>
-            <div className="grid grid-cols-7 gap-2 mb-10">
-              {/* Placeholder mood icons */}
-              {Array(7).fill(null).map((_, index) => (
-                <div key={index} className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg mx-auto"></div>
-              ))}
-            </div>
-          </div>
-          <div className="flex justify-center items-center gap-4 mt-auto mb-2">
-            {/* Placeholder button and text */}
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
-            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <MoodPickerSkeleton />;
   }
 
-  // Prompt user to sign in if not authenticated
+  // --- Authentication Check --- (Unchanged)
   if (!session) {
       return (
         <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full justify-center items-center">
@@ -282,12 +301,12 @@ const MoodPicker: React.FC = () => {
   }
 
 
-  // Render Mood Insights view if showInsights is true
+  // --- Insights View Rendering --- (Unchanged)
   if (showInsights) {
     return <MoodInsights moodHistory={moodHistory} onBack={handleToggleInsights} />;
   }
 
-  // Render Mood Picker view
+  // --- Mood Picker View Rendering --- (Unchanged)
   return (
     <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
       {/* Header Section */}
@@ -350,7 +369,7 @@ const MoodPicker: React.FC = () => {
               : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-80"}
           `}
           onClick={handleLogMood}
-          disabled={!selectedMood} // Disable button if no mood is selected
+          disabled={!selectedMood || loading} // Disable button if no mood is selected or loading
         >
           Log mood
         </button>

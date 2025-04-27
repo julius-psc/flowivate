@@ -1,10 +1,8 @@
-// app/providers/ClientProvider.tsx
 "use client"; // This directive is essential
 
 import React, { ReactNode } from "react";
 import { SessionProvider } from "next-auth/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 // You might want to move DashboardProvider here too if it's client-side context
 // import { DashboardProvider } from "../context/DashboardContext";
@@ -35,10 +33,6 @@ export default function ClientProvider({ children }: { children: ReactNode }) {
         {/* <DashboardProvider> */}
               {children}
         {/* </DashboardProvider> */}
-
-        {/* Optional: React Query DevTools for debugging */}
-        {/* These will only show up in development environments */}
-        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </SessionProvider>
   );
