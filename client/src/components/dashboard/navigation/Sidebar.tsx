@@ -34,62 +34,64 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <div className=" border border-bdr-light dark:border-bdr-dark p-5 mb-2 mx-2 rounded-lg flex flex-col justify-between items-center">
-        <div>
-          <div className="mb-10 flex-shrink-0 transition-transform duration-200 hover:scale-105">
-            <Image src={logo} alt="Flowivate's logo" width={44} height={44} priority />
+      <aside className="flex flex-col z-40 px-2 py-4 mx-3 my-1 rounded-xl backdrop-blur-sm bg-white/60 dark:bg-black/40 border border-gray-100/60 dark:border-gray-800/60 w-16">
+        <div className="flex flex-col items-center h-full">
+          {/* Logo */}
+          <div className="mb-8 flex-shrink-0 transition-transform duration-200 hover:scale-105">
+            <Image src={logo} alt="Flowivate's logo" width={40} height={40} priority />
           </div>
 
+          {/* Navigation Items */}
           <div className="flex-grow">
             <ul className="space-y-2">
               {navItems.map((item) => (
                 <li key={item.name} className="relative group">
                   <Link href={item.path}>
                     <div
-                      className={`flex items-center justify-center py-2 rounded-md cursor-pointer transition-all duration-200 group-hover:bg-primary-bluelight dark:group-hover:bg-primary-blue-ring ${
+                      className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-200 ${
                         activeLink === item.name
-                          ? "bg-primary-bluelight dark:bg-primary-blue-ring"
-                          : ""
+                          ? "bg-blue-50/80 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/40"
+                          : "hover:bg-gray-100/60 dark:hover:bg-gray-800/30"
                       }`}
                       onClick={() => setActiveLink(item.name)}
                     >
                       <item.icon
-                        className={`w-6 h-6 transition-colors duration-200 ${
+                        className={`w-5 h-5 ${
                           activeLink === item.name
                             ? "text-primary-blue"
-                            : "text-secondary-black opacity-20 dark:text-secondary-white group-hover:text-primary-blue dark:group-hover:text-primary-blue"
+                            : "text-gray-600 dark:text-gray-300"
                         }`}
                       />
                     </div>
                   </Link>
 
-                  <div className="absolute left-12 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-sm text-primary-blue px-2 py-1 rounded-lg whitespace-nowrap z-10">
+                  <div className="absolute left-14 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs font-medium bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 px-2 py-1 rounded-md whitespace-nowrap shadow-sm border border-gray-100 dark:border-gray-800 z-10">
                     {item.name}
                   </div>
                 </li>
               ))}
             </ul>
           </div>
-        </div>
 
-        <div className="flex flex-col items-center gap-4 pt-4">
-
-          <div className="flex flex-col items-center gap-4">
+          {/* Bottom Actions */}
+          <div className="flex flex-col items-center space-y-2 mt-4">
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="p-2"
+              className="p-2 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors"
+              aria-label="Settings"
             >
-              <IconSettings className="w-4 h-4 text-secondary-black dark:text-secondary-white hover:text-primary-blue dark:hover:text-primary-blue transition-colors duration-200" />
+              <IconSettings className="w-4 h-auto text-gray-600 dark:text-gray-300" />
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="p-2"
+              className="p-2 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors"
+              aria-label="Logout"
             >
-              <IconLogout2 className="w-4 h-4 text-secondary-black dark:text-secondary-white hover:text-primary-blue dark:hover:text-primary-blue transition-colors duration-200" />
+              <IconLogout2 className="w-4 h-auto text-gray-600 dark:text-gray-300" />
             </button>
           </div>
         </div>
-      </div>
+      </aside>
 
       <Settings isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </>

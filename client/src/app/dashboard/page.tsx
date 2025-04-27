@@ -128,9 +128,9 @@ export default function Dashboard() {
           {selectedFeatures.length > 0 && (
             <button
               onClick={() => router.push("/dashboard/personal")}
-              className="absolute bottom-2 right-6 bg-primary-blue text-white rounded-full shadow-lg hover:bg-primary-blue-dark focus:outline-none focus:ring-2 focus:ring-primary-blue focus:ring-offset-1 p-3 flex items-center"
+              className="absolute bottom-2 right-4 text-secondary-black opacity-100 hover:opacity-60 dark:text-secondary-white focus:outline-none p-3 flex items-center"
             >
-              <IconCubePlus size={20} />
+              <IconCubePlus size={24} />
             </button>
           )}
         </div>
