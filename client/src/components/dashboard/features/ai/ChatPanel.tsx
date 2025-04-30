@@ -3,15 +3,20 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  IconSend,
+  IconSearch,
   IconX,
   IconLoader2,
-  IconRobot,
-  IconChevronDown,
-  IconLock,
+  IconArrowRight,
+  IconHourglass,
+  IconHistory,
+  IconUser,
   IconVolume,
   IconCopy,
   IconCheck,
+  IconMaximize,
+  IconMinimize,
+  IconMoodSmile,
+  IconSparkles,
 } from "@tabler/icons-react";
 import { useDebouncedCallback } from "use-debounce";
 
@@ -25,7 +30,7 @@ interface Message {
   isTyping?: boolean;
 }
 
-interface ChatPanelProps {
+interface CommandBarProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   initialQuery?: string;
@@ -42,7 +47,7 @@ const generateMessageId = () => {
 
 // --- ChatPanel Component ---
 
-const ChatPanel: React.FC<ChatPanelProps> = ({
+const ChatPanel: React.FC<CommandBarProps> = ({
   isOpen,
   setIsOpen,
   initialQuery,
@@ -54,13 +59,19 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [suggestions] = useState([
+    "How can i be more focused?",
+    "I feel overwhelmed by work, what do I do?",
+    "Give me motivation to do my workout",
+    "What is a dopamine detox?",
+  ]);
 
   // --- Refs ---
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const apiCallInProgressRef = useRef<boolean>(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -152,6 +163,10 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
           debouncedSaveChat(updatedMessages, conversationId);
           return updatedMessages;
         });
+        // Auto-expand when first response arrives
+        if (currentHistory.length === 1 && currentHistory[0].sender === "user") {
+          setExpanded(true);
+        }
       } catch (err: unknown) {
         let errorText = "Sorry, an unknown error occurred. Please try again.";
         if (err instanceof Error) {
@@ -187,6 +202,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             timestamp: new Date(m.timestamp),
           }))
         );
+        setExpanded(true);
       } else if (initialQuery) {
         const userMessage: Message = {
           id: generateMessageId(),
@@ -198,6 +214,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         fetchAndSetClaudeResponse(initialQuery, [userMessage]);
       } else {
         setMessages([]);
+        setExpanded(false);
       }
       const timer = setTimeout(() => {
         inputRef.current?.focus();
@@ -207,19 +224,13 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   }, [isOpen, initialQuery, initialMessages, fetchAndSetClaudeResponse]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [messages]);
-
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.style.height = "auto";
-      const scrollHeight = inputRef.current.scrollHeight;
-      inputRef.current.style.height = `${Math.min(scrollHeight, 128)}px`;
+    if (expanded) {
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [inputText]);
+  }, [messages, expanded]);
 
   useEffect(() => {
     if (copiedMessageId) {
@@ -227,6 +238,18 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       return () => clearTimeout(timer);
     }
   }, [copiedMessageId]);
+
+  // --- Keyboard Shortcuts ---
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isOpen, setIsOpen]);
 
   // --- Handlers ---
   const handleSendMessage = useCallback(
@@ -243,7 +266,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       setMessages((prev) => [...prev, userMessage]);
       setInputText("");
       setError(null);
-      if (inputRef.current) inputRef.current.style.height = "auto";
       setMessages((currentMessages) => {
         fetchAndSetClaudeResponse(trimmedInput, currentMessages);
         return currentMessages;
@@ -252,9 +274,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     [inputText, isLoading, fetchAndSetClaudeResponse]
   );
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
       handleSendMessage();
     }
   };
@@ -290,8 +311,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     exit: { opacity: 0, transition: { duration: 0.2 } },
   };
 
-  const panelVariants = {
-    hidden: { opacity: 0, y: 50, scale: 0.95 },
+  const barVariants = {
+    hidden: { opacity: 0, y: -50, scale: 0.9 },
     visible: {
       opacity: 1,
       y: 0,
@@ -300,14 +321,34 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     },
     exit: {
       opacity: 0,
-      y: 30,
-      scale: 0.98,
+      y: -30,
+      scale: 0.95,
       transition: { duration: 0.2, ease: [0.5, 0, 0.75, 0] },
     },
   };
 
+  const expandedVariants = {
+    collapsed: { height: 0, opacity: 0 },
+    expanded: { 
+      height: "auto", 
+      opacity: 1,
+      transition: { 
+        height: { duration: 0.3, ease: "easeOut" },
+        opacity: { duration: 0.2, delay: 0.1 }
+      }
+    },
+    exit: { 
+      height: 0, 
+      opacity: 0,
+      transition: { 
+        height: { duration: 0.2, ease: "easeIn" },
+        opacity: { duration: 0.1 }
+      }
+    }
+  };
+
   const messageVariants = {
-    initial: { opacity: 0, y: 10 },
+    initial: { opacity: 0, y: 8 },
     animate: {
       opacity: 1,
       y: 0,
@@ -318,259 +359,265 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:p-4"
-        >
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 md:pt-32 px-4">
           {/* Overlay */}
           <motion.div
             variants={overlayVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute inset-0 bg-white/10 backdrop-blur-sm backdrop-saturate-150 transition-all duration-300"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Chat Panel - Main Container */}
+          {/* Command Bar - Main Container */}
           <motion.div
-            variants={panelVariants}
+            variants={barVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full sm:max-w-2xl h-[95vh] sm:h-[85vh] max-h-[800px] bg-secondary-white flex flex-col overflow-hidden shadow-2xl rounded-t-2xl sm:rounded-xl z-[51]"
+            className="relative w-full max-w-2xl flex flex-col bg-white/90 dark:bg-zinc-900/95 backdrop-blur-md backdrop-saturate-150 border border-gray-200 dark:border-zinc-700/50 shadow-2xl rounded-2xl overflow-hidden z-[51]"
+            style={{
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+            }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-bdr-light">
-              <div className="flex items-center gap-3">
-                {/* Assistant Icon/Badge */}
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-blue flex items-center justify-center">
-                  <IconRobot className="w-5 h-5 text-secondary-white" />
-                </div>
-                {/* Title and Info */}
-                <div>
-                  <h2 className="text-base sm:text-lg font-semibold text-secondary-black">
-                    Assistant
-                  </h2>
-                  <button
-                    onClick={() => setShowInfo(!showInfo)}
-                    className="flex items-center text-xs text-accent-grey-hover hover:text-primary-blue"
-                  >
-                    <span>{showInfo ? "Hide" : "Show"} Info</span>
-                    <IconChevronDown
-                      className={`w-3.5 h-3.5 ml-1 transition-transform ${
-                        showInfo ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                </div>
+            {/* Input Bar */}
+            <div className="relative flex items-center px-4 py-3 border-b border-gray-200 dark:border-zinc-700/70">
+              <div className="absolute left-4 text-gray-400 dark:text-gray-500">
+                <IconSearch className="w-5 h-5" />
               </div>
-              {/* Close Button */}
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-full text-accent-grey-hover hover:bg-accent-lightgrey hover:text-secondary-black transition-colors"
-                aria-label="Close chat"
-              >
-                <IconX className="w-5 h-5" />
-              </button>
+              <form onSubmit={handleSendMessage} className="w-full">
+                <input
+                  ref={inputRef}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask anything..."
+                  className="w-full py-2 pl-8 pr-4 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none text-base"
+                  autoComplete="off"
+                />
+              </form>
+              <div className="flex items-center gap-2">
+                {isLoading && (
+                  <IconLoader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                )}
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputText.trim() || isLoading}
+                  className={`p-1.5 rounded-lg flex items-center justify-center ${
+                    inputText.trim() && !isLoading
+                      ? "bg-blue-500 hover:bg-blue-600 text-white"
+                      : "bg-gray-200 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                  } transition-colors duration-150`}
+                >
+                  <IconArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            {/* Privacy Info Panel */}
-            <AnimatePresence>
-              {showInfo && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden border-b border-bdr-light"
-                >
-                  <div className="p-3 sm:p-4 bg-primary-bluelight bg-opacity-30 text-xs text-secondary-black">
-                    <p className="flex items-center mb-1">
-                      <IconLock
-                        size={14}
-                        className="mr-1.5 flex-shrink-0 text-primary-blue"
-                      />
-                      <span>
-                        End-to-end encrypted. Your conversations are private.
-                      </span>
-                    </p>
-                    <p>
-                      <span className="font-semibold">Powered by Claude:</span>{" "}
-                      Secure processing via Anthropic.
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Suggestion Pills (visible when no messages) */}
+            {messages.length === 0 && (
+              <div className="px-4 py-3 flex flex-wrap gap-2">
+                {suggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setInputText(suggestion);
+                      // Submit the suggestion automatically
+                      const userMessage: Message = {
+                        id: generateMessageId(),
+                        sender: "user",
+                        text: suggestion,
+                        timestamp: new Date(),
+                      };
+                      setMessages([userMessage]);
+                      fetchAndSetClaudeResponse(suggestion, [userMessage]);
+                    }}
+                    className="px-3 py-1.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-sm text-gray-700 dark:text-gray-300 transition-colors flex items-center gap-2"
+                  >
+                    <IconSparkles className="w-3.5 h-3.5 text-blue-500" />
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Error Display Banner */}
             {error && (
-              <div className="p-3 bg-third-red bg-opacity-10 text-third-red text-sm border-b border-third-red border-opacity-20 flex items-center gap-2">
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm border-b border-red-200 dark:border-red-800/50 flex items-center gap-2">
                 <span className="font-medium">Error:</span>
                 <span>{error}</span>
               </div>
             )}
 
-            {/* Messages Area */}
-            <div
-              ref={messagesContainerRef}
-              className="flex-1 px-4 sm:px-6 py-5 overflow-y-auto scroll-smooth bg-secondary-white"
-              style={{
-                scrollbarWidth: "thin",
-                scrollbarColor: `var(--color-accent-grey) transparent`,
-              }}
-            >
-              {/* Empty State */}
-              {messages.length === 0 && !isLoading && (
-                <div className="flex flex-col justify-center items-center h-full text-center text-accent-grey-hover p-6">
-                  <div className="mb-4">
-                    <IconRobot
-                      size={40}
-                      className="text-primary-blue"
-                    />
-                  </div>
-                  <h3 className="text-lg font-medium text-secondary-black mb-1">
-                    Ready to Assist
-                  </h3>
-                  <p className="text-sm max-w-xs">
-                    How can I help you be more productive today?
-                  </p>
-                </div>
-              )}
-
-              {/* Render Messages */}
-              <AnimatePresence initial={false}>
-                {messages.map((msg) => (
-                  <motion.div
-                    key={msg.id}
-                    variants={messageVariants}
-                    initial="initial"
-                    animate="animate"
-                    layout
-                    className={`flex mb-4 group ${
-                      msg.sender === "user" ? "justify-end" : "justify-start"
-                    }`}
+            {/* Expanded Messages Area */}
+            <AnimatePresence mode="wait">
+              {(expanded || messages.length > 0) && (
+                <motion.div
+                  key="messages-container"
+                  initial="collapsed"
+                  animate="expanded"
+                  exit="exit"
+                  variants={expandedVariants}
+                  className="overflow-hidden"
+                >
+                  <div
+                    ref={messagesContainerRef}
+                    className="max-h-96 overflow-y-auto px-4 py-3 bg-white/50 dark:bg-zinc-900/50"
                   >
-                    <div
-                      className={`flex items-end gap-2 max-w-[85%] sm:max-w-[75%] ${
-                        msg.sender === "user" ? "flex-row-reverse" : "flex-row"
-                      }`}
-                    >
-                      {/* Message Bubble */}
-                      <div
-                        className={`relative px-4 py-3 rounded-2xl shadow-sm ${
-                          msg.sender === "user"
-                            ? "bg-primary-blue text-secondary-white"
-                            : "bg-accent-lightgrey text-secondary-black"
-                        }`}
-                      >
-                        <div className="whitespace-pre-wrap text-sm leading-relaxed break-words">
-                          {msg.text}
-                        </div>
-                        <span
-                          className={`absolute -bottom-3 text-[10px] ${
-                            msg.sender === "user"
-                              ? "right-2 text-accent-grey"
-                              : "left-2 text-accent-grey-hover"
+                    {/* Render Messages */}
+                    <AnimatePresence initial={false}>
+                      {messages.map((msg) => (
+                        <motion.div
+                          key={msg.id}
+                          variants={messageVariants}
+                          initial="initial"
+                          animate="animate"
+                          layout
+                          className={`flex mb-4 group ${
+                            msg.sender === "user" ? "justify-end" : "justify-start"
                           }`}
                         >
-                          {formatTime(msg.timestamp)}
-                        </span>
-                      </div>
-                      {/* Message Actions */}
-                      <div
-                        className={`flex items-center self-center mb-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-1 ${
-                          msg.sender === "user" ? "mr-1" : "ml-1"
-                        }`}
-                      >
-                        <button
-                          onClick={() =>
-                            copyMessageToClipboard(msg.text, msg.id)
-                          }
-                          className="p-1 rounded-full text-accent-grey-hover hover:bg-accent-lightgrey hover:text-secondary-black transition-colors"
-                          aria-label="Copy message"
-                        >
-                          {copiedMessageId === msg.id ? (
-                            <IconCheck className="w-3.5 h-3.5 text-third-green" />
-                          ) : (
-                            <IconCopy className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                        {msg.sender === "assistant" &&
-                          !msg.isTyping && (
-                            <button
-                              onClick={() => speakMessage(msg.text)}
-                              className="p-1 rounded-full text-accent-grey-hover hover:bg-accent-lightgrey hover:text-secondary-black transition-colors"
-                              aria-label="Listen to message"
+                          <div
+                            className={`flex items-end gap-2 max-w-[85%] ${
+                              msg.sender === "user" ? "flex-row-reverse" : "flex-row"
+                            }`}
+                          >
+                            {/* Avatar */}
+                            <div 
+                              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                                msg.sender === "user" 
+                                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                  : "bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400"
+                              }`}
                             >
-                              <IconVolume className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                              {msg.sender === "user" ? (
+                                <IconUser className="w-4 h-4" />
+                              ) : (
+                                <IconMoodSmile className="w-4 h-4" />
+                              )}
+                            </div>
+                            
+                            {/* Message Bubble */}
+                            <div
+                              className={`relative px-4 py-3 rounded-xl ${
+                                msg.sender === "user"
+                                  ? "bg-blue-500 text-white"
+                                  : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
+                              }`}
+                            >
+                              <div className="whitespace-pre-wrap text-sm leading-relaxed break-words">
+                                {msg.text}
+                              </div>
+                              <span
+                                className={`absolute -bottom-4 text-[10px] ${
+                                  msg.sender === "user"
+                                    ? "right-2 text-gray-500 dark:text-gray-400"
+                                    : "left-2 text-gray-500 dark:text-gray-400"
+                                }`}
+                              >
+                                {formatTime(msg.timestamp)}
+                              </span>
+                            </div>
+                            
+                            {/* Message Actions */}
+                            <div
+                              className={`flex items-center self-center mb-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-1 ${
+                                msg.sender === "user" ? "mr-1" : "ml-1"
+                              }`}
+                            >
+                              <button
+                                onClick={() =>
+                                  copyMessageToClipboard(msg.text, msg.id)
+                                }
+                                className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                                aria-label="Copy message"
+                              >
+                                {copiedMessageId === msg.id ? (
+                                  <IconCheck className="w-3.5 h-3.5 text-green-500" />
+                                ) : (
+                                  <IconCopy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                              {msg.sender === "assistant" && !msg.isTyping && (
+                                <button
+                                  onClick={() => speakMessage(msg.text)}
+                                  className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                                  aria-label="Listen to message"
+                                >
+                                  <IconVolume className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
 
-              {/* Loading Indicator */}
-              {isLoading && (
-                <motion.div
-                  key="loading-indicator"
-                  variants={messageVariants}
-                  initial="initial"
-                  animate="animate"
-                  layout
-                  className="flex justify-start mb-4"
-                >
-                  <div className="flex items-end gap-2 max-w-[85%] sm:max-w-[75%]">
-                    <div className="px-4 py-3 rounded-2xl bg-accent-lightgrey text-secondary-black shadow-sm">
-                      <div className="flex items-center space-x-2 text-accent-grey-hover">
-                        <IconLoader2 className="w-4 h-4 animate-spin text-primary-blue" />
-                        <span className="text-sm">Thinking...</span>
-                      </div>
-                    </div>
+                    {/* Loading Indicator */}
+                    {isLoading && (
+                      <motion.div
+                        key="loading-indicator"
+                        variants={messageVariants}
+                        initial="initial"
+                        animate="animate"
+                        layout
+                        className="flex justify-start mb-4"
+                      >
+                        <div className="flex items-end gap-2 max-w-[85%]">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400">
+                            <IconHourglass className="w-4 h-4" />
+                          </div>
+                          <div className="px-4 py-3 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
+                            <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
+                              <IconLoader2 className="w-4 h-4 animate-spin text-blue-500" />
+                              <span className="text-sm">Thinking...</span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                    <div ref={messagesEndRef} className="h-1" />
                   </div>
                 </motion.div>
               )}
-              <div ref={messagesEndRef} className="h-1" />
-            </div>
+            </AnimatePresence>
 
-            {/* Input Area */}
-            <form
-              onSubmit={handleSendMessage}
-              className="p-3 sm:p-4 border-t border-bdr-light bg-secondary-white"
-            >
-              <div className="flex items-end gap-2 sm:gap-3">
-                <div className="flex-1 relative">
-                  <textarea
-                    ref={inputRef}
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type your message..."
-                    rows={1}
-                    className="w-full px-4 py-3 pr-10 rounded-xl border border-bdr-light bg-secondary-white text-secondary-black text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue-ring focus:border-primary-blue resize-none placeholder-accent-grey-hover"
-                    style={{ scrollbarWidth: "none" }}
-                  />
+            {/* Footer */}
+            {messages.length > 0 && (
+              <div className="px-4 py-2 flex justify-between items-center border-t border-gray-200 dark:border-zinc-700/70 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center">
+                  <IconHistory className="w-3.5 h-3.5 mr-1" />
+                  <span>{messages.filter(m => !m.isTyping).length} messages</span>
                 </div>
+                
                 <button
-                  type="submit"
-                  title="Send message"
-                  className={`flex-shrink-0 w-11 h-11 rounded-xl bg-primary-blue text-secondary-white hover:bg-primary-blue-hover disabled:bg-accent-grey disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-blue-ring ${
-                    isLoading ? "w-11" : "w-11"
-                  }`}
-                  disabled={!inputText.trim() || isLoading}
+                  onClick={() => setExpanded(!expanded)}
+                  className="flex items-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 >
-                  {isLoading ? (
-                    <IconLoader2 className="w-5 h-5 animate-spin" />
+                  {expanded ? (
+                    <>
+                      <IconMinimize className="w-3.5 h-3.5 mr-1" />
+                      <span>Collapse</span>
+                    </>
                   ) : (
-                    <IconSend className="w-5 h-5" />
+                    <>
+                      <IconMaximize className="w-3.5 h-3.5 mr-1" />
+                      <span>Expand</span>
+                    </>
                   )}
                 </button>
+                
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                >
+                  <IconX className="w-3.5 h-3.5" />
+                </button>
               </div>
-            </form>
+            )}
           </motion.div>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );
