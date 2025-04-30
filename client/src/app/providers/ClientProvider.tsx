@@ -18,7 +18,7 @@ export default function ClientProvider({ children }: { children: ReactNode }) {
             // Example: Data considered fresh for 1 minute
             staleTime: 1000 * 60 * 1,
             // Example: Refetch data when the browser window regains focus
-            refetchOnWindowFocus: true,
+            refetchOnWindowFocus: false,
           },
         },
       })
