@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-// Import week functions from date-fns
 import {
   format,
   startOfWeek,
@@ -25,11 +24,9 @@ import typescript from "highlight.js/lib/languages/typescript";
 import javascript from "highlight.js/lib/languages/javascript";
 import { SlashCommands } from "../../recyclable/markdown/SlashCommands";
 import { ContextMenu } from "../../recyclable/markdown/ContextMenu";
-// Using Lucide icons as per the last working version you provided
 import { ChevronLeft, ChevronRight, Save, Trash2 } from "lucide-react";
+import { toast } from "sonner"; // Import Sonner toast
 
-
-// --- Interfaces and Setup (unchanged) ---
 interface JournalEntryData {
   _id: string;
   userId: string;
@@ -45,9 +42,7 @@ const lowlight = createLowlight();
 lowlight.register("typescript", typescript);
 lowlight.register("javascript", javascript);
 
-// Slash commands - keep the same items from your original code
 const slashCommandItems = [
-    // ... (Original slash command items remain exactly the same) ...
     {
         title: "Heading 1",
         command: ({ editor }: { editor: Editor }) => { editor.chain().focus().toggleHeading({ level: 1 }).run(); },
@@ -84,7 +79,6 @@ const slashCommandItems = [
         icon: <span>😊</span>,
     },
 ];
-// --- End Setup ---
 
 export const Journal: React.FC<JournalProps> = ({
   initialDate = new Date(),
@@ -94,14 +88,12 @@ export const Journal: React.FC<JournalProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null); // REMOVE error state
+  // const [feedback, setFeedback] = useState<string | null>(null); // REMOVE feedback state
   const editorRef = useRef<Editor | null>(null);
 
-  // --- Editor Hook (Keep updated text colors) ---
   const editor = useEditor({
     extensions: [
-      /* ... (keep same extensions as original) ... */
        StarterKit.configure({
         heading: { levels: [1, 2, 3] },
         bulletList: { keepMarks: true, keepAttributes: false },
@@ -121,7 +113,7 @@ export const Journal: React.FC<JournalProps> = ({
       Highlight,
       CodeBlockLowlight.configure({ lowlight }),
       SlashCommands(slashCommandItems),
-      Extension.create({ /* ... (keep enterHandler as original) ... */
+      Extension.create({
         name: "enterHandler",
         addKeyboardShortcuts() {
           return {
@@ -146,15 +138,15 @@ export const Journal: React.FC<JournalProps> = ({
     content: "",
     editorProps: {
       attributes: {
-        // Keep updated text color for editor content
         class: "prose dark:prose-invert focus:outline-none flex-grow p-4 text-secondary-black dark:text-secondary-white",
       },
     },
     injectCSS: false,
     immediatelyRender: false,
     onUpdate: () => {
-      if (feedback) setFeedback(null);
-      if (error) setError(null);
+      // REMOVE feedback/error clearing logic
+      // if (feedback) setFeedback(null);
+      // if (error) setError(null);
     },
   });
 
@@ -164,14 +156,12 @@ export const Journal: React.FC<JournalProps> = ({
     }
   }, [editor]);
 
-  // --- API Interaction Logic (unchanged) ---
   const fetchJournalEntry = useCallback(
-    // ... (keep the same fetchJournalEntry logic) ...
      async (date: Date) => {
       if (!editorRef.current || !isValid(date)) return;
       setIsLoading(true);
-      setError(null);
-      setFeedback(null);
+      // setError(null); // REMOVE
+      // setFeedback(null); // REMOVE
       const formattedDate = format(date, "yyyy-MM-dd");
       console.log(`Workspaceing journal entry for: ${formattedDate}`);
       editorRef.current.commands.setContent("<p></p>");
@@ -198,25 +188,22 @@ export const Journal: React.FC<JournalProps> = ({
           }
         } else {
           const errorData = await response.json();
-          console.error(
-            `Failed to fetch entry (${response.status}):`,
-            errorData.message
-          );
+          const errorMessage = `Failed to load entry: ${errorData.message || response.statusText}`;
+          console.error(`Failed to fetch entry (${response.status}):`, errorData.message);
           if (format(selectedDate, "yyyy-MM-dd") === formattedDate) {
-            setError(
-              `Failed to load entry: ${
-                errorData.message || response.statusText
-              }`
-            );
+            // setError(errorMessage); // REMOVE
+            toast.error(errorMessage); // Use toast
             editorRef.current.commands.setContent(
               "<p>Error loading content.</p>"
             );
           }
         }
       } catch (err) {
+        const errorMessage = "A network error occurred while loading the entry.";
         console.error("Network or other error fetching entry:", err);
         if (format(selectedDate, "yyyy-MM-dd") === formattedDate) {
-          setError("A network error occurred while loading the entry.");
+          // setError(errorMessage); // REMOVE
+          toast.error(errorMessage); // Use toast
           if (editorRef.current)
             editorRef.current.commands.setContent(
               "<p>Error loading content.</p>"
@@ -226,11 +213,10 @@ export const Journal: React.FC<JournalProps> = ({
         setIsLoading(false);
       }
     },
-    [selectedDate]
+    [selectedDate] // Keep selectedDate dependency
   );
 
   useEffect(() => {
-    // ... (keep the same useEffect logic) ...
      if (editorRef.current && isValid(selectedDate)) {
       setDisplayMonthDate(selectedDate);
       fetchJournalEntry(selectedDate);
@@ -238,11 +224,10 @@ export const Journal: React.FC<JournalProps> = ({
   }, [selectedDate, fetchJournalEntry]);
 
   const handleSave = async () => {
-    // ... (keep the same handleSave logic) ...
      if (!editorRef.current || isSaving || isLoading) return;
     setIsSaving(true);
-    setError(null);
-    setFeedback(null);
+    // setError(null); // REMOVE
+    // setFeedback(null); // REMOVE
     const content = editorRef.current.getHTML();
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
     console.log(`Saving journal entry for: ${formattedDate}`);
@@ -255,36 +240,32 @@ export const Journal: React.FC<JournalProps> = ({
       if (response.ok) {
         const data: { entry: JournalEntryData } = await response.json();
         console.log("Saved entry:", data.entry._id);
-        setFeedback(response.status === 201 ? "Created!" : "Saved!");
-        setTimeout(() => setFeedback(null), 2000);
+        // setFeedback(response.status === 201 ? "Created!" : "Saved!"); // REMOVE
+        toast.success(response.status === 201 ? "Entry created!" : "Entry saved!"); // Use toast
+        // setTimeout(() => setFeedback(null), 2000); // REMOVE timeout
       } else {
         const errorData = await response.json();
-        console.error(
-          `Failed to save entry (${response.status}):`,
-          errorData.message
-        );
-        setError(`Save failed: ${errorData.message || response.statusText}`);
+        const errorMessage = `Save failed: ${errorData.message || response.statusText}`;
+        console.error(`Failed to save entry (${response.status}):`, errorData.message);
+        // setError(errorMessage); // REMOVE
+        toast.error(errorMessage); // Use toast
       }
     } catch (err) {
+      const errorMessage = "A network error occurred while saving.";
       console.error("Network or other error saving entry:", err);
-      setError("A network error occurred while saving.");
+      // setError(errorMessage); // REMOVE
+      toast.error(errorMessage); // Use toast
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    // ... (keep the same handleDelete logic with corrected format string) ...
      if (isDeleting || !editorRef.current || isLoading) return;
-    if (
-      !window.confirm(
-        `Delete entry for ${format(selectedDate, "MMMM d,𒑊")}?` // Corrected format
-      )
-    )
-      return;
+    if (!window.confirm(`Delete entry for ${format(selectedDate, "MMMM d, yyyy")}?`)) return;
     setIsDeleting(true);
-    setError(null);
-    setFeedback(null);
+    // setError(null); // REMOVE
+    // setFeedback(null); // REMOVE
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
     console.log(`Deleting journal entry for: ${formattedDate}`);
     try {
@@ -293,47 +274,43 @@ export const Journal: React.FC<JournalProps> = ({
       });
       if (response.ok) {
         console.log(`Successfully deleted entry for ${formattedDate}`);
-        setFeedback("Deleted!");
+        // setFeedback("Deleted!"); // REMOVE
+        toast.success("Entry deleted!"); // Use toast
         editorRef.current.commands.setContent("<p></p>");
-        setTimeout(() => setFeedback(null), 2000);
+        // setTimeout(() => setFeedback(null), 2000); // REMOVE timeout
       } else if (response.status === 404) {
-        console.warn(
-          `Attempted to delete non-existent entry for ${formattedDate}`
-        );
-        setError("Entry not found.");
+        console.warn(`Attempted to delete non-existent entry for ${formattedDate}`);
+        // setError("Entry not found."); // REMOVE
+        toast.error("Entry not found."); // Use toast
         editorRef.current.commands.setContent("<p></p>");
       } else {
         const errorData = await response.json();
-        console.error(
-          `Failed to delete entry (${response.status}):`,
-          errorData.message
-        );
-        setError(`Delete failed: ${errorData.message || response.statusText}`);
+        const errorMessage = `Delete failed: ${errorData.message || response.statusText}`;
+        console.error(`Failed to delete entry (${response.status}):`, errorData.message);
+        // setError(errorMessage); // REMOVE
+        toast.error(errorMessage); // Use toast
       }
     } catch (err) {
+      const errorMessage = "A network error occurred while deleting.";
       console.error("Network or other error deleting entry:", err);
-      setError("A network error occurred while deleting.");
+      // setError(errorMessage); // REMOVE
+      toast.error(errorMessage); // Use toast
     } finally {
       setIsDeleting(false);
     }
   };
-  // --- End API Logic ---
 
-  // --- Week Navigation and Date Selection (Logic unchanged) ---
   const handlePreviousWeek = () => {
-    // ... (keep the same handlePreviousWeek logic) ...
      if (isLoading || isSaving || isDeleting) return;
     setSelectedDate(subWeeks(selectedDate, 1));
   };
 
   const handleNextWeek = () => {
-     // ... (keep the same handleNextWeek logic) ...
      if (isLoading || isSaving || isDeleting) return;
     setSelectedDate(addWeeks(selectedDate, 1));
   };
 
   const handleDateSelect = (date: Date) => {
-     // ... (keep the same handleDateSelect logic) ...
      if (isLoading || isSaving || isDeleting) return;
     setSelectedDate(date);
   };
@@ -346,47 +323,37 @@ export const Journal: React.FC<JournalProps> = ({
     const labels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
     return labels[dayIndex];
   };
-  // --- End Date Selection ---
 
   if (!editor) {
     return (
-      // Keep updated text color
       <div className="flex items-center justify-center h-full w-full text-accent-grey-hover dark:text-accent-grey">
         Loading editor...
       </div>
     );
   }
 
-  // --- JSX Structure ---
   return (
-    // Keep updated base text colors
     <div className="flex flex-col h-full w-full overflow-hidden text-secondary-black dark:text-secondary-white">
-      {/* Main Content Area */}
       <div className="flex flex-1 gap-4 p-3 md:p-4 overflow-hidden mx-auto max-w-4xl w-full">
 
-        {/* === Sidebar Section === */}
         <div className="flex flex-col w-20 flex-shrink-0">
-          {/* Week Navigation & Month Display */}
           <div className="flex items-center justify-between w-full my-2 px-1">
             <button
               onClick={handlePreviousWeek}
-              // Original hover/disabled/text styles
               className="p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-30"
               aria-label="Previous week"
               disabled={isLoading || isSaving || isDeleting}
             >
               <ChevronLeft size={16} />
             </button>
-            {/* Original text color/style */}
             <span
               className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center whitespace-nowrap"
-              title={format(displayMonthDate, "MMMM d, yyyy")} // Corrected format string
+              title={format(displayMonthDate, "MMMM d, yyyy")}
             >
                {format(displayMonthDate, "MMM yy")}
             </span>
             <button
               onClick={handleNextWeek}
-               // Original hover/disabled/text styles
               className="p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-30"
               aria-label="Next week"
               disabled={isLoading || isSaving || isDeleting}
@@ -395,7 +362,6 @@ export const Journal: React.FC<JournalProps> = ({
             </button>
           </div>
 
-          {/* Day Buttons - REVERTED */}
           <div className="flex flex-col gap-2">
             {daysInWeek.map((day) => {
               const dayOfWeekIndex = getDay(day);
@@ -409,16 +375,14 @@ export const Journal: React.FC<JournalProps> = ({
                   key={format(day, "yyyy-MM-dd")}
                   onClick={() => handleDateSelect(day)}
                   disabled={isLoading || isSaving || isDeleting}
-                  // Original complex className logic REVERTED
                   className={`
                         flex flex-col items-center p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 dark:focus:ring-offset-zinc-900 focus:ring-black dark:focus:ring-white
                         ${
                           isSelected
-                            ? "bg-black text-white dark:bg-white dark:text-black" // Original selected style
-                            : "hover:bg-gray-200 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300" // Original hover/text style
+                            ? "bg-black text-white dark:bg-white dark:text-black"
+                            : "hover:bg-gray-200 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300"
                         }
                         ${
-                           // Original today border style
                           isTodayDate && !isSelected
                             ? "border border-gray-400 dark:border-zinc-600"
                             : "border border-transparent"
@@ -430,7 +394,6 @@ export const Journal: React.FC<JournalProps> = ({
                         }
                     `}
                 >
-                  {/* Original text styles */}
                   <span className="text-xs font-medium opacity-80">
                     {getDayLabel(dayOfWeekIndex)}
                   </span>
@@ -442,44 +405,31 @@ export const Journal: React.FC<JournalProps> = ({
             })}
           </div>
         </div>
-        {/* === End of REVERTED Sidebar Section === */}
 
-
-        {/* Separator - REVERTED to Original Styling */}
         <div className="w-px bg-gray-200 dark:bg-zinc-700 opacity-50 flex-shrink-0" />
 
-
-        {/* Editor Area - Keep BookLogger background/border */}
         <div className="relative w-full p-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden">
-           {/* Header - Keep updated text color */}
           <div className="flex items-center justify-between p-4 flex-shrink-0">
-          <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">JOURNAL</h1>
-            {/* Keep updated text color */}
+            <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">JOURNAL</h1>
             <div className="text-sm text-accent-grey-hover dark:text-accent-grey opacity-90">
-              {format(selectedDate, "EEEE, MMMM d, yyyy")} {/* Corrected format string */}
+              {format(selectedDate, "EEEE, MMMM d, yyyy")}
             </div>
           </div>
 
-
-          {/* Loading Overlay - Keep updated spinner and colors */}
           {isLoading && (
             <div className="absolute inset-0 bg-white/70 dark:bg-zinc-900/70 flex items-center justify-center z-20">
-              {/* Keep BookLogger spinner style */}
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-blue dark:border-primary-bluelight border-t-transparent"></div>
             </div>
           )}
 
-          {/* Editor Content - Keep updated text colors */}
           <div className="flex-grow overflow-y-auto prose dark:prose-invert max-w-none focus:outline-none relative px-0 pb-16">
-             {/* Keep padding for EditorContent */}
             <EditorContent editor={editor} className="min-h-[200px] p-4" />
             {editor && <ContextMenu editor={editor} />}
           </div>
 
-          {/* Buttons & Feedback - Keep BookLogger styles */}
           <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
-            {/* Keep updated feedback styles */}
-            {error && (
+            {/* REMOVE error and feedback spans */}
+            {/* {error && (
               <span className="text-xs text-red-800 dark:text-third-red bg-third-red/10 dark:bg-third-red/20 px-2 py-1 rounded">
                 {error}
               </span>
@@ -488,9 +438,8 @@ export const Journal: React.FC<JournalProps> = ({
                <span className="text-xs text-green-800 dark:text-third-green bg-third-green/10 dark:bg-third-green/20 px-2 py-1 rounded">
                 {feedback}
               </span>
-            )}
+            )} */}
 
-            {/* Keep BookLogger DELETE button style */}
             <button
               onClick={handleDelete}
               className={`p-2 rounded-md border border-bdr-light dark:border-bdr-dark hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -505,7 +454,6 @@ export const Journal: React.FC<JournalProps> = ({
               )}
             </button>
 
-            {/* Keep BookLogger SAVE button style */}
             <button
               onClick={handleSave}
               className={`flex items-center justify-center gap-1.5 px-4 py-2 min-w-[80px] bg-primary-blue hover:bg-primary-blue-hover text-secondary-white font-medium rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}

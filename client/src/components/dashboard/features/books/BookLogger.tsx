@@ -25,6 +25,7 @@ import typescript from "highlight.js/lib/languages/typescript";
 import javascript from "highlight.js/lib/languages/javascript";
 import { SlashCommands } from "../../recyclable/markdown/SlashCommands";
 import { ContextMenu } from "../../recyclable/markdown/ContextMenu";
+import { toast } from "sonner"; // Import Sonner toast
 
 interface Book {
   _id: string;
@@ -46,14 +47,13 @@ lowlight.register("javascript", javascript);
 const BookLogger: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null); // REMOVE error state
 
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  // For creating/editing a book
   const [formData, setFormData] = useState<Partial<Book>>({
     title: "",
     author: "",
@@ -64,7 +64,6 @@ const BookLogger: React.FC = () => {
   });
 
   const slashCommandItems = [
-    // ... (slash command items remain the same)
     {
       title: "Heading 1",
       command: ({ editor }: { editor: Editor }) => {
@@ -109,9 +108,7 @@ const BookLogger: React.FC = () => {
     },
     {
       title: "Emoji",
-      command: ({}: { editor: Editor }) => {
-        // This will be handled in SlashCommands render
-      },
+      command: ({}: { editor: Editor }) => {},
       icon: <span>😊</span>,
     },
   ];
@@ -153,12 +150,10 @@ const BookLogger: React.FC = () => {
     injectCSS: false,
   });
 
-  // Fetch books on component mount
   useEffect(() => {
     fetchBooks();
   }, []);
 
-  // Update editor content when selected book changes or editing mode changes
   useEffect(() => {
     if (notesEditor && isEditing) {
       notesEditor.commands.setContent(formData.notes || "");
@@ -168,15 +163,16 @@ const BookLogger: React.FC = () => {
   const fetchBooks = async () => {
     try {
       setLoading(true);
+      // setError(null); // REMOVE
       const response = await fetch("/api/features/books");
       if (!response.ok) {
         throw new Error("Failed to fetch books");
       }
       const data = await response.json();
       setBooks(data.books);
-      setError(null);
     } catch (err) {
-      setError("Error loading books. Please try again.");
+      // setError("Error loading books. Please try again."); // REMOVE
+      toast.error("Error loading books. Please try again."); // Use toast
       console.error(err);
     } finally {
       setLoading(false);
@@ -186,14 +182,11 @@ const BookLogger: React.FC = () => {
   const getStatusColor = (status: Book["status"]) => {
     switch (status) {
       case "not-started":
-        // Using bluelight bg for light mode, slightly transparent blue for dark
         return "bg-primary-bluelight/60 text-primary-blue dark:bg-primary-blue/20 dark:text-primary-bluelight";
       case "in-progress":
-        // Using transparent yellow for both, different text color for contrast
-        return "bg-third-yellow/30 text-amber-800 dark:bg-third-yellow/20 dark:text-third-yellow"; // Note: amber-800 is not in config, adjust if needed
+        return "bg-third-yellow/30 text-amber-800 dark:bg-third-yellow/20 dark:text-third-yellow";
       case "completed":
-        // Using transparent green for both, different text color for contrast
-        return "bg-third-green/30 text-green-800 dark:bg-third-green/20 dark:text-third-green"; // Note: green-800 is not in config, adjust if needed
+        return "bg-third-green/30 text-green-800 dark:bg-third-green/20 dark:text-third-green";
       default:
         return "bg-accent-lightgrey text-accent-grey-hover dark:bg-bdr-dark dark:text-accent-lightgrey";
     }
@@ -231,12 +224,14 @@ const BookLogger: React.FC = () => {
   const handleSelectBook = (book: Book) => {
     setSelectedBook(book);
     setIsEditing(false);
+    // setError(null); // REMOVE (Not strictly necessary here but for consistency)
   };
 
   const handleEditBook = () => {
     if (selectedBook) {
       setFormData(selectedBook);
       setIsEditing(true);
+      // setError(null); // REMOVE
       if (notesEditor) {
         notesEditor.commands.setContent(selectedBook.notes || "");
       }
@@ -244,8 +239,10 @@ const BookLogger: React.FC = () => {
   };
 
   const handleSaveBook = async () => {
+    // setError(null); // REMOVE
     if (!formData.title || !formData.author) {
-      setError("Title and author are required");
+      // setError("Title and author are required"); // REMOVE
+      toast.error("Title and author are required."); // Use toast
       return;
     }
     try {
@@ -263,15 +260,16 @@ const BookLogger: React.FC = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        // Surface server-provided message if available
         const message =
           data.message || `Failed to ${selectedBook ? "update" : "add"} book`;
-        setError(message);
+        // setError(message); // REMOVE
+        toast.error(message); // Use toast
         console.error("Server error:", data);
         return;
       }
 
-      // On success, update local state
+      toast.success(`Book ${selectedBook ? "updated" : "added"} successfully!`); // Optional success toast
+
       if (selectedBook) {
         setBooks(
           books.map((book) =>
@@ -283,9 +281,9 @@ const BookLogger: React.FC = () => {
       }
       setSelectedBook(data.book);
       setIsEditing(false);
-      setError(null);
     } catch (err) {
-      setError("Error saving book. Please try again.");
+      // setError("Error saving book. Please try again."); // REMOVE
+      toast.error("Error saving book. Please try again."); // Use toast
       console.error("Fetch error:", err);
     }
   };
@@ -293,6 +291,7 @@ const BookLogger: React.FC = () => {
   const handleDeleteBook = async () => {
     if (selectedBook) {
       try {
+        // setError(null); // REMOVE
         const response = await fetch(
           `/api/features/books/${selectedBook._id}`,
           { method: "DELETE" }
@@ -300,12 +299,13 @@ const BookLogger: React.FC = () => {
         if (!response.ok) {
           throw new Error("Failed to delete book");
         }
+        toast.success("Book deleted successfully!"); // Optional success toast
         setBooks(books.filter((book) => book._id !== selectedBook._id));
         setSelectedBook(null);
         setIsEditing(false);
-        setError(null);
       } catch (err) {
-        setError("Error deleting book. Please try again.");
+        // setError("Error deleting book. Please try again."); // REMOVE
+        toast.error("Error deleting book. Please try again."); // Use toast
         console.error(err);
       }
     }
@@ -317,7 +317,6 @@ const BookLogger: React.FC = () => {
     >
   ) => {
     const { name, value } = e.target;
-    // Handle potential date completion logic if status changes to completed
     if (name === "status" && value === "completed" && !formData.dateCompleted) {
       setFormData({
         ...formData,
@@ -329,7 +328,7 @@ const BookLogger: React.FC = () => {
         ...formData,
         [name]: value as Book["status"],
         dateCompleted: undefined,
-      }); // Clear date if moved away from completed
+      });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -371,9 +370,7 @@ const BookLogger: React.FC = () => {
         <h1 className="text-sm font-medium text-secondary-black dark:text-secondary-white opacity-50 tracking-wider">
           MY LIBRARY
         </h1>
-        {/* Top section with title, button, search, filters remains the same */}
         <div className="p-5">
-          {/* ... (Title, Add Book button, Search Input, Status Filters) ... */}
           <div className="flex justify-between items-center mb-4">
             <button
               onClick={handleAddNewBook}
@@ -420,62 +417,45 @@ const BookLogger: React.FC = () => {
               )
             )}
           </div>
-          {/* --- End of unchanged top section --- */}
         </div>
 
-        {/* Scrollable Book List Area */}
         <div className="flex-1 overflow-y-auto">
-          {" "}
-          {/* Use flex-1 to take remaining space */}
           {loading ? (
             <div className="flex flex-col items-center justify-center p-8 text-center text-accent-grey-hover dark:text-accent-grey space-y-3 h-full">
-              {" "}
-              {/* Ensure loading takes space */}
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-blue border-t-transparent"></div>
               <p>Loading your books...</p>
-            </div>
-          ) : error ? (
-            <div className="p-6 text-center h-full flex flex-col justify-center items-center">
-              {" "}
-              {/* Ensure error takes space */}
-              <div className="inline-flex items-center justify-center p-3 mb-4 rounded-full bg-third-red/10 dark:bg-third-red/20">
-                <IconX size={24} className="text-third-red" />
-              </div>
-              <p className="text-third-red">{error}</p>
-              <button
-                onClick={fetchBooks}
-                className="mt-4 px-4 py-2 border border-bdr-light dark:border-bdr-dark rounded-md text-accent-grey-hover dark:text-accent-lightgrey hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
-              >
-                Try Again
-              </button>
-            </div>
+            </div> /* REMOVE error display condition */
           ) : (
-            // ***** MODIFIED UL *****
-            // Removed divide-y classes, added padding
+            // {error ? (
+            //  <div className="p-6 text-center h-full flex flex-col justify-center items-center">
+            //    <div className="inline-flex items-center justify-center p-3 mb-4 rounded-full bg-third-red/10 dark:bg-third-red/20">
+            //      <IconX size={24} className="text-third-red" />
+            //    </div>
+            //    <p className="text-third-red">{error}</p>
+            //    <button
+            //      onClick={fetchBooks}
+            //      className="mt-4 px-4 py-2 border border-bdr-light dark:border-bdr-dark rounded-md text-accent-grey-hover dark:text-accent-lightgrey hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
+            //    >
+            //      Try Again
+            //    </button>
+            //  </div>
+            // ) : (
             <ul className="px-2 py-1">
               {filteredBooks.length > 0 ? (
                 filteredBooks.map((book, index) => (
-                  // ***** MODIFIED LI *****
                   <li
                     key={book._id}
                     onClick={() => handleSelectBook(book)}
-                    // - Removed getStatusIndicator()
-                    // - Added rounded-lg, mb-2
-                    // - Set base bg: bg-white dark:bg-secondary-black
-                    // - Adjusted hover/selected states
                     className={`
                     pl-4 pr-5 py-4 rounded-lg transition-colors duration-200 cursor-pointer
-                    ${
-                      index < filteredBooks.length - 1 ? "mb-2" : ""
-                    } // Add margin-bottom to all but the last item
+                    ${index < filteredBooks.length - 1 ? "mb-2" : ""}
                     ${
                       selectedBook?._id === book._id
-                        ? "bg-accent-lightgrey dark:bg-bdr-dark" // Selected state: specific background
-                        : "bg-white dark:bg-secondary-black hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/50" // Default state: base background + hover effect
+                        ? "bg-accent-lightgrey dark:bg-bdr-dark"
+                        : "bg-white dark:bg-secondary-black hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/50"
                     }
                   `}
                   >
-                    {/* --- Content of the list item remains the same --- */}
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-medium text-secondary-black dark:text-secondary-white line-clamp-1">
@@ -502,35 +482,29 @@ const BookLogger: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex flex-col items-end">
-                        {
-                          book.rating ? (
-                            <div className="flex items-center bg-third-yellow/20 dark:bg-third-yellow/20 px-2 py-1 rounded-md">
-                              <span className="text-amber-800 dark:text-third-yellow font-medium text-sm mr-1">
-                                {book.rating}
-                              </span>
-                              <IconStarFilled
-                                size={14}
-                                className="text-third-yellow"
-                              />
-                            </div>
-                          ) : (
-                            <div className="h-[26px]"></div>
-                          ) /* Placeholder for alignment if no rating */
-                        }
+                        {book.rating ? (
+                          <div className="flex items-center bg-third-yellow/20 dark:bg-third-yellow/20 px-2 py-1 rounded-md">
+                            <span className="text-amber-800 dark:text-third-yellow font-medium text-sm mr-1">
+                              {book.rating}
+                            </span>
+                            <IconStarFilled
+                              size={14}
+                              className="text-third-yellow"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-[26px]"></div>
+                        )}
                         <IconChevronRight
                           size={18}
                           className="text-accent-grey dark:text-bdr-dark mt-4"
                         />
                       </div>
                     </div>
-                    {/* --- End of list item content --- */}
                   </li>
                 ))
               ) : (
-                // Empty state remains the same
                 <div className="flex flex-col items-center justify-center p-8 text-center text-accent-grey-hover dark:text-accent-grey h-full">
-                  {" "}
-                  {/* Ensure empty state takes space */}
                   <div className="p-3 mb-4 rounded-full bg-accent-lightgrey dark:bg-bdr-dark">
                     <IconSearch
                       size={24}
@@ -542,21 +516,19 @@ const BookLogger: React.FC = () => {
                 </div>
               )}
             </ul>
-            // ***** END MODIFIED UL *****
+            // )} // End of removed error display ternary
           )}
         </div>
       </div>
 
       {/* Right Panel - Book Details / Edit Form */}
       <div className="relative p-4 w-2/3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden">
-        {error && !loading && !isEditing && (
-          // Error message uses red shades
+        {/* REMOVE error display */}
+        {/* {error && !loading && !isEditing && (
           <div className="mx-5 mt-5 bg-third-red/10 dark:bg-third-red/20 border border-third-red/30 dark:border-third-red/50 text-red-800 dark:text-third-red px-4 py-3 rounded">
-            {" "}
-            {/* Note: red-800 fallback */}
             {error}
           </div>
-        )}
+        )} */}
 
         {selectedBook && !isEditing ? (
           <div className="p-6">
@@ -571,7 +543,6 @@ const BookLogger: React.FC = () => {
                     {getStatusLabel(selectedBook.status)}
                   </span>
                   {selectedBook.genre && (
-                    // Genre tag uses subtle grey
                     <span className="text-xs bg-accent-lightgrey/60 dark:bg-bdr-dark text-accent-grey-hover dark:text-accent-lightgrey px-2 py-0.5 rounded flex items-center">
                       <IconTag size={12} className="mr-1" />
                       {selectedBook.genre}
@@ -586,7 +557,6 @@ const BookLogger: React.FC = () => {
                 </p>
               </div>
               <div className="flex gap-2">
-                {/* Edit/Delete buttons are neutral styled */}
                 <button
                   onClick={handleEditBook}
                   className="p-2 rounded-md border border-bdr-light dark:border-bdr-dark hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
@@ -602,7 +572,6 @@ const BookLogger: React.FC = () => {
                   className="p-2 rounded-md border border-bdr-light dark:border-bdr-dark hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
                   aria-label="Delete book"
                 >
-                  {/* Delete icon uses red */}
                   <IconTrash size={20} className="text-third-red" />
                 </button>
               </div>
@@ -622,7 +591,6 @@ const BookLogger: React.FC = () => {
                       <IconStarFilled
                         key={i}
                         size={18}
-                        // Stars use yellow for filled, specific greys for empty
                         className={
                           i < (selectedBook.rating || 0)
                             ? "text-third-yellow"
@@ -636,7 +604,6 @@ const BookLogger: React.FC = () => {
             ) : null}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {/* Date info boxes use subtle grey background */}
               <div className="bg-accent-lightgrey/30 dark:bg-bdr-dark/50 rounded-lg p-4">
                 <div className="flex items-center mb-1">
                   <IconCalendar
@@ -656,7 +623,6 @@ const BookLogger: React.FC = () => {
                 selectedBook.dateCompleted && (
                   <div className="bg-accent-lightgrey/30 dark:bg-bdr-dark/50 rounded-lg p-4">
                     <div className="flex items-center mb-1">
-                      {/* Completed date uses green icon */}
                       <IconBookmark
                         size={18}
                         className="text-third-green mr-2"
@@ -677,10 +643,8 @@ const BookLogger: React.FC = () => {
                 <h3 className="text-lg font-medium text-secondary-black dark:text-secondary-white mb-3">
                   Notes
                 </h3>
-                {/* Notes display uses subtle grey background */}
                 <div className="bg-accent-lightgrey/30 dark:bg-bdr-dark/50 rounded-lg p-5">
                   <div
-                    // Prose handles typography, ensure base text color is correct
                     className="text-secondary-black dark:text-secondary-white prose prose-sm dark:prose-invert max-w-none"
                     dangerouslySetInnerHTML={renderNotesContent(
                       selectedBook.notes
@@ -696,13 +660,10 @@ const BookLogger: React.FC = () => {
               <h2 className="text-2xl font-bold text-secondary-black dark:text-secondary-white">
                 {selectedBook ? "Edit Book" : "Add New Book"}
               </h2>
-              {/* Cancel button is neutral styled */}
               <button
                 onClick={() => {
                   setIsEditing(false);
-                  setError(null);
-                  // Keep selected book if cancelling edit, clear if cancelling add
-                  // setSelectedBook(selectedBook ? selectedBook : null);
+                  // setError(null); // REMOVE
                 }}
                 className="p-2 rounded-md border border-bdr-light dark:border-bdr-dark hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
                 aria-label="Cancel"
@@ -714,17 +675,14 @@ const BookLogger: React.FC = () => {
               </button>
             </div>
 
-            {error && (
-              // Error message uses red shades
+            {/* REMOVE error display */}
+            {/* {error && (
               <div className="bg-third-red/10 dark:bg-third-red/20 border border-third-red/30 dark:border-third-red/50 text-red-800 dark:text-third-red px-4 py-3 rounded mb-6">
-                {" "}
-                {/* Note: red-800 fallback */}
                 {error}
               </div>
-            )}
+            )} */}
 
             <div className="space-y-6">
-              {/* Form Inputs */}
               <div>
                 <label className="block text-sm font-medium text-accent-grey-hover dark:text-accent-lightgrey mb-2">
                   Title
@@ -764,13 +722,12 @@ const BookLogger: React.FC = () => {
                     name="status"
                     value={formData.status || "not-started"}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200 appearance-none" // Added appearance-none for better custom styling potential
+                    className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200 appearance-none"
                   >
                     <option value="not-started">Not Started</option>
                     <option value="in-progress">Reading</option>
                     <option value="completed">Finished</option>
                   </select>
-                  {/* Add a dropdown indicator if needed */}
                 </div>
 
                 <div>
@@ -788,7 +745,6 @@ const BookLogger: React.FC = () => {
                 </div>
               </div>
 
-              {/* Rating Input */}
               <div>
                 <label className="block text-sm font-medium text-accent-grey-hover dark:text-accent-lightgrey mb-2">
                   Rating
@@ -804,7 +760,6 @@ const BookLogger: React.FC = () => {
                       >
                         <IconStarFilled
                           size={26}
-                          // Stars use yellow for filled, specific greys for empty
                           className={
                             rating <= (formData.rating || 0)
                               ? "text-third-yellow"
@@ -826,13 +781,11 @@ const BookLogger: React.FC = () => {
                 </div>
               </div>
 
-              {/* Notes Editor Input */}
               <div>
                 <label className="block text-sm font-medium text-accent-grey-hover dark:text-accent-lightgrey mb-2">
                   Notes
                 </label>
                 {notesEditor && (
-                  // Editor wrapper uses standard input border/bg/focus
                   <div className="border border-bdr-light dark:border-bdr-dark rounded-lg p-4 bg-secondary-white dark:bg-secondary-black min-h-[200px] focus-within:ring-2 focus-within:ring-primary-blue dark:focus-within:ring-primary-blue focus-within:border-transparent transition-all duration-200">
                     <EditorContent editor={notesEditor} />
                     {notesEditor && <ContextMenu editor={notesEditor} />}
@@ -841,18 +794,15 @@ const BookLogger: React.FC = () => {
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
-                {/* Cancel Button - neutral style */}
                 <button
                   onClick={() => {
                     setIsEditing(false);
-                    setError(null);
-                    // setSelectedBook(selectedBook ? selectedBook : null);
+                    // setError(null); // REMOVE
                   }}
                   className="px-4 py-2 border border-bdr-light dark:border-bdr-dark text-accent-grey-hover dark:text-accent-lightgrey rounded-md hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
                 >
                   Cancel
                 </button>
-                {/* Save Button - primary style */}
                 <button
                   onClick={handleSaveBook}
                   className="px-5 py-2 bg-primary-blue hover:bg-primary-blue-hover text-secondary-white font-medium rounded-md transition-colors duration-200"
@@ -863,9 +813,7 @@ const BookLogger: React.FC = () => {
             </div>
           </div>
         ) : (
-          // Empty state when no book is selected or being edited
           <div className="flex flex-col items-center justify-center h-[70vh] p-6 text-center">
-            {/* Empty state uses primary blue for icon background/color */}
             <div className="bg-primary-bluelight/30 dark:bg-primary-blue/20 p-4 rounded-full mb-4">
               <IconBook2
                 size={42}
@@ -879,7 +827,6 @@ const BookLogger: React.FC = () => {
               Track your reading journey, capture your thoughts, and never
               forget a book you&#39;ve read.
             </p>
-            {/* Button uses primary style */}
             <button
               onClick={handleAddNewBook}
               className="flex items-center gap-2 px-5 py-3 bg-primary-blue hover:bg-primary-blue-hover text-secondary-white font-medium rounded-md transition-colors duration-200"

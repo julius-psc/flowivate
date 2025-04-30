@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google"; // Assuming these are correct Geist imports
 import "./globals.css";
+// Import the provider component correctly
+import ClientProvider from "@/app/providers/ClientProvider"; // Use the correct name
 
-const geistSans = Geist({
+const geistSans = Geist({ // Make sure Geist setup is correct
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const geistMono = Geist_Mono({ // Make sure Geist_Mono setup is correct
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
@@ -27,7 +29,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        {/* Wrap the children with ClientProvider */}
+        <ClientProvider>
+           {/* If you passed props to ClientProvider (Optional step from above) you'd set them here: */}
+           {/* e.g., <ClientProvider toasterPosition="bottom-right" toasterRichColors> */}
+          {children}
+        </ClientProvider>
+        {/* REMOVE this line, as the Toaster is inside ClientProvider */}
+        {/* <Toaster position="top-center" richColors /> */}
       </body>
     </html>
   );

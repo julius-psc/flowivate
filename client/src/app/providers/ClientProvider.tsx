@@ -3,21 +3,23 @@
 import React, { ReactNode } from "react";
 import { SessionProvider } from "next-auth/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster as SonnerToaster } from "sonner";
 
-// You might want to move DashboardProvider here too if it's client-side context
-// import { DashboardProvider } from "../context/DashboardContext";
+// Define props if you want to pass them from layout (Optional)
+// interface ClientProviderProps {
+//   children: ReactNode;
+//   toasterPosition?: React.ComponentProps<typeof SonnerToaster>['position'];
+//   toasterRichColors?: boolean;
+// }
 
 export default function ClientProvider({ children }: { children: ReactNode }) {
-  // Use React.useState to ensure QueryClient is only created once per component instance
-  // This prevents recreating the client on every render within this client boundary
+// Or use the interface: export default function ClientProvider({ children, toasterPosition, toasterRichColors }: ClientProviderProps) {
   const [queryClient] = React.useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Example: Data considered fresh for 1 minute
             staleTime: 1000 * 60 * 1,
-            // Example: Refetch data when the browser window regains focus
             refetchOnWindowFocus: false,
           },
         },
@@ -25,14 +27,30 @@ export default function ClientProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    // SessionProvider should usually wrap QueryClientProvider if your queries
-    // depend on the session status or data.
     <SessionProvider>
+      {/* SonnerToaster is rendered here, applying props directly */}
+      <SonnerToaster
+        position="top-center" // Applied here
+        richColors          // Applied here
+        theme={'system'}    // Your existing theme setting
+        className="toaster group"
+        toastOptions={{
+          classNames: {
+            toast:
+              'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
+            description: 'group-[.toast]:text-muted-foreground',
+            actionButton:
+              'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
+            cancelButton:
+              'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
+          },
+        }}
+        // Pass props from ClientProvider if using the optional interface above:
+        // position={toasterPosition || "top-center"}
+        // richColors={toasterRichColors}
+      />
       <QueryClientProvider client={queryClient}>
-        {/* If DashboardProvider is client context, it can go here */}
-        {/* <DashboardProvider> */}
-              {children}
-        {/* </DashboardProvider> */}
+        {children}
       </QueryClientProvider>
     </SessionProvider>
   );

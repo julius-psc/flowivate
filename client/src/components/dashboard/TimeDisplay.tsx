@@ -4,25 +4,24 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSession } from "next-auth/react";
 import { motivationalQuotes } from '../../app/data/quotes';
 import { IconFlameFilled } from '@tabler/icons-react';
+import { toast } from "sonner"; // Import Sonner toast
 
 interface TimeDisplayProps {
   isCenteredFullScreen?: boolean;
 }
 
-// Function to get the quote index based on a 2-hour interval
+// Function to get the quote index based on a 2-hour interval (Unchanged)
 const getQuoteIndexForTime = (date: Date): number => {
     const twoHoursInMillis = 2 * 60 * 60 * 1000;
     const intervalIndex = Math.floor(date.getTime() / twoHoursInMillis);
     return intervalIndex % motivationalQuotes.length;
 };
 
-// Placeholder component for initial render to prevent hydration errors
+// Placeholder component (Unchanged)
 const TimeDisplayPlaceholder: React.FC<{ isCenteredFullScreen?: boolean }> = ({ isCenteredFullScreen }) => {
-    // Estimate height to minimize layout shift
     const placeholderHeight = isCenteredFullScreen ? "h-[250px]" : "h-[180px]";
     return (
         <div className={`flex flex-col items-center justify-center ${placeholderHeight} w-full max-w-xl opacity-0`}>
-             {/* Content can be added here for structure if needed, but opacity-0 hides it */}
              <div className="h-6 w-3/4 bg-gray-300 dark:bg-gray-700 rounded mb-2 animate-pulse"></div>
              <div className="h-16 w-1/2 bg-gray-400 dark:bg-gray-600 rounded mb-4 animate-pulse"></div>
              <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded animate-pulse"></div>
@@ -34,69 +33,75 @@ const TimeDisplayPlaceholder: React.FC<{ isCenteredFullScreen?: boolean }> = ({ 
 export default function TimeDisplay({
   isCenteredFullScreen = false,
 }: TimeDisplayProps) {
-  const [isMounted, setIsMounted] = useState(false); // State to track client mount
-  const [currentTime, setCurrentTime] = useState(() => new Date()); // Initialize safely
-  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(() => getQuoteIndexForTime(new Date())); // Initialize safely
+  const [isMounted, setIsMounted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(() => getQuoteIndexForTime(new Date()));
   const [streakCount, setStreakCount] = useState<number | null>(null);
   const [isStreakLoading, setIsStreakLoading] = useState(true);
 
   const { data: session, status: sessionStatus } = useSession();
   const username = session?.user?.username || "User";
 
-  // Effect to set isMounted to true only on the client
+  // Effect to set isMounted (Unchanged)
   useEffect(() => {
     setIsMounted(true);
-
-    // Set initial time again after mount to ensure client's time is used
     const now = new Date();
     setCurrentTime(now);
     setCurrentQuoteIndex(getQuoteIndexForTime(now));
-
-    // Start the timer interval
     const timer = setInterval(() => {
       const newTime = new Date();
       setCurrentTime(newTime);
-
       const newQuoteIndex = getQuoteIndexForTime(newTime);
-      // Use functional update for state based on previous state
       setCurrentQuoteIndex(prevIndex => newQuoteIndex !== prevIndex ? newQuoteIndex : prevIndex);
-
     }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-    return () => clearInterval(timer); // Cleanup interval
-  }, []); // Empty dependency array ensures this runs only once on mount
 
-
-  // Fetch streak data when session is available (runs after mount effect)
+  // Fetch streak data with toast error handling
   useEffect(() => {
     if (sessionStatus === "authenticated") {
       setIsStreakLoading(true);
       fetch('/api/features/streaks')
-        .then(res => {
+        .then(async res => { // Make async to await potential error JSON parsing
           if (!res.ok) {
-            console.error("Failed to fetch streak:", res.statusText);
-            return { streak: 0 };
+            console.error("Failed to fetch streak:", res.status, res.statusText); // Keep for debugging
+            // Try to parse error message from response body
+            let errorMsg = `Failed to fetch streak data (${res.status})`;
+            try {
+              const errorData = await res.json();
+              if (errorData && errorData.message) {
+                errorMsg = errorData.message;
+              }
+            } catch (parseError) {
+              toast.error(String(parseError));
+            }
+            throw new Error(errorMsg); // Throw error to be caught below
           }
-          return res.json();
+          return res.json(); // Parse JSON if response is OK
         })
         .then(data => {
-          setStreakCount(data.streak > 0 ? data.streak : null);
+          // Set streak count, ensuring data and streak property exist
+          setStreakCount(data && data.streak > 0 ? data.streak : null);
         })
         .catch(error => {
-          console.error("Error fetching streak:", error);
-          setStreakCount(null);
+          console.error("Error fetching streak:", error); // Keep for debugging
+          // USE TOAST INSTEAD OF JUST CONSOLE.ERROR
+          const message = error instanceof Error ? error.message : "An unknown error occurred.";
+          toast.error(`Could not load streak: ${message}`); // Show toast to user
+          setStreakCount(null); // Ensure streak is cleared on error
         })
         .finally(() => {
           setIsStreakLoading(false);
         });
-    } else if (sessionStatus !== "loading") { // Handle unauthenticated or error
+    } else if (sessionStatus !== "loading") { // Handle unauthenticated or initial loading state
         setIsStreakLoading(false);
         setStreakCount(null);
     }
   }, [sessionStatus]);
 
 
-  // Memoize derived values
+  // Memoized derived values (Unchanged)
   const greeting = useMemo(() => {
     const hour = currentTime.getHours();
     if (hour < 12) return "Good morning";
@@ -120,7 +125,11 @@ export default function TimeDisplay({
   }, [currentTime]);
 
   const currentQuote = useMemo(() => {
-      return motivationalQuotes[currentQuoteIndex];
+      // Ensure index is always within bounds, fallback to 0 if somehow invalid
+      const safeIndex = Number.isInteger(currentQuoteIndex) && currentQuoteIndex >= 0 && currentQuoteIndex < motivationalQuotes.length
+          ? currentQuoteIndex
+          : 0;
+      return motivationalQuotes[safeIndex];
   }, [currentQuoteIndex]);
 
 
@@ -128,9 +137,9 @@ export default function TimeDisplay({
     ? "min-h-screen flex flex-col items-center justify-center text-center p-4"
     : "text-center px-4 py-6";
 
+  // Rendering logic (Unchanged structure, only error handling is modified)
   return (
     <div className={containerClasses}>
-      {/* Render placeholder on server and initial client render, actual content after mount */}
       {!isMounted ? (
         <TimeDisplayPlaceholder isCenteredFullScreen={isCenteredFullScreen} />
       ) : (
@@ -143,19 +152,22 @@ export default function TimeDisplay({
           </div>
 
           {/* Wrapper for Time and Streak */}
-          <div className="flex items-center justify-center gap-3 my-1"> {/* Added wrapper and gap */}
+          <div className="flex items-center justify-center gap-3 my-1">
             {/* Main Time Display */}
             <h1 className="text-6xl sm:text-7xl font-bold text-gray-900 dark:text-gray-100 tracking-tight tabular-nums">
               {formattedTime}
             </h1>
 
-            <div className="h-6 w-10 flex items-center justify-start"> {/* Height matches large text line-height roughly */}
-                {!isStreakLoading && streakCount && streakCount > 0 && (
-                    <span className="flex items-center gap-1 animate-fade-in" title={`${streakCount}-day streak`}> {/* Added fade-in animation */}
+             {/* Placeholder div to reserve space for streak indicator */}
+            <div className="h-10 w-12 flex items-center justify-start"> {/* Adjusted height/width for better alignment */}
+                {isStreakLoading ? (
+                    <div className="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse"></div> /* Basic loading pulse */
+                ) : streakCount && streakCount > 0 ? (
+                    <span className="flex items-center gap-1 animate-fade-in" title={`${streakCount}-day streak`}>
                         <IconFlameFilled className="w-5 h-auto text-primary-blue" />
                         <span className="text-md font-semibold text-primary-blue ">{streakCount}</span>
                     </span>
-                )}
+                ) : null /* No streak or not loading, render nothing */}
             </div>
           </div>
 

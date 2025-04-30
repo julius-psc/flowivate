@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Plus, Minus } from "lucide-react";
 import { IconBucketDroplet } from "@tabler/icons-react";
+import { toast } from "sonner"; // Import Sonner toast
 
-// --- New Skeleton Loader Component ---
+// --- Skeleton Loader Component (Unchanged) ---
 const WaterSkeleton = () => {
   return (
     // Match outer container style from Water component
@@ -44,12 +45,8 @@ const WaterSkeleton = () => {
         </div>
       </div>
 
-      {/* Status Message Placeholder */}
-      {/* Occupies space roughly equivalent to the status message area height */}
-      <div className="h-6 mb-2 flex justify-center items-center">
-          <div className="h-4 w-1/3 bg-gray-200 dark:bg-zinc-700 rounded"></div>
-      </div>
-
+      {/* Placeholder for status message area height (removed actual content) */}
+      <div className="h-6 mb-2"></div>
 
       {/* Save Button Placeholder */}
       {/* Using mt-auto might be needed if the parent flex container height is fixed/guaranteed */}
@@ -61,13 +58,14 @@ const WaterSkeleton = () => {
 };
 
 
-// --- Main Water Component ---
+// --- Main Water Component (with Sonner Toasts) ---
 const Water = () => {
   const [waterAmount, setWaterAmount] = useState(0);
   const [isLoading, setIsLoading] = useState(true); // Used for BOTH initial fetch AND saving
   const [isFetching, setIsFetching] = useState(true); // Specifically for initial fetch state
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // REMOVED: error and successMessage states are no longer needed
+  // const [error, setError] = useState<string | null>(null);
+  // const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { status } = useSession();
 
   const dailyGoal = 2000;
@@ -78,7 +76,7 @@ const Water = () => {
     const fetchInitialWater = async () => {
       if (status === "authenticated") {
         setIsFetching(true); // Start fetching state
-        setError(null);
+        // setError(null); // No longer needed
         try {
           const response = await fetch("/api/features/water", {
             method: "GET",
@@ -87,7 +85,7 @@ const Water = () => {
           });
 
           if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({})); // Attempt to parse JSON error, default to empty obj if fails
             throw new Error(errorData.message || `Failed to fetch water data (${response.status})`);
           }
 
@@ -95,7 +93,9 @@ const Water = () => {
           setWaterAmount(data.waterAmount || 0);
         } catch (err) {
           console.error("Failed to fetch initial water amount:", err);
-          setError(err instanceof Error ? err.message : "An unknown error occurred fetching data.");
+          // USE TOAST INSTEAD OF setError
+          const message = err instanceof Error ? err.message : "An unknown error occurred fetching data.";
+          toast.error(`Failed to load water data: ${message}`);
         } finally {
           setIsFetching(false); // End fetching state
           setIsLoading(false); // Also end general loading state after fetch
@@ -122,28 +122,29 @@ const Water = () => {
   const handleIncrement = () => {
     if (waterAmount < dailyGoal) {
       setWaterAmount((prev) => Math.min(prev + increment, dailyGoal));
-      setError(null);
-      setSuccessMessage(null);
+      // setError(null); // No longer needed
+      // setSuccessMessage(null); // No longer needed
     }
   };
 
   const handleDecrement = () => {
     if (waterAmount > 0) {
       setWaterAmount((prev) => Math.max(prev - increment, 0));
-      setError(null);
-      setSuccessMessage(null);
+      // setError(null); // No longer needed
+      // setSuccessMessage(null); // No longer needed
     }
   };
 
   const handleSave = async () => {
     if (status !== "authenticated") {
-      setError("You must be logged in to save your water intake.");
+      // USE TOAST INSTEAD OF setError
+      toast.error("You must be logged in to save your water intake.");
       return;
     }
 
     setIsLoading(true); // Indicate saving process
-    setError(null);
-    setSuccessMessage(null);
+    // setError(null); // No longer needed
+    // setSuccessMessage(null); // No longer needed
 
     try {
       const response = await fetch("/api/features/water", {
@@ -153,18 +154,23 @@ const Water = () => {
         body: JSON.stringify({ waterAmount: waterAmount }),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({})); // Attempt to parse JSON, default if fails
 
       if (!response.ok) {
+        // Throw error to be caught below, use result.message if available
         throw new Error(result.message || `Failed to save data (${response.status})`);
       }
 
       console.log("Save successful:", result);
-      setSuccessMessage(result.message || "Water intake saved successfully!");
-      setTimeout(() => setSuccessMessage(null), 3000);
+      // USE TOAST INSTEAD OF setSuccessMessage
+      toast.success(result.message || "Water intake saved successfully!");
+      // setTimeout(() => setSuccessMessage(null), 3000); // No longer needed
+
     } catch (err) {
       console.error("Failed to save water amount:", err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred.");
+      // USE TOAST INSTEAD OF setError
+      const message = err instanceof Error ? err.message : "An unknown error occurred.";
+      toast.error(`Error saving water intake: ${message}`);
     } finally {
       setIsLoading(false); // End saving process
     }
@@ -172,8 +178,8 @@ const Water = () => {
 
   const percentage = Math.min((waterAmount / dailyGoal) * 100, 100);
   const remainingWater = dailyGoal - waterAmount;
-  // Disable save if: fetching initial data, currently saving, not authenticated, or water amount is 0 (optional, depends if saving 0 is desired)
-  const isSaveDisabled = isFetching || isLoading || status !== "authenticated"; // Simplified: disable if any loading is happening or not logged in.
+  // Disable save if: fetching initial data, currently saving, or not authenticated.
+  const isSaveDisabled = isFetching || isLoading || status !== "authenticated";
 
   // --- Determine when to show Skeleton ---
   // Show skeleton if session is loading OR if we are fetching initial data
@@ -242,13 +248,13 @@ const Water = () => {
         </div>
       </div>
 
-      {/* Status Messages */}
-      <div className="h-6 mb-2 text-center">
-        {/* Only show "Saving..." when actively saving, not during initial load */}
-        {isLoading && !isFetching && <p className="text-sm text-gray-500 dark:text-gray-400">Saving...</p>}
-        {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
-        {successMessage && <p className="text-sm text-green-500 dark:text-green-400">{successMessage}</p>}
+      {/* REMOVED: Status Message Area - replaced by toasts */}
+      <div className="h-6 mb-2">
+         {/* Kept for spacing, content removed */}
+         {/* Optionally display non-error/success messages here if needed */}
+         {/* Example: {isLoading && !isFetching && <p className="text-sm text-gray-500 dark:text-gray-400 text-center">Saving...</p>} */}
       </div>
+
 
       {/* Save Button */}
       <div className="flex justify-center mt-auto pt-2"> {/* Added pt-2 to push button down slightly */}
@@ -257,6 +263,7 @@ const Water = () => {
           disabled={isSaveDisabled}
           className={`dark:bg-secondary-black bg-secondary-white dark:text-secondary-white text-primary-black mx-2.5 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${isSaveDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
         >
+          {/* Text inside button now indicates saving state */}
           {isLoading && !isFetching ? "Saving..." : "Save Water Intake"}
           {status !== "authenticated" && " (Login Required)"}
         </button>

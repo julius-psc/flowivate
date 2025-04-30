@@ -11,54 +11,39 @@ import {
 } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Checkbox from "../../recyclable/Checkbox"; // Adjust path as needed
+import Checkbox from "../../recyclable/Checkbox";
 import Link from "next/link";
-import * as tasksApi from "../../../../lib/tasksApi"; // Adjust path as needed
-import type { Task, TaskList } from "@/types/taskTypes"; // Adjust path as needed
+import * as tasksApi from "../../../../lib/tasksApi";
+import type { Task, TaskList } from "@/types/taskTypes";
+import { toast } from "sonner"; // Import Sonner toast
 
-// --- Skeleton Loader Component (Unchanged) ---
 const TasksSkeleton = () => {
-  const numberOfPlaceholderTasks = 3; // Number of skeleton rows to show
-
+  const numberOfPlaceholderTasks = 3;
   return (
     <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col animate-pulse">
-      {/* Header Skeleton */}
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <div className="h-3 w-12 bg-gray-200 dark:bg-zinc-700 rounded"></div>{" "}
-        {/* "TASKS" placeholder */}
-        <div className="h-7 w-28 bg-gray-300 dark:bg-zinc-600 rounded-md"></div>{" "}
-        {/* "Go to Tasks" button placeholder */}
+        <div className="h-3 w-12 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+        <div className="h-7 w-28 bg-gray-300 dark:bg-zinc-600 rounded-md"></div>
       </div>
-      {/* Summary Message Skeleton */}
-      <div className="h-4 w-3/5 bg-gray-200 dark:bg-zinc-700 rounded mb-3 mx-auto"></div>{" "}
-      {/* Summary text placeholder */}
-      {/* Task Items Skeleton */}
+      <div className="h-4 w-3/5 bg-gray-200 dark:bg-zinc-700 rounded mb-3 mx-auto"></div>
       <div className="space-y-2 flex-grow">
         {[...Array(numberOfPlaceholderTasks)].map((_, index) => (
           <div
             key={index}
             className="flex items-center p-2 rounded-lg bg-gray-100/50 dark:bg-zinc-800/50 border border-transparent"
           >
-            {/* --- MODIFICATION START: Adjusted placeholder spacing slightly if needed --- */}
-            <div className="w-5 h-5 bg-gray-300 dark:bg-zinc-600 rounded mr-1 flex-shrink-0"></div>{" "}
-            {/* Checkbox placeholder */}
-            {/* --- MODIFICATION END --- */}
-            <div className="h-4 flex-1 bg-gray-200 dark:bg-zinc-700 rounded"></div>{" "}
-            {/* Task Name placeholder */}
+            <div className="w-5 h-5 bg-gray-300 dark:bg-zinc-600 rounded mr-1 flex-shrink-0"></div>
+            <div className="h-4 flex-1 bg-gray-200 dark:bg-zinc-700 rounded"></div>
           </div>
         ))}
       </div>
-      {/* Footer Link Skeleton */}
       <div className="mt-3 text-center flex-shrink-0">
-        <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded mx-auto"></div>{" "}
-        {/* "View all tasks" placeholder */}
+        <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded mx-auto"></div>
       </div>
     </div>
   );
 };
 
-
-// --- Helper Functions (Unchanged) ---
 const priorityLevels = [
   {
     level: 0,
@@ -101,7 +86,6 @@ const PriorityIconDisplay: React.FC<{ level: number }> = ({ level }) => {
   );
 };
 
-// Minimal placeholder for logged-out state (Unchanged)
 const placeholderTaskLists: TaskList[] = [
   {
     _id: "placeholder-preview",
@@ -118,7 +102,6 @@ const placeholderTaskLists: TaskList[] = [
   },
 ];
 
-// --- Priority Dropdown Component (MODIFIED POSITIONING) ---
 interface PriorityDropdownProps {
   taskId: string;
   listId: string;
@@ -151,9 +134,7 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      // --- MODIFICATION START: Changed positioning from top-full mt-2 to bottom-full mb-2 ---
       className="absolute right-0 bottom-full mb-2 w-40 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg z-[1000] py-1.5 transition-all duration-200 ease-out animate-fade-in"
-      // --- MODIFICATION END ---
     >
       {priorityLevels.map(({ level, label, icon: Icon, color }) => (
         <button
@@ -179,13 +160,9 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
   );
 };
 
-// --- Main Tasks (Preview) Component ---
 const Tasks: React.FC = () => {
-  // --- React Query Client (Unchanged) ---
   const queryClient = useQueryClient();
   const { status } = useSession();
-
-  // --- Local UI State (Unchanged) ---
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskValue, setEditingTaskValue] = useState("");
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>(
@@ -194,13 +171,9 @@ const Tasks: React.FC = () => {
   const [openPriorityDropdown, setOpenPriorityDropdown] = useState<
     string | null
   >(null);
-
-  // --- Refs (Unchanged) ---
   const editInputRef = useRef<HTMLInputElement>(null);
-
   const MAX_PREVIEW_TASKS = 5;
 
-  // --- React Query: Fetching Task Lists (Unchanged) ---
   const {
     data: taskLists = [],
     isLoading: isLoadingLists,
@@ -216,77 +189,71 @@ const Tasks: React.FC = () => {
       status !== "authenticated" ? placeholderTaskLists : undefined,
   });
 
-// --- React Query: Mutations (MODIFIED with Optimistic Updates) ---
-const updateListMutation = useMutation({
-  mutationFn: tasksApi.updateTaskList, // Expects { id: string; tasks?: Task[]; name?: string }
-
-  // --- MODIFICATION START: Optimistic Updates Logic with Corrected Types ---
-  onMutate: async (variables: { id: string; tasks?: Task[]; name?: string }) => { // <-- Changed type here
-    // --> Add this check: If 'tasks' isn't part of this specific update, skip optimistic logic
-    if (!variables.tasks) {
-      console.warn(
-        "Skipping optimistic update in preview as 'tasks' were not provided."
-      );
-      // Return minimal context or undefined
-      return { previousTaskLists: undefined };
-    }
-    // <-- End of check
-
-    // Now we know variables.tasks exists
-    const tasksToUpdate = variables.tasks;
-
-    // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-    await queryClient.cancelQueries({ queryKey: ["tasks"] });
-
-    // Snapshot the previous value
-    const previousTaskLists = queryClient.getQueryData<TaskList[]>(["tasks"]);
-
-    // Optimistically update to the new value using tasksToUpdate
-    if (previousTaskLists) {
-      queryClient.setQueryData<TaskList[]>(["tasks"], (old) =>
-        old?.map((list) =>
-          list._id === variables.id
-            ? { ...list, tasks: tasksToUpdate } // Apply the new tasks array directly
-            : list
-        ) ?? []
+  // Show toast for main fetch error
+  useEffect(() => {
+    if (isErrorLists && errorLists) {
+      toast.error(
+        `Error loading tasks preview: ${errorLists?.message || "Unknown error"}`
       );
     }
+  }, [isErrorLists, errorLists]);
 
-    // Return a context object with the snapshotted value
-    return { previousTaskLists };
-  },
-  // If the mutation fails, use the context returned from onMutate to roll back
-  onError: (err, variables, context) => {
-    console.error("Optimistic update failed in preview:", err);
-    // Use optional chaining for safety
-    if (context?.previousTaskLists) {
-      queryClient.setQueryData(["tasks"], context.previousTaskLists);
-    }
-    // Potentially show an error notification to the user here
-  },
-  // Always refetch after error or success:
-  onSettled: (data, error, variables) => { // Add data, error, variables params
-    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+  const updateListMutation = useMutation({
+    mutationFn: tasksApi.updateTaskList,
+    onMutate: async (variables: {
+      id: string;
+      tasks?: Task[];
+      name?: string;
+    }) => {
+      if (!variables.tasks) {
+        console.warn(
+          "Skipping optimistic update in preview as 'tasks' were not provided."
+        );
+        return { previousTaskLists: undefined };
+      }
+      const tasksToUpdate = variables.tasks;
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+      const previousTaskLists = queryClient.getQueryData<TaskList[]>(["tasks"]);
+      if (previousTaskLists) {
+        queryClient.setQueryData<TaskList[]>(
+          ["tasks"],
+          (old) =>
+            old?.map((list) =>
+              list._id === variables.id
+                ? { ...list, tasks: tasksToUpdate }
+                : list
+            ) ?? []
+        );
+      }
+      return { previousTaskLists };
+    },
+    onError: (err, variables, context) => {
+      console.error("Optimistic update failed in preview:", err);
+      if (context?.previousTaskLists) {
+        queryClient.setQueryData(["tasks"], context.previousTaskLists);
+      }
+      toast.error(
+        `Failed to update task: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      ); // Use toast
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      if (
+        variables.tasks &&
+        editingTaskId &&
+        variables.id ===
+          taskLists.find((list) =>
+            list.tasks?.some((task) => task.id === editingTaskId)
+          )?._id
+      ) {
+        setEditingTaskId(null);
+        setEditingTaskValue("");
+      }
+    },
+  });
 
-    // Clean up editing state if the mutation involved tasks and finished
-    // Added check to ensure variables.tasks was involved
-    if (
-      variables.tasks && // Only clear if tasks were part of the mutation
-      editingTaskId &&
-      variables.id ===
-        taskLists.find((list) =>
-          list.tasks?.some((task) => task.id === editingTaskId)
-        )?._id
-    ) {
-      setEditingTaskId(null);
-      setEditingTaskValue("");
-    }
-  },
-  // --- MODIFICATION END ---
-});
-
-
-  // --- Task Management Helpers (Unchanged Logic, but benefits from optimistic mutation) ---
   const findAndUpdateTask = (
     tasks: Task[],
     taskId: string,
@@ -298,7 +265,6 @@ const updateListMutation = useMutation({
         taskFound = true;
         return updateFn(task);
       }
-      // Ensure subtasks exist before trying to map over them
       if (task.subtasks && task.subtasks.length > 0) {
         const result = findAndUpdateTask(task.subtasks, taskId, updateFn);
         if (result.taskFound) {
@@ -314,7 +280,6 @@ const updateListMutation = useMutation({
   const triggerListUpdate = (listId: string, updatedTasks: Task[]) => {
     const list = taskLists.find((l) => l._id === listId);
     if (list && list._id && !list._id.startsWith("placeholder-")) {
-      // The mutation now handles the optimistic update internally
       updateListMutation.mutate({ id: list._id, tasks: updatedTasks });
     } else {
       console.warn(
@@ -326,23 +291,13 @@ const updateListMutation = useMutation({
   const handleToggleTaskCompletion = (listId: string, taskId: string) => {
     const list = taskLists.find((l) => l._id === listId);
     if (!list || !list.tasks) return;
-
-    // Calculate the *next* state
     const { updatedTasks, taskFound } = findAndUpdateTask(
-      [...list.tasks], // Operate on a copy
+      [...list.tasks],
       taskId,
-      (task) => ({
-        ...task,
-        completed: !task.completed,
-      })
+      (task) => ({ ...task, completed: !task.completed })
     );
-
-    // Trigger the mutation with the next state. React Query's onMutate will handle the immediate UI update.
-    if (taskFound) {
-      triggerListUpdate(listId, updatedTasks);
-    }
+    if (taskFound) triggerListUpdate(listId, updatedTasks);
   };
-
 
   const handleSetPriority = (
     listId: string,
@@ -350,18 +305,13 @@ const updateListMutation = useMutation({
     newPriority: number
   ) => {
     const list = taskLists.find((l) => l._id === listId);
-    if (!list || !list.tasks) return; // Added check for list.tasks
+    if (!list || !list.tasks) return;
     const { updatedTasks, taskFound } = findAndUpdateTask(
       [...list.tasks],
       taskId,
-      (task) => ({
-        ...task,
-        priority: newPriority,
-      })
+      (task) => ({ ...task, priority: newPriority })
     );
-    if (taskFound) {
-      triggerListUpdate(listId, updatedTasks); // This will also be optimistic if called frequently, but primary request was for checkbox
-    }
+    if (taskFound) triggerListUpdate(listId, updatedTasks);
   };
 
   const handleStartEditing = (listId: string, task: Task) => {
@@ -384,49 +334,36 @@ const updateListMutation = useMutation({
     if (!list || !list.tasks) {
       handleCancelEditing();
       return;
-    } // Added check for list.tasks
-
+    }
     if (!trimmedValue) {
       handleCancelEditing();
+      // Optionally delete if empty, but maybe not in preview?
+      // handleDeleteTask(listId, editingTaskId); // If deletion is desired
       return;
     }
-
     const { updatedTasks, taskFound } = findAndUpdateTask(
       [...list.tasks],
       editingTaskId,
-      (task) => ({
-        ...task,
-        name: trimmedValue,
-      })
+      (task) => ({ ...task, name: trimmedValue })
     );
-
-    if (taskFound) {
-      // --- MODIFICATION START: Reset edit state immediately on triggering save ---
-      // This should happen regardless of optimistic success/failure, as the user intent is to finish editing.
-      // The optimistic update handles the data state.
-      setEditingTaskId(null);
-      setEditingTaskValue("");
-      // --- MODIFICATION END ---
-      triggerListUpdate(listId, updatedTasks);
-    } else {
-      handleCancelEditing();
-    }
+    setEditingTaskId(null); // Clear state immediately
+    setEditingTaskValue(""); // Clear state immediately
+    if (taskFound) triggerListUpdate(listId, updatedTasks);
+    else handleCancelEditing(); // Should not happen if list was found
   };
-
 
   const handleEditInputKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
     listId: string
   ) => {
     if (e.key === "Enter") {
-       e.preventDefault(); // Prevent potential form submission if wrapped
+      e.preventDefault();
       handleSaveEditing(listId);
     } else if (e.key === "Escape") {
       handleCancelEditing();
     }
   };
 
-  // --- UI State Toggles (Unchanged) ---
   const toggleTaskExpansion = (taskId: string) => {
     setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }));
   };
@@ -435,7 +372,6 @@ const updateListMutation = useMutation({
     setOpenPriorityDropdown((prev) => (prev === taskId ? null : taskId));
   };
 
-  // --- UI Calculation (Unchanged) ---
   const calculateTotalIncomplete = (
     allLists: TaskList[] | undefined
   ): number => {
@@ -445,27 +381,19 @@ const updateListMutation = useMutation({
       allLists.some((l) => l._id?.startsWith("placeholder-"))
     )
       return 0;
-
     let count = 0;
     const countIncomplete = (tasks: Task[]) => {
       tasks.forEach((task) => {
         if (!task.completed) count++;
-        // Recursively count incomplete subtasks if needed
-        // if (task.subtasks && task.subtasks.length > 0) {
-        //     countIncomplete(task.subtasks);
-        // }
       });
     };
-
     allLists.forEach((list) => {
-      if (!list._id?.startsWith("placeholder-")) {
+      if (!list._id?.startsWith("placeholder-"))
         countIncomplete(list.tasks || []);
-      }
     });
     return count;
   };
 
-  // --- Render Task Function (MODIFIED PADDING) ---
   const renderTask = (
     task: Task,
     listId: string,
@@ -485,9 +413,7 @@ const updateListMutation = useMutation({
           className={`relative group/task ${indentationClass}`}
         >
           <div className="flex items-center p-2 rounded-lg">
-             {/* --- MODIFICATION START: Adjusted placeholder spacing slightly --- */}
             <div className="w-5 flex-shrink-0 flex items-center justify-center mr-1">
-            {/* --- MODIFICATION END --- */}
               <div className="w-5"></div>
             </div>
             <Checkbox
@@ -509,39 +435,35 @@ const updateListMutation = useMutation({
           className={`relative ${indentationClass}`}
         >
           <div className="flex items-center p-2 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 transition-all duration-200">
-            {/* --- MODIFICATION START: Reduced margin for consistency --- */}
             <div className="w-5 mr-1 flex-shrink-0" aria-hidden="true"></div>
-             {/* --- MODIFICATION END --- */}
             <input
               ref={editInputRef}
               type="text"
               value={editingTaskValue}
               onChange={(e) => setEditingTaskValue(e.target.value)}
               onKeyDown={(e) => handleEditInputKeyDown(e, listId)}
-              onBlur={() => handleSaveEditing(listId)} // Consider if blur should always save
+              onBlur={() => handleSaveEditing(listId)}
               className="flex-1 bg-transparent focus:outline-none text-slate-900 dark:text-slate-200 text-sm font-medium"
               autoFocus
               disabled={updateListMutation.isPending}
             />
-            <div className="w-16 flex-shrink-0" aria-hidden="true"></div> {/* Placeholder for icons */}
+            <div className="w-16 flex-shrink-0" aria-hidden="true"></div>
           </div>
         </div>
       );
     }
 
-    // Normal task rendering
     return (
       <div key={task.id} className={`relative group/task ${indentationClass}`}>
         <div className="flex items-center p-2 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-100/50 dark:border-zinc-700/50 hover:border-slate-200/70 dark:hover:border-zinc-600/70 transition-all duration-200">
-
-          {/* --- MODIFICATION START: Reduced right margin on icon container --- */}
           <div className="w-5 flex-shrink-0 flex items-center justify-center mr-1">
-          {/* --- MODIFICATION END --- */}
             {hasSubtasks ? (
               <button
                 onClick={() => toggleTaskExpansion(task.id)}
                 className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
-                aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+                aria-label={
+                  isExpanded ? "Collapse subtasks" : "Expand subtasks"
+                }
               >
                 {isExpanded ? (
                   <IconChevronDown size={14} />
@@ -550,12 +472,11 @@ const updateListMutation = useMutation({
                 )}
               </button>
             ) : (
-              <div className="w-5"></div> // Keep space consistent
+              <div className="w-5"></div>
             )}
           </div>
-
           <div
-            className="flex-1 mr-2 cursor-pointer" // Keep mr-2 here to space checkbox from icons
+            className="flex-1 mr-2 cursor-pointer"
             onDoubleClick={() => handleStartEditing(listId, task)}
             title="Double-click to edit"
           >
@@ -564,19 +485,17 @@ const updateListMutation = useMutation({
               onChange={() => handleToggleTaskCompletion(listId, task.id)}
               label={task.name}
               variant="default"
-              // --- MODIFICATION START: Disable checkbox slightly differently during mutation for better optimistic feel ---
-              // Disable interactions but don't visually change opacity as much, relies on optimistic update
-              disabled={updateListMutation.isPending && updateListMutation.variables?.id === listId } // Disable only if the *current* list is mutating
-              // Consider adding a subtle visual cue like 'cursor-wait' if needed
-              // --- MODIFICATION END ---
+              disabled={
+                updateListMutation.isPending &&
+                updateListMutation.variables?.id === listId
+              }
             />
           </div>
-
           <div className="flex items-center gap-1 ml-auto pl-2 opacity-0 group-hover/task:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-            <div className="relative"> {/* Keep relative positioning for the dropdown */}
+            <div className="relative">
               <button
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent triggering double-click on parent
+                  e.stopPropagation();
                   togglePriorityDropdown(task.id);
                 }}
                 title={`Priority: ${
@@ -610,8 +529,6 @@ const updateListMutation = useMutation({
             </button>
           </div>
         </div>
-
-        {/* Render subtasks (Unchanged) */}
         {isExpanded && hasSubtasks && (
           <div className="mt-1 space-y-1">
             {task.subtasks.map((subtask) =>
@@ -623,8 +540,6 @@ const updateListMutation = useMutation({
     );
   };
 
-
-  // --- Loading State (Unchanged - Uses Skeleton) ---
   if (
     status === "loading" ||
     (status === "authenticated" && isLoadingLists && !taskLists?.length)
@@ -632,16 +547,11 @@ const updateListMutation = useMutation({
     return <TasksSkeleton />;
   }
 
-  // --- Error state (Unchanged) ---
-  if (isErrorLists) {
-    return (
-      <div className="p-4 text-center text-red-500 dark:text-red-400">
-        Error loading tasks preview: {errorLists?.message || "Unknown error"}
-      </div>
-    );
-  }
+  // REMOVE main error display block
+  // if (isErrorLists) {
+  //   return <div className="p-4 text-center text-red-500 dark:text-red-400"> Error loading tasks preview: {errorLists?.message || "Unknown error"} </div>;
+  // }
 
-  // --- Data for display (Unchanged) ---
   const displayList =
     taskLists?.find(
       (list) => list._id && !list._id.startsWith("placeholder-")
@@ -653,10 +563,8 @@ const updateListMutation = useMutation({
     : [];
   const totalIncomplete = calculateTotalIncomplete(taskLists);
 
-  // --- Main Component Render (Unchanged) ---
   return (
     <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col">
-      {/* Header */}
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
           TASKS
@@ -669,7 +577,6 @@ const updateListMutation = useMutation({
         </Link>
       </div>
 
-      {/* Summary Message */}
       {status === "authenticated" &&
         !isLoadingLists &&
         !isErrorLists &&
@@ -679,19 +586,19 @@ const updateListMutation = useMutation({
             task{totalIncomplete !== 1 ? "s" : ""} remaining.
           </p>
         )}
-      {status === "unauthenticated" && (
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-3 text-center">
-          Sign in to see your tasks.
-        </p>
-      )}
+      {status === "unauthenticated" &&
+        !isErrorLists && ( // Only show if no fetch error
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-3 text-center">
+            Sign in to see your tasks.
+          </p>
+        )}
 
-      {/* Display Area */}
       <div className="space-y-1 flex-grow">
-        {displayList ? (
+        {displayList && !isErrorLists ? ( // Only render list if no fetch error
           <>
             {displayTasks.length > 0 ? (
               displayTasks
-                .sort((a, b) => b.priority - a.priority) // Sort by priority (descending)
+                .sort((a, b) => b.priority - a.priority)
                 .map((task) => renderTask(task, displayList._id!, 0))
             ) : (
               <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
@@ -702,7 +609,6 @@ const updateListMutation = useMutation({
             )}
           </>
         ) : (
-          // Handling case where user is logged in but has no lists
           status === "authenticated" &&
           !isLoadingLists &&
           !isErrorLists &&
@@ -714,7 +620,6 @@ const updateListMutation = useMutation({
         )}
       </div>
 
-      {/* Footer Link */}
       <div className="mt-3 text-center flex-shrink-0">
         <Link
           href="/dashboard/tasks"

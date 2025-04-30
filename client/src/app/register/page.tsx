@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "sonner"; 
 import logo from '../../assets/brand/logo-v1.5.svg';
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
 import gradBg from '../../../public/assets/illustrations/gradient-bg.svg';
@@ -16,12 +17,10 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     try {
       const response = await fetch("/api/auth/register", {
@@ -33,10 +32,11 @@ export default function Register() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Registration failed");
+        toast.error(data.error || "Registration failed. Please try again."); // Use toast
         return;
       }
 
+      // Registration successful, now attempt sign in
       const result = await signIn("credentials", {
         redirect: false,
         email,
@@ -44,23 +44,35 @@ export default function Register() {
       });
 
       if (result?.error) {
-        setError(result.error);
-      } else {
+        // Map known errors if desired, otherwise show a generic message
+        let signInError = "Login after registration failed. Please try logging in manually.";
+        if (result.error === "CredentialsSignin") {
+           signInError = "Invalid credentials used for automatic login. Please log in manually.";
+        } else if (result.error) {
+            signInError = result.error; // Use specific error if available
+        }
+        toast.error(signInError);
+      } else if (result?.ok) {
+        toast.success("Registration successful! Welcome."); // Optional success toast
         router.push("/dashboard");
+      } else {
+         // Handle unexpected signIn result after successful registration
+         toast.warning("Registration complete, but auto-login failed. Please log in manually.");
+         router.push("/login"); // Redirect to login page
       }
     } catch (err) {
-      setError("An unexpected error occurred");
-      console.error(err);
+      toast.error("An unexpected error occurred during registration."); // Use toast
+      console.error("Registration error:", err);
     }
   };
 
   const handleSocialSignIn = (provider: string) => {
+    // No toast.loading as requested
     signIn(provider, { callbackUrl: '/dashboard' });
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary-black relative overflow-hidden">
-      {/* Gradient Background */}
       <div className="absolute opacity-60 inset-0 w-full h-full">
         <Image
           src={gradBg}
@@ -71,7 +83,6 @@ export default function Register() {
         />
       </div>
 
-      {/* Content with higher z-index */}
       <div className="relative z-10">
         <div className="flex flex-col justify-center items-center">
           <Image className="w-24 h-auto mb-2" src={logo} alt="Flowivate logo" />
@@ -79,28 +90,26 @@ export default function Register() {
             Get started
           </h1>
         </div>
-        
-        {/* Social Login Buttons */}
+
         <div className="flex justify-center items-center space-x-4 mb-4">
-          <button 
+          <button
             onClick={() => handleSocialSignIn('github')}
             className="w-14 h-14 flex items-center justify-center rounded-md hover:bg-gray-800 transition-colors duration-200"
           >
             <Image className="w-10 h-auto" src={github} alt="Sign up with Github" />
           </button>
           <div className="bg-secondary-white opacity-14 h-10 w-px"></div>
-          <button 
+          <button
             onClick={() => handleSocialSignIn('google')}
             className="w-14 h-14 flex items-center justify-center rounded-md hover:bg-gray-800 transition-colors duration-200"
           >
             <Image className="w-10 h-auto" src={google} alt="Sign up with Google" />
           </button>
         </div>
-        
+
         <p className="text-center text-secondary-white py-2">or</p>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Username Field */}
           <div className="space-y-2">
             <div className="relative">
               <input
@@ -115,7 +124,6 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Email Field */}
           <div className="space-y-2">
             <div className="relative">
               <input
@@ -130,7 +138,6 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Password Field */}
           <div className="space-y-2">
             <div className="relative">
               <input
@@ -146,6 +153,7 @@ export default function Register() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-accent-grey-hover hover:text-secondary-white"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
                   <IconEyeOff size={20} />
@@ -156,7 +164,6 @@ export default function Register() {
             </div>
           </div>
 
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <button
             type="submit"
             className="w-full bg-primary-blue hover:bg-primary-blue-hover text-white py-2 rounded-md transition-colors duration-200"
