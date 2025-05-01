@@ -5,21 +5,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   IconSearch,
   IconX,
-  IconLoader2,
   IconArrowRight,
-  IconHourglass,
   IconHistory,
-  IconUser,
-  IconVolume,
   IconCopy,
   IconCheck,
   IconMaximize,
   IconMinimize,
-  IconMoodSmile,
+  IconVolume,
   IconSparkles,
 } from "@tabler/icons-react";
 import { useDebouncedCallback } from "use-debounce";
-import { toast } from "sonner"; // Import Sonner toast
+import { toast } from "sonner";
 
 interface Message {
   id: string;
@@ -54,7 +50,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  // const [error, setError] = useState<string | null>(null); // REMOVE error state
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [suggestions] = useState([
     "How can i be more focused?",
@@ -76,7 +71,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       if (currentMessages.length === 0) return;
       const messagesToSave = currentMessages.filter((msg) => !msg.isTyping);
       if (messagesToSave.length === 0) return;
-      // setError(null); // REMOVE
       try {
         const response = await fetch("/api/chats", {
           method: "POST",
@@ -106,8 +100,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
           errorText = `Error saving chat: ${err.message}`;
         }
         console.error(errorText);
-        // setError(errorText); // REMOVE
-        toast.error("Failed to save chat progress."); // Use toast
+        toast.error("Failed to save chat progress.");
       }
     },
     [setConversationId]
@@ -125,7 +118,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       }
       apiCallInProgressRef.current = true;
       setIsLoading(true);
-      // setError(null); // REMOVE
       try {
         const conversationHistory = currentHistory
           .filter((msg) => !msg.isTyping)
@@ -167,7 +159,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
         if (err instanceof Error) {
           errorText = `Sorry, error: ${err.message}. Try again?`;
         }
-        // Keep the error message in the chat for context
         const errorMessage: Message = {
           id: generateMessageId(),
           sender: "assistant",
@@ -175,8 +166,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, errorMessage]);
-        // setError(errorText); // REMOVE
-        toast.error(errorText); // Use toast as well for immediate feedback
+        toast.error(errorText);
       } finally {
         setIsLoading(false);
         apiCallInProgressRef.current = false;
@@ -188,7 +178,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
   useEffect(() => {
     if (isOpen) {
       setInputText("");
-      // setError(null); // REMOVE
       setIsLoading(false);
       apiCallInProgressRef.current = false;
       if (initialMessages && initialMessages.length > 0) {
@@ -259,7 +248,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       };
       setMessages((prev) => [...prev, userMessage]);
       setInputText("");
-      // setError(null); // REMOVE
       setMessages((currentMessages) => {
         fetchAndSetClaudeResponse(trimmedInput, currentMessages);
         return currentMessages;
@@ -287,7 +275,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       .then(() => setCopiedMessageId(messageId))
       .catch((err) => {
         console.error("Failed to copy text: ", err);
-        toast.error("Failed to copy text to clipboard."); // Use toast
+        toast.error("Failed to copy text to clipboard.");
       });
   };
 
@@ -295,37 +283,36 @@ const ChatPanel: React.FC<CommandBarProps> = ({
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      // Handle potential errors during speech synthesis setup or speaking
       utterance.onerror = (event) => {
         console.error("Speech synthesis error:", event.error);
-        toast.error(`Could not speak message: ${event.error}`); // Use toast
+        toast.error(`Could not speak message: ${event.error}`);
       };
       window.speechSynthesis.speak(utterance);
     } else {
       console.warn("Speech synthesis not supported in this browser.");
-      toast.warning("Speech synthesis is not supported in this browser."); // Use toast
+      toast.warning("Speech synthesis is not supported in this browser.");
     }
   };
 
   const overlayVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.3 } },
-    exit: { opacity: 0, transition: { duration: 0.2 } },
+    visible: { opacity: 1, transition: { duration: 0.2 } },
+    exit: { opacity: 0, transition: { duration: 0.15 } },
   };
 
   const barVariants = {
-    hidden: { opacity: 0, y: -50, scale: 0.9 },
+    hidden: { opacity: 0, y: -20, scale: 0.98 },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { duration: 0.3, ease: [0.25, 1, 0.5, 1] },
+      transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] },
     },
     exit: {
       opacity: 0,
-      y: -30,
-      scale: 0.95,
-      transition: { duration: 0.2, ease: [0.5, 0, 0.75, 0] },
+      y: -15,
+      scale: 0.98,
+      transition: { duration: 0.15, ease: [0.4, 0, 0.6, 1] },
     },
   };
 
@@ -335,28 +322,36 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       height: "auto",
       opacity: 1,
       transition: {
-        height: { duration: 0.3, ease: "easeOut" },
-        opacity: { duration: 0.2, delay: 0.1 },
+        height: { duration: 0.25, ease: [0.16, 1, 0.3, 1] },
+        opacity: { duration: 0.2, delay: 0.05 },
       },
     },
     exit: {
       height: 0,
       opacity: 0,
       transition: {
-        height: { duration: 0.2, ease: "easeIn" },
+        height: { duration: 0.15, ease: [0.4, 0, 0.6, 1] },
         opacity: { duration: 0.1 },
       },
     },
   };
 
   const messageVariants = {
-    initial: { opacity: 0, y: 8 },
+    initial: { opacity: 0, y: 6 },
     animate: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.3, ease: "easeOut" },
+      transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
     },
   };
+
+  const SkeletonLoader = () => (
+    <div className="flex flex-col gap-2 pl-2 w-full animate-pulse">
+      <div className="h-3 bg-gray-200 dark:bg-zinc-700 rounded-md w-3/4"></div>
+      <div className="h-3 bg-gray-200 dark:bg-zinc-700 rounded-md w-1/2"></div>
+      <div className="h-3 bg-gray-200 dark:bg-zinc-700 rounded-md w-5/6"></div>
+    </div>
+  );
 
   return (
     <AnimatePresence>
@@ -367,7 +362,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           />
 
@@ -376,15 +371,12 @@ const ChatPanel: React.FC<CommandBarProps> = ({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-2xl flex flex-col bg-white/90 dark:bg-zinc-900/95 backdrop-blur-md backdrop-saturate-150 border border-gray-200 dark:border-zinc-700/50 shadow-2xl rounded-2xl overflow-hidden z-[51]"
-            style={{
-              boxShadow:
-                "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
-            }}
+            className="relative w-full max-w-xl flex flex-col bg-white/90 dark:bg-zinc-900/95 backdrop-blur-md border border-gray-200/50 dark:border-zinc-700/30 rounded-lg overflow-hidden z-[51]"
+            style={{ boxShadow: "0 4px 24px rgba(0, 0, 0, 0.08)" }}
           >
-            <div className="relative flex items-center px-4 py-3 border-b border-gray-200 dark:border-zinc-700/70">
-              <div className="absolute left-4 text-gray-400 dark:text-gray-500">
-                <IconSearch className="w-5 h-5" />
+            <div className="relative flex items-center px-3 py-3">
+              <div className="absolute left-3 text-gray-400 dark:text-gray-500">
+                <IconSearch className="w-4 h-4" />
               </div>
               <form onSubmit={handleSendMessage} className="w-full">
                 <input
@@ -393,31 +385,28 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask anything..."
-                  className="w-full py-2 pl-8 pr-4 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none text-base"
+                  className="w-full py-1.5 pl-7 pr-8 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none text-sm"
                   autoComplete="off"
                 />
               </form>
-              <div className="flex items-center gap-2">
-                {isLoading && (
-                  <IconLoader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                )}
+              <div className="flex items-center">
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputText.trim() || isLoading}
-                  className={`p-1.5 rounded-lg flex items-center justify-center ${
+                  className={`p-1 rounded-md flex items-center justify-center ${
                     inputText.trim() && !isLoading
                       ? "bg-blue-500 hover:bg-blue-600 text-white"
                       : "bg-gray-200 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                  } transition-colors duration-150`}
+                  } transition-colors`}
                   aria-label="Send message"
                 >
-                  <IconArrowRight className="w-4 h-4" />
+                  <IconArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
             {messages.length === 0 && (
-              <div className="px-4 py-3 flex flex-wrap gap-2">
+              <div className="px-3 py-2 flex flex-wrap gap-2">
                 {suggestions.map((suggestion, index) => (
                   <button
                     key={index}
@@ -432,22 +421,14 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                       setMessages([userMessage]);
                       fetchAndSetClaudeResponse(suggestion, [userMessage]);
                     }}
-                    className="px-3 py-1.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-sm text-gray-700 dark:text-gray-300 transition-colors flex items-center gap-2"
+                    className="px-2.5 py-1 bg-gray-100 dark:bg-zinc-800/70 hover:bg-gray-200 dark:hover:bg-zinc-700/70 rounded-md text-xs text-gray-700 dark:text-gray-300 transition-colors flex items-center gap-1.5"
                   >
-                    <IconSparkles className="w-3.5 h-3.5 text-blue-500" />
+                    <IconSparkles className="w-3 h-3 text-blue-500" />
                     {suggestion}
                   </button>
                 ))}
               </div>
             )}
-
-            {/* REMOVE error display banner */}
-            {/* {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm border-b border-red-200 dark:border-red-800/50 flex items-center gap-2">
-                <span className="font-medium">Error:</span>
-                <span>{error}</span>
-              </div>
-            )} */}
 
             <AnimatePresence mode="wait">
               {(expanded || messages.length > 0) && (
@@ -461,7 +442,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                 >
                   <div
                     ref={messagesContainerRef}
-                    className="max-h-96 overflow-y-auto px-4 py-3 bg-white/50 dark:bg-zinc-900/50"
+                    className="max-h-96 overflow-y-auto px-3 py-2"
                   >
                     <AnimatePresence initial={false}>
                       {messages.map((msg) => (
@@ -471,82 +452,55 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                           initial="initial"
                           animate="animate"
                           layout
-                          className={`flex mb-4 group ${
-                            msg.sender === "user"
-                              ? "justify-end"
-                              : "justify-start"
-                          }`}
+                          className="mb-4 group"
                         >
-                          <div
-                            className={`flex items-end gap-2 max-w-[85%] ${
-                              msg.sender === "user"
-                                ? "flex-row-reverse"
-                                : "flex-row"
-                            }`}
-                          >
-                            <div
-                              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                                msg.sender === "user"
-                                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                                  : "bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400"
-                              }`}
-                            >
-                              {msg.sender === "user" ? (
-                                <IconUser className="w-4 h-4" />
-                              ) : (
-                                <IconMoodSmile className="w-4 h-4" />
-                              )}
+                          {msg.sender === "user" ? (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 pl-1">
+                              You
                             </div>
-
+                          ) : null}
+                          <div className="flex items-start gap-2">
                             <div
-                              className={`relative px-4 py-3 rounded-xl ${
+                              className={`flex-grow rounded-md p-2.5 ${
                                 msg.sender === "user"
-                                  ? "bg-blue-500 text-white"
-                                  : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
+                                  ? "text-sm text-gray-700 dark:text-gray-300"
+                                  : "bg-gray-50/70 dark:bg-zinc-800/40 text-sm text-gray-800 dark:text-gray-200"
                               }`}
                             >
-                              <div className="whitespace-pre-wrap text-sm leading-relaxed break-words">
+                              <div className="whitespace-pre-wrap leading-relaxed break-words">
                                 {msg.text}
                               </div>
-                              <span
-                                className={`absolute -bottom-4 text-[10px] ${
-                                  msg.sender === "user"
-                                    ? "right-2 text-gray-500 dark:text-gray-400"
-                                    : "left-2 text-gray-500 dark:text-gray-400"
-                                }`}
-                              >
-                                {formatTime(msg.timestamp)}
-                              </span>
                             </div>
 
                             <div
-                              className={`flex items-center self-center mb-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-1 ${
-                                msg.sender === "user" ? "mr-1" : "ml-1"
-                              }`}
+                              className={`flex items-center self-start opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-1`}
                             >
                               <button
                                 onClick={() =>
                                   copyMessageToClipboard(msg.text, msg.id)
                                 }
-                                className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                                className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800/70 transition-colors"
                                 aria-label="Copy message"
                               >
                                 {copiedMessageId === msg.id ? (
-                                  <IconCheck className="w-3.5 h-3.5 text-green-500" />
+                                  <IconCheck className="w-3 h-3 text-green-500" />
                                 ) : (
-                                  <IconCopy className="w-3.5 h-3.5" />
+                                  <IconCopy className="w-3 h-3" />
                                 )}
                               </button>
                               {msg.sender === "assistant" && !msg.isTyping && (
                                 <button
                                   onClick={() => speakMessage(msg.text)}
-                                  className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                                  className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800/70 transition-colors"
                                   aria-label="Listen to message"
                                 >
-                                  <IconVolume className="w-3.5 h-3.5" />
+                                  <IconVolume className="w-3 h-3" />
                                 </button>
                               )}
                             </div>
+                          </div>
+                          <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 text-right pr-2">
+                            {formatTime(msg.timestamp)}
                           </div>
                         </motion.div>
                       ))}
@@ -559,18 +513,10 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                         initial="initial"
                         animate="animate"
                         layout
-                        className="flex justify-start mb-4"
+                        className="mb-4"
                       >
-                        <div className="flex items-end gap-2 max-w-[85%]">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400">
-                            <IconHourglass className="w-4 h-4" />
-                          </div>
-                          <div className="px-4 py-3 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100">
-                            <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
-                              <IconLoader2 className="w-4 h-4 animate-spin text-blue-500" />
-                              <span className="text-sm">Thinking...</span>
-                            </div>
-                          </div>
+                        <div className="flex-grow rounded-md p-2.5 bg-gray-50/70 dark:bg-zinc-800/40">
+                          <SkeletonLoader />
                         </div>
                       </motion.div>
                     )}
@@ -581,9 +527,9 @@ const ChatPanel: React.FC<CommandBarProps> = ({
             </AnimatePresence>
 
             {messages.length > 0 && (
-              <div className="px-4 py-2 flex justify-between items-center border-t border-gray-200 dark:border-zinc-700/70 text-xs text-gray-500 dark:text-gray-400">
+              <div className="px-3 py-1.5 flex justify-between items-center border-t border-gray-200/50 dark:border-zinc-700/30 text-xs text-gray-500 dark:text-gray-400">
                 <div className="flex items-center">
-                  <IconHistory className="w-3.5 h-3.5 mr-1" />
+                  <IconHistory className="w-3 h-3 mr-1" />
                   <span>
                     {messages.filter((m) => !m.isTyping).length} messages
                   </span>
@@ -595,12 +541,12 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                 >
                   {expanded ? (
                     <>
-                      <IconMinimize className="w-3.5 h-3.5 mr-1" />
+                      <IconMinimize className="w-3 h-3 mr-1" />
                       <span>Collapse</span>
                     </>
                   ) : (
                     <>
-                      <IconMaximize className="w-3.5 h-3.5 mr-1" />
+                      <IconMaximize className="w-3 h-3 mr-1" />
                       <span>Expand</span>
                     </>
                   )}
@@ -610,7 +556,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                   onClick={() => setIsOpen(false)}
                   className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 >
-                  <IconX className="w-3.5 h-3.5" />
+                  <IconX className="w-3 h-3" />
                 </button>
               </div>
             )}

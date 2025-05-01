@@ -173,8 +173,8 @@ export default function TimeDisplay({
 
           {/* Quote Display */}
           <div className="mt-3 max-w-md text-center">
-            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 font-medium italic">
-              &#34;{currentQuote}&#34;
+            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+              {currentQuote}
             </p>
           </div>
 
