@@ -7,7 +7,7 @@ import {
   IconFlagFilled,
   IconChevronDown,
   IconChevronRight,
-  IconArrowRight,
+  IconCheck,
 } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -571,8 +571,8 @@ const Tasks: React.FC = () => {
         </h1>
         <Link href="/dashboard/tasks" passHref legacyBehavior>
           <a className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 bg-primary-white dark:bg-primary-black-dark px-2 py-1 rounded-md dark:hover:text-gray-100 cursor-pointer border border-slate-200/80 dark:border-zinc-700/80 transition-all">
-            <span>Go to Tasks</span>
-            <IconArrowRight size={14} />
+            <span>New Task</span>
+            <IconCheck size={14} />
           </a>
         </Link>
       </div>

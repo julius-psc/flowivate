@@ -150,7 +150,7 @@ export default function Affirmations() {
             affirmations.map((affirmation, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between group px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/50 transition-colors"
+                className="flex items-center justify-between group px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-primary font-medium">•</span>

@@ -20,6 +20,7 @@ import {
   IconBulb,
   IconChartLine,
   IconDirections,
+  IconViewfinder
 } from "@tabler/icons-react";
 
 // Feature icon mapping
@@ -30,6 +31,7 @@ const featureIcons = {
   Water: <IconGlass size={20} />,
   Sleep: <IconZzz size={20} />,
   Mood: <IconMoodSmile size={20} />,
+  DeepWork: <IconViewfinder size={20} />,
   Ambient: <IconWaveSine size={20} />,
   Assistant: <IconRobot size={20} />,
   Books: <IconBook size={20} />,
@@ -58,6 +60,11 @@ const featureCategories = [
     name: "Focus & Flow",
     icon: <IconBulb size={20} />,
     features: [
+      {
+        key: "DeepWork",
+        description: "Dedicate your time fruitfully.",
+        benefit: "Improve efficiency",
+      },
       {
         key: "Pomodoro",
         description: "Enhance focus with timed sessions.",

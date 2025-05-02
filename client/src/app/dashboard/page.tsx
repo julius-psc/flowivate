@@ -103,6 +103,7 @@ export default function Dashboard() {
               >
                 {selectedFeatures.map((featureKey) => {
                   const FeatureComponent = featureComponents[featureKey];
+                  console.log("Mapping feature:", featureKey, "Found component:", FeatureComponent); // Add this log
                   return (
                     <SortableFeature
                       key={featureKey}

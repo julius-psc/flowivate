@@ -10,6 +10,7 @@
 @theme {
   --font-display: "Sans Pro 3", "sans-serif";
   --color-primary-blue: #0075C4;
+
   --color-primary-blue-hover: #105C8E; /* Hover */
   --color-primary-blue-ring: #114162;
   --color-primary-bluelight: #BADEF6;
