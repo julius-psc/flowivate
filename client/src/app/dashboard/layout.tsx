@@ -12,25 +12,25 @@ export default function DashboardLayout({
 }) {
   return (
     <ClientProvider>
-        <div
-          className="flex flex-col h-screen w-screen dark:bg-[#151E2F]"
-          id="dashboard-container"
-          style={{
-            backgroundImage: `url('/assets/illustrations/gradient-bg.svg')`,
-            backgroundSize: "cover",
-            backgroundRepeat: "no-repeat",
-          }}
-        >
-          <div className="flex-shrink-0">
-            <Navbar />
-          </div>
-          <div className="flex flex-1 overflow-hidden">
-            <Sidebar />
-            <DashboardProvider>
-              <main className="flex-1 overflow-y-auto">{children}</main>
-            </DashboardProvider>
-          </div>
+      <div
+        className="
+    flex flex-col h-screen w-screen 
+    bg-cover bg-no-repeat 
+    bg-[url('/assets/illustrations/gradient-bg.svg')] 
+    dark:bg-[#151E2F]
+  "
+        id="dashboard-container"
+      >
+        <div className="flex-shrink-0">
+          <Navbar />
         </div>
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar />
+          <DashboardProvider>
+            <main className="flex-1 overflow-y-auto">{children}</main>
+          </DashboardProvider>
+        </div>
+      </div>
     </ClientProvider>
   );
 }

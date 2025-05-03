@@ -3,7 +3,7 @@
 import React from 'react'; 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react"; // Needed for session data
-import ThemeToggle from '../recyclable/ThemeToggle'
+import ThemeToggle from '../../../../themes/ThemeToggle'
 import {
   X,
   User,
