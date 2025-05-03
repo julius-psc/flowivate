@@ -15,7 +15,6 @@ import {
   Volume2,
   VolumeX,
   Timer,
-  ArrowRight,
 } from "lucide-react";
 import * as tasksApi from "../../../lib/tasksApi"; // Adjust path as needed
 import type { Task, TaskList } from "@/types/taskTypes"; // Adjust path as needed
@@ -316,50 +315,43 @@ const DeepWork: React.FC = () => {
   // --- Render Logic ---
 
   const renderIdle = () => (
-    <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full overflow-hidden">
-      <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
-        FOCUS
+    <div className="flex flex-col h-full items-center justify-center text-center p-4">
+      <Timer size={36} className="text-primary-blue mb-6" />
+      <h1 className="text-xl font-medium text-primary-black dark:text-primary-white mb-2">
+        Deep Work Session
       </h1>
-      <div className="flex flex-col h-full items-center justify-center text-center p-4">
-        <div className="w-16 h-16 rounded-full bg-primary-blue/10 dark:bg-primary-blue/20 flex items-center justify-center mb-6">
-          <Timer size={28} className="text-primary-blue" />
-        </div>
-        <h2 className="text-lg font-medium text-primary-black dark:text-primary-white mb-3">
-          Deep Work Session
-        </h2>
-        <p className="text-sm text-secondary-black dark:text-secondary-white opacity-60 mb-8 max-w-xs">
-          Create a distraction-free environment for focused work.
-        </p>
-        <button
-          onClick={handleStartSetup}
-          className="px-6 py-2.5 bg-primary-blue text-secondary-white rounded-lg hover:bg-primary-blue-hover transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue-ring flex items-center justify-center"
-        >
-          <span className="font-medium mr-2">Begin</span>
-          <ArrowRight size={16} />
-        </button>
-      </div>
+      <p className="text-sm text-secondary-black dark:text-secondary-white opacity-60 mb-8 max-w-xs">
+        Create a distraction-free environment for focused work.
+      </p>
+      <button
+        onClick={handleStartSetup}
+        className="px-8 py-3 bg-primary-blue text-secondary-white rounded-lg flex items-center justify-center space-x-2 hover:bg-primary-blue-hover transition-colors focus:outline-none focus:ring-2 focus:ring-primary-blue-ring"
+      >
+        <span className="font-medium">Begin</span>
+        <ChevronRight size={18} />
+      </button>
     </div>
   );
 
   const renderTaskSelection = () => (
-    <div className="flex flex-col h-full p-6">
-      <h2 className="text-sm font-medium text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider mb-6">
-        Select Focus Task
+    <div className="flex flex-col h-full p-2">
+      <h2 className="text-lg font-semibold mb-5 text-center text-primary-black dark:text-primary-white">
+        SELECT FOCUS TASK
       </h2>
       <div className="flex-grow overflow-y-auto space-y-3 mb-4 pr-2 -mr-2">
         {/* Task List */}
         {status === "authenticated" && (
           <>
-            <h3 className="text-xs uppercase tracking-wider font-medium text-secondary-black dark:text-secondary-white opacity-60 mb-3 sticky top-0 py-1 z-10 bg-white/80 dark:bg-zinc-900/80">
+            <h3 className="text-md font-medium text-left text-secondary-black dark:text-secondary-white mb-3 sticky top-0 py-1 z-10 bg-white/80 dark:bg-zinc-900/80">
               Your Tasks
             </h3>
             {isLoadingTasks && (
               <div className="flex justify-center items-center py-4 text-secondary-black dark:text-secondary-white opacity-60">
-                <Loader2 className="animate-spin mr-2" size={16} /> Loading...
+                <Loader2 className="animate-spin mr-2" /> Loading...
               </div>
             )}
             {isErrorTasks && errorTasks && (
-              <div className="text-third-red text-sm p-2 rounded border border-third-red/30 bg-third-red/5">
+              <div className="text-third-red text-sm p-2 rounded border border-third-red">
                 Could not load tasks: {errorTasks.message}
               </div>
             )}
@@ -376,29 +368,30 @@ const DeepWork: React.FC = () => {
                 <button
                   key={task.id}
                   onClick={() => handleSelectTaskListTask(task)}
-                  className="w-full text-left p-3 rounded-lg border border-bdr-light dark:border-bdr-dark hover:border-primary-blue hover:bg-primary-blue/5 dark:hover:bg-primary-blue/10 transition-all flex items-center group"
+                  className="w-full text-left p-3 bg-secondary-white dark:bg-secondary-black rounded-lg border border-bdr-light dark:border-bdr-dark hover:border-primary-blue dark:hover:border-primary-blue transition-all flex items-center group"
                 >
-                  <div className="w-6 h-6 rounded-full bg-primary-blue/10 dark:bg-primary-blue/20 flex items-center justify-center mr-3 flex-shrink-0">
-                    <List size={14} className="text-primary-blue" />
-                  </div>
+                  <List
+                    size={18}
+                    className="mr-3 text-primary-blue flex-shrink-0"
+                  />
                   <span className="flex-grow truncate text-secondary-black dark:text-secondary-white">
                     {task.name}
                   </span>
                   <ChevronRight
                     size={16}
-                    className="text-accent-grey opacity-60 group-hover:text-primary-blue group-hover:opacity-100 transition-all"
+                    className="ml-2 text-accent-grey group-hover:text-primary-blue transition-transform group-hover:translate-x-1"
                   />
                 </button>
               ))}
           </>
         )}
         {status === "unauthenticated" && (
-          <p className="text-secondary-black dark:text-secondary-white opacity-60 text-sm text-left p-3 rounded-lg border border-bdr-light dark:border-bdr-dark bg-secondary-white/50 dark:bg-secondary-black/50">
+          <p className="text-secondary-black dark:text-secondary-white opacity-60 text-sm text-left p-2 rounded border border-bdr-light dark:border-bdr-dark">
             Sign in to select from your saved tasks.
           </p>
         )}
         {/* Custom Task */}
-        <h3 className="text-xs uppercase tracking-wider font-medium text-secondary-black dark:text-secondary-white opacity-60 mt-6 mb-3 sticky top-0 py-1 z-10 bg-white/80 dark:bg-zinc-900/80">
+        <h3 className="text-md font-medium text-left text-secondary-black dark:text-secondary-white mt-6 mb-3 sticky top-0 py-1 z-10 bg-white/80 dark:bg-zinc-900/80">
           Custom Focus
         </h3>
         <div className="flex gap-2">
@@ -415,7 +408,7 @@ const DeepWork: React.FC = () => {
               handleSelectCustomTask()
             }
             placeholder="E.g., Write project proposal"
-            className="flex-grow p-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-primary-blue focus:border-primary-blue placeholder-accent-grey text-primary-black dark:text-primary-white"
+            className="flex-grow p-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent placeholder-accent-grey text-primary-black dark:text-primary-white"
           />
           <button
             onClick={handleSelectCustomTask}
@@ -423,14 +416,14 @@ const DeepWork: React.FC = () => {
             className="p-3 bg-primary-blue text-secondary-white rounded-lg hover:bg-primary-blue-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             aria-label="Confirm custom task"
           >
-            <ArrowRight size={18} />
+            <Edit3 size={20} />
           </button>
         </div>
       </div>
       {/* Cancel button */}
       <button
         onClick={handleStopFocus}
-        className="mt-auto pt-4 text-xs uppercase tracking-wider font-medium text-secondary-black dark:text-secondary-white opacity-40 hover:text-third-red hover:opacity-100 transition-colors self-center"
+        className="mt-auto pt-4 text-sm text-secondary-black dark:text-secondary-white opacity-60 hover:text-third-red hover:opacity-100 transition-colors self-center"
       >
         Cancel
       </button>
@@ -438,31 +431,27 @@ const DeepWork: React.FC = () => {
   );
 
   const renderDurationSelection = () => (
-    <div className="flex flex-col h-full p-6">
-      <h2 className="text-sm font-medium text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider mb-6">
-        Set Duration
+    <div className="flex flex-col h-full text-center p-4">
+      <h2 className="text-lg font-semibold mb-4 text-primary-black dark:text-primary-white">
+        SET DURATION
       </h2>
-      <div className="mt-2 mb-8 p-3 rounded-lg border border-bdr-light dark:border-bdr-dark bg-primary-blue/5 dark:bg-primary-blue/10">
-        <p className="text-sm text-secondary-black dark:text-secondary-white flex items-center">
-          <Edit3 size={14} className="text-primary-blue mr-2" />
-          <span className="font-medium break-words">
-            {selectedTask?.name || "..."}
-          </span>
-        </p>
-      </div>
-      <div className="flex-grow flex flex-col items-center justify-center">
-        <div className="w-16 h-16 rounded-full bg-primary-blue/10 dark:bg-primary-blue/20 flex items-center justify-center mb-8">
-          <Clock4 size={28} className="text-primary-blue" />
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 w-full max-w-md">
+      <p className="mb-6 text-secondary-black dark:text-secondary-white text-sm px-4">
+        Task:{" "}
+        <span className="font-medium break-words">
+          {selectedTask?.name || "..."}
+        </span>
+      </p>
+      <div className="flex-grow flex flex-col items-center justify-center space-y-6">
+        <Clock4 size={36} className="text-primary-blue mb-4" />
+        <div className="flex flex-wrap justify-center gap-3 mb-4">
           {DURATION_OPTIONS.map((duration) => (
             <button
               key={duration}
               onClick={() => handleSetDuration(duration)}
-              className={`px-4 py-3 rounded-lg text-sm font-medium transition-all focus:outline-none focus:ring-1 ${
+              className={`px-5 py-2.5 rounded-lg text-md font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 focus:ring-primary-blue ${
                 focusDuration === duration
-                  ? "bg-primary-blue text-secondary-white shadow-md shadow-primary-blue/20"
-                  : "bg-secondary-white/50 dark:bg-secondary-black/50 text-secondary-black dark:text-secondary-white border border-bdr-light dark:border-bdr-dark hover:border-primary-blue"
+                  ? "bg-primary-blue text-secondary-white border-primary-blue"
+                  : "bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white border-bdr-light dark:border-bdr-dark hover:border-primary-blue"
               }`}
             >
               {duration} min
@@ -470,80 +459,77 @@ const DeepWork: React.FC = () => {
           ))}
         </div>
       </div>
-      <div className="flex flex-col items-center space-y-4">
-        <button
-          onClick={handleConfirmDuration}
-          disabled={focusDuration <= 0}
-          className="w-full max-w-xs py-2.5 px-6 bg-primary-blue text-secondary-white rounded-lg font-medium hover:bg-primary-blue-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-        >
-          <span className="mr-2">Next</span>
-          <ArrowRight size={16} />
-        </button>
-        <button
-          onClick={() => setSetupStep("task")}
-          className="text-xs uppercase tracking-wider font-medium text-secondary-black dark:text-secondary-white opacity-40 hover:opacity-100 transition-colors"
-        >
-          Back
-        </button>
-      </div>
+      <button
+        onClick={handleConfirmDuration}
+        disabled={focusDuration <= 0}
+        className="w-full max-w-xs mx-auto mt-8 py-3 px-6 bg-primary-blue text-secondary-white rounded-lg text-lg font-medium hover:bg-primary-blue-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+      >
+        Next <ChevronRight size={20} />
+      </button>
+      <button
+        onClick={() => setSetupStep("task")}
+        className="mt-4 text-sm text-secondary-black dark:text-secondary-white opacity-60 hover:opacity-100 transition-colors"
+      >
+        Back
+      </button>
     </div>
   );
 
   const renderMusicSelection = () => (
-    <div className="flex flex-col h-full p-6">
-      <h2 className="text-sm font-medium text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider mb-6">
-        Ambient Sound
+    <div className="flex flex-col h-full p-4">
+      <h2 className="text-lg font-semibold mb-4 text-center text-primary-black dark:text-primary-white">
+        AMBIENT SOUND
       </h2>
-      <p className="text-xs text-secondary-black dark:text-secondary-white opacity-60 mb-6">
+      <p className="text-sm text-secondary-black dark:text-secondary-white opacity-60 mb-6 text-center">
         Choose a sound for your session (optional)
       </p>
-      <div className="flex-grow overflow-y-auto space-y-2 mb-4 pr-2 -mr-2">
+      <div className="flex-grow overflow-y-auto space-y-3 mb-4 pr-2 -mr-2">
         {ambientSoundNames.map((name) => (
           <button
             key={name}
             onClick={() => handleSelectMusic(name as AmbientSoundName)}
-            className={`w-full text-left p-3 rounded-lg border transition-all flex items-center justify-between group focus:outline-none focus:ring-1 focus:ring-primary-blue ${
+            className={`w-full text-left p-3 rounded-lg border transition-all flex items-center justify-between group focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 focus:ring-primary-blue ${
               ambientSoundHook.currentSound === name
-                ? "bg-primary-blue/10 dark:bg-primary-blue/20 border-primary-blue"
-                : "border-bdr-light dark:border-bdr-dark text-secondary-black dark:text-secondary-white hover:border-primary-blue hover:bg-primary-blue/5 dark:hover:bg-primary-blue/10"
+                ? "bg-primary-blue/10 dark:bg-primary-blue/20 border-primary-blue" // Highlight selected
+                : "bg-secondary-white dark:bg-secondary-black border-bdr-light dark:border-bdr-dark text-secondary-black dark:text-secondary-white hover:border-primary-blue"
             }`}
           >
-            <div className="flex items-center text-secondary-black dark:text-secondary-white gap-3">
-              <span className="w-8 h-8 flex items-center justify-center rounded-full bg-secondary-white/70 dark:bg-secondary-black/70 text-lg">
+            <div className="flex items-center text-secondary-black dark:text-secondary-white">
+              <span className="text-xl mr-3">
                 {ambientSoundHook.availableSounds[name as AmbientSoundName]
                   ?.emoji || "🎵"}
               </span>
-              <span className="text-sm">{name}</span>
+              <span>{name}</span>
             </div>
             {ambientSoundHook.currentSound === name && (
-              <Check size={16} className="text-primary-blue" />
+              <Check size={18} className="text-primary-blue" />
             )}
           </button>
         ))}
       </div>
-      <div className="flex flex-col items-center space-y-4">
-        <button
-          onClick={handleStartFocusSession}
-          className="w-full max-w-xs py-2.5 px-6 bg-primary-blue text-secondary-white rounded-lg font-medium hover:bg-primary-blue-hover transition-colors flex items-center justify-center"
-        >
-          <span className="mr-2">Start Focus</span>
-          <Check size={16} />
-        </button>
-        <button
-          onClick={() => setSetupStep("duration")}
-          className="text-xs uppercase tracking-wider font-medium text-secondary-black dark:text-secondary-white opacity-40 hover:opacity-100 transition-colors"
-        >
-          Back
-        </button>
-      </div>
+      <button
+        // Use the specific handler to start the session AND request fullscreen
+        onClick={handleStartFocusSession}
+        className="w-full max-w-xs mx-auto mt-8 py-3 px-6 bg-primary-blue text-secondary-white rounded-lg text-lg font-medium hover:bg-primary-blue-hover transition-colors flex items-center justify-center gap-2"
+      >
+        Start Focus <Check size={20} />
+      </button>
+      <button
+        onClick={() => setSetupStep("duration")}
+        className="mt-4 text-sm text-secondary-black dark:text-secondary-white opacity-60 hover:opacity-100 transition-colors self-center"
+      >
+        Back
+      </button>
     </div>
   );
 
-  // Redesigned active state with a more minimalist approach
+  // Render active state - looks good for fullscreen already
   const renderActive = () => (
-    <div className="flex flex-col h-full bg-gradient-to-b from-[#0f1215] to-[#1a1e24] text-secondary-white relative">
+    // This container will fill the fullscreen element.
+    // The dark background is appropriate for focus.
+    <div className="flex flex-col h-full items-center justify-between text-center p-4 sm:p-6 md:p-8 bg-[#141618] text-secondary-white relative">
       {/* Controls Container - Top Right */}
-      <div className="absolute top-6 right-6 flex items-center gap-3 z-10">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-3 z-10">
         {/* Music Control Button */}
         {ambientSoundHook.currentSound &&
           ambientSoundHook.currentSound !== "None" && (
@@ -553,7 +539,7 @@ const DeepWork: React.FC = () => {
                   ? ambientSoundHook.pauseSound
                   : ambientSoundHook.playSound
               }
-              className="p-2 rounded-full bg-white/10 text-secondary-white hover:bg-white/20 transition-all focus:outline-none"
+              className="p-2.5 rounded-lg border border-bdr-dark text-secondary-white hover:border-primary-blue transition-colors focus:outline-none focus:ring-2 focus:ring-primary-blue"
               aria-label={
                 ambientSoundHook.isPlaying
                   ? "Pause ambient sound"
@@ -561,94 +547,59 @@ const DeepWork: React.FC = () => {
               }
             >
               {ambientSoundHook.isPlaying ? (
-                <Volume2 size={18} />
+                <Volume2 size={20} />
               ) : (
-                <VolumeX size={18} />
+                <VolumeX size={20} />
               )}
             </button>
           )}
+        {/* Manual Fullscreen Toggle Button - Optional */}
+        {/* Consider adding if explicit control is desired */}
+        {/* <button
+                    onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+                    className="p-2.5 rounded-lg border border-bdr-dark text-secondary-white hover:border-primary-blue transition-colors focus:outline-none focus:ring-2 focus:ring-primary-blue"
+                    aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                >
+                    {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                </button> */}
 
         {/* Stop Session Button */}
         <button
-          onClick={handleStopFocus}
-          className="p-2 rounded-full bg-third-red/20 text-third-red hover:bg-third-red/30 transition-all focus:outline-none"
+          onClick={handleStopFocus} // Use the callback that also handles exiting fullscreen
+          className="p-2.5 rounded-lg border border-third-red text-third-red hover:bg-third-red hover:text-secondary-white transition-colors focus:outline-none focus:ring-2 focus:ring-third-red"
           aria-label="End focus session"
         >
-          <X size={18} />
+          <X size={20} />
         </button>
       </div>
 
       {/* Main Content Area - Centered */}
-      <div className="flex flex-col items-center justify-center w-full flex-grow p-6">
-        {/* Timer Display - Completely redesigned */}
-        <div className="mb-12 relative">
-          <div className="relative">
-            {/* Background Glow Effect */}
-            <div className="absolute inset-0 rounded-full bg-primary-blue/20 blur-xl"></div>
+      <div className="flex flex-col items-center justify-center w-full flex-grow mt-10">
+        <p className="text-md text-secondary-white opacity-60 mb-2 uppercase tracking-wider">
+          Focusing on
+        </p>
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-medium mb-10 px-4 break-words max-w-xl lg:max-w-2xl leading-tight">
+          {selectedTask?.name || "Deep Work"}
+        </h2>
 
-            {/* Main Timer Container */}
-            <div className="relative flex flex-col items-center justify-center">
-              {/* Task Label */}
-              <p className="absolute -top-12 left-1/2 transform -translate-x-1/2 text-xs font-medium uppercase tracking-widest text-white/60 mb-1">
-                Focus Task
-              </p>
-
-              {/* Task Name */}
-              <h2 className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-lg font-medium mb-8 text-center max-w-xs break-words">
-                {selectedTask?.name || "Deep Work"}
-              </h2>
-
-              {/* Timer Circle */}
-              <div className="w-64 h-64 flex items-center justify-center">
-                <svg className="w-64 h-64 -rotate-90" viewBox="0 0 100 100">
-                  {/* Background Circle */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    fill="none"
-                    stroke="rgba(255,255,255,0.1)"
-                    strokeWidth="2"
-                  />
-
-                  {/* Progress Circle */}
-                  {remainingTime !== null && focusDuration > 0 && (
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="45"
-                      fill="none"
-                      stroke="rgba(59, 130, 246, 0.8)"
-                      strokeWidth="2"
-                      strokeDasharray="283"
-                      strokeDashoffset={
-                        283 - 283 * (remainingTime / (focusDuration * 60))
-                      }
-                      strokeLinecap="round"
-                    />
-                  )}
-                </svg>
-
-                {/* Time Display */}
-                <div className="absolute flex flex-col items-center">
-                  {remainingTime !== null ? (
-                    <span className="text-6xl font-light text-white tracking-wider tabular-nums">
-                      {formatRemainingTime(remainingTime)}
-                    </span>
-                  ) : (
-                    <Loader2
-                      className="animate-spin text-primary-blue"
-                      size={48}
-                    />
-                  )}
-
-                  {endTime && (
-                    <p className="text-xs text-white/60 mt-2 flex items-center">
-                      <Clock4 size={10} className="mr-1" /> Until {endTime}
-                    </p>
-                  )}
-                </div>
-              </div>
+        {/* Timer Display */}
+        <div className="mb-8 relative scale-90 sm:scale-100">
+          {" "}
+          {/* Adjust scale slightly on smaller screens if needed */}
+          <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-full border-4 border-primary-blue flex items-center justify-center">
+            <div className="w-full h-full rounded-full border-2 border-primary-blue/30 flex flex-col items-center justify-center p-4">
+              {remainingTime !== null ? (
+                <span className="text-5xl sm:text-6xl md:text-7xl font-medium text-secondary-white tracking-wider tabular-nums">
+                  {formatRemainingTime(remainingTime)}
+                </span>
+              ) : (
+                <Loader2 className="animate-spin text-primary-blue" size={48} />
+              )}
+              {endTime && (
+                <p className="text-xs sm:text-sm text-secondary-white opacity-60 mt-2">
+                  <Timer size={10} className="inline mr-1" /> Ends at {endTime}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -656,40 +607,35 @@ const DeepWork: React.FC = () => {
         {/* Playing sound indicator */}
         {ambientSoundHook.currentSound &&
           ambientSoundHook.currentSound !== "None" && (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 text-white/70 mt-4">
-              <span className="text-lg">
-                {
-                  ambientSoundHook.availableSounds[
-                    ambientSoundHook.currentSound
-                  ]?.emoji
-                }
-              </span>
-              <span className="text-xs font-medium">
-                {ambientSoundHook.currentSound}
-              </span>
+            <p className="text-xs sm:text-sm text-secondary-white opacity-60 mt-4 flex items-center gap-1.5">
               {ambientSoundHook.isPlaying ? (
-                <Volume2 size={12} className="text-third-green ml-1" />
+                <Volume2 size={12} className="text-third-green" />
               ) : (
-                <VolumeX size={12} className="text-third-red ml-1" />
+                <VolumeX size={12} className="text-third-red" />
               )}
-            </div>
+              {ambientSoundHook.currentSound}{" "}
+              {
+                ambientSoundHook.availableSounds[ambientSoundHook.currentSound]
+                  ?.emoji
+              }
+            </p>
           )}
       </div>
 
       {/* End Focus Button - Bottom */}
       <button
-        onClick={handleStopFocus}
-        className="mx-auto mb-8 px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center space-x-2 transition-all"
+        onClick={handleStopFocus} // Use the callback that also handles exiting fullscreen
+        className="mb-4 px-6 py-2.5 rounded-lg border border-bdr-dark flex items-center justify-center space-x-2 transition-colors hover:border-third-red hover:text-third-red focus:outline-none focus:ring-2 focus:ring-third-red"
       >
         <Moon size={16} />
-        <span className="text-xs font-medium uppercase tracking-wider">
-          End Focus
-        </span>
+        <span className="text-sm font-medium">End Focus</span>
       </button>
     </div>
   );
 
   // Main component render
+  // Adjust height logic: setup steps have dynamic height, active step fills container
+  // The browser handles the actual fullscreen sizing of the element `componentRef` points to.
   return (
     <div
       ref={componentRef}
@@ -701,8 +647,19 @@ const DeepWork: React.FC = () => {
         setupStep === "active"
           ? "border-transparent"
           : "border-slate-200/50 dark:border-zinc-800/50"
-      } flex flex-col h-full w-full overflow-hidden transition-all duration-300`}
+      } flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
+        setupStep === "active"
+          ? "h-full" // Let renderActive's internal flexbox control layout
+          : setupStep === "idle"
+          ? "h-80"
+          : "h-[calc(100vh-10rem)] max-h-[700px]"
+      }`}
+      // Add specific styles for when the element *is* fullscreen via CSS pseudo-class if needed
+      // e.g., in your global CSS:
+      // .deep-work-container:fullscreen { border-radius: 0; border: none; }
+      id="deep-work-container" // Optional ID for easier CSS targeting
     >
+      {/* Conditional rendering based on setupStep */}
       {setupStep === "idle" && renderIdle()}
       {setupStep === "task" && renderTaskSelection()}
       {setupStep === "duration" && renderDurationSelection()}
