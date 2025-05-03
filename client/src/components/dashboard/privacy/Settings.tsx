@@ -1,9 +1,14 @@
 "use client";
 
-import React from 'react'; 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react"; // Needed for session data
-import ThemeToggle from '../../../../themes/ThemeToggle'
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  ChangeEvent,
+  MouseEvent,
+} from "react";
+import { useSession, signOut } from "next-auth/react";
+import Link from "next/link"; // Import Link
 import {
   X,
   User,
@@ -11,14 +16,20 @@ import {
   Settings,
   AlertTriangle,
   CreditCard,
-  Sun,
-  Moon,
-  Monitor,
   Pencil,
   Loader2,
-} from "lucide-react"; // Icons from lucide-react
+  CheckCircle2,
+  SunMedium,
+  Moon,
+  Monitor,
+  ArrowRight,
+  ExternalLink,
+  AlertCircle,
+  KeyRound,
+  Trash2,
+} from "lucide-react"; // ChevronRight removed
 
-// Define theme type explicitly
+// Types
 type Theme = "light" | "dark" | "system";
 
 interface SettingsModalProps {
@@ -26,196 +37,290 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-// Tab definitions
+interface StatusMessage {
+  type: "success" | "error" | "info" | null;
+  message: string | null;
+}
+
+// Consistent Tab definitions
 const tabs = [
   { id: "account", label: "Account", icon: <User size={16} /> },
   { id: "security", label: "Security", icon: <Lock size={16} /> },
-  { id: "preferences", label: "Preferences", icon: <Settings size={16} /> },
+  { id: "appearance", label: "Appearance", icon: <Settings size={16} /> },
   { id: "subscription", label: "Subscription", icon: <CreditCard size={16} /> },
   { id: "danger", label: "Danger Zone", icon: <AlertTriangle size={16} /> },
 ];
 
-const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
-  // Removed 'update: updateSession' from destructuring as it's unused in placeholder
-  const { data: session, status } = useSession();
+// Helper function for API calls
+async function fetchApi<T>(url: string, options: RequestInit): Promise<T> {
+  try {
+    const response = await fetch(url, options);
+    // Check if response is JSON, handle cases where it might not be (e.g., 204 No Content)
+    const contentType = response.headers.get("content-type");
+    let data;
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+    }
 
-  const [activeTab, setActiveTab] = useState("account");
+    if (!response.ok) {
+      // Use error message from JSON if available, otherwise use status text
+      const errorMessage =
+        data?.error ||
+        response.statusText ||
+        `Request failed with status ${response.status}`;
+      throw new Error(errorMessage);
+    }
+    return data; // Return data on success (might be undefined for 204)
+  } catch (error) {
+    // Rethrow network errors or other unexpected issues
+    if (error instanceof Error) {
+      throw error;
+    } else {
+      throw new Error("An unexpected error occurred during fetch.");
+    }
+  }
+}
+
+const SettingsModal = ({
+  isOpen,
+  onClose,
+}: SettingsModalProps): React.JSX.Element | null => {
+  const { data: session, status, update: updateSession } = useSession();
+
+  const [activeTab, setActiveTab] = useState<string>("account");
   const [theme, setTheme] = useState<Theme>("system");
 
+  // Status messages
+  const [statusMessage, setStatusMessage] = useState<StatusMessage>({
+    type: null,
+    message: null,
+  });
+
   // --- Account State ---
-  const [isEditingUsername, setIsEditingUsername] = useState(false);
-  const [isEditingEmail, setIsEditingEmail] = useState(false);
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [initialUsername, setInitialUsername] = useState("");
-  const [initialEmail, setInitialEmail] = useState("");
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isEditingUsername, setIsEditingUsername] = useState<boolean>(false);
+  const [isEditingEmail, setIsEditingEmail] = useState<boolean>(false);
+  const [username, setUsername] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [initialUsername, setInitialUsername] = useState<string>("");
+  const [initialEmail, setInitialEmail] = useState<string>("");
+  const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
 
   // --- Security State ---
-  const [isEditingPassword, setIsEditingPassword] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isEditingPassword, setIsEditingPassword] = useState<boolean>(false);
+  const [currentPassword, setCurrentPassword] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState<boolean>(false);
+
+  // --- Account deletion state ---
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState<string>("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState<boolean>(false);
 
   // --- Derived State ---
-  const hasProfileChanges = username !== initialUsername || email !== initialEmail;
-  const canSaveChanges = (isEditingUsername || isEditingEmail) && hasProfileChanges && !isSavingProfile;
+  const safeInitialUsername = initialUsername ?? "";
+  const safeInitialEmail = initialEmail ?? "";
+  const safeUsername = username ?? "";
+  const safeEmail = email ?? "";
+
+  const hasProfileChanges =
+    safeUsername !== safeInitialUsername || safeEmail !== safeInitialEmail;
+  const canSaveChanges =
+    (isEditingUsername || isEditingEmail) &&
+    hasProfileChanges &&
+    !isSavingProfile;
   const canUpdatePassword =
     isEditingPassword &&
-    currentPassword &&
-    newPassword &&
-    confirmPassword &&
-    newPassword.length >= 8 && // Basic validation example
+    currentPassword.length > 0 &&
+    newPassword.length >= 8 &&
     newPassword === confirmPassword &&
     !isUpdatingPassword;
-
-    
+  const canDeleteAccount =
+    showDeleteConfirm &&
+    (deleteConfirmText === safeUsername || deleteConfirmText === safeEmail) &&
+    deleteConfirmText.length > 0 &&
+    !isDeletingAccount;
 
   // --- Effects ---
 
-  // Effect to load theme from localStorage on initial mount
+  // Load theme from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
-    // Set theme state only on mount, let the other effect handle applying it
-    if (savedTheme) {
-        setTheme(savedTheme);
-    } else {
-        setTheme("system"); // Default if nothing saved
-    }
-  }, []); // Empty dependency array ensures this runs only once on mount
+    setTheme(savedTheme ?? "system");
+  }, []);
 
-  // Effect to apply theme class and manage system preference listener
+  // Apply theme class and handle system changes
   useEffect(() => {
-    // Function to apply the theme class based on the 'theme' state
     const applyThemeClass = (themeToApply: Theme) => {
-        if (themeToApply === "system") {
-            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-            document.documentElement.classList.toggle("dark", prefersDark);
-            console.log(`Applied system theme: ${prefersDark ? 'dark' : 'light'}`);
-        } else {
-            document.documentElement.classList.toggle("dark", themeToApply === "dark");
-            console.log(`Applied theme: ${themeToApply}`);
-        }
-    }
+      const root = document.documentElement;
+      if (!root) return;
+      if (themeToApply === "system") {
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+        root.classList.toggle("dark", prefersDark);
+      } else {
+        root.classList.toggle("dark", themeToApply === "dark");
+      }
+    };
 
-    applyThemeClass(theme); // Apply the theme when the effect runs (mount or theme change)
-    localStorage.setItem("theme", theme); // Save preference
+    applyThemeClass(theme);
+    localStorage.setItem("theme", theme);
 
-    // Listener for OS theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleSystemChange = () => {
-        // Only re-apply if the component's theme state IS 'system'
-        if (theme === 'system') {
-            console.log("System theme changed, reapplying...");
-            applyThemeClass('system');
-        }
+      // Check theme state again inside handler in case it changed
+      if (theme === "system") {
+        applyThemeClass("system");
+      }
     };
 
-    // Add listener only if theme is 'system'
-    if (theme === 'system') {
-        mediaQuery.addEventListener('change', handleSystemChange);
-        console.log("Added system theme change listener.");
+    if (typeof window !== "undefined" && mediaQuery?.addEventListener) {
+      if (theme === "system") {
+        mediaQuery.addEventListener("change", handleSystemChange);
+      }
+      return () => {
+        mediaQuery.removeEventListener("change", handleSystemChange);
+      };
     }
+    return () => {};
+  }, [theme]);
 
-    // Cleanup function: removes listener if it was added
-    return () => {
-        mediaQuery.removeEventListener('change', handleSystemChange);
-        console.log("Removed system theme change listener.");
-    };
-
-  }, [theme]); // Runs when 'theme' state changes
-
-  // Effect to populate account fields from session data
+  // Populate account fields from session
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
       const userEmail = session.user.email ?? "";
-      const userUsername = session.user.username ?? "";
+      const userUsername =
+        session.user.username ??
+        session.user.email?.split("@")[0] ??
+        `user_${Date.now().toString().slice(-4)}`; // More robust fallback
+
       setEmail(userEmail);
       setUsername(userUsername);
       setInitialEmail(userEmail);
       setInitialUsername(userUsername);
-      // Reset edit states if session changes (e.g., re-login)
+      // Reset editing states if session data changes
       setIsEditingEmail(false);
       setIsEditingUsername(false);
-    } else if (status === 'unauthenticated') {
-        // Clear fields if user logs out while modal is open
-        setEmail(""); setUsername(""); setInitialEmail(""); setInitialUsername("");
+    } else if (status === "unauthenticated") {
+      // Clear fields if logged out
+      setEmail("");
+      setUsername("");
+      setInitialEmail("");
+      setInitialUsername("");
     }
-  }, [session, status]); // Runs when session object or status changes
+  }, [session, status]);
 
-  // --- Theme Handling ---
-  const handleThemeChange = (newTheme: Theme) => {
-    setTheme(newTheme);
-  };
-
-  // --- Action Handlers (Placeholders) ---
+  // --- API Handlers ---
   const handleSaveProfile = async () => {
-      if (!canSaveChanges) return;
-      setIsSavingProfile(true);
-      console.log("Simulating profile save:", { username, email });
-      // --- TODO: API Call to update profile ---
-      // Replace with your actual fetch/axios call
-      // Example:
-      // try {
-      //   const response = await fetch('/api/user/profile', { method: 'PUT', ... });
-      //   if (!response.ok) throw new Error('Failed to update profile');
-      //   const updatedUser = await response.json();
-      //   setInitialUsername(updatedUser.username); // Update base values on success
-      //   setInitialEmail(updatedUser.email);
-      //   // If using updateSession: const updatedSession = await updateSession({ user: { ...session?.user, username: updatedUser.username, email: updatedUser.email } });
-      //   setIsEditingUsername(false); // Close edit fields
-      //   setIsEditingEmail(false);
-      //   // Show success notification
-      // } catch (error) { console.error(error); /* Show error UI */ }
-      // finally { setIsSavingProfile(false); }
+    if (!canSaveChanges) return;
+    setIsSavingProfile(true);
+    setStatusMessage({ type: null, message: null });
 
-      // Placeholder:
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setInitialUsername(username); // Assume success for demo
+    try {
+      await fetchApi("/api/user", {
+        // Replace with your actual API endpoint
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: username !== initialUsername ? username : undefined,
+          email: email !== initialEmail ? email : undefined,
+        }),
+      });
+
+      setInitialUsername(username);
       setInitialEmail(email);
       setIsEditingUsername(false);
       setIsEditingEmail(false);
+      setStatusMessage({
+        type: "success",
+        message: "Profile updated successfully",
+      });
+      await updateSession(); // Await session update
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "An unknown error occurred";
+      setStatusMessage({ type: "error", message });
+    } finally {
       setIsSavingProfile(false);
-      console.log("Profile save simulation complete.");
-      // Consider adding a success toast/message here
+    }
   };
 
   const handleUpdatePassword = async () => {
-      if (!canUpdatePassword) return;
-      setPasswordError(null); // Clear previous errors
-      if (newPassword !== confirmPassword) { // Belt and braces check
-          setPasswordError("New passwords do not match.");
-          return;
-      }
-      setIsUpdatingPassword(true);
-      console.log("Simulating password update...");
-      // --- TODO: API Call to update password ---
-      // Replace with your actual fetch/axios call
-      // Example:
-      // try {
-      //   const response = await fetch('/api/user/password', { method: 'PUT', ... body: JSON.stringify({ currentPassword, newPassword }) });
-      //   if (!response.ok) { const err = await response.json(); throw new Error(err.message || 'Update failed'); }
-      //   setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); // Clear fields
-      //   setIsEditingPassword(false); // Close edit fields
-      //   // Show success notification
-      // } catch (error: any) { setPasswordError(error.message); /* Show error UI */ }
-      // finally { setIsUpdatingPassword(false); }
+    if (!canUpdatePassword) return;
+    setPasswordError(null);
+    setStatusMessage({ type: null, message: null });
 
-      // Placeholder:
-      await new Promise(resolve => setTimeout(resolve, 1000));
-       if (currentPassword === "wrong") { // Simulate incorrect current password error
-           console.log("Password update simulation failed (wrong current pw).")
-           setPasswordError("The current password you entered is incorrect.");
-           setIsUpdatingPassword(false);
-           return;
-       }
-      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+    // Re-validate before sending
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters long.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+
+    try {
+      await fetchApi("/api/user/password", {
+        // Replace with your actual password endpoint
+        method: "PATCH", // Or PUT
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
       setIsEditingPassword(false);
+      setStatusMessage({
+        type: "success",
+        message: "Password updated successfully",
+      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "An unknown error occurred";
+      setPasswordError(message); // Set specific password error
+    } finally {
       setIsUpdatingPassword(false);
-      console.log("Password update simulation complete.");
-      // Consider adding a success toast/message here
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!canDeleteAccount) {
+      setStatusMessage({
+        type: "error",
+        message: "Please type your username or email correctly to confirm.",
+      });
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    setStatusMessage({ type: null, message: null });
+
+    try {
+      await fetchApi("/api/user", {
+        // Replace with your actual delete endpoint
+        method: "DELETE",
+      });
+
+      // Sign out the user AFTER successful deletion and BEFORE closing modal
+      await signOut({ redirect: false }); // Don't redirect automatically
+      onClose(); // Close the modal first
+      window.location.href = "/"; // Then manually redirect
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete account";
+      setStatusMessage({ type: "error", message });
+      // Keep confirmation visible on error for retry? Maybe hide it.
+      // setShowDeleteConfirm(false);
+      // setDeleteConfirmText("");
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   // --- Cancel Handlers ---
@@ -224,6 +329,7 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     setEmail(initialEmail);
     setIsEditingUsername(false);
     setIsEditingEmail(false);
+    setStatusMessage({ type: null, message: null });
   };
 
   const cancelEditPassword = () => {
@@ -232,420 +338,778 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     setConfirmPassword("");
     setPasswordError(null);
     setIsEditingPassword(false);
+    setStatusMessage({ type: null, message: null });
   };
 
+  const cancelDeleteAccount = () => {
+    setShowDeleteConfirm(false);
+    setDeleteConfirmText("");
+    setStatusMessage({ type: null, message: null });
+  };
+
+  // --- Utils ---
+  const clearStatusMessage = useCallback(() => {
+    setStatusMessage({ type: null, message: null });
+  }, []);
+
+  useEffect(() => {
+    let timerId: NodeJS.Timeout | null = null;
+    if (statusMessage.type && statusMessage.message) {
+      timerId = setTimeout(clearStatusMessage, 5000);
+    }
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [statusMessage, clearStatusMessage]);
 
   // --- Render Logic ---
+  if (!isOpen) return null;
 
-  if (!isOpen) return null; // Don't render anything if not open
-
-  // Helper to wrap content needing authentication
+  // Protected content wrapper
   const renderProtectedContent = (contentRenderer: () => React.JSX.Element) => {
-     if (status === "loading") {
-          return <div className="flex justify-center items-center h-40"><Loader2 className="animate-spin text-gray-500 dark:text-gray-400" size={32}/></div>;
-      }
-      if (status === "unauthenticated") {
-          return <p className="text-center text-gray-500 dark:text-gray-400 mt-10 px-4">Please log in to manage this section.</p>;
-      }
-      // Only render if authenticated (status === "authenticated")
-      return contentRenderer();
-  }
-
-  // --- Tab Content Renderers ---
-
-  const renderAccountContent = (): React.JSX.Element => {
-    return (
-      <div className="space-y-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100" id="account-settings-heading">
-          Account Settings
-        </h2>
-        <div className="space-y-5" role="group" aria-labelledby="account-settings-heading">
-          {/* Username Section */}
-          <div>
-            <label htmlFor="username-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Username
-            </label>
-            <div className="flex items-center group">
-              {isEditingUsername ? (
-                <input
-                  id="username-input"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="flex-grow p-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100"
-                  placeholder="Enter your username"
-                />
-              ) : (
-                <span className="flex-grow p-2.5 text-gray-800 dark:text-gray-200 truncate min-h-[44px] inline-flex items-center">
-                  {username || <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>}
-                </span>
-              )}
-              {/* Edit/Cancel Button Logic */}
-              {isEditingUsername ? (
-                 <button
-                    onClick={() => setIsEditingUsername(false)} // Simple hide, full cancel below
-                    className="ml-3 p-1.5 rounded-md text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-all flex-shrink-0"
-                    aria-label="Stop editing username"
-                >
-                    <X size={18} />
-                </button>
-              ) : (
-                 <button
-                    onClick={() => setIsEditingUsername(true)}
-                    className="ml-3 p-1.5 rounded-md text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all flex-shrink-0"
-                    aria-label="Edit username"
-                >
-                    <Pencil size={16} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Email Section */}
-          <div>
-            <label htmlFor="email-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email
-            </label>
-            <div className="flex items-center group">
-              {isEditingEmail ? (
-                <input
-                  id="email-input"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-grow p-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100"
-                  placeholder="Enter your email"
-                />
-              ) : (
-                <span className="flex-grow p-2.5 text-gray-800 dark:text-gray-200 truncate min-h-[44px] inline-flex items-center">
-                  {email}
-                </span>
-              )}
-              {/* Edit/Cancel Button Logic */}
-               {isEditingEmail ? (
-                 <button
-                    onClick={() => setIsEditingEmail(false)} // Simple hide
-                    className="ml-3 p-1.5 rounded-md text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-all flex-shrink-0"
-                    aria-label="Stop editing email"
-                 >
-                    <X size={18} />
-                 </button>
-               ) : (
-                 <button
-                    onClick={() => setIsEditingEmail(true)}
-                    className="ml-3 p-1.5 rounded-md text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all flex-shrink-0"
-                    aria-label="Edit email"
-                 >
-                    <Pencil size={16} />
-                 </button>
-               )}
-            </div>
-          </div>
-
-          {/* Save/Cancel Buttons for Profile */}
-          {(isEditingUsername || isEditingEmail) && (
-             <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700/50 mt-4">
-                <button
-                    onClick={cancelEditProfile} // Resets state
-                    disabled={isSavingProfile}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={handleSaveProfile}
-                    disabled={!canSaveChanges}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px] transition-colors"
-                >
-                   {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
-                </button>
-             </div>
-          )}
+    if (status === "loading") {
+      return (
+        <div className="flex justify-center items-center h-40">
+          <Loader2
+            className="animate-spin text-gray-400 dark:text-gray-500"
+            size={24}
+          />
         </div>
+      );
+    }
+    if (status === "unauthenticated") {
+      return (
+        <div className="flex flex-col items-center justify-center h-48 text-center p-4">
+          <AlertCircle
+            className="mb-3 text-gray-400 dark:text-gray-500"
+            size={24}
+          />
+          <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">
+            Please log in to manage this section.
+          </p>
+          {/* Keep <a> for API routes like signin */}
+          <Link
+            href="/api/auth/signin"
+            className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center py-1 px-3 rounded-md border border-blue-200 dark:border-blue-800/50 bg-blue-50/50 dark:bg-blue-900/20 hover:bg-blue-100/70 dark:hover:bg-blue-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:focus:ring-offset-gray-950"
+          >
+            Go to login <ArrowRight size={14} className="ml-1" />
+          </Link>
+        </div>
+      );
+    }
+    // Ensure session exists before rendering protected content
+    if (status === "authenticated" && session?.user) {
+      return contentRenderer();
+    }
+    // Fallback if authenticated but no session (shouldn't happen often)
+    return (
+      <p className="text-center text-gray-500 dark:text-gray-400">
+        Session data not available.
+      </p>
+    );
+  };
+
+  // --- Status Message Component (Toast style) ---
+  const StatusIndicator = (): React.JSX.Element | null => {
+    if (!statusMessage.type || !statusMessage.message) return null;
+
+    const bgColors = {
+      success:
+        "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800/50",
+      error:
+        "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/50",
+      info: "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800/50",
+    };
+    const textColors = {
+      success: "text-green-700 dark:text-green-300",
+      error: "text-red-700 dark:text-red-300",
+      info: "text-blue-700 dark:text-blue-300",
+    };
+    const icons = {
+      success: (
+        <CheckCircle2
+          size={18}
+          className="text-green-500 dark:text-green-400 flex-shrink-0"
+        />
+      ),
+      error: (
+        <AlertCircle
+          size={18}
+          className="text-red-500 dark:text-red-400 flex-shrink-0"
+        />
+      ),
+      info: (
+        <AlertCircle
+          size={18}
+          className="text-blue-500 dark:text-blue-400 flex-shrink-0"
+        />
+      ),
+    };
+
+    return (
+      <div
+        className={`fixed bottom-4 right-4 z-[11000] px-4 py-3 rounded-lg border ${
+          bgColors[statusMessage.type]
+        } flex items-start space-x-3 max-w-sm animate-fade-in shadow-md dark:shadow-lg`} // Added subtle shadow back for visibility
+        role="alert"
+        aria-live="assertive"
+      >
+        {icons[statusMessage.type]}
+        <span
+          className={`text-sm font-medium ${
+            textColors[statusMessage.type]
+          } flex-grow`}
+        >
+          {statusMessage.message}
+        </span>
+        <button
+          onClick={clearStatusMessage}
+          className="ml-auto p-1 -m-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 flex-shrink-0 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-current"
+          aria-label="Dismiss notification"
+        >
+          <X size={16} />
+        </button>
       </div>
     );
   };
 
-  const renderSecurityContent = (): React.JSX.Element => {
-    return (
-      <div className="space-y-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100" id="security-settings-heading">
-          Password & Security
-        </h2>
-        <div className="space-y-5" role="group" aria-labelledby="security-settings-heading">
-          {/* Password Section */}
-          <div>
-             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+  // --- Base Styling Classes --- (Removed shadow classes initially, added back for toast)
+  const inputClasses =
+    "w-full p-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed";
+  const labelClasses =
+    "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
+  const buttonBaseClasses =
+    "text-sm font-medium rounded-md flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950 disabled:opacity-50 disabled:cursor-not-allowed";
+  const buttonPrimaryClasses = `${buttonBaseClasses} px-4 py-1.5 text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 min-w-[80px]`;
+  const buttonSecondaryClasses = `${buttonBaseClasses} px-4 py-1.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-gray-400`;
+  const buttonDangerClasses = `${buttonBaseClasses} px-4 py-1.5 text-white bg-red-600 hover:bg-red-700 focus:ring-red-500 min-w-[80px]`;
+  const buttonDangerOutlineClasses = `${buttonBaseClasses} px-4 py-1.5 text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 hover:bg-red-100/50 dark:hover:bg-red-900/20 focus:ring-red-500`;
+  const linkButtonPrimaryClasses = `${buttonPrimaryClasses} text-xs !px-3 !py-1`; // For Link components styled as buttons
+  const linkButtonSecondaryClasses = `${buttonSecondaryClasses} text-xs !px-3 !py-1 flex items-center`; // For Link components styled as buttons
+  const sectionHeaderClasses =
+    "border-b border-gray-200 dark:border-gray-700/80 pb-3 mb-5";
+  const sectionTitleClasses =
+    "text-lg font-semibold text-gray-900 dark:text-gray-100";
+  const sectionDescriptionClasses =
+    "text-sm text-gray-500 dark:text-gray-400 mt-1";
+
+  // --- Event Handlers with Types ---
+  const handleInputChange =
+    (setter: React.Dispatch<React.SetStateAction<string>>) =>
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setter(e.target.value);
+    };
+
+  const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setConfirmPassword(e.target.value);
+    if (
+      passwordError === "New passwords do not match." &&
+      e.target.value === newPassword
+    ) {
+      setPasswordError(null); // Clear mismatch error immediately
+    }
+  };
+
+  // --- Tab Content Renderers ---
+  const renderAccountContent = (): React.JSX.Element => (
+    <div className="space-y-6">
+      <div className={sectionHeaderClasses}>
+        <h2 className={sectionTitleClasses}>Account Settings</h2>
+        <p className={sectionDescriptionClasses}>
+          Manage your personal information.
+        </p>
+      </div>
+      <div className="space-y-5">
+        {/* Username Section */}
+        <div>
+          <label htmlFor="username-input" className={labelClasses}>
+            Username
+          </label>
+          <div className="flex items-center space-x-2 group">
+            {isEditingUsername ? (
+              <input
+                id="username-input"
+                type="text"
+                value={username}
+                onChange={handleInputChange(setUsername)}
+                className={inputClasses}
+                placeholder="Enter your username"
+                disabled={isSavingProfile}
+              />
+            ) : (
+              <span className="flex-grow p-2 text-gray-800 dark:text-gray-200 text-sm min-h-[38px] inline-flex items-center border border-transparent">
+                {username || (
+                  <span className="text-gray-400 dark:text-gray-500 italic">
+                    Not set
+                  </span>
+                )}
+              </span>
+            )}
+            {!isEditingUsername && (
+              <button
+                onClick={() => setIsEditingUsername(true)}
+                className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                aria-label="Edit username"
+              >
+                <Pencil size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Email Section */}
+        <div>
+          <label htmlFor="email-input" className={labelClasses}>
+            Email
+          </label>
+          <div className="flex items-center space-x-2 group">
+            {isEditingEmail ? (
+              <input
+                id="email-input"
+                type="email"
+                value={email}
+                onChange={handleInputChange(setEmail)}
+                className={inputClasses}
+                placeholder="Enter your email"
+                disabled={isSavingProfile}
+              />
+            ) : (
+              <span className="flex-grow p-2 text-gray-800 dark:text-gray-200 text-sm min-h-[38px] inline-flex items-center border border-transparent">
+                {email}
+              </span>
+            )}
+            {!isEditingEmail && (
+              <button
+                onClick={() => setIsEditingEmail(true)}
+                className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                aria-label="Edit email"
+              >
+                <Pencil size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Save/Cancel Buttons for Profile */}
+        {(isEditingUsername || isEditingEmail) && (
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700/80 mt-4">
+            <button
+              onClick={cancelEditProfile}
+              disabled={isSavingProfile}
+              className={buttonSecondaryClasses}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveProfile}
+              disabled={!canSaveChanges}
+              className={buttonPrimaryClasses}
+            >
+              {isSavingProfile ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Save"
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderSecurityContent = (): React.JSX.Element => (
+    <div className="space-y-6">
+      <div className={sectionHeaderClasses}>
+        <h2 className={sectionTitleClasses}>Security</h2>
+        <p className={sectionDescriptionClasses}>
+          Manage your password and account security.
+        </p>
+      </div>
+      <div className="space-y-5">
+        {/* Password Section */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className={labelClasses + " mb-0 flex items-center"}>
+              <KeyRound
+                size={16}
+                className="mr-2 text-gray-400 dark:text-gray-500 flex-shrink-0"
+              />
               Password
             </label>
             {!isEditingPassword && (
-                <div className="flex items-center group">
-                    <span className="flex-grow p-2.5 text-gray-800 dark:text-gray-200 tracking-widest min-h-[44px] inline-flex items-center">
-                    ••••••••
-                    </span>
-                    <button
-                        onClick={() => setIsEditingPassword(true)}
-                        className="ml-3 p-1.5 rounded-md text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex-shrink-0"
-                        aria-label="Change password"
-                    >
-                        <Pencil size={16} />
-                    </button>
-              </div>
+              <button
+                onClick={() => setIsEditingPassword(true)}
+                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center focus:outline-none focus:underline"
+              >
+                {" "}
+                Change <Pencil size={12} className="ml-1" />{" "}
+              </button>
             )}
           </div>
-
-          {/* Password Change Form (Conditional) */}
-          {isEditingPassword && (
-            <div className="space-y-4 border-t border-gray-200 dark:border-gray-700/50 pt-6">
-              <div>
-                <label htmlFor="current-password-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Current Password
-                </label>
-                <input
-                  id="current-password-input"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="mt-1 w-full p-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100"
-                  placeholder="Enter your current password"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="new-password-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  New Password
-                </label>
-                <input
-                  id="new-password-input"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="mt-1 w-full p-2.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100"
-                  placeholder="Enter new password (min. 8 characters)"
-                  autoComplete="new-password"
-                  minLength={8} // Basic validation
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="confirm-password-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Confirm New Password
-                </label>
-                <input
-                  id="confirm-password-input"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (passwordError === "New passwords do not match." && e.target.value === newPassword) {
-                          setPasswordError(null); // Clear mismatch error when they match again
-                      }
-                  }}
-                  className={`mt-1 w-full p-2.5 bg-gray-50 dark:bg-gray-800/60 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100 ${
-                    (newPassword && confirmPassword && newPassword !== confirmPassword) || (passwordError && passwordError !== "New passwords do not match.")
-                    ? 'border-red-500 dark:border-red-600'
-                    : 'border-gray-300 dark:border-gray-700'
-                  }`}
-                  placeholder="Confirm new password"
-                  autoComplete="new-password"
-                  required
-                />
-                 {/* Error display */}
-                 {(newPassword && confirmPassword && newPassword !== confirmPassword && !passwordError) && ( // Only show mismatch if no other error exists
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">Passwords do not match.</p>
-                 )}
-                 {passwordError && ( // Show other backend/validation errors
-                     <p className="text-xs text-red-600 dark:text-red-400 mt-1">{passwordError}</p>
-                 )}
-              </div>
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end space-x-3 pt-2">
-                 <button
-                    type="button" // Prevent form submission if wrapped in form
-                    onClick={cancelEditPassword} // Resets state
-                    disabled={isUpdatingPassword}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="button" // Prevent form submission
-                    onClick={handleUpdatePassword}
-                    disabled={!canUpdatePassword}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px] transition-colors"
-                >
-                  {isUpdatingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update Password'}
-                </button>
-              </div>
+          {!isEditingPassword && (
+            <div className="flex items-center text-gray-800 dark:text-gray-200 text-sm pl-8">
+              {" "}
+              {/* Indent to align with label icon */}
+              <span className="tracking-wider">••••••••</span>
             </div>
           )}
         </div>
-        {/* Placeholder for other security settings like 2FA */}
+
+        {/* Password Change Form (Conditional) */}
+        {isEditingPassword && (
+          <div className="space-y-4 bg-gray-50/50 dark:bg-gray-900/30 p-4 rounded-lg border border-gray-200 dark:border-gray-700/50">
+            <div>
+              <label htmlFor="current-password-input" className={labelClasses}>
+                Current Password
+              </label>
+              <input
+                id="current-password-input"
+                type="password"
+                value={currentPassword}
+                onChange={handleInputChange(setCurrentPassword)}
+                className={inputClasses}
+                placeholder="Enter your current password"
+                autoComplete="current-password"
+                required
+                disabled={isUpdatingPassword}
+              />
+            </div>
+            <div>
+              <label htmlFor="new-password-input" className={labelClasses}>
+                New Password
+              </label>
+              <input
+                id="new-password-input"
+                type="password"
+                value={newPassword}
+                onChange={handleInputChange(setNewPassword)}
+                className={inputClasses}
+                placeholder="Min. 8 characters"
+                autoComplete="new-password"
+                minLength={8}
+                required
+                disabled={isUpdatingPassword}
+              />
+            </div>
+            <div>
+              <label htmlFor="confirm-password-input" className={labelClasses}>
+                Confirm New Password
+              </label>
+              <input
+                id="confirm-password-input"
+                type="password"
+                value={confirmPassword}
+                onChange={handleConfirmPasswordChange}
+                className={`${inputClasses} ${
+                  passwordError ||
+                  (newPassword &&
+                    confirmPassword &&
+                    newPassword !== confirmPassword)
+                    ? "border-red-400 dark:border-red-600 focus:ring-red-500"
+                    : ""
+                }`}
+                placeholder="Confirm new password"
+                autoComplete="new-password"
+                required
+                disabled={isUpdatingPassword}
+              />
+              {/* Password Error Display */}
+              {passwordError && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center">
+                  {" "}
+                  <AlertCircle size={12} className="mr-1" /> {passwordError}
+                </p>
+              )}
+              {!passwordError &&
+                newPassword &&
+                confirmPassword &&
+                newPassword !== confirmPassword && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                    Passwords do not match.
+                  </p>
+                )}
+            </div>
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={cancelEditPassword}
+                disabled={isUpdatingPassword}
+                className={buttonSecondaryClasses}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleUpdatePassword}
+                disabled={!canUpdatePassword}
+                className={buttonPrimaryClasses}
+              >
+                {isUpdatingPassword ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Update"
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderAppearanceContent = (): React.JSX.Element => {
+    const themeOptions: {
+      value: Theme;
+      label: string;
+      icon: React.ReactElement;
+    }[] = [
+      { value: "light", label: "Light", icon: <SunMedium size={20} /> },
+      { value: "dark", label: "Dark", icon: <Moon size={20} /> },
+      { value: "system", label: "System", icon: <Monitor size={20} /> },
+    ];
+
+    return (
+      <div className="space-y-6">
+        <div className={sectionHeaderClasses}>
+          <h2 className={sectionTitleClasses}>Appearance</h2>
+          <p className={sectionDescriptionClasses}>
+            Customize your visual experience.
+          </p>
+        </div>
+        <div className="space-y-5">
+          <div>
+            <h3 className={labelClasses + " mb-2"}>Theme</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {themeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setTheme(option.value)}
+                  className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950 ${
+                    theme === option.value
+                      ? "bg-blue-50 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 focus:ring-blue-500"
+                      : "bg-white dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 focus:ring-gray-400"
+                  }`}
+                  aria-pressed={theme === option.value}
+                >
+                  {React.cloneElement(option.icon, {})}
+                  <span className="text-xs font-medium">{option.label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+              {theme === "system"
+                ? "Automatically switches based on your device settings."
+                : theme === "dark"
+                ? "Dark mode is applied."
+                : "Light mode is applied."}
+            </p>
+          </div>
+        </div>
       </div>
     );
   };
 
-  const renderPreferencesContent = (): React.JSX.Element => {
-       return (
-          <div className="space-y-8">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100" id="preferences-settings-heading">
-              Preferences
-            </h2>
-            <div className="space-y-6" role="group" aria-labelledby="preferences-settings-heading">
-              {/* Theme Selection */}
+  const renderSubscriptionContent = (): React.JSX.Element => (
+    <div className="space-y-6">
+      <div className={sectionHeaderClasses}>
+        <h2 className={sectionTitleClasses}>Subscription</h2>
+        <p className={sectionDescriptionClasses}>
+          Manage your plan and billing details.
+        </p>
+      </div>
+      <div className="space-y-5">
+        {/* Current Plan Display */}
+        <div className="p-4 bg-gray-50/50 dark:bg-gray-900/30 rounded-lg border border-gray-200 dark:border-gray-700/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                Current Plan
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                You are currently on the free plan.
+              </p>{" "}
+              {/* TODO: Make dynamic */}
+            </div>
+            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full bg-blue-100/50 dark:bg-blue-900/30">
+              Free {/* TODO: Make dynamic */}
+            </span>
+          </div>
+        </div>
+
+        {/* Upgrade Options */}
+        <div className="border border-gray-200 dark:border-gray-700/50 rounded-lg overflow-hidden">
+          <div className="px-4 py-3 bg-gray-50/50 dark:bg-gray-900/40 border-b border-gray-200 dark:border-gray-700/50">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              Upgrade Options
+            </h3>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Interface Theme
-                </label>
-                <div className="flex flex-wrap gap-3" role="radiogroup" aria-label="Interface Theme">
-                  {/* Theme Buttons */}
-                  {(['light', 'dark', 'system'] as Theme[]).map((themeOption) => (
-                    <button
-                        key={themeOption}
-                        onClick={() => handleThemeChange(themeOption)}
-                        className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all ${
-                        theme === themeOption
-                            ? "border-blue-500 ring-1 ring-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" // Active state
-                            : "border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-300" // Inactive state
-                        }`}
-                        role="radio"
-                        aria-checked={theme === themeOption}
-                    >
-                        {themeOption === 'light' && <Sun size={16} aria-hidden="true" />}
-                        {themeOption === 'dark' && <Moon size={16} aria-hidden="true" />}
-                        {themeOption === 'system' && <Monitor size={16} aria-hidden="true" />}
-                        <span className="text-sm capitalize">{themeOption}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {/* Removed Theme Color section - Feature deferred */}
-              {/* Placeholder for other preferences like language, notifications */}
-            </div>
-          </div>
-        );
-  };
-
-  const renderSubscriptionContent = (): React.JSX.Element => {
-     return (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100" id="subscription-settings-heading">
-              Subscription
-            </h2>
-            <div className="space-y-4" role="group" aria-labelledby="subscription-settings-heading">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Manage your plan and billing details.
-              </p>
-              <div className="p-5 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700/50">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
-                  Current Plan: <span className="font-semibold text-blue-600 dark:text-blue-400">Free</span> {/* TODO: Fetch dynamically */}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                  You are currently on the free plan.
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Pro Plan
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Unlock premium features & priority support.
                 </p>
-                <button className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                  View Upgrade Options
-                </button>
               </div>
-              {/* Placeholder for Billing History, Payment Methods etc. */}
+              <Link href="/pricing" className={linkButtonPrimaryClasses}>
+                Upgrade
+              </Link>
             </div>
-          </div>
-        );
-  };
-
-    const renderDangerZoneContent = (): React.JSX.Element => {
-       return (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-red-600 dark:text-red-500" id="danger-zone-heading">
-              Danger Zone
-            </h2>
-            <div className="space-y-4 p-5 border border-red-300 dark:border-red-700/50 bg-red-50/50 dark:bg-red-900/10 rounded-lg" role="group" aria-labelledby="danger-zone-heading">
-              <h3 className="text-lg font-medium text-red-700 dark:text-red-400">Delete Account</h3>
-              <p className="text-sm text-red-600 dark:text-red-300">
-                Permanently delete your account ({session?.user?.email ? <strong>{session.user.email}</strong> : 'your account'}) and all associated data. This action is irreversible and cannot be undone.
-              </p>
-              <button
-                // TODO: Implement confirmation modal before actual deletion API call
-                onClick={() => alert("Account deletion confirmation needed!")} // Simple alert placeholder
-                className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950 disabled:opacity-50"
-                disabled={status !== 'authenticated'} // Should be disabled if not logged in
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Enterprise Plan
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Custom solutions for team collaboration.
+                </p>
+              </div>
+              <Link
+                href="/contact-sales"
+                className={linkButtonSecondaryClasses}
               >
-                Delete My Account
-              </button>
-              <ThemeToggle/>
+                Contact Sales <ExternalLink size={12} className="ml-1" />
+              </Link>
             </div>
           </div>
-        );
-    }
+        </div>
+      </div>
+    </div>
+  );
 
+  const renderDangerZoneContent = (): React.JSX.Element => (
+    <div className="space-y-6">
+      <div
+        className={
+          sectionHeaderClasses + " !border-red-300 dark:!border-red-700/50"
+        }
+      >
+        <h2
+          className={
+            sectionTitleClasses +
+            " !text-red-600 dark:!text-red-400 flex items-center"
+          }
+        >
+          <AlertTriangle size={18} className="mr-2" /> Danger Zone
+        </h2>
+        <p
+          className={
+            sectionDescriptionClasses + " !text-red-500 dark:!text-red-300/90"
+          }
+        >
+          Critical settings and irreversible actions.
+        </p>
+      </div>
+      <div className="space-y-4 p-4 border border-red-300 dark:border-red-700/50 bg-red-50/30 dark:bg-red-900/10 rounded-lg">
+        <h3 className="text-md font-semibold text-red-700 dark:text-red-300">
+          Delete Account
+        </h3>
+        <p className="text-sm text-red-600 dark:text-red-400">
+          Permanently delete your account (
+          <strong className="font-mono">{username || email}</strong>) and all
+          associated data. This action is irreversible.
+        </p>
+
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className={buttonDangerOutlineClasses} // Use outline style
+            disabled={isDeletingAccount}
+          >
+            <Trash2 size={14} className="mr-1.5" /> Delete My Account...
+          </button>
+        ) : (
+          <div className="space-y-3 pt-3 border-t border-red-200 dark:border-red-800/50">
+            <p className="text-sm font-medium text-red-700 dark:text-red-300">
+              To confirm, please type your username (
+              <strong className="select-all font-mono">{username}</strong>) or
+              email (<strong className="select-all font-mono">{email}</strong>)
+              below:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={handleInputChange(setDeleteConfirmText)}
+              className={`${inputClasses} !border-red-300 dark:!border-red-600 focus:!ring-red-500 font-mono`}
+              placeholder="Type username or email to confirm"
+              disabled={isDeletingAccount}
+              aria-label="Confirm account deletion input"
+            />
+            <div className="flex items-center justify-end space-x-3">
+              <button
+                onClick={cancelDeleteAccount}
+                className={buttonSecondaryClasses}
+                disabled={isDeletingAccount}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                className={buttonDangerClasses}
+                disabled={!canDeleteAccount}
+              >
+                {isDeletingAccount ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Confirm Deletion"
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   // --- Main Content Router ---
   const renderTabContent = () => {
     switch (activeTab) {
-      case "account":       return renderProtectedContent(renderAccountContent);
-      case "security":      return renderProtectedContent(renderSecurityContent);
-      case "preferences":   return renderPreferencesContent(); // No auth needed usually
-      case "subscription":  return renderProtectedContent(renderSubscriptionContent);
-      case "danger":        return renderProtectedContent(renderDangerZoneContent);
-      default:              return null; // Should not happen
+      case "account":
+        return renderProtectedContent(renderAccountContent);
+      case "security":
+        return renderProtectedContent(renderSecurityContent);
+      case "appearance":
+        return renderAppearanceContent();
+      case "subscription":
+        return renderProtectedContent(renderSubscriptionContent);
+      case "danger":
+        return renderProtectedContent(renderDangerZoneContent);
+      default:
+        return <p>Invalid tab selected.</p>; // Fallback
     }
   };
 
   // --- Component Return ---
   return (
-    // Modal backdrop
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-900/30 dark:bg-black/50 backdrop-blur-sm p-4" aria-labelledby="settings-modal-title" role="dialog" aria-modal="true">
-      {/* Modal container */}
-      <div className="bg-white/95 dark:bg-gray-950/90 backdrop-blur-xl w-full max-w-4xl h-[calc(100vh-4rem)] max-h-[700px] rounded-xl border border-gray-200/70 dark:border-gray-800/70 overflow-hidden flex flex-col sm:flex-row shadow-xl dark:shadow-2xl dark:shadow-black/30">
+    <>
+      {/* Modal backdrop */}
+      <div
+        className="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm p-4 transition-opacity duration-300 ease-out" // Added transition
+        aria-labelledby="settings-modal-title"
+        role="dialog"
+        aria-modal="true"
+        onClick={onClose} // Close on backdrop click
+      >
+        {/* Modal container: Stop propagation */}
+        <div
+          onClick={(e: MouseEvent) => e.stopPropagation()}
+          className="bg-white dark:bg-gray-950 w-full max-w-4xl h-[calc(100vh-4rem)] max-h-[750px] rounded-lg border border-gray-200/80 dark:border-gray-800/70 overflow-hidden flex flex-col sm:flex-row transition-transform duration-300 ease-out scale-95 animate-scale-in" // Added transition/animation
+        >
+          {/* Sidebar Tabs */}
+          <div
+            className="w-full sm:w-56 shrink-0 border-b sm:border-b-0 sm:border-r border-gray-200/80 dark:border-gray-800/70 bg-gray-50/40 dark:bg-gray-900/40 p-3 sm:p-4 overflow-y-auto relative"
+            role="tablist"
+            aria-orientation="vertical"
+          >
+            <h1
+              id="settings-modal-title"
+              className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 px-2 hidden sm:block"
+            >
+              Settings
+            </h1>
+            {/* Close Button (Mobile - absolute positioned) */}
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 sm:hidden p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 z-10 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-blue-500"
+              aria-label="Close settings"
+            >
+              {" "}
+              <X size={18} />{" "}
+            </button>
 
-        {/* Sidebar Tabs */}
-        <div className="w-full sm:w-56 shrink-0 border-b sm:border-b-0 sm:border-r border-gray-200/60 dark:border-gray-800/60 bg-gray-50/60 dark:bg-gray-900/60 p-4 sm:p-5 overflow-y-auto" role="tablist" aria-orientation="vertical">
-          <h1 id="settings-modal-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 px-2 hidden sm:block">
-            Settings
-          </h1>
-          <div className="space-y-1.5">
+            <nav className="space-y-1">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   id={`settings-tab-${tab.id}`}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-md transition-all duration-150 ${
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (activeTab === "security" && isEditingPassword)
+                      cancelEditPassword();
+                    if (activeTab === "danger" && showDeleteConfirm)
+                      cancelDeleteAccount();
+                  }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-900 ${
                     activeTab === tab.id
-                      ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-100"
-                  }`}
+                      ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-100"
+                  } ${
+                    tab.id === "danger" && activeTab !== "danger"
+                      ? "!text-red-600/80 dark:!text-red-500/70 hover:!bg-red-50 dark:hover:!bg-red-900/20 hover:!text-red-700 dark:hover:!text-red-400"
+                      : ""
+                  }
+                     ${
+                       tab.id === "danger" && activeTab === "danger"
+                         ? "!bg-red-100 dark:!bg-red-900/40 !text-red-700 dark:!text-red-300"
+                         : ""
+                     }`}
                   role="tab"
                   aria-selected={activeTab === tab.id}
-                  aria-controls={`settings-panel-${tab.id}`} // Connects tab to panel
+                  aria-controls={`settings-panel-${activeTab}`} // Use activeTab here for dynamic association
                 >
-                  {React.cloneElement(tab.icon, { "aria-hidden": true })} {/* Hide icon from screen readers */}
+                  {/* Type assertion for icon props if needed, but should be compatible */}
+                  {React.cloneElement(tab.icon, { "aria-hidden": "true" })}
                   {tab.label}
                 </button>
               ))}
+            </nav>
           </div>
-        </div>
 
-        {/* Main Content Area */}
-        <div
-            className="flex-1 p-6 sm:p-8 overflow-y-auto relative"
-            id={`settings-panel-${activeTab}`} // Connects panel to tab
+          {/* Main Content Area */}
+          <div
+            className="flex-1 p-5 sm:p-8 overflow-y-auto relative"
+            id={`settings-panel-${activeTab}`} // Panel ID matches active tab
             role="tabpanel"
             tabIndex={0} // Make panel focusable
-            aria-labelledby={`settings-tab-${activeTab}`} // Labels panel with tab
-        >
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
-            aria-label="Close settings"
+            aria-labelledby={`settings-tab-${activeTab}`} // Labels panel with active tab
           >
-            <X size={20} />
-          </button>
-          {renderTabContent()}
+            {/* Close Button (Desktop - absolute positioned) */}
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 hidden sm:inline-flex p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-950"
+              aria-label="Close settings"
+            >
+              <X size={20} />
+            </button>
+            {renderTabContent()}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Render the Status Indicator outside the modal DOM structure for proper layering */}
+      <StatusIndicator />
+
+      {/* Add Tailwind animation utility if not already present in global CSS */}
+      <style jsx global>{`
+        @keyframes scaleIn {
+          from {
+            transform: scale(0.95);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        .animate-scale-in {
+          animation: scaleIn 0.2s ease-out forwards;
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-out forwards;
+        }
+      `}</style>
+    </>
   );
 };
 
