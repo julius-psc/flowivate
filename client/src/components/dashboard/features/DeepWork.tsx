@@ -4,25 +4,26 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import {
-  Moon,
+  Clock,
   X,
-  List,
-  Edit3,
-  Clock4,
-  Check,
-  ChevronRight,
-  Loader2,
+  Target, // Using Target for task icon
+  Loader,
   Volume2,
   VolumeX,
-  Timer,
+  ArrowLeft,
+  Play,
+  Plus,
+  Focus,
+  CheckCircle,
+  // VolumeOff, // Removed as per request (only top-right volume)
 } from "lucide-react";
-import * as tasksApi from "../../../lib/tasksApi"; // Adjust path as needed
-import type { Task, TaskList } from "@/types/taskTypes"; // Adjust path as needed
+import * as tasksApi from "../../../lib/tasksApi";
+import type { Task, TaskList } from "@/types/taskTypes";
 import {
   useAmbientSound,
   AmbientSoundName,
   ambientSoundNames,
-} from "@/hooks/useAmbientSound"; // Adjust path as needed
+} from "@/hooks/useAmbientSound";
 import { toast } from "sonner";
 
 type SetupStep = "idle" | "task" | "duration" | "music" | "active";
@@ -35,29 +36,38 @@ interface SelectedTask {
 
 const DURATION_OPTIONS = [25, 50, 75, 90]; // in minutes
 
+// --- Define the requested input className ---
+const inputClassName =
+  "flex-1 rounded-xl border-2 border-slate-300 dark:border-zinc-700  dark:bg-zinc-800/90 px-4 py-3 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary-blue focus:ring-3 focus:ring-primary-blue/20 dark:focus:ring-primary-blue/10 disabled:opacity-60 disabled:cursor-not-allowed";
+
 const DeepWork: React.FC = () => {
   const { data: session, status } = useSession();
   const queryKey = ["tasks", session?.user?.id];
 
-  // Component State
+  // --- State ---
   const [setupStep, setSetupStep] = useState<SetupStep>("idle");
-  const [, setIsFullscreen] = useState(false); // Track fullscreen state
+  const [, setIsFullscreen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
   const [customTaskName, setCustomTaskName] = useState("");
+  const [showCustomTaskInput, setShowCustomTaskInput] = useState(false);
   const [focusDuration, setFocusDuration] = useState<number>(
     DURATION_OPTIONS[0]
   );
+  const [customDurationInput, setCustomDurationInput] = useState<string>("");
+  const [isCustomDurationSelected, setIsCustomDurationSelected] =
+    useState(false);
   const [endTime, setEndTime] = useState<string | null>(null);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const [timerIntervalId, setTimerIntervalId] = useState<NodeJS.Timeout | null>(
     null
   );
 
-  // Refs
+  // --- Refs ---
   const componentRef = useRef<HTMLDivElement>(null);
   const customTaskInputRef = useRef<HTMLInputElement>(null);
+  const customDurationInputRef = useRef<HTMLInputElement>(null);
 
-  // Hooks
+  // --- Hooks ---
   const ambientSoundHook = useAmbientSound();
 
   // --- Task Fetching ---
@@ -70,11 +80,10 @@ const DeepWork: React.FC = () => {
     queryKey: queryKey,
     queryFn: tasksApi.getTaskLists,
     enabled: status === "authenticated" && setupStep === "task",
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
 
-  // Filter incomplete tasks
   const incompleteTasks: Task[] = React.useMemo(() => {
     if (status !== "authenticated" || isLoadingTasks || isErrorTasks) return [];
     return taskLists
@@ -82,7 +91,6 @@ const DeepWork: React.FC = () => {
       .filter((task) => task && !task.completed);
   }, [taskLists, isLoadingTasks, isErrorTasks, status]);
 
-  // Effect for task loading errors
   useEffect(() => {
     if (isErrorTasks && errorTasks) {
       toast.error(
@@ -113,11 +121,9 @@ const DeepWork: React.FC = () => {
         toast.error(
           `Fullscreen not available: ${err.message}. Starting normally.`
         );
-        // No need to explicitly set isFullscreen(false), listener handles it
       });
-      // Note: State update (setIsFullscreen) is handled by the event listener
     }
-  }, []); // componentRef is stable
+  }, []);
 
   const exitFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -126,27 +132,20 @@ const DeepWork: React.FC = () => {
         .catch((err) =>
           console.error("Error attempting to exit full-screen mode:", err)
         );
-      // Note: State update (setIsFullscreen) is handled by the event listener
     }
   }, []);
 
-  // Effect to listen for fullscreen changes (user Esc key, API calls)
   useEffect(() => {
     const handleFullscreenChange = () => {
-      // Check if *this* component's ref is the one in fullscreen
-      setIsFullscreen(document.fullscreenElement === componentRef.current);
+      setIsFullscreen(!!document.fullscreenElement);
     };
-
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-
-    // Cleanup listener on unmount
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
-  }, []); // Empty dependency array ensures this runs once on mount
+  }, []);
 
   // --- Callbacks ---
-
   const stopTimer = useCallback(() => {
     if (timerIntervalId) {
       clearInterval(timerIntervalId);
@@ -156,80 +155,75 @@ const DeepWork: React.FC = () => {
     setEndTime(null);
   }, [timerIntervalId]);
 
-  // resetState now includes exiting fullscreen
   const resetState = useCallback(() => {
     stopTimer();
-    ambientSoundHook.stopSound();
-    exitFullscreen(); // Ensure fullscreen is exited on reset
+    ambientSoundHook.stopSound(); // Ensure sound stops on reset
+    exitFullscreen();
     setSelectedTask(null);
     setCustomTaskName("");
+    setShowCustomTaskInput(false);
     setFocusDuration(DURATION_OPTIONS[0]);
+    setCustomDurationInput("");
+    setIsCustomDurationSelected(false);
     setSetupStep("idle");
-    // isFullscreen state is managed by the event listener
-  }, [stopTimer, ambientSoundHook, exitFullscreen]); // Added exitFullscreen dependency
+  }, [stopTimer, ambientSoundHook, exitFullscreen]);
 
-  // handleSessionEnd now includes exiting fullscreen
   const handleSessionEnd = useCallback(() => {
     const completedTask = selectedTask;
-    // Important: Call resetState *first* to handle cleanup including fullscreen exit
     resetState();
-    // Now show toast after state is reset
     toast.success("Focus session complete!");
-
     if (completedTask?.source === "list" && completedTask.id !== "custom") {
       console.log(
         `TODO: Mark task ${completedTask.id} (${completedTask.name}) as complete.`
       );
     }
-  }, [resetState, selectedTask]); // resetState dependency implicitly includes exitFullscreen
+  }, [resetState, selectedTask]);
 
   const startTimer = useCallback(() => {
-    if (timerIntervalId) {
-      clearInterval(timerIntervalId);
+    const durationToUse =
+      focusDuration > 0 ? focusDuration : DURATION_OPTIONS[0];
+    if (durationToUse <= 0) {
+      toast.error("Invalid duration set. Using default.");
+      setFocusDuration(DURATION_OPTIONS[0]);
+      setSetupStep("duration");
+      return;
     }
 
-    const durationInSeconds = focusDuration * 60;
+    if (timerIntervalId) clearInterval(timerIntervalId);
+    const durationInSeconds = durationToUse * 60;
     setRemainingTime(durationInSeconds);
-
     const now = new Date();
     const end = new Date(now.getTime() + durationInSeconds * 1000);
     setEndTime(formatTime(end));
-
     const interval = setInterval(() => {
       setRemainingTime((prev) => {
-        if (prev !== null && prev > 1) {
-          return prev - 1;
-        } else {
-          if (interval) clearInterval(interval); // Clear the interval *before* calling handleSessionEnd
-          setTimerIntervalId(null); // Update state *before* potentially unmounting/changing state
-          handleSessionEnd(); // Call session end logic AFTER clearing interval
-          return 0; // Ensure remaining time is 0
-        }
+        if (prev !== null && prev > 1) return prev - 1;
+        if (interval) clearInterval(interval);
+        setTimerIntervalId(null);
+        handleSessionEnd();
+        return 0;
       });
     }, 1000);
     setTimerIntervalId(interval);
-  }, [focusDuration, timerIntervalId, handleSessionEnd]); // Correct dependencies
+  }, [focusDuration, timerIntervalId, handleSessionEnd, setSetupStep]);
 
-  // handleStopFocus now includes exiting fullscreen
   const handleStopFocus = useCallback(() => {
-    // Important: Call resetState *first* to handle cleanup including fullscreen exit
     resetState();
-    // Now show toast
     toast.info("Focus session ended.");
-  }, [resetState]); // resetState dependency implicitly includes exitFullscreen
+  }, [resetState]);
 
   // --- State Transitions and Actions ---
-  const handleStartSetup = () => {
-    setSetupStep("task");
-  };
+  const handleStartSetup = () => setSetupStep("task");
 
   const handleSelectTaskListTask = (task: Task) => {
     setSelectedTask({ id: task.id, name: task.name, source: "list" });
     setCustomTaskName("");
+    setShowCustomTaskInput(false);
     setSetupStep("duration");
   };
 
-  const handleSelectCustomTask = () => {
+  // **MODIFIED:** Action triggered by Enter key or input blur (if valid)
+  const handleConfirmCustomTask = () => {
     const trimmedName = customTaskName.trim();
     if (!trimmedName) {
       toast.error("Please enter a name for your focus task.");
@@ -240,125 +234,182 @@ const DeepWork: React.FC = () => {
     setSetupStep("duration");
   };
 
-  const handleSetDuration = (duration: number) => {
-    setFocusDuration(duration > 0 ? duration : DURATION_OPTIONS[0]);
+  const handleSetDurationPreset = (duration: number) => {
+    setFocusDuration(duration);
+    setIsCustomDurationSelected(false);
+    setCustomDurationInput("");
   };
 
-  const handleConfirmDuration = () => {
-    if (focusDuration <= 0) {
-      toast.error("Please set a focus duration.");
-      return;
+  // **MODIFIED:** Action triggered by Enter key or input blur (if valid)
+  const handleConfirmCustomDuration = () => {
+    const numericValue = parseInt(customDurationInput, 10);
+    if (!isNaN(numericValue) && numericValue > 0) {
+      setFocusDuration(numericValue);
+      setIsCustomDurationSelected(true); // Ensure this is true if confirming via Enter/blur
+      setSetupStep("music"); // Proceed to next step if valid
+    } else if (customDurationInput === "" && !isCustomDurationSelected) {
+      // Allow proceeding if input is empty but a preset was selected
+      setFocusDuration(focusDuration > 0 ? focusDuration : DURATION_OPTIONS[0]); // Use current valid focus duration
+      setSetupStep("music");
+    } else {
+      toast.error("Please enter a valid positive number for duration.");
+      setIsCustomDurationSelected(true); // Keep custom selected to indicate input attempt
+      customDurationInputRef.current?.focus();
     }
-    setSetupStep("music");
+  };
+
+  const handleCustomDurationChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    setCustomDurationInput(value);
+    const numericValue = parseInt(value, 10);
+    if (!isNaN(numericValue) && numericValue > 0) {
+      setFocusDuration(numericValue); // Update duration state immediately for potential confirmation
+      setIsCustomDurationSelected(true);
+    } else if (value === "") {
+      // If input is cleared, revert to the last *preset* or default, and deselect custom
+      // Find the currently selected preset or default
+      const currentPreset = DURATION_OPTIONS.includes(focusDuration)
+        ? focusDuration
+        : DURATION_OPTIONS[0];
+      setFocusDuration(currentPreset);
+      setIsCustomDurationSelected(false);
+    } else {
+      // Invalid input like text or zero/negative
+      setIsCustomDurationSelected(true); // Still mark as custom input attempt
+      setFocusDuration(0); // Set focus duration to an invalid state to prevent proceeding
+    }
+  };
+
+  // Selects custom duration input visually when clicked
+  const selectCustomDurationInput = () => {
+    setIsCustomDurationSelected(true);
+    // Don't change focusDuration here, only on valid input change or confirmation
+  };
+
+  // **MODIFIED:** Renamed for clarity, now moves to music step
+  const handleConfirmDurationStep = () => {
+    if (isCustomDurationSelected) {
+      // If custom is selected, try to confirm it
+      handleConfirmCustomDuration(); // This will validate and potentially move step
+    } else if (focusDuration > 0) {
+      // If a valid preset is selected
+      setSetupStep("music");
+    } else {
+      toast.error(
+        "Please set a valid focus duration (must be greater than 0)."
+      );
+    }
   };
 
   const handleSelectMusic = (soundName: AmbientSoundName) => {
     ambientSoundHook.selectSound(soundName);
   };
 
-  // Modified handleStartFocusSession: Request fullscreen, then start
+  // **REMOVED:** handleMuteSound (as per request for single top-right control)
+
   const handleStartFocusSession = useCallback(() => {
     if (!selectedTask || focusDuration <= 0) {
       toast.error("Configuration incomplete. Cannot start focus session.");
-      resetState(); // Reset fully if config is bad
+      resetState(); // Go back to idle if config is bad
       return;
     }
-
-    // 1. Request Fullscreen
-    enterFullscreen(); // Fire and forget, the listener will update state
-
-    // 2. Start Timer (don't wait for fullscreen confirmation)
+    enterFullscreen();
     startTimer();
-
-    // 3. Play Sound
     if (
       ambientSoundHook.currentSound &&
       ambientSoundHook.currentSound !== "None"
     ) {
       ambientSoundHook.playSound();
     }
-
-    // 4. Set state to active
     setSetupStep("active");
     toast.success(`Focus session started for ${selectedTask.name}`);
   }, [
     selectedTask,
     focusDuration,
-    enterFullscreen, // Add dependency
+    enterFullscreen,
     startTimer,
     ambientSoundHook,
-    resetState, // Add dependency for the error case
+    resetState, // Added resetState dependency
   ]);
 
-  // Effect for cleanup on unmount (timer and potential fullscreen exit)
   useEffect(() => {
-    // Store the ref's current value for the cleanup function
-    const currentRef = componentRef.current;
     return () => {
-      // Cleanup timer
-      if (timerIntervalId) {
-        clearInterval(timerIntervalId);
-        console.log("DeepWork component unmounted, clearing timer interval.");
-      }
-      // Cleanup fullscreen if this component was the fullscreen element when unmounted
-      // Use the stored ref value in case the ref gets cleared before cleanup
-      if (document.fullscreenElement === currentRef) {
-        document
-          .exitFullscreen()
-          .catch((err) =>
-            console.error("Error exiting fullscreen on unmount:", err)
-          );
+      if (timerIntervalId) clearInterval(timerIntervalId);
+      if (document.fullscreenElement) {
+        exitFullscreen();
       }
     };
-  }, [timerIntervalId]); // Only depends on timerIntervalId now, as componentRef is stable
+  }, [timerIntervalId, exitFullscreen]);
 
   // --- Render Logic ---
 
   const renderIdle = () => (
-    <div className="flex flex-col h-full items-center justify-center text-center p-4">
-      <Timer size={36} className="text-primary-blue mb-6" />
-      <h1 className="text-xl font-medium text-primary-black dark:text-primary-white mb-2">
-        Deep Work Session
-      </h1>
-      <p className="text-sm text-secondary-black dark:text-secondary-white opacity-60 mb-8 max-w-xs">
-        Create a distraction-free environment for focused work.
-      </p>
-      <button
-        onClick={handleStartSetup}
-        className="px-8 py-3 bg-primary-blue text-secondary-white rounded-lg flex items-center justify-center space-x-2 hover:bg-primary-blue-hover transition-colors focus:outline-none focus:ring-2 focus:ring-primary-blue-ring"
-      >
-        <span className="font-medium">Begin</span>
-        <ChevronRight size={18} />
-      </button>
+    <div className="flex flex-col items-center justify-center gap-6 py-4 w-full h-full">
+      <div className="flex flex-col items-center gap-2">
+        <div className="relative flex items-center justify-center w-12 h-12">
+          <div className="absolute w-12 h-12 rounded-full bg-secondary-white dark:bg-secondary-black" />
+          <Focus className="w-6 h-6 text-secondary-black dark:text-secondary-white z-10" />
+        </div>
+        <h3 className="text-lg font-medium text-secondary-black dark:text-secondary-white">
+          Deep Focus
+        </h3>
+        <p className="text-xs text-primary-black dark:text-gray-300 opacity-70 px-2 text-center">
+          A distraction-free environment for your most important work
+        </p>
+      </div>
+      <div className="flex flex-col items-center gap-3 w-full">
+        <button
+          onClick={handleStartSetup}
+          className="w-full max-w-[220px] px-4 py-3 flex items-center justify-center bg-secondary-black text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-600"
+        >
+          Start Focus Session
+        </button>
+      </div>
     </div>
   );
 
   const renderTaskSelection = () => (
-    <div className="flex flex-col h-full p-2">
-      <h2 className="text-lg font-semibold mb-5 text-center text-primary-black dark:text-primary-white">
-        SELECT FOCUS TASK
-      </h2>
-      <div className="flex-grow overflow-y-auto space-y-3 mb-4 pr-2 -mr-2">
-        {/* Task List */}
+    <>
+      <div className="flex items-center justify-between mb-3">
+        {" "}
+        {/* **MODIFIED:** Reduced mb */}
+        <h2 className="text-lg font-semibold text-secondary-black dark:text-secondary-white">
+          Choose Your Task
+        </h2>
+        <button
+          onClick={handleStopFocus}
+          aria-label="Close task selection"
+          className="p-1.5 text-secondary-black/60 dark:text-secondary-white/60 hover:text-secondary-black dark:hover:text-secondary-white rounded-md transition-colors"
+        >
+          <X size={18} />
+        </button>
+      </div>
+      {/* **MODIFIED:** Reduced space-y, added max-h-[calc(100%-...)] and overflow-y-auto */}
+      <div className="flex-grow space-y-2 overflow-y-auto pr-1 max-h-[calc(100%-130px)]">
+        {" "}
+        {/* Adjust max-h based on surrounding elements */}
         {status === "authenticated" && (
           <>
-            <h3 className="text-md font-medium text-left text-secondary-black dark:text-secondary-white mb-3 sticky top-0 py-1 z-10 bg-white/80 dark:bg-zinc-900/80">
+            <h3 className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider mb-1">
               Your Tasks
             </h3>
             {isLoadingTasks && (
-              <div className="flex justify-center items-center py-4 text-secondary-black dark:text-secondary-white opacity-60">
-                <Loader2 className="animate-spin mr-2" /> Loading...
+              <div className="flex items-center text-secondary-black/60 dark:text-secondary-white/60 py-2">
+                <Loader className="animate-spin mr-2" size={16} />
+                Loading tasks...
               </div>
             )}
             {isErrorTasks && errorTasks && (
-              <div className="text-third-red text-sm p-2 rounded border border-third-red">
+              <div className="text-red-500 text-sm p-3 rounded-md bg-red-500/10">
                 Could not load tasks: {errorTasks.message}
               </div>
             )}
             {!isLoadingTasks &&
               !isErrorTasks &&
               incompleteTasks.length === 0 && (
-                <p className="text-secondary-black dark:text-secondary-white opacity-60 text-sm text-left px-1 py-2">
+                <p className="text-secondary-black/60 dark:text-secondary-white/60 text-sm py-2">
                   No incomplete tasks found.
                 </p>
               )}
@@ -368,303 +419,414 @@ const DeepWork: React.FC = () => {
                 <button
                   key={task.id}
                   onClick={() => handleSelectTaskListTask(task)}
-                  className="w-full text-left p-3 bg-secondary-white dark:bg-secondary-black rounded-lg border border-bdr-light dark:border-bdr-dark hover:border-primary-blue dark:hover:border-primary-blue transition-all flex items-center group"
+                  className="w-full text-left p-3 bg-secondary-white dark:bg-secondary-black rounded-md hover:bg-secondary-black/5 dark:hover:bg-secondary-white/10 text-secondary-black dark:text-secondary-white flex items-center group transition-colors"
+                  title={task.name}
                 >
-                  <List
-                    size={18}
-                    className="mr-3 text-primary-blue flex-shrink-0"
-                  />
-                  <span className="flex-grow truncate text-secondary-black dark:text-secondary-white">
-                    {task.name}
-                  </span>
-                  <ChevronRight
-                    size={16}
-                    className="ml-2 text-accent-grey group-hover:text-primary-blue transition-transform group-hover:translate-x-1"
-                  />
+                  <span className="flex-grow truncate">{task.name}</span>
                 </button>
               ))}
           </>
         )}
         {status === "unauthenticated" && (
-          <p className="text-secondary-black dark:text-secondary-white opacity-60 text-sm text-left p-2 rounded border border-bdr-light dark:border-bdr-dark">
+          <p className="text-secondary-black/60 dark:text-secondary-white/60 text-sm p-3 rounded-md bg-secondary-black/5 dark:bg-secondary-white/5">
             Sign in to select from your saved tasks.
           </p>
         )}
-        {/* Custom Task */}
-        <h3 className="text-md font-medium text-left text-secondary-black dark:text-secondary-white mt-6 mb-3 sticky top-0 py-1 z-10 bg-white/80 dark:bg-zinc-900/80">
-          Custom Focus
+      </div> {/* End of scrollable task list */}
+      {/* Custom Task Section - Outside the scrollable list area */}
+      <div className="mt-auto pt-3 flex-shrink-0">
+        {" "}
+        {/* Pushes to bottom, adds padding top */}
+        <h3 className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider mb-1.5">
+          Custom Task
         </h3>
-        <div className="flex gap-2">
-          <input
-            ref={customTaskInputRef}
-            type="text"
-            value={customTaskName}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setCustomTaskName(e.target.value)
-            }
-            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
-              e.key === "Enter" &&
-              customTaskName.trim() &&
-              handleSelectCustomTask()
-            }
-            placeholder="E.g., Write project proposal"
-            className="flex-grow p-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent placeholder-accent-grey text-primary-black dark:text-primary-white"
-          />
+        {!showCustomTaskInput ? (
           <button
-            onClick={handleSelectCustomTask}
-            disabled={!customTaskName.trim()}
-            className="p-3 bg-primary-blue text-secondary-white rounded-lg hover:bg-primary-blue-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-            aria-label="Confirm custom task"
+            onClick={() => {
+              setShowCustomTaskInput(true);
+              setTimeout(() => customTaskInputRef.current?.focus(), 0);
+            }}
+            className="w-full flex items-center justify-center gap-2 p-3 bg-secondary-white dark:bg-secondary-black rounded-md hover:bg-secondary-black/5 dark:hover:bg-secondary-white/10 text-secondary-black/70 dark:text-secondary-white/70 border border-dashed border-secondary-black/20 dark:border-secondary-white/20 transition-colors"
           >
-            <Edit3 size={20} />
+            <Plus size={16} />
+            Add Custom Task
           </button>
-        </div>
+        ) : (
+          <div className="flex gap-2">
+            {/* **MODIFIED:** Applied user's className, added min-w-0, Enter/Esc handlers */}
+            <input
+              ref={customTaskInputRef}
+              type="text"
+              value={customTaskName}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setCustomTaskName(e.target.value)
+              }
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                if (e.key === "Enter") {
+                  handleConfirmCustomTask(); // Confirm on Enter
+                } else if (e.key === "Escape") {
+                  setShowCustomTaskInput(false); // Cancel on Escape
+                  setCustomTaskName("");
+                }
+              }}
+              onBlur={() => {
+                // Optional: confirm on blur if input is valid and non-empty
+                if (customTaskName.trim()) {
+                  // Maybe only confirm if user *intended* to move on?
+                  // For now, Enter/Esc are primary actions. Blur just loses focus.
+                } else {
+                  // If blurred while empty, maybe hide it?
+                  // setShowCustomTaskInput(false);
+                }
+              }}
+              placeholder="Enter custom task name"
+              className={`${inputClassName} min-w-0`} // Applied requested style + min-w-0
+            />
+            {/* **REMOVED:** Check button removed as per Enter/Esc request */}
+            {/*
+            <button
+              onClick={handleConfirmCustomTask} // Changed from handleSelectCustomTask
+              disabled={!customTaskName.trim()}
+              className="p-3 aspect-square bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center flex-shrink-0"
+              aria-label="Confirm custom task"
+            >
+              <Check size={16} />
+            </button>
+             */}
+          </div>
+        )}
       </div>
-      {/* Cancel button */}
-      <button
-        onClick={handleStopFocus}
-        className="mt-auto pt-4 text-sm text-secondary-black dark:text-secondary-white opacity-60 hover:text-third-red hover:opacity-100 transition-colors self-center"
-      >
-        Cancel
-      </button>
-    </div>
+    </>
   );
 
   const renderDurationSelection = () => (
-    <div className="flex flex-col h-full text-center p-4">
-      <h2 className="text-lg font-semibold mb-4 text-primary-black dark:text-primary-white">
-        SET DURATION
-      </h2>
-      <p className="mb-6 text-secondary-black dark:text-secondary-white text-sm px-4">
-        Task:{" "}
-        <span className="font-medium break-words">
-          {selectedTask?.name || "..."}
-        </span>
-      </p>
-      <div className="flex-grow flex flex-col items-center justify-center space-y-6">
-        <Clock4 size={36} className="text-primary-blue mb-4" />
-        <div className="flex flex-wrap justify-center gap-3 mb-4">
+    <>
+      <div className="flex items-center mb-3">
+        {" "}
+        {/* **MODIFIED:** Reduced mb */}
+        <button
+          onClick={() => setSetupStep("task")}
+          aria-label="Back to task selection"
+          className="p-1.5 text-secondary-black/60 dark:text-secondary-white/60 hover:text-secondary-black dark:hover:text-secondary-white rounded-md mr-2 transition-colors"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <h2 className="text-lg font-semibold text-secondary-black dark:text-secondary-white">
+          Set Duration
+        </h2>
+      </div>
+      {/* Task display */}
+      <div className="p-3 bg-secondary-black/5 dark:bg-secondary-white/5 rounded-md mb-3">
+        {" "}
+        {/* **MODIFIED:** Reduced p and mb */}
+        <div className="flex items-center">
+          <Target
+            size={16}
+            className="mr-2 text-secondary-black/60 dark:text-secondary-white/60 flex-shrink-0" // Reduced mr
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-secondary-black/60 dark:text-secondary-white/60">
+              Task
+            </p>
+            <h3
+              className="text-sm font-medium text-secondary-black dark:text-secondary-white truncate"
+              title={selectedTask?.name}
+            >
+              {selectedTask?.name || "..."}
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      {/* **MODIFIED:** Reduced space-y, added max-h and overflow */}
+      <div className="flex-grow space-y-2 overflow-y-auto pr-1 max-h-[calc(100%-150px)]">
+        {" "}
+        {/* Adjust max-h */}
+        <h3 className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider mb-1">
+          Focus Duration (minutes)
+        </h3>
+        <div className="grid grid-cols-2 gap-2">
+          {" "}
+          {/* Reduced gap */}
           {DURATION_OPTIONS.map((duration) => (
             <button
               key={duration}
-              onClick={() => handleSetDuration(duration)}
-              className={`px-5 py-2.5 rounded-lg text-md font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 focus:ring-primary-blue ${
-                focusDuration === duration
-                  ? "bg-primary-blue text-secondary-white border-primary-blue"
-                  : "bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white border-bdr-light dark:border-bdr-dark hover:border-primary-blue"
+              onClick={() => handleSetDurationPreset(duration)}
+              // **MODIFIED:** Removed scale-105 from selected state to prevent border distortion
+              className={`p-3 rounded-md text-center transition-all duration-150 text-sm border ${
+                !isCustomDurationSelected && focusDuration === duration
+                  ? "bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black border-transparent shadow-md ring-1 ring-black/10 dark:ring-white/10" // Added subtle ring instead of scale
+                  : "bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white border-secondary-black/20 dark:border-secondary-white/20 hover:bg-secondary-black/5 dark:hover:bg-secondary-white/10 hover:border-secondary-black/40 dark:hover:border-secondary-white/40"
               }`}
             >
-              {duration} min
+              <div className="font-semibold">{duration}</div>
+              <div className="text-xs opacity-70">minutes</div>
             </button>
           ))}
         </div>
-      </div>
+        <div className="pt-2">
+          {" "}
+          {/* **MODIFIED:** Reduced pt */}
+          <label
+            htmlFor="custom-duration"
+            className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider block mb-1" // Reduced mb
+          >
+            Custom Duration
+          </label>
+          <div className="flex gap-2 items-center">
+            {/* **MODIFIED:** Applied user's className, added min-w-0, Enter/Esc handlers */}
+            <input
+              ref={customDurationInputRef}
+              id="custom-duration"
+              type="number"
+              min="1"
+              value={customDurationInput}
+              onChange={handleCustomDurationChange}
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                if (e.key === "Enter") {
+                  handleConfirmDurationStep(); // Confirm Step on Enter (will validate)
+                } else if (e.key === "Escape") {
+                  // Revert to last preset on Escape
+                  const lastPreset = DURATION_OPTIONS.includes(focusDuration)
+                    ? focusDuration
+                    : DURATION_OPTIONS[0];
+                  handleSetDurationPreset(lastPreset);
+                  (e.target as HTMLInputElement).blur(); // Remove focus
+                }
+              }}
+              onFocus={selectCustomDurationInput} // Select custom style on focus
+              onBlur={() => {
+                // Validate on blur only if custom is still selected and input is invalid
+                const numericValue = parseInt(customDurationInput, 10);
+                if (
+                  isCustomDurationSelected &&
+                  (isNaN(numericValue) || numericValue <= 0) &&
+                  customDurationInput !== "" // Don't invalidate if just cleared
+                ) {
+                  toast.error(
+                    "Invalid custom duration. Please enter a positive number."
+                  );
+                  // Optionally revert or keep focus
+                  // customDurationInputRef.current?.focus();
+                } else if (
+                  isCustomDurationSelected &&
+                  customDurationInput === ""
+                ) {
+                  // If blurred while empty and custom was selected, revert to default
+                  handleSetDurationPreset(DURATION_OPTIONS[0]);
+                }
+              }}
+              placeholder="e.g., 45"
+              // **MODIFIED:** Applied requested style + min-w-0, conditional styling adjusted
+              className={`${inputClassName} min-w-0 ${
+                isCustomDurationSelected
+                  ? "border-primary-blue ring-1 ring-primary-blue/20 dark:ring-primary-blue/10" // Use focus style when selected
+                  : "" // Default style from inputClassName handles non-selected
+              }`}
+            />
+          </div>
+        </div>
+      </div>{" "}
+      {/* End of scrollable duration area */}
       <button
-        onClick={handleConfirmDuration}
-        disabled={focusDuration <= 0}
-        className="w-full max-w-xs mx-auto mt-8 py-3 px-6 bg-primary-blue text-secondary-white rounded-lg text-lg font-medium hover:bg-primary-blue-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        onClick={handleConfirmDurationStep} // Use updated handler
+        disabled={focusDuration <= 0} // Simple validation: must be > 0
+        className="mt-auto pt-3 w-full py-3 bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex-shrink-0" // Pushes to bottom
       >
-        Next <ChevronRight size={20} />
+        Next
       </button>
-      <button
-        onClick={() => setSetupStep("task")}
-        className="mt-4 text-sm text-secondary-black dark:text-secondary-white opacity-60 hover:opacity-100 transition-colors"
-      >
-        Back
-      </button>
-    </div>
+    </>
   );
 
   const renderMusicSelection = () => (
-    <div className="flex flex-col h-full p-4">
-      <h2 className="text-lg font-semibold mb-4 text-center text-primary-black dark:text-primary-white">
-        AMBIENT SOUND
-      </h2>
-      <p className="text-sm text-secondary-black dark:text-secondary-white opacity-60 mb-6 text-center">
-        Choose a sound for your session (optional)
+    <>
+      <div className="flex items-center mb-3">
+        {" "}
+        {/* Reduced mb */}
+        <button
+          onClick={() => setSetupStep("duration")}
+          aria-label="Back to duration selection"
+          className="p-1.5 text-secondary-black/60 dark:text-secondary-white/60 hover:text-secondary-black dark:hover:text-secondary-white rounded-md mr-2 transition-colors"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <h2 className="text-lg font-semibold text-secondary-black dark:text-secondary-white">
+          Ambient Sound
+        </h2>
+      </div>
+      <p className="text-sm text-secondary-black/60 dark:text-secondary-white/60 mb-3 flex-shrink-0">
+        {" "}
+        {/* Reduced mb */}
+        Select an optional ambient sound to play during your session.
       </p>
-      <div className="flex-grow overflow-y-auto space-y-3 mb-4 pr-2 -mr-2">
+      {/* **MODIFIED:** Reduced space-y, added max-h and overflow */}
+      <div className="flex-grow overflow-y-auto space-y-2 pr-1 max-h-[calc(100%-110px)]">
+        {" "}
+        {/* Adjust max-h */}
         {ambientSoundNames.map((name) => (
           <button
             key={name}
             onClick={() => handleSelectMusic(name as AmbientSoundName)}
-            className={`w-full text-left p-3 rounded-lg border transition-all flex items-center justify-between group focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 focus:ring-primary-blue ${
+            className={`w-full p-3 rounded-md transition-colors flex items-center justify-between text-sm text-left ${
               ambientSoundHook.currentSound === name
-                ? "bg-primary-blue/10 dark:bg-primary-blue/20 border-primary-blue" // Highlight selected
-                : "bg-secondary-white dark:bg-secondary-black border-bdr-light dark:border-bdr-dark text-secondary-black dark:text-secondary-white hover:border-primary-blue"
+                ? "bg-secondary-black/10 dark:bg-secondary-white/10 ring-1 ring-inset ring-secondary-black/20 dark:ring-secondary-white/20"
+                : "bg-secondary-white dark:bg-secondary-black hover:bg-secondary-black/5 dark:hover:bg-secondary-white/5"
             }`}
           >
-            <div className="flex items-center text-secondary-black dark:text-secondary-white">
-              <span className="text-xl mr-3">
+            <div className="flex items-center min-w-0">
+              <span className="text-lg mr-3 flex-shrink-0">
                 {ambientSoundHook.availableSounds[name as AmbientSoundName]
                   ?.emoji || "🎵"}
               </span>
-              <span>{name}</span>
+              <span className="text-secondary-black dark:text-secondary-white truncate">
+                {name}
+              </span>
             </div>
             {ambientSoundHook.currentSound === name && (
-              <Check size={18} className="text-primary-blue" />
+              <CheckCircle
+                size={18}
+                className="text-secondary-black/80 dark:text-secondary-white/80 flex-shrink-0 ml-2"
+              />
             )}
           </button>
         ))}
-      </div>
+      </div>{" "}
+      {/* End scrollable music list */}
       <button
-        // Use the specific handler to start the session AND request fullscreen
         onClick={handleStartFocusSession}
-        className="w-full max-w-xs mx-auto mt-8 py-3 px-6 bg-primary-blue text-secondary-white rounded-lg text-lg font-medium hover:bg-primary-blue-hover transition-colors flex items-center justify-center gap-2"
+        className="mt-auto pt-3 w-full py-3 bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black rounded-md text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 flex-shrink-0" // Pushed to bottom
       >
-        Start Focus <Check size={20} />
+        <Play size={16} />
+        Start Focus
       </button>
-      <button
-        onClick={() => setSetupStep("duration")}
-        className="mt-4 text-sm text-secondary-black dark:text-secondary-white opacity-60 hover:opacity-100 transition-colors self-center"
-      >
-        Back
-      </button>
-    </div>
+    </>
   );
 
-  // Render active state - looks good for fullscreen already
   const renderActive = () => (
-    // This container will fill the fullscreen element.
-    // The dark background is appropriate for focus.
-    <div className="flex flex-col h-full items-center justify-between text-center p-4 sm:p-6 md:p-8 bg-[#141618] text-secondary-white relative">
-      {/* Controls Container - Top Right */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-3 z-10">
-        {/* Music Control Button */}
+    <div className="flex flex-col h-full items-center justify-between p-6 bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white relative">
+      {" "}
+      {/* Slightly less padding */}
+      {/* **MODIFIED:** Only Top Right Controls */}
+      <div className="absolute top-4 right-4 flex items-center gap-3 z-10">
+        {/* Volume Toggle Button */}
         {ambientSoundHook.currentSound &&
           ambientSoundHook.currentSound !== "None" && (
             <button
               onClick={
                 ambientSoundHook.isPlaying
-                  ? ambientSoundHook.pauseSound
-                  : ambientSoundHook.playSound
+                  ? ambientSoundHook.pauseSound // Pause action
+                  : ambientSoundHook.playSound // Play action
               }
-              className="p-2.5 rounded-lg border border-bdr-dark text-secondary-white hover:border-primary-blue transition-colors focus:outline-none focus:ring-2 focus:ring-primary-blue"
+              className="p-2 rounded-md bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 transition-colors text-secondary-black/80 dark:text-secondary-white/80"
               aria-label={
                 ambientSoundHook.isPlaying
                   ? "Pause ambient sound"
                   : "Play ambient sound"
               }
             >
+              {/* Icon changes based on isPlaying state */}
               {ambientSoundHook.isPlaying ? (
-                <Volume2 size={20} />
+                <Volume2 size={18} /> // Icon when playing
               ) : (
-                <VolumeX size={20} />
+                <VolumeX size={18} /> // Icon when paused or stopped
               )}
             </button>
           )}
-        {/* Manual Fullscreen Toggle Button - Optional */}
-        {/* Consider adding if explicit control is desired */}
-        {/* <button
-                    onClick={isFullscreen ? exitFullscreen : enterFullscreen}
-                    className="p-2.5 rounded-lg border border-bdr-dark text-secondary-white hover:border-primary-blue transition-colors focus:outline-none focus:ring-2 focus:ring-primary-blue"
-                    aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                >
-                    {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-                </button> */}
-
-        {/* Stop Session Button */}
+        {/* Close Button */}
         <button
-          onClick={handleStopFocus} // Use the callback that also handles exiting fullscreen
-          className="p-2.5 rounded-lg border border-third-red text-third-red hover:bg-third-red hover:text-secondary-white transition-colors focus:outline-none focus:ring-2 focus:ring-third-red"
+          onClick={handleStopFocus}
+          className="p-2 rounded-md bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 transition-colors text-secondary-black/80 dark:text-secondary-white/80"
           aria-label="End focus session"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
       </div>
 
-      {/* Main Content Area - Centered */}
-      <div className="flex flex-col items-center justify-center w-full flex-grow mt-10">
-        <p className="text-md text-secondary-white opacity-60 mb-2 uppercase tracking-wider">
-          Focusing on
-        </p>
-        <h2 className="text-2xl md:text-3xl lg:text-4xl font-medium mb-10 px-4 break-words max-w-xl lg:max-w-2xl leading-tight">
+      {/* Main Content Area (Centered) */}
+      <div className="flex flex-col items-center justify-center text-center space-y-4 flex-grow pt-10">
+        {" "}
+        {/* Added flex-grow and some padding-top */}
+        <h2 className="text-xl font-medium text-secondary-black/80 dark:text-secondary-white/80 break-words max-w-md px-4">
           {selectedTask?.name || "Deep Work"}
         </h2>
-
-        {/* Timer Display */}
-        <div className="mb-8 relative scale-90 sm:scale-100">
-          {" "}
-          {/* Adjust scale slightly on smaller screens if needed */}
-          <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-full border-4 border-primary-blue flex items-center justify-center">
-            <div className="w-full h-full rounded-full border-2 border-primary-blue/30 flex flex-col items-center justify-center p-4">
-              {remainingTime !== null ? (
-                <span className="text-5xl sm:text-6xl md:text-7xl font-medium text-secondary-white tracking-wider tabular-nums">
-                  {formatRemainingTime(remainingTime)}
-                </span>
-              ) : (
-                <Loader2 className="animate-spin text-primary-blue" size={48} />
-              )}
-              {endTime && (
-                <p className="text-xs sm:text-sm text-secondary-white opacity-60 mt-2">
-                  <Timer size={10} className="inline mr-1" /> Ends at {endTime}
-                </p>
-              )}
-            </div>
-          </div>
+        <div className="text-7xl md:text-8xl font-semibold tracking-tight tabular-nums text-secondary-black dark:text-secondary-white">
+          {remainingTime !== null ? (
+            formatRemainingTime(remainingTime)
+          ) : (
+            <Loader className="animate-spin inline-block" size={60} />
+          )}
         </div>
-
-        {/* Playing sound indicator */}
+        {endTime && (
+          <div className="flex items-center justify-center gap-2 text-secondary-black/60 dark:text-secondary-white/60 text-sm">
+            <Clock size={14} />
+            <span>Ends at {endTime}</span>
+          </div>
+        )}
         {ambientSoundHook.currentSound &&
           ambientSoundHook.currentSound !== "None" && (
-            <p className="text-xs sm:text-sm text-secondary-white opacity-60 mt-4 flex items-center gap-1.5">
-              {ambientSoundHook.isPlaying ? (
-                <Volume2 size={12} className="text-third-green" />
-              ) : (
-                <VolumeX size={12} className="text-third-red" />
-              )}
-              {ambientSoundHook.currentSound}{" "}
-              {
-                ambientSoundHook.availableSounds[ambientSoundHook.currentSound]
-                  ?.emoji
-              }
-            </p>
+            <div className="flex items-center justify-center gap-2 text-secondary-black/60 dark:text-secondary-white/60 text-sm">
+              <span className="text-lg">
+                {
+                  ambientSoundHook.availableSounds[
+                    ambientSoundHook.currentSound
+                  ]?.emoji
+                }
+              </span>
+              <span>
+                {ambientSoundHook.currentSound}{" "}
+                {ambientSoundHook.isPlaying ? "playing" : "paused"}
+              </span>
+            </div>
           )}
       </div>
 
-      {/* End Focus Button - Bottom */}
-      <button
-        onClick={handleStopFocus} // Use the callback that also handles exiting fullscreen
-        className="mb-4 px-6 py-2.5 rounded-lg border border-bdr-dark flex items-center justify-center space-x-2 transition-colors hover:border-third-red hover:text-third-red focus:outline-none focus:ring-2 focus:ring-third-red"
-      >
-        <Moon size={16} />
-        <span className="text-sm font-medium">End Focus</span>
-      </button>
+      {/* Bottom Buttons Area */}
+      <div className="flex items-center justify-center gap-4 pb-4 flex-shrink-0">
+        {" "}
+        {/* Centered the button */}
+        {/* **REMOVED:** Mute button from the bottom/middle area */}
+        <button
+          onClick={handleStopFocus}
+          className="px-6 py-2 border border-secondary-black/20 dark:border-secondary-white/20 rounded-md text-sm hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-secondary-black/80 dark:text-secondary-white/80"
+        >
+          End Session
+        </button>
+      </div>
     </div>
   );
 
-  // Main component render
-  // Adjust height logic: setup steps have dynamic height, active step fills container
-  // The browser handles the actual fullscreen sizing of the element `componentRef` points to.
+  // --- Main Return ---
   return (
     <div
       ref={componentRef}
-      className={`relative p-0 ${
+      // **MODIFIED:** Adjusted height for setup steps for better spacing
+      className={`relative rounded-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/50 dark:border-zinc-800/50 ${
         setupStep === "active"
-          ? "bg-transparent"
-          : "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md"
-      } rounded-xl border ${
-        setupStep === "active"
-          ? "border-transparent"
-          : "border-slate-200/50 dark:border-zinc-800/50"
-      } flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-        setupStep === "active"
-          ? "h-full" // Let renderActive's internal flexbox control layout
+          ? "h-full !bg-secondary-white dark:!bg-secondary-black !border-transparent" // Active styles override
           : setupStep === "idle"
           ? "h-80"
-          : "h-[calc(100vh-10rem)] max-h-[700px]"
+          : "h-[500px]" // Reduced height for setup steps
       }`}
-      // Add specific styles for when the element *is* fullscreen via CSS pseudo-class if needed
-      // e.g., in your global CSS:
-      // .deep-work-container:fullscreen { border-radius: 0; border: none; }
-      id="deep-work-container" // Optional ID for easier CSS targeting
+      id="deep-work-container"
     >
-      {/* Conditional rendering based on setupStep */}
-      {setupStep === "idle" && renderIdle()}
-      {setupStep === "task" && renderTaskSelection()}
-      {setupStep === "duration" && renderDurationSelection()}
-      {setupStep === "music" && renderMusicSelection()}
-      {setupStep === "active" && renderActive()}
+      {setupStep === "active" ? (
+        renderActive()
+      ) : (
+        // Container for setup steps (non-active)
+        <div className="relative p-4 flex flex-col h-full overflow-hidden">
+          {/* Widget Heading */}
+          <h1 className="text-sm font-medium text-secondary-black dark:text-secondary-white opacity-40 mb-2 uppercase tracking-wider flex-shrink-0">
+            DEEP WORK
+          </h1>
+          {/* Inner container for steps */}
+          <div className="flex-grow flex flex-col overflow-hidden">
+            {setupStep === "idle" && renderIdle()}
+            {setupStep === "task" && renderTaskSelection()}
+            {setupStep === "duration" && renderDurationSelection()}
+            {setupStep === "music" && renderMusicSelection()}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

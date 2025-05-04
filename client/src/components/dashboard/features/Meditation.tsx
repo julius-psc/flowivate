@@ -183,9 +183,9 @@ const Meditation = () => {
           <div className="flex flex-col items-center gap-2">
             <div className="relative flex items-center justify-center w-12 h-12">
               <div className="absolute w-12 h-12 rounded-full bg-secondary-white dark:bg-secondary-black" />
-              <IconWind className="w-6 h-6 text-secondary-black dark:text-white z-10" />
+              <IconWind className="w-6 h-6 text-secondary-black dark:text-secondary-white z-10" />
             </div>
-            <h3 className="text-lg font-medium text-primary-black dark:text-white">
+            <h3 className="text-lg font-medium text-primary-black dark:text-secondary-white">
               Mindful Breathing
             </h3>
             <p className="text-xs text-primary-black dark:text-gray-300 opacity-70 px-2">

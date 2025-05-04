@@ -11,14 +11,20 @@ interface RequestBody {
 
 // Define the structure for the breakdown prompt specifically
 const breakdownPromptTemplate = (task: string): string => `
-Break down the following complex task into smaller, actionable subtasks.
-For each subtask, assign a priority level: 3 for High, 2 for Medium, 1 for Low, and 0 for None.
-Return the result ONLY as a valid JSON array of objects. Each object in the array should have the following structure:
-{ "name": "Subtask description", "priority": <0|1|2|3> }
+Analyze the complex task below and break it down into a concise list of approximately 5-8 actionable, high-level subtasks.
 
-Do NOT include any introductory text, explanations, or code block formatting (like \`\`\`json). Just the raw JSON array.
+Instructions:
+1.  Focus on the *major* steps or components required to complete the task. Avoid overly granular micro-tasks.
+2.  Ensure each subtask description is specific, clear, and starts with an action verb (e.g., Research, Design, Implement, Write, Review, Schedule, Finalize).
+3.  Assign a priority level to each subtask: 3 (High), 2 (Medium), 1 (Low), 0 (None - for optional or non-critical items if applicable).
+4.  Format the output *strictly* as a valid JSON array of objects.
+5.  Each object in the array must have exactly two keys: "name" (string: the subtask description) and "priority" (integer: 0, 1, 2, or 3).
 
-Task to break down: "${task}"
+Output Constraints:
+* The response MUST contain ONLY the raw JSON array.
+* Do NOT include any introductory sentences, concluding remarks, explanations, apologies, or markdown code fences (like \`\`\`json).
+
+Complex Task: "${task}"
 
 JSON Array:
 `;
