@@ -1,71 +1,84 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from 'react';
-import { useTheme } from "next-themes";
-// Import icons from lucide-react
-import { Sun, Moon, Laptop } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
 
-// Interface for theme options for better type safety
-interface ThemeOption {
-  name: string; // Corresponds to themes supported by next-themes ('light', 'dark', 'system')
-  label: string; // User-friendly label
-  icon: React.ElementType; // Icon component (Lucide icons are compatible)
-}
+type Theme = 'default' | 'candy';
 
-export default function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
+const ThemeToggle: React.FC = () => {
+  const [theme, setTheme] = useState<Theme>('default');
 
-  // useEffect only runs on the client, essential for theme switching components
-  // to avoid hydration errors.
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
-    setMounted(true);
+    setIsMounted(true);
+  }, []); 
+
+  useEffect(() => {
+    // Only run this logic if the component has mounted
+    if (isMounted) {
+      const savedTheme = localStorage.getItem('theme') as Theme | null;
+      if (savedTheme === 'candy') {
+        setTheme(savedTheme); // Update state based on localStorage
+      }
+    }
+  }, [isMounted]);
+
+  useEffect(() => {
+    if (isMounted) {
+      const root = document.documentElement;
+      if (theme === 'default') {
+        root.removeAttribute('data-theme');
+        localStorage.removeItem('theme');
+      } else {
+        root.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+      }
+    }
+  }, [theme, isMounted]); // Also depends on isMounted
+
+  // Function to toggle the theme
+  const toggleTheme = useCallback(() => {
+    setTheme((prevTheme) => (prevTheme === 'default' ? 'candy' : 'default'));
   }, []);
 
-  // Define the theme options using Lucide icons
-  const themes: ThemeOption[] = [
-    { name: 'light', label: 'Light', icon: Sun },
-    { name: 'dark', label: 'Dark', icon: Moon },
-    { name: 'system', label: 'System', icon: Laptop } // Using Laptop icon for system preference
-  ];
-
-  // Until the component is mounted, we can render a placeholder or null
-  if (!mounted) {
-    // Render a simple placeholder matching the final dimensions
-    return <div className="inline-flex h-[36px] w-[100px] animate-pulse rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800"></div>;
+  if (!isMounted) {
+     return (
+        <button
+            style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: 'var(--color-accent-grey)', // Use default styles
+                color: 'var(--color-secondary-black)',
+                border: '1px solid var(--color-bdr-light)',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                opacity: 0.7, // Indicate loading state maybe
+            }}
+            aria-disabled="true" // Disable until mounted and theme loaded
+        >
+            Loading Theme...
+        </button>
+    );
   }
 
-  return (
-    <div className="inline-flex items-center p-0.5 space-x-1 bg-gray-200/80 dark:bg-gray-700/80 rounded-lg border border-gray-300/70 dark:border-gray-600/70 shadow-sm">
-      {themes.map((t) => {
-        const isActive = theme === t.name;
-        const IconComponent = t.icon; // Assign to a variable starting with uppercase for JSX
 
-        return (
-          <button
-            key={t.name}
-            type="button"
-            className={`
-              p-1.5 rounded-md transition-colors duration-200 ease-in-out
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-800
-              ${isActive
-                ? 'bg-white dark:bg-gray-900 shadow-sm text-blue-600 dark:text-blue-400' // Active styles
-                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-300/60 dark:hover:bg-gray-600/60 hover:text-gray-700 dark:hover:text-gray-200' // Inactive styles
-              }
-            `}
-            title={`Set theme to ${t.label}`}
-            aria-label={`Set theme to ${t.label}`}
-            aria-pressed={isActive} // Indicate active state for screen readers
-            onClick={() => setTheme(t.name)}
-          >
-            {/* Render the Lucide icon component.
-                Lucide icons inherit color via 'currentColor' by default.
-                Explicit size can be set via props (e.g., size={20}) or Tailwind classes.
-                Using Tailwind classes here: */}
-            <IconComponent className="w-5 h-5" aria-hidden="true" />
-          </button>
-        );
-      })}
-    </div>
+  return (
+    <button
+      onClick={toggleTheme}
+      style={{
+        padding: '0.5rem 1rem',
+        backgroundColor: 'var(--color-accent-grey)',
+        color: 'var(--color-secondary-black)',
+        border: '1px solid var(--color-bdr-light)',
+        borderRadius: '0.375rem',
+        cursor: 'pointer',
+        transition: 'background-color 0.2s ease-in-out',
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-accent-grey-hover)'}
+      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-accent-grey)'}
+    >
+      Switch to {theme === 'default' ? 'Candy' : 'Default'} Theme
+    </button>
   );
-}
+};
+
+export default ThemeToggle;

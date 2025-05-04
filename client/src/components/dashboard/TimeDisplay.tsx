@@ -164,8 +164,8 @@ export default function TimeDisplay({
                     <div className="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse"></div> /* Basic loading pulse */
                 ) : streakCount && streakCount > 0 ? (
                     <span className="flex items-center gap-1 animate-fade-in" title={`${streakCount}-day streak`}>
-                        <IconFlameFilled className="w-5 h-auto text-primary-blue" />
-                        <span className="text-md font-semibold text-primary-blue ">{streakCount}</span>
+                        <IconFlameFilled className="w-5 h-auto text-primary" />
+                        <span className="text-md font-semibold text-primary ">{streakCount}</span>
                     </span>
                 ) : null /* No streak or not loading, render nothing */}
             </div>

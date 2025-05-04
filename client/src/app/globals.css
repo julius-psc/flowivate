@@ -10,7 +10,7 @@
 
 @theme {
   --font-display: "Sans Pro 3", "sans-serif";
-  --color-primary-blue: #0075C4;
+  --color-primary: #0075C4;
 
   --color-primary-blue-hover: #105C8E; /* Hover */
   --color-primary-blue-ring: #114162;
@@ -32,6 +32,12 @@
 
   --color-bdr-light: #DEE2E7;
   --color-bdr-dark: #394046;
+}
+
+@layer base {
+  [data-theme='candy'] {
+    --color-primary: #f9a8d4;
+  }
 }
 
 @layer utilities {

@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import Settings from "../privacy/Settings";
+import ThemeToggle from "../../../../themes/ThemeToggle"
+
 import {
   IconLayoutDashboard,
   IconStack2,
@@ -82,6 +84,7 @@ const Sidebar: React.FC = () => {
 
           {/* Bottom Actions */}
           <div className="flex flex-col items-center space-y-2 mt-4">
+            <ThemeToggle />
             <button
               onClick={() => setIsSettingsOpen(true)}
               className="p-2 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors"
