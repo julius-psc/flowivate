@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from "@/lib/authOptions";
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { NextResponse } from 'next/server';
 
 interface ChatConversation {
   _id: ObjectId;
@@ -13,9 +13,9 @@ interface ChatConversation {
   updatedAt: Date;
 }
 
-// GET /api/chats/[chatId] - Fetch a specific chat conversation
+// GET /api/chats/[chatId]
 export async function GET(
-  request: NextRequest,
+  _req: Request,
   context: { params: { chatId: string } }
 ) {
   try {
@@ -68,9 +68,9 @@ export async function GET(
   }
 }
 
-// DELETE /api/chats/[chatId] - Delete a specific chat conversation
+// DELETE /api/chats/[chatId]
 export async function DELETE(
-  request: NextRequest,
+  _req: Request,
   context: { params: { chatId: string } }
 ) {
   try {
