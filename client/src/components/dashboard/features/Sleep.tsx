@@ -160,9 +160,9 @@ export default function Sleep() {
 
   const getSleepBarStyle = (value: number | null) => {
     if (!value) return { height: "10px", colorClass: "bg-secondary-black" };
-    if (value >= 8) return { height: "70px", colorClass: "bg-primary-blue" };
-    if (value >= 4) return { height: "40px", colorClass: "bg-primary-blue" };
-    if (value >= 1) return { height: "20px", colorClass: "bg-primary-blue" };
+    if (value >= 8) return { height: "70px", colorClass: "bg-primary" };
+    if (value >= 4) return { height: "40px", colorClass: "bg-primary" };
+    if (value >= 1) return { height: "20px", colorClass: "bg-primary" };
     return { height: "10px", colorClass: "bg-gray-500" };
   };
 
@@ -183,9 +183,9 @@ export default function Sleep() {
       </div>
       <div className="">
         <div className="flex items-center justify-center">
-          <button onClick={handleDecrement} className="text-primary-blue text-2xl font-bold bg-transparent border-none cursor-pointer"> - </button>
+          <button onClick={handleDecrement} className="text-primary text-2xl font-bold bg-transparent border-none cursor-pointer"> - </button>
           <p className="text-secondary-black dark:text-secondary-white font-medium text-2xl mx-1.5 my-1"> {sleepHours} </p>
-          <button onClick={handleIncrement} className="text-primary-blue text-2xl font-bold bg-transparent border-none cursor-pointer"> + </button>
+          <button onClick={handleIncrement} className="text-primary text-2xl font-bold bg-transparent border-none cursor-pointer"> + </button>
         </div>
       </div>
 

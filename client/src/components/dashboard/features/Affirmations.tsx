@@ -301,7 +301,7 @@ export default function Affirmations() {
             placeholder="I am..."
             value={newAffirmation}
             onChange={(e) => setNewAffirmation(e.target.value)}
-            className="flex-1 rounded-xl border-2 border-slate-300 dark:border-zinc-700  dark:bg-zinc-800/90 px-4 py-3 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary-blue focus:ring-3 focus:ring-primary-blue/20 dark:focus:ring-primary-blue/10 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex-1 rounded-xl border-2 border-slate-300 dark:border-zinc-700  dark:bg-zinc-800/90 px-4 py-3 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 dark:focus:ring-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={isAdding} // Only disable based on isAdding here
             autoComplete="off"
           />

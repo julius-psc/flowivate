@@ -1,28 +1,32 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { SunMedium, Sparkles, Loader2 } from 'lucide-react'; // Add icons
 
 type Theme = 'default' | 'candy';
 
 const ThemeToggle: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('default');
-
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-  }, []); 
+  }, []);
 
+  // Load theme from localStorage AFTER mounting
   useEffect(() => {
-    // Only run this logic if the component has mounted
     if (isMounted) {
       const savedTheme = localStorage.getItem('theme') as Theme | null;
-      if (savedTheme === 'candy') {
-        setTheme(savedTheme); // Update state based on localStorage
+      if (savedTheme === 'default' || savedTheme === 'candy') {
+        setTheme(savedTheme);
+      } else {
+        setTheme('default'); // Fallback
+        localStorage.removeItem('theme');
       }
     }
   }, [isMounted]);
 
+  // Apply/save theme effect
   useEffect(() => {
     if (isMounted) {
       const root = document.documentElement;
@@ -34,49 +38,56 @@ const ThemeToggle: React.FC = () => {
         localStorage.setItem('theme', theme);
       }
     }
-  }, [theme, isMounted]); // Also depends on isMounted
+  }, [theme, isMounted]);
 
-  // Function to toggle the theme
   const toggleTheme = useCallback(() => {
     setTheme((prevTheme) => (prevTheme === 'default' ? 'candy' : 'default'));
   }, []);
 
+  // Define base button classes matching SettingsModal secondary button
+  const buttonClasses = `
+    inline-flex items-center justify-center gap-2 px-4 py-1.5
+    text-sm font-medium rounded-md border
+    transition-colors duration-150 ease-in-out
+    focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950
+    disabled:opacity-50 disabled:cursor-not-allowed
+  `;
+
+  // Define specific color classes (matching secondary button)
+  const colorClasses = `
+    border-gray-300 dark:border-gray-700
+    bg-gray-100 dark:bg-gray-800
+    text-gray-700 dark:text-gray-300
+    hover:bg-gray-200 dark:hover:bg-gray-700
+    focus:ring-gray-400
+  `;
+
+  // Loading state button
   if (!isMounted) {
-     return (
-        <button
-            style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: 'var(--color-accent-grey)', // Use default styles
-                color: 'var(--color-secondary-black)',
-                border: '1px solid var(--color-bdr-light)',
-                borderRadius: '0.375rem',
-                cursor: 'pointer',
-                opacity: 0.7, // Indicate loading state maybe
-            }}
-            aria-disabled="true" // Disable until mounted and theme loaded
-        >
-            Loading Theme...
-        </button>
+    return (
+      <button
+        className={`${buttonClasses} ${colorClasses} cursor-wait`}
+        aria-disabled="true"
+        disabled // Add disabled attribute for semantics
+      >
+        <Loader2 size={16} className="animate-spin" />
+        <span>Loading...</span>
+      </button>
     );
   }
 
+  // Active toggle button
+  const Icon = theme === 'default' ? Sparkles : SunMedium; // Icon shows the theme you'll switch *to*
+  const label = theme === 'default' ? 'Candy' : 'Default';
 
   return (
     <button
       onClick={toggleTheme}
-      style={{
-        padding: '0.5rem 1rem',
-        backgroundColor: 'var(--color-accent-grey)',
-        color: 'var(--color-secondary-black)',
-        border: '1px solid var(--color-bdr-light)',
-        borderRadius: '0.375rem',
-        cursor: 'pointer',
-        transition: 'background-color 0.2s ease-in-out',
-      }}
-      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-accent-grey-hover)'}
-      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-accent-grey)'}
+      className={`${buttonClasses} ${colorClasses}`}
+      aria-label={`Switch to ${label} theme`} // Better accessibility label
     >
-      Switch to {theme === 'default' ? 'Candy' : 'Default'} Theme
+      <Icon size={16} aria-hidden="true" />
+      <span>Switch to {label}</span>
     </button>
   );
 };

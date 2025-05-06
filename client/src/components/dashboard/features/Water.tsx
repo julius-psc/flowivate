@@ -196,7 +196,7 @@ const Water = () => {
       </div>
       <div className="flex flex-col items-center mb-6">
         <div className="relative mb-3">
-          <IconBucketDroplet className="w-10 h-10 text-primary-blue dark:text-primary-blue" />
+          <IconBucketDroplet className="w-10 h-10 text-primary dark:text-primary" />
         </div>
         <div className="text-center">
           <span className="text-3xl font-bold text-gray-800 dark:text-white">{waterAmount}</span>

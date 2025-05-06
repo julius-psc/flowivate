@@ -28,6 +28,7 @@ import {
   KeyRound,
   Trash2,
 } from "lucide-react"; // ChevronRight removed
+import ThemeToggle from '../../../../themes/ThemeToggle'
 
 // Types
 type Theme = "light" | "dark" | "system";
@@ -387,10 +388,9 @@ const SettingsModal = ({
           <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">
             Please log in to manage this section.
           </p>
-          {/* Keep <a> for API routes like signin */}
           <Link
             href="/api/auth/signin"
-            className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center py-1 px-3 rounded-md border border-blue-200 dark:border-blue-800/50 bg-blue-50/50 dark:bg-blue-900/20 hover:bg-blue-100/70 dark:hover:bg-blue-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:focus:ring-offset-gray-950"
+            className="text-sm text-primary hover:text-primary/80 dark:text-primary/40 dark:hover:text-primary/30 inline-flex items-center py-1 px-3 rounded-md border border-primary/20 dark:border-primary/50 bg-primary/50 dark:bg-primary/20 hover:bg-primary/70 dark:hover:bg-primary/30 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1 dark:focus:ring-offset-gray-950"
           >
             Go to login <ArrowRight size={14} className="ml-1" />
           </Link>
@@ -418,12 +418,12 @@ const SettingsModal = ({
         "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800/50",
       error:
         "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/50",
-      info: "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800/50",
+      info: "bg-primary/20 dark:bg-primary/30 border-primary/20 dark:border-primary/50",
     };
     const textColors = {
       success: "text-green-700 dark:text-green-300",
       error: "text-red-700 dark:text-red-300",
-      info: "text-blue-700 dark:text-blue-300",
+      info: "text-primary/70 dark:text-primary/30",
     };
     const icons = {
       success: (
@@ -441,7 +441,7 @@ const SettingsModal = ({
       info: (
         <AlertCircle
           size={18}
-          className="text-blue-500 dark:text-blue-400 flex-shrink-0"
+          className="text-primary dark:text-primary/80 flex-shrink-0"
         />
       ),
     };
@@ -475,12 +475,12 @@ const SettingsModal = ({
 
   // --- Base Styling Classes --- (Removed shadow classes initially, added back for toast)
   const inputClasses =
-    "w-full p-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed";
+    "w-full p-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed";
   const labelClasses =
     "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
   const buttonBaseClasses =
     "text-sm font-medium rounded-md flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950 disabled:opacity-50 disabled:cursor-not-allowed";
-  const buttonPrimaryClasses = `${buttonBaseClasses} px-4 py-1.5 text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 min-w-[80px]`;
+  const buttonPrimaryClasses = `${buttonBaseClasses} px-4 py-1.5 text-white bg-primary hover:bg-primary/80 focus:ring-primary min-w-[80px]`;
   const buttonSecondaryClasses = `${buttonBaseClasses} px-4 py-1.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-gray-400`;
   const buttonDangerClasses = `${buttonBaseClasses} px-4 py-1.5 text-white bg-red-600 hover:bg-red-700 focus:ring-red-500 min-w-[80px]`;
   const buttonDangerOutlineClasses = `${buttonBaseClasses} px-4 py-1.5 text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 hover:bg-red-100/50 dark:hover:bg-red-900/20 focus:ring-red-500`;
@@ -639,7 +639,7 @@ const SettingsModal = ({
             {!isEditingPassword && (
               <button
                 onClick={() => setIsEditingPassword(true)}
-                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center focus:outline-none focus:underline"
+                className="text-sm text-primary hover:text-primary/80 dark:text-primary/80 dark:hover:text-primary/30 flex items-center focus:outline-none focus:underline"
               >
                 {" "}
                 Change <Pencil size={12} className="ml-1" />{" "}
@@ -787,7 +787,7 @@ const SettingsModal = ({
                   onClick={() => setTheme(option.value)}
                   className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950 ${
                     theme === option.value
-                      ? "bg-blue-50 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 focus:ring-blue-500"
+                      ? "bg-primary/10 dark:bg-primary/50 border-primary/30 dark:border-primary/70 text-primary/70 dark:text-primary/30 focus:ring-primary/50"
                       : "bg-white dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 focus:ring-gray-400"
                   }`}
                   aria-pressed={theme === option.value}
@@ -805,6 +805,7 @@ const SettingsModal = ({
                 : "Light mode is applied."}
             </p>
           </div>
+          <ThemeToggle />
         </div>
       </div>
     );
@@ -831,7 +832,7 @@ const SettingsModal = ({
               </p>{" "}
               {/* TODO: Make dynamic */}
             </div>
-            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full bg-blue-100/50 dark:bg-blue-900/30">
+            <span className="text-sm font-semibold text-primary dark:text-primary/80 px-2 py-0.5 rounded-full bg-primary/20 dark:bg-primary/30">
               Free {/* TODO: Make dynamic */}
             </span>
           </div>
@@ -909,7 +910,7 @@ const SettingsModal = ({
         </h3>
         <p className="text-sm text-red-600 dark:text-red-400">
           Permanently delete your account (
-          <strong className="font-mono">{username || email}</strong>) and all
+          <strong className="">{username || email}</strong>) and all
           associated data. This action is irreversible.
         </p>
 
@@ -925,15 +926,15 @@ const SettingsModal = ({
           <div className="space-y-3 pt-3 border-t border-red-200 dark:border-red-800/50">
             <p className="text-sm font-medium text-red-700 dark:text-red-300">
               To confirm, please type your username (
-              <strong className="select-all font-mono">{username}</strong>) or
-              email (<strong className="select-all font-mono">{email}</strong>)
+              <strong className="select-all">{username}</strong>) or
+              email (<strong className="select-all">{email}</strong>)
               below:
             </p>
             <input
               type="text"
               value={deleteConfirmText}
               onChange={handleInputChange(setDeleteConfirmText)}
-              className={`${inputClasses} !border-red-300 dark:!border-red-600 focus:!ring-red-500 font-mono`}
+              className={`${inputClasses} !border-red-300 dark:!border-red-600 focus:!ring-red-500`}
               placeholder="Type username or email to confirm"
               disabled={isDeletingAccount}
               aria-label="Confirm account deletion input"
@@ -1013,7 +1014,7 @@ const SettingsModal = ({
             {/* Close Button (Mobile - absolute positioned) */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 sm:hidden p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 z-10 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-blue-500"
+              className="absolute top-3 right-3 sm:hidden p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 z-10 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-primary/50"
               aria-label="Close settings"
             >
               {" "}
@@ -1032,9 +1033,9 @@ const SettingsModal = ({
                     if (activeTab === "danger" && showDeleteConfirm)
                       cancelDeleteAccount();
                   }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-900 ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-900 ${
                     activeTab === tab.id
-                      ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300"
+                      ? "bg-primary/10 dark:bg-primary/50 text-primary/70 dark:text-primary/30"
                       : "text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-100"
                   } ${
                     tab.id === "danger" && activeTab !== "danger"
@@ -1069,7 +1070,7 @@ const SettingsModal = ({
             {/* Close Button (Desktop - absolute positioned) */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 hidden sm:inline-flex p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-950"
+              className="absolute top-3 right-3 hidden sm:inline-flex p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-950"
               aria-label="Close settings"
             >
               <X size={20} />

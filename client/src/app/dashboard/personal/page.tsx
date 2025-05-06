@@ -149,8 +149,8 @@ export default function Personal() {
             onClick={() => setActiveCategory("all")}
             className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5 ${
               activeCategory === "all"
-                ? "bg-primary-blue text-white" // Updated color
-                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-blue hover:text-white" // Updated color
+                ? "bg-primary text-white" // Updated color
+                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white" // Updated color
             }`}
           >
             <IconApps size={14} />
@@ -162,8 +162,8 @@ export default function Personal() {
               onClick={() => setActiveCategory(category.name)}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5 ${
                 activeCategory === category.name
-                  ? "bg-primary-blue text-white" // Updated color
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-blue hover:text-white" // Updated color
+                  ? "bg-primary text-white" // Updated color
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white" // Updated color
               }`}
             >
               {React.cloneElement(category.icon, { size: 14 })}
@@ -180,7 +180,7 @@ export default function Personal() {
             <div className="flex items-center mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 {/* Updated color for category icon */}
-                {React.cloneElement(category.icon, { className: "text-primary-blue" })}
+                {React.cloneElement(category.icon, { className: "text-primary" })}
                 {category.name}
               </h3>
             </div>
@@ -199,7 +199,7 @@ export default function Personal() {
                     <div className="flex justify-between items-start mb-3"> {/* Changed items-center to items-start */}
                       <div className="flex items-center gap-3">
                         {/* Updated colors for icon container */}
-                        <div className="p-2 bg-primary-bluelight dark:bg-primary-blue/30 rounded-md text-primary-blue">
+                        <div className="p-2 bg-primary/20 dark:bg-primary/20 rounded-md text-primary">
                           {featureIcons[key as keyof typeof featureIcons]}
                         </div>
                         <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
@@ -218,7 +218,7 @@ export default function Personal() {
                     {/* Benefit Tag */}
                     <div className="mb-3">
                       {/* Updated colors for benefit tag */}
-                      <span className="inline-block px-2 py-1 text-xs font-medium text-primary-blue dark:text-primary-bluelight bg-primary-bluelight/50 dark:bg-primary-blue/30 rounded-md">
+                      <span className="inline-block px-2 py-1 text-xs font-medium text-primary dark:text-primary/30 bg-primary/20 dark:bg-primary/20 rounded-md">
                         {benefit}
                       </span>
                     </div>
@@ -227,14 +227,6 @@ export default function Personal() {
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 grow"> {/* Added grow and mb-4 */}
                       {description}
                     </p>
-
-                    {/* Pro Tip Section REMOVED */}
-                    {/* <div className="mb-4 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-md border-l-2 border-blue-400 dark:border-blue-500">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        <span className="font-medium text-blue-600 dark:text-blue-400">Pro tip:</span> {tips}
-                      </p>
-                    </div> */}
-
                     {/* Action Button */}
                     <button
                       onClick={() => addFeature(key as FeatureKey)}
@@ -242,7 +234,7 @@ export default function Personal() {
                       className={`mt-auto py-2 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center gap-2 ${
                         isSelected
                           ? "bg-accent-grey/30 dark:bg-zinc-800 text-accent-grey-hover dark:text-zinc-500 cursor-not-allowed" // Updated disabled state colors
-                          : "bg-primary-blue text-white hover:bg-primary-blue-hover focus:ring-2 focus:ring-primary-blue-ring dark:focus:ring-primary-blue-ring focus:outline-none" // Updated active state colors
+                          : "bg-primary text-white hover:bg-primary-hover focus:ring-2 focus:ring-primary-ring dark:focus:ring-primary-ring focus:outline-none" // Updated active state colors
                       }`}
                     >
                       {isSelected ? (

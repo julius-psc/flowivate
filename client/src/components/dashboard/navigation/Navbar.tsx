@@ -11,8 +11,7 @@ import {
 import { toast } from "sonner";
 
 import ChatPanel from "../features/ai/ChatPanel";
-// Make sure the path to Profile is correct
-import Profile from "../privacy/Profile"; // Assuming this is the correct path now
+import Profile from "../privacy/Profile";
 
 interface StatusOption {
   name: string;
@@ -156,15 +155,15 @@ const Navbar: React.FC = () => {
             <button
               onClick={handleOpenChat}
               aria-label="Ask your AI assistant"
-              className="flex items-center px-2 py-2 rounded-lg bg-blue-50/80 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/40 text-sm text-left text-gray-700 dark:text-gray-200 transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-300"
+              className="flex items-center px-2 py-2 rounded-lg bg-primary/10 dark:bg-primary/10 border border-primary/80 dark:border-primary/80 text-sm text-left text-gray-700 dark:text-gray-200 transition-all duration-200 hover:border-primary/80 dark:hover:border-primary/80 focus:outline-none focus:ring-1 focus:ring-primary"
             >
-              <IconBrain height={20} className="text-primary-blue" />
-              <span className="flex-grow mr-3 text-primary-blue font-semibold">
+              <IconBrain height={20} className="text-primary" />
+              <span className="flex-grow mr-3 text-primary font-semibold">
                 My AI
               </span>
-              <div className="flex items-center px-1.5 py-0.5 ml-2 rounded bg-blue-100/80 dark:bg-blue-800/30">
-                <IconCommand className="w-3 h-3 text-primary-blue" />
-                <span className="text-xs font-medium ml-0.5 text-primary-blue ">
+              <div className="flex items-center px-1.5 py-0.5 ml-2 rounded bg-primary/20 dark:bg-primary/20">
+                <IconCommand className="w-3 h-3 text-primary" />
+                <span className="text-xs font-medium ml-0.5 text-primary">
                   F
                 </span>
               </div>

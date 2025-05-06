@@ -57,7 +57,7 @@ const Sidebar: React.FC = () => {
                       className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-200 ${
                         // Compare current pathname with item's path
                         pathname === item.path
-                          ? "bg-blue-50/80 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/40"
+                          ? "bg-primary/10 dark:bg-primary/10 border border-primary/80 dark:border-primary/40"
                           : "hover:bg-gray-100/60 dark:hover:bg-gray-800/30"
                       }`}
                       // onClick={() => setActiveLink(item.name)} // <-- Remove this line
@@ -66,7 +66,7 @@ const Sidebar: React.FC = () => {
                         className={`w-5 h-5 ${
                           // Compare current pathname with item's path
                           pathname === item.path
-                            ? "text-primary-blue"
+                            ? "text-primary"
                             : "text-gray-600 dark:text-gray-300"
                         }`}
                       />

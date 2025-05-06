@@ -192,7 +192,7 @@ const Pomodoro: React.FC = () => {
   const progress = timeLeft > 0 ? (timeLeft / getTotalTime()) * 100 : 0;
 
   const modeColors = {
-    focus: { main: "bg-primary-blue", hover: "hover:bg-primary-blue/90", text: "text-primary-blue", ring: "focus:ring-primary-blue/30", progress: "#0075C4", iconColor: "text-primary-blue", lightBg: "bg-primary-blue/10" },
+    focus: { main: "bg-primary", hover: "hover:bg-primary/90", text: "text-primary", ring: "focus:ring-primary/30", progress: "#0075C4", iconColor: "text-primary", lightBg: "bg-primary/10" },
     shortBreak: { main: "bg-third-red", hover: "hover:bg-third-red/90", text: "text-third-red", ring: "focus:ring-third-red/30", progress: "#FF3D00", iconColor: "text-third-red", lightBg: "bg-third-red/10" },
     longBreak: { main: "bg-third-green", hover: "hover:bg-third-green/90", text: "text-third-green", ring: "focus:ring-third-green/30", progress: "#4ED454", iconColor: "text-third-green", lightBg: "bg-third-green/10" },
   };
@@ -367,7 +367,7 @@ const Pomodoro: React.FC = () => {
               <button type="button" onClick={() => setShowSettings(false)} className="px-4 py-2 text-xs font-medium text-accent-grey-hover dark:text-accent-grey bg-accent-lightgrey/10 dark:bg-accent-grey/10 rounded-lg hover:bg-accent-lightgrey/20 dark:hover:bg-accent-grey/20 transition-colors focus:outline-none">
                 Cancel
               </button>
-              <button type="submit" className="px-4 py-2 text-xs font-medium text-secondary-white bg-primary-blue hover:bg-primary-blue/90 rounded-lg transition-colors focus:outline-none">
+              <button type="submit" className="px-4 py-2 text-xs font-medium text-secondary-white bg-primary hover:bg-primary/90 rounded-lg transition-colors focus:outline-none">
                 Apply Settings
               </button>
             </div>

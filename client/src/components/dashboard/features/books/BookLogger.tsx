@@ -182,7 +182,7 @@ const BookLogger: React.FC = () => {
   const getStatusColor = (status: Book["status"]) => {
     switch (status) {
       case "not-started":
-        return "bg-primary-bluelight/60 text-primary-blue dark:bg-primary-blue/20 dark:text-primary-bluelight";
+        return "bg-primary/60 text-primary dark:bg-primary/20 dark:text-primary/20";
       case "in-progress":
         return "bg-third-yellow/30 text-amber-800 dark:bg-third-yellow/20 dark:text-third-yellow";
       case "completed":
@@ -374,7 +374,7 @@ const BookLogger: React.FC = () => {
           <div className="flex justify-between items-center mb-4">
             <button
               onClick={handleAddNewBook}
-              className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-secondary-white bg-primary-blue hover:bg-primary-blue-hover transition-colors duration-200 rounded-md"
+              className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-secondary-white bg-primary hover:bg-primary-hover transition-colors duration-200 rounded-md"
             >
               <IconPlus size={16} />
               <span>Add Book</span>
@@ -386,7 +386,7 @@ const BookLogger: React.FC = () => {
               placeholder="Search books or authors..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-bdr-light dark:border-bdr-dark rounded-md bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey-hover dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200"
+              className="w-full pl-10 pr-4 py-2.5 border border-bdr-light dark:border-bdr-dark rounded-md bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey-hover dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary focus:border-transparent transition-all duration-200"
             />
             <IconSearch
               size={18}
@@ -401,7 +401,7 @@ const BookLogger: React.FC = () => {
                   onClick={() => setStatusFilter(status)}
                   className={`flex items-center px-3 py-1.5 mr-2 rounded-md text-sm whitespace-nowrap transition-colors duration-200 ${
                     statusFilter === status
-                      ? "bg-primary-bluelight/60 text-primary-blue dark:bg-primary-blue/30 dark:text-primary-bluelight"
+                      ? "bg-primary-primary/60 text-primary dark:bg-primary/30 dark:text-primary/20"
                       : "bg-accent-lightgrey text-accent-grey-hover dark:bg-bdr-dark dark:text-accent-lightgrey hover:bg-accent-grey/50 dark:hover:bg-bdr-dark/60"
                   }`}
                 >
@@ -422,24 +422,10 @@ const BookLogger: React.FC = () => {
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-8 text-center text-accent-grey-hover dark:text-accent-grey space-y-3 h-full">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-blue border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
               <p>Loading your books...</p>
             </div> /* REMOVE error display condition */
           ) : (
-            // {error ? (
-            //  <div className="p-6 text-center h-full flex flex-col justify-center items-center">
-            //    <div className="inline-flex items-center justify-center p-3 mb-4 rounded-full bg-third-red/10 dark:bg-third-red/20">
-            //      <IconX size={24} className="text-third-red" />
-            //    </div>
-            //    <p className="text-third-red">{error}</p>
-            //    <button
-            //      onClick={fetchBooks}
-            //      className="mt-4 px-4 py-2 border border-bdr-light dark:border-bdr-dark rounded-md text-accent-grey-hover dark:text-accent-lightgrey hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200"
-            //    >
-            //      Try Again
-            //    </button>
-            //  </div>
-            // ) : (
             <ul className="px-2 py-1">
               {filteredBooks.length > 0 ? (
                 filteredBooks.map((book, index) => (
@@ -692,7 +678,7 @@ const BookLogger: React.FC = () => {
                   name="title"
                   value={formData.title || ""}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary focus:border-transparent transition-all duration-200"
                   placeholder="Book title"
                   required
                 />
@@ -707,7 +693,7 @@ const BookLogger: React.FC = () => {
                   name="author"
                   value={formData.author || ""}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary focus:border-transparent transition-all duration-200"
                   placeholder="Author name"
                   required
                 />
@@ -722,7 +708,7 @@ const BookLogger: React.FC = () => {
                     name="status"
                     value={formData.status || "not-started"}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200 appearance-none"
+                    className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white focus:outline-none focus:ring-2 focus:ring- dark:focus:ring-primary focus:border-transparent transition-all duration-200 appearance-none"
                   >
                     <option value="not-started">Not Started</option>
                     <option value="in-progress">Reading</option>
@@ -739,7 +725,7 @@ const BookLogger: React.FC = () => {
                     name="genre"
                     value={formData.genre || ""}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary-blue dark:focus:ring-primary-blue focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-bdr-light dark:border-bdr-dark rounded-lg bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white placeholder:text-accent-grey dark:placeholder:text-accent-grey focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary focus:border-transparent transition-all duration-200"
                     placeholder="Fiction, Non-fiction, etc."
                   />
                 </div>
@@ -786,7 +772,7 @@ const BookLogger: React.FC = () => {
                   Notes
                 </label>
                 {notesEditor && (
-                  <div className="border border-bdr-light dark:border-bdr-dark rounded-lg p-4 bg-secondary-white dark:bg-secondary-black min-h-[200px] focus-within:ring-2 focus-within:ring-primary-blue dark:focus-within:ring-primary-blue focus-within:border-transparent transition-all duration-200">
+                  <div className="border border-bdr-light dark:border-bdr-dark rounded-lg p-4 bg-secondary-white dark:bg-secondary-black min-h-[200px] focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-primary focus-within:border-transparent transition-all duration-200">
                     <EditorContent editor={notesEditor} />
                     {notesEditor && <ContextMenu editor={notesEditor} />}
                   </div>
@@ -805,7 +791,7 @@ const BookLogger: React.FC = () => {
                 </button>
                 <button
                   onClick={handleSaveBook}
-                  className="px-5 py-2 bg-primary-blue hover:bg-primary-blue-hover text-secondary-white font-medium rounded-md transition-colors duration-200"
+                  className="px-5 py-2 bg-primary hover:bg-primary-hover text-secondary-white font-medium rounded-md transition-colors duration-200"
                 >
                   {selectedBook ? "Update Book" : "Add Book"}
                 </button>
@@ -814,10 +800,10 @@ const BookLogger: React.FC = () => {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-[70vh] p-6 text-center">
-            <div className="bg-primary-bluelight/30 dark:bg-primary-blue/20 p-4 rounded-full mb-4">
+            <div className="bg-primary/30 dark:bg-primary/20 p-4 rounded-full mb-4">
               <IconBook2
                 size={42}
-                className="text-primary-blue dark:text-primary-bluelight"
+                className="text-primary dark:text-primary/30"
               />
             </div>
             <h3 className="text-xl font-semibold text-secondary-black dark:text-secondary-white mb-2">
@@ -829,7 +815,7 @@ const BookLogger: React.FC = () => {
             </p>
             <button
               onClick={handleAddNewBook}
-              className="flex items-center gap-2 px-5 py-3 bg-primary-blue hover:bg-primary-blue-hover text-secondary-white font-medium rounded-md transition-colors duration-200"
+              className="flex items-center gap-2 px-5 py-3 bg-primary hover:bg-primary-hover text-secondary-white font-medium rounded-md transition-colors duration-200"
             >
               <IconPlus size={18} />
               <span>Add Your First Book</span>

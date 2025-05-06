@@ -210,7 +210,7 @@ const Assistant: React.FC = () => {
               <div className="mb-4">
                 <p className="text-primary-black dark:text-gray-200 font-medium">
                   How can I help make your day more{" "}
-                  <span className="text-primary-blue dark:text-blue-400">
+                  <span className="text-primary dark:text-blue-400">
                     productive
                   </span>
                   ?
@@ -225,7 +225,7 @@ const Assistant: React.FC = () => {
                   <button
                     key={index}
                     onClick={() => handleNewChat(option.starter)}
-                    className="flex items-center justify-between bg-primary-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-blue/30 dark:focus:ring-blue-400/30 group"
+                    className="flex items-center justify-between bg-primary-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30 group"
                     title={option.text}
                   >
                     <div className="flex items-center">
@@ -246,7 +246,7 @@ const Assistant: React.FC = () => {
                 </h3>
                 <button
                   onClick={() => setShowRecentChats(false)}
-                  className="text-xs text-primary-blue dark:text-blue-400 hover:underline"
+                  className="text-xs text-primary dark:text-blue-400 hover:underline"
                 >
                   Back to suggestions
                 </button>
@@ -271,7 +271,7 @@ const Assistant: React.FC = () => {
                       >
                         <div className="mr-3 mt-1 flex-shrink-0">
                           <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                            <IconMessage className="w-4 h-4 text-primary-blue dark:text-blue-400" />
+                            <IconMessage className="w-4 h-4 text-primary dark:text-blue-400" />
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -313,7 +313,7 @@ const Assistant: React.FC = () => {
                 fetchRecentChats();
               }
             }}
-            className="flex bg-primary-white dark:bg-gray-700/70 px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-blue/30 dark:focus:ring-blue-400/30"
+            className="flex bg-primary-white dark:bg-gray-700/70 px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30"
           >
             <IconMessage className="w-5 h-5 mr-1 text-primary-black/60 dark:text-gray-300/60" />
             <span className="text-sm text-primary-black/60 dark:text-gray-300/60">
@@ -323,10 +323,10 @@ const Assistant: React.FC = () => {
 
           <button
             onClick={() => handleNewChat()}
-            className="flex bg-primary-blue/10 dark:bg-blue-900/30 px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-primary-blue/20 dark:hover:bg-blue-800/40 focus:outline-none focus:ring-2 focus:ring-primary-blue/30 dark:focus:ring-blue-400/30"
+            className="flex bg-primary/10 dark:bg-blue-900/30 px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-primary/20 dark:hover:bg-blue-800/40 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30"
           >
-            <IconCircleDashedPlus className="w-5 h-5 mr-1 text-primary-blue dark:text-blue-400" />
-            <span className="text-sm text-primary-blue dark:text-blue-400 font-medium">
+            <IconCircleDashedPlus className="w-5 h-5 mr-1 text-primary dark:text-blue-400" />
+            <span className="text-sm text-primary dark:text-blue-400 font-medium">
               New chat
             </span>
           </button>

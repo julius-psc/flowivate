@@ -38,7 +38,7 @@ const DURATION_OPTIONS = [25, 50, 75, 90]; // in minutes
 
 // --- Define the requested input className ---
 const inputClassName =
-  "flex-1 rounded-xl border-2 border-slate-300 dark:border-zinc-700  dark:bg-zinc-800/90 px-4 py-3 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary-blue focus:ring-3 focus:ring-primary-blue/20 dark:focus:ring-primary-blue/10 disabled:opacity-60 disabled:cursor-not-allowed";
+  "flex-1 rounded-xl border-2 border-slate-300 dark:border-zinc-700  dark:bg-zinc-800/90 px-4 py-3 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 dark:focus:ring-primary/10 disabled:opacity-60 disabled:cursor-not-allowed";
 
 const DeepWork: React.FC = () => {
   const { data: session, status } = useSession();
@@ -620,7 +620,7 @@ const DeepWork: React.FC = () => {
               // **MODIFIED:** Applied requested style + min-w-0, conditional styling adjusted
               className={`${inputClassName} min-w-0 ${
                 isCustomDurationSelected
-                  ? "border-primary-blue ring-1 ring-primary-blue/20 dark:ring-primary-blue/10" // Use focus style when selected
+                  ? "border-primary ring-1 ring-primary/20 dark:ring-primary/10" // Use focus style when selected
                   : "" // Default style from inputClassName handles non-selected
               }`}
             />

@@ -418,7 +418,7 @@ export const Journal: React.FC<JournalProps> = ({
 
           {isLoading && (
             <div className="absolute inset-0 bg-white/70 dark:bg-zinc-900/70 flex items-center justify-center z-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-blue dark:border-primary-bluelight border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary dark:border-primary-bluelight border-t-transparent"></div>
             </div>
           )}
 
@@ -456,7 +456,7 @@ export const Journal: React.FC<JournalProps> = ({
 
             <button
               onClick={handleSave}
-              className={`flex items-center justify-center gap-1.5 px-4 py-2 min-w-[80px] bg-primary-blue hover:bg-primary-blue-hover text-secondary-white font-medium rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`flex items-center justify-center gap-1.5 px-4 py-2 min-w-[80px] bg-primary hover:bg-primary-hover text-secondary-white font-medium rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
               aria-label="Save journal entry"
               disabled={isLoading || isSaving || isDeleting}
             >
