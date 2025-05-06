@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import clientPromise from "@/lib/mongodb"; // Adjust path if needed
-import { authOptions } from "../../auth/[...nextauth]/route"; // Adjust path to your NextAuth options
+import { authOptions } from "@/lib/authOptions";
 import { ObjectId } from "mongodb";
 
 const DB_NAME = process.env.MONGODB_DB || "Flowivate"; // Use env variable or default

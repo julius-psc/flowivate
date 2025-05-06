@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import clientPromise from "../../../../../lib/mongodb"; // Adjust path if necessary
 import { ObjectId } from "mongodb";
-import { authOptions } from '../../../auth/[...nextauth]/route'; // Adjust path if necessary
+import { authOptions } from "@/lib/authOptions";
 import { parse, isValid, format } from 'date-fns';
 
 // Define the JournalEntry type used in the backend

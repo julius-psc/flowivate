@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateClaudeResponse } from "../../../../../services/claude";
 
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 
 // Define the expected structure of the request body for this specific route
 interface RequestBody {

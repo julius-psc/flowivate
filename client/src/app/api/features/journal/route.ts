@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import clientPromise from "../../../../lib/mongodb"; // Adjust path
 import { ObjectId } from "mongodb";
-import { authOptions } from '../../auth/[...nextauth]/route'; // Adjust path
+import { authOptions } from "@/lib/authOptions";
 
 // Define the JournalEntry type (can be shared or redefined)
 interface JournalEntry {

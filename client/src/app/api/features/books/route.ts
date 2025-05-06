@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from "@/lib/authOptions";
 
 // GET all books for the logged‑in user
 export async function GET() {

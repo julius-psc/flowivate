@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import clientPromise from '../../../../lib/mongodb'; // Adjust path if needed
-import { authOptions } from '../../auth/[...nextauth]/route'; // Adjust path if needed
+import clientPromise from '../../../../lib/mongodb' // Adjust path if needed
+import { authOptions } from "@/lib/authOptions";
 import { ObjectId } from 'mongodb';
 
 interface UserDocument {
