@@ -1,22 +1,21 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'; // Import NextRequest
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from "@/lib/authOptions";
-import clientPromise from '../../../../lib/mongodb'; // Adjust path
+import clientPromise from '../../../../lib/mongodb'; 
 import { ObjectId } from 'mongodb';
 
 interface ChatConversation {
-    _id?: ObjectId;
+    _id: ObjectId; // Ensure _id is always ObjectId from DB, make optional if creating new
     userId: ObjectId;
     title: string;
-    messages: { sender: string; content: string; timestamp: Date }[]; // Define message structure
+    messages: { sender: string; content: string; timestamp: Date }[];
     createdAt: Date;
     updatedAt: Date;
 }
 
-
 // GET /api/chats/[chatId] - Fetch a specific chat conversation
 export async function GET(
-    request: Request,
+    request: NextRequest, // Changed from Request to NextRequest
     { params }: { params: { chatId: string } }
 ) {
     try {
@@ -33,35 +32,32 @@ export async function GET(
             userObjectId = new ObjectId(session.user.id);
             chatObjectId = new ObjectId(chatId);
         } catch (error) {
-            console.log(error);
+            console.log("Invalid ID format error:", error);
             return NextResponse.json({ message: 'Invalid ID format' }, { status: 400 });
         }
 
         const client = await clientPromise;
-        const db = client.db();
+        const db = client.db("Flowivate");
         const chatsCollection = db.collection<ChatConversation>('chats');
 
         const chat = await chatsCollection.findOne({
             _id: chatObjectId,
-            userId: userObjectId // Ensure the user owns this chat
+            userId: userObjectId
         });
 
         if (!chat) {
             return NextResponse.json({ message: 'Chat not found or unauthorized' }, { status: 404 });
         }
 
-        // Return the full chat object, converting ObjectId to string for the client
         const chatResponse = {
             ...chat,
             _id: chat._id.toString(),
-            userId: chat.userId.toString(), // Convert userId ObjectId to string
-             // Ensure messages timestamps are strings or numbers suitable for JSON
+            userId: chat.userId.toString(),
             messages: chat.messages.map(msg => ({
                 ...msg,
-                timestamp: msg.timestamp.toISOString() // Or keep as Date object if client handles it
+                timestamp: msg.timestamp.toISOString() 
             }))
         };
-
 
         return NextResponse.json(chatResponse, { status: 200 });
 
@@ -71,10 +67,9 @@ export async function GET(
     }
 }
 
-
 // DELETE /api/chats/[chatId] - Delete a specific chat conversation
 export async function DELETE(
-    request: Request,
+    request: NextRequest, // Changed from Request to NextRequest
     { params }: { params: { chatId: string } }
 ) {
      try {
@@ -91,17 +86,17 @@ export async function DELETE(
             userObjectId = new ObjectId(session.user.id);
             chatObjectId = new ObjectId(chatId);
         } catch (error) {
-            console.error(error);
+            console.error("Invalid ID format error:", error);
             return NextResponse.json({ message: 'Invalid ID format' }, { status: 400 });
         }
 
         const client = await clientPromise;
-        const db = client.db();
-        const chatsCollection = db.collection('chats');
+        const db = client.db("yourDatabaseName"); // Replace "yourDatabaseName" if applicable
+        const chatsCollection = db.collection('chats'); // No need for <ChatConversation> if only deleting
 
         const deleteResult = await chatsCollection.deleteOne({
             _id: chatObjectId,
-            userId: userObjectId // Ensure the user owns this chat before deleting
+            userId: userObjectId
         });
 
         if (deleteResult.deletedCount === 0) {
