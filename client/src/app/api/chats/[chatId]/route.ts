@@ -1,8 +1,8 @@
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from "@/lib/authOptions";
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
-import { NextResponse } from 'next/server';
 
 interface ChatConversation {
   _id: ObjectId;
@@ -15,8 +15,8 @@ interface ChatConversation {
 
 // GET /api/chats/[chatId]
 export async function GET(
-  _req: Request,
-  context: { params: { chatId: string } }
+  req: NextRequest,
+  { params }: { params: { chatId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,7 +24,7 @@ export async function GET(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { chatId } = context.params;
+    const { chatId } = params;
 
     let userObjectId: ObjectId;
     let chatObjectId: ObjectId;
@@ -63,15 +63,15 @@ export async function GET(
     return NextResponse.json(chatResponse, { status: 200 });
 
   } catch (error) {
-    console.error(`Error in GET /api/chats/${context.params.chatId}:`, error);
+    console.error(`Error in GET /api/chats/${params.chatId}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 // DELETE /api/chats/[chatId]
 export async function DELETE(
-  _req: Request,
-  context: { params: { chatId: string } }
+  req: NextRequest,
+  { params }: { params: { chatId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -79,7 +79,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { chatId } = context.params;
+    const { chatId } = params;
 
     let userObjectId: ObjectId;
     let chatObjectId: ObjectId;
@@ -108,7 +108,7 @@ export async function DELETE(
     return NextResponse.json({ message: 'Chat deleted successfully' }, { status: 200 });
 
   } catch (error) {
-    console.error(`Error in DELETE /api/chats/${context.params.chatId}:`, error);
+    console.error(`Error in DELETE /api/chats/${params.chatId}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
