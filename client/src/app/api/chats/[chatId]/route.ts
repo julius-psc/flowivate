@@ -15,8 +15,8 @@ interface ChatConversation {
 
 // GET /api/chats/[chatId]
 export async function GET(
-  req: NextRequest,
-  context: { params: { chatId: string } }
+  request: NextRequest,
+  { params }: { params: { chatId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,7 +24,7 @@ export async function GET(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { chatId } = context.params;
+    const { chatId } = params;
 
     let userObjectId: ObjectId;
     let chatObjectId: ObjectId;
@@ -63,15 +63,15 @@ export async function GET(
     return NextResponse.json(chatResponse, { status: 200 });
 
   } catch (error) {
-    console.error(`Error in GET /api/chats/${context.params.chatId}:`, error);
+    console.error(`Error in GET /api/chats/${params.chatId}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 // DELETE /api/chats/[chatId]
 export async function DELETE(
-  req: NextRequest,
-  context: { params: { chatId: string } }
+  request: NextRequest,
+  { params }: { params: { chatId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -79,7 +79,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { chatId } = context.params;
+    const { chatId } = params;
 
     let userObjectId: ObjectId;
     let chatObjectId: ObjectId;
@@ -108,7 +108,7 @@ export async function DELETE(
     return NextResponse.json({ message: 'Chat deleted successfully' }, { status: 200 });
 
   } catch (error) {
-    console.error(`Error in DELETE /api/chats/${context.params.chatId}:`, error);
+    console.error(`Error in DELETE /api/chats/${params.chatId}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
