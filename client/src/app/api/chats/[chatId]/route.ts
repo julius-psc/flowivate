@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from "@/lib/authOptions";
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import type { NextRequest } from 'next/server';
 
 interface ChatConversation {
   _id: ObjectId;
@@ -13,10 +14,16 @@ interface ChatConversation {
   updatedAt: Date;
 }
 
+interface RouteContext {
+  params: {
+    chatId: string;
+  };
+}
+
 // GET /api/chats/[chatId]
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { chatId: string } }
+  req: NextRequest,
+  { params }: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,7 +31,7 @@ export async function GET(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { chatId } = params;
+    const chatId = params.chatId;
 
     let userObjectId: ObjectId;
     let chatObjectId: ObjectId;
@@ -70,8 +77,8 @@ export async function GET(
 
 // DELETE /api/chats/[chatId]
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { chatId: string } }
+  req: NextRequest,
+  { params }: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -79,7 +86,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { chatId } = params;
+    const chatId = params.chatId;
 
     let userObjectId: ObjectId;
     let chatObjectId: ObjectId;
