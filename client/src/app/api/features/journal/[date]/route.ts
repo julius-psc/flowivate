@@ -9,11 +9,22 @@ import { parse, isValid, format } from 'date-fns';
 interface JournalEntry {
   _id: ObjectId;
   userId: ObjectId;
-  date: string; // Store date as 'YYYY-MM-DD' string for reliable matching
+  date: string; // Store date as 'YYYY-MM-DD' string
   content: string;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Define the structure for the API response for a single journal entry
+interface JournalEntryResponse {
+  _id: string;
+  userId: string;
+  date: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 // Helper function to validate 'YYYY-MM-DD' date format
 function isValidDateString(dateStr: string): boolean {
@@ -26,104 +37,144 @@ function isValidObjectId(id: string): boolean {
   return ObjectId.isValid(id);
 }
 
+// Adapted error logging function
+function logApiError(
+  operation: 'GET' | 'PUT' | 'DELETE',
+  identifier: string, // Represents date string for journal
+  error: unknown,
+  additionalInfo?: Record<string, unknown>
+): void {
+  const endpointScope = `/api/features/journal/${identifier}`;
+  let errorMessage = "An unknown error occurred";
+  let errorDetails: Record<string, unknown> = { ...additionalInfo };
+
+  if (error instanceof Error) {
+    errorMessage = error.message;
+    errorDetails = {
+      ...errorDetails,
+      name: error.name,
+      message: error.message,
+      stack: error.stack, // Be cautious with logging full stack in production
+      cause: (error as { cause?: unknown }).cause,
+    };
+  } else if (typeof error === 'string') {
+    errorMessage = error;
+    errorDetails = { ...errorDetails, errorString: error };
+  } else if (typeof error === 'object' && error !== null) {
+    errorMessage = JSON.stringify(error);
+    errorDetails = { ...errorDetails, errorObject: error };
+  }
+
+  console.error(
+    `[API_ERROR] Operation: ${operation}, Endpoint: ${endpointScope}, Message: "${errorMessage}"`,
+    errorDetails
+  );
+}
+
 // GET a single journal entry by date
 export async function GET(
-  request: Request,
-  { params }: { params: { date: string } } // Expect date param directly
+  request: Request, // Can use NextRequest if specific Next.js features are needed
+  { params }: { params: { date: string } }
 ) {
-  const operation = "GET /api/features/journal/[date]";
+  const operation = "GET";
   const { date: dateString } = params;
-  console.log(`${operation}: Received request for date: ${dateString}`);
 
   if (!isValidDateString(dateString)) {
-    console.warn(`${operation}: Invalid date format: ${dateString}. Expected YYYY-MM-DD.`);
+    console.warn(`[API_VALIDATION_ERROR] Operation: ${operation}, Endpoint: /api/features/journal/${dateString}, Message: Invalid date format. Expected YYYY-MM-DD.`);
     return NextResponse.json({ message: "Invalid date format. Use YYYY-MM-DD." }, { status: 400 });
   }
 
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      console.warn(`${operation}: Unauthorized access - No session or user ID.`);
+      console.warn(`[API_AUTH_ERROR] Operation: ${operation}, Endpoint: /api/features/journal/${dateString}, Message: Unauthorized - No session or user ID.`);
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
     if (!isValidObjectId(userId)) {
-        console.error(`${operation}: Invalid session userId format: ${userId}`);
-        return NextResponse.json({ message: 'Invalid user ID format in session' }, { status: 400 });
+        logApiError(operation, dateString, new Error('Invalid user ID format in session'), { userId });
+        return NextResponse.json({ message: 'Invalid user ID format.' }, { status: 400 });
     }
     const userObjectId = new ObjectId(userId);
 
-    console.log(`${operation}: Querying DB for date: ${dateString} and userObjectId: ${userObjectId.toHexString()}`);
-
     const client = await clientPromise;
-    const db = client.db("Flowivate"); // Ensure this is your DB name
-    const journalCollection = db.collection<JournalEntry>("journalEntries"); // Ensure this is your collection name
+    const db = client.db("Flowivate");
+    const journalCollection = db.collection<JournalEntry>("journalEntries");
 
     const entry = await journalCollection.findOne({
       userId: userObjectId,
-      date: dateString // Match directly on the date string
+      date: dateString
     });
 
     if (!entry) {
-      console.log(`${operation}: Journal entry not found for date ${dateString} and user ${userId}`);
-      // Return 404 Not Found, as this is expected if no entry exists for the date
+      // Log this occurrence, but it's a valid case (no entry for the date)
+      console.log(`[API_INFO] Operation: ${operation}, Endpoint: /api/features/journal/${dateString}, User: ${userId}, Message: Journal entry not found.`);
       return NextResponse.json({ message: "Journal entry not found" }, { status: 404 });
     }
 
-    console.log(`${operation}: Successfully found entry ${entry._id.toHexString()} for date ${dateString}`);
-    // Return the found entry
-    return NextResponse.json({ entry }, { status: 200 });
+    // Transform the entry for the response
+    const entryResponse: JournalEntryResponse = {
+      _id: entry._id.toString(),
+      userId: entry.userId.toString(),
+      date: entry.date,
+      content: entry.content,
+      createdAt: entry.createdAt.toISOString(),
+      updatedAt: entry.updatedAt.toISOString(),
+    };
+    
+    console.log(`[API_SUCCESS] Operation: ${operation}, Endpoint: /api/features/journal/${dateString}, User: ${userId}, Message: Successfully found entry ${entry._id.toString()}.`);
+    return NextResponse.json({ entry: entryResponse }, { status: 200 });
 
   } catch (error) {
-    console.error(`Error in ${operation} for date ${dateString}:`, error);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    logApiError(operation, dateString, error);
+    return NextResponse.json({ message: "Internal server error. Please try again later." }, { status: 500 });
   }
 }
 
 
 // PUT to create or update (upsert) a journal entry by date
+// This handler remains unchanged as per the request, but could also adopt logApiError.
 export async function PUT(
   request: Request,
   { params }: { params: { date: string } }
 ) {
-  const operation = "PUT /api/features/journal/[date]";
+  const operation = "PUT"; // For consistency if we add logApiError here
   const { date: dateString } = params;
-  console.log(`${operation}: Received request for date: ${dateString}`);
+  // console.log(`${operation} /api/features/journal/[date]: Received request for date: ${dateString}`); // Original log
 
    if (!isValidDateString(dateString)) {
-    console.warn(`${operation}: Invalid date format: ${dateString}. Expected YYYY-MM-DD.`);
+    // console.warn(`${operation} /api/features/journal/[date]: Invalid date format: ${dateString}. Expected YYYY-MM-DD.`); // Original log
     return NextResponse.json({ message: "Invalid date format. Use YYYY-MM-DD." }, { status: 400 });
   }
 
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      console.warn(`${operation}: Unauthorized access - No session or user ID.`);
+      // console.warn(`${operation} /api/features/journal/[date]: Unauthorized access - No session or user ID.`); // Original log
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
      if (!isValidObjectId(userId)) {
-        console.error(`${operation}: Invalid session userId format: ${userId}`);
+        // console.error(`${operation} /api/features/journal/[date]: Invalid session userId format: ${userId}`); // Original log
         return NextResponse.json({ message: 'Invalid user ID format in session' }, { status: 400 });
     }
     const userObjectId = new ObjectId(userId);
 
     const data = await request.json();
-    console.log(`${operation}: Received update data:`, { content: data?.content ? '[Content Present]' : '[Content Missing]' });
+    // console.log(`${operation} /api/features/journal/[date]: Received update data:`, { content: data?.content ? '[Content Present]' : '[Content Missing]' }); // Original log
 
     if (!data || typeof data.content === 'undefined') {
-      console.warn(`${operation}: Invalid request body. 'content' field is required.`);
+      // console.warn(`${operation} /api/features/journal/[date]: Invalid request body. 'content' field is required.`); // Original log
       return NextResponse.json({ message: "Invalid request body: 'content' is required." }, { status: 400 });
     }
 
-    // Validate content (allow empty string, but must be string)
     if (typeof data.content !== 'string') {
-        console.warn(`${operation}: Invalid content type: ${typeof data.content}`);
+        // console.warn(`${operation} /api/features/journal/[date]: Invalid content type: ${typeof data.content}`); // Original log
         return NextResponse.json({ message: "Content must be a string." }, { status: 400 });
     }
-    const content = data.content; // Sanitize potentially? (e.g., using DOMPurify if needed, but Tiptap often handles this)
+    const content = data.content;
 
     const client = await clientPromise;
     const db = client.db("Flowivate");
@@ -131,50 +182,56 @@ export async function PUT(
 
     const now = new Date();
 
-    // Perform an upsert operation
     const result = await journalCollection.findOneAndUpdate(
-      { userId: userObjectId, date: dateString }, // Filter: find entry for this user and date
+      { userId: userObjectId, date: dateString },
       {
-        $set: { // Fields to set on update or insert
+        $set: {
           content: content,
           updatedAt: now,
         },
-        $setOnInsert: { // Fields to set only on insert (creation)
-           _id: new ObjectId(), // Generate new ID only on insert
+        $setOnInsert: {
+           _id: new ObjectId(),
            userId: userObjectId,
            date: dateString,
            createdAt: now,
         }
       },
       {
-        upsert: true, // Create the document if it doesn't exist
-        returnDocument: "after" // Return the modified or newly inserted document
+        upsert: true,
+        returnDocument: "after"
       }
     );
 
-    // Log the raw result from MongoDB for debugging
-    console.log(`${operation}: MongoDB findOneAndUpdate result:`, result);
+    // console.log(`${operation} /api/features/journal/[date]: MongoDB findOneAndUpdate result:`, result); // Original log
 
-    // Check if the operation was successful and returned a document
     if (!result) {
-         // This case should ideally not happen with upsert:true and returnDocument:after unless there's a DB error
-         console.error(`${operation}: Upsert operation failed unexpectedly for date ${dateString} and user ${userId}.`);
-         return NextResponse.json({ message: "Failed to save journal entry due to unexpected database issue." }, { status: 500 });
+        // console.error(`${operation} /api/features/journal/[date]: Upsert operation failed unexpectedly for date ${dateString} and user ${userId}.`); // Original log
+        // Using logApiError would be good here too
+        logApiError(operation, dateString, new Error("Upsert operation failed unexpectedly"), { userId, dateString });
+        return NextResponse.json({ message: "Failed to save journal entry due to unexpected database issue." }, { status: 500 });
     }
 
-    const savedEntry = result as JournalEntry; // Type assertion after checking result
+    const savedEntry = result as JournalEntry;
 
-    console.log(`${operation}: Successfully upserted entry ${savedEntry._id.toHexString()} for date ${dateString}`);
+    // console.log(`${operation} /api/features/journal/[date]: Successfully upserted entry ${savedEntry._id.toHexString()} for date ${dateString}`); // Original log
 
-    // Determine if it was an insert or update based on createdAt and updatedAt times
-    const statusCode = Math.abs(savedEntry.createdAt.getTime() - savedEntry.updatedAt.getTime()) < 1000 ? 201 : 200; // Roughly check if created now
+    const statusCode = Math.abs(savedEntry.createdAt.getTime() - savedEntry.updatedAt.getTime()) < 1000 ? 201 : 200;
 
+    // Transform the saved entry for the response, similar to GET
+    const entryResponse: JournalEntryResponse = {
+        _id: savedEntry._id.toString(),
+        userId: savedEntry.userId.toString(),
+        date: savedEntry.date,
+        content: savedEntry.content,
+        createdAt: savedEntry.createdAt.toISOString(),
+        updatedAt: savedEntry.updatedAt.toISOString(),
+    };
 
-    return NextResponse.json({ entry: savedEntry }, { status: statusCode });
+    return NextResponse.json({ entry: entryResponse }, { status: statusCode });
 
   } catch (error) {
-    console.error(`Error in ${operation} for date ${dateString}:`, error);
-    // Avoid sending detailed error messages to the client in production
+    // console.error(`Error in ${operation} /api/features/journal/[date] for date ${dateString}:`, error); // Original log
+    logApiError(operation, dateString, error);
     return NextResponse.json({ message: "Internal server error during save" }, { status: 500 });
   }
 }
@@ -182,33 +239,30 @@ export async function PUT(
 
 // DELETE a journal entry by date
 export async function DELETE(
-  request: Request,
+  request: Request, // Can use NextRequest
   { params }: { params: { date: string } }
 ) {
-  const operation = "DELETE /api/features/journal/[date]";
+  const operation = "DELETE";
   const { date: dateString } = params;
-  console.log(`${operation}: Received request for date: ${dateString}`);
 
   if (!isValidDateString(dateString)) {
-    console.warn(`${operation}: Invalid date format: ${dateString}. Expected YYYY-MM-DD.`);
+    console.warn(`[API_VALIDATION_ERROR] Operation: ${operation}, Endpoint: /api/features/journal/${dateString}, Message: Invalid date format. Expected YYYY-MM-DD.`);
     return NextResponse.json({ message: "Invalid date format. Use YYYY-MM-DD." }, { status: 400 });
   }
 
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      console.warn(`${operation}: Unauthorized access - No session or user ID.`);
+      console.warn(`[API_AUTH_ERROR] Operation: ${operation}, Endpoint: /api/features/journal/${dateString}, Message: Unauthorized - No session or user ID.`);
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
     if (!isValidObjectId(userId)) {
-        console.error(`${operation}: Invalid session userId format: ${userId}`);
-        return NextResponse.json({ message: 'Invalid user ID format in session' }, { status: 400 });
+        logApiError(operation, dateString, new Error('Invalid user ID format in session'), { userId });
+        return NextResponse.json({ message: 'Invalid user ID format.' }, { status: 400 });
     }
     const userObjectId = new ObjectId(userId);
-
-    console.log(`${operation}: Attempting to delete entry for date: ${dateString} and userObjectId: ${userObjectId.toHexString()}`);
 
     const client = await clientPromise;
     const db = client.db("Flowivate");
@@ -216,25 +270,19 @@ export async function DELETE(
 
     const result = await journalCollection.deleteOne({
       userId: userObjectId,
-      date: dateString // Match user and the specific date string
+      date: dateString
     });
 
-    console.log(`${operation}: Deletion result for date ${dateString}:`, result);
-
     if (result.deletedCount === 0) {
-      // This means no document matched BOTH userId and date
-      console.warn(`${operation}: Journal entry not found for deletion. Date ${dateString}, User ${userId}.`);
-      // It's arguably not an error if the client tries to delete something that doesn't exist.
-      // Return 404 to indicate the resource wasn't found.
+      console.warn(`[API_INFO] Operation: ${operation}, Endpoint: /api/features/journal/${dateString}, User: ${userId}, Message: Journal entry not found for deletion.`);
       return NextResponse.json({ message: "Journal entry not found" }, { status: 404 });
     }
 
-    console.log(`${operation}: Successfully deleted journal entry for date ${dateString}`);
-    // Return 200 OK or 204 No Content. 200 with a message is often clearer for the client.
+    console.log(`[API_SUCCESS] Operation: ${operation}, Endpoint: /api/features/journal/${dateString}, User: ${userId}, Message: Successfully deleted journal entry.`);
     return NextResponse.json({ message: "Journal entry deleted successfully" }, { status: 200 });
 
   } catch (error) {
-    console.error(`Error in ${operation} for date ${dateString}:`, error);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    logApiError(operation, dateString, error);
+    return NextResponse.json({ message: "Internal server error. Please try again later." }, { status: 500 });
   }
 }
