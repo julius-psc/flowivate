@@ -136,11 +136,11 @@ export async function GET(
 // PUT to create or update (upsert) a journal entry by date
 // This handler remains unchanged as per the request, but could also adopt logApiError.
 export async function PUT(
-  request: Request,
-  { params }: { params: { date: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ date: string }> }
 ) {
   const operation = "PUT"; // For consistency if we add logApiError here
-  const { date: dateString } = params;
+  const { date: dateString } = await params;
   // console.log(`${operation} /api/features/journal/[date]: Received request for date: ${dateString}`); // Original log
 
    if (!isValidDateString(dateString)) {
@@ -239,11 +239,11 @@ export async function PUT(
 
 // DELETE a journal entry by date
 export async function DELETE(
-  request: Request, // Can use NextRequest
-  { params }: { params: { date: string } }
+  request: NextRequest, 
+  { params }: { params: Promise<{ date: string }> }
 ) {
   const operation = "DELETE";
-  const { date: dateString } = params;
+  const { date: dateString } = await params;
 
   if (!isValidDateString(dateString)) {
     console.warn(`[API_VALIDATION_ERROR] Operation: ${operation}, Endpoint: /api/features/journal/${dateString}, Message: Invalid date format. Expected YYYY-MM-DD.`);
