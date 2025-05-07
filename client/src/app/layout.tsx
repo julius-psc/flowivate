@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 // Define metadata for your application
 export const metadata: Metadata = {
-  title: "Your App Title",
-  description: "Your App Description",
+  title: "Flowivate",
+  description: "Your productivity and focus hub.",
 };
 
 export default function RootLayout({
