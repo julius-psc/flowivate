@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from "@/lib/authOptions";
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
-import type { NextRequest } from 'next/server';
 
 interface ChatConversation {
   _id: ObjectId;
@@ -46,10 +45,10 @@ function logApiError(
 }
 
 export async function GET(
-  req: NextRequest,
-  context: { params: Promise<{ chatId: string }> }
+  request: NextRequest,
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
-  const { chatId } = await context.params;
+  const { chatId } = await params;
 
   try {
     const session = await getServerSession(authOptions);
