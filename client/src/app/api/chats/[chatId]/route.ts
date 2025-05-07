@@ -45,12 +45,11 @@ function logApiError(
   );
 }
 
-// GET /api/chats/[chatId]
 export async function GET(
   req: NextRequest,
-  context: { params: { chatId: string } }
+  context: { params: Promise<{ chatId: string }> }
 ) {
-  const { chatId } = context.params;
+  const { chatId } = await context.params;
 
   try {
     const session = await getServerSession(authOptions);
@@ -94,12 +93,11 @@ export async function GET(
   }
 }
 
-// DELETE /api/chats/[chatId]
 export async function DELETE(
   req: NextRequest,
-  context: { params: { chatId: string } }
+  context: { params: Promise<{ chatId: string }> }
 ) {
-  const { chatId } = context.params;
+  const { chatId } = await context.params;
 
   try {
     const session = await getServerSession(authOptions);
