@@ -2,12 +2,17 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "16.x"
+  },
+  
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
+  
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@auth/mongodb-adapter": "^3.8.0",
