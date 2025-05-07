@@ -14,16 +14,17 @@ interface ChatConversation {
   updatedAt: Date;
 }
 
-interface RouteContext {
-  params: {
-    chatId: string;
-  };
-}
+// REMOVE or comment out your custom RouteContext interface
+// interface RouteContext {
+//   params: {
+//     chatId: string;
+//   };
+// }
 
 // GET /api/chats/[chatId]
 export async function GET(
   req: NextRequest,
-  { params }: RouteContext
+  { params }: { params: { chatId: string } } // Type the params inline here
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -31,7 +32,7 @@ export async function GET(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const chatId = params.chatId;
+    const chatId = params.chatId; // This remains the same
 
     let userObjectId: ObjectId;
     let chatObjectId: ObjectId;
@@ -70,7 +71,9 @@ export async function GET(
     return NextResponse.json(chatResponse, { status: 200 });
 
   } catch (error) {
-    console.error(`Error in GET /api/chats/${params.chatId}:`, error);
+    // It's good practice to check if params exists before trying to access chatId
+    const chatIdForError = params ? params.chatId : 'unknown';
+    console.error(`Error in GET /api/chats/${chatIdForError}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
@@ -78,7 +81,7 @@ export async function GET(
 // DELETE /api/chats/[chatId]
 export async function DELETE(
   req: NextRequest,
-  { params }: RouteContext
+  { params }: { params: { chatId: string } } // Type the params inline here
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -86,7 +89,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const chatId = params.chatId;
+    const chatId = params.chatId; // This remains the same
 
     let userObjectId: ObjectId;
     let chatObjectId: ObjectId;
@@ -115,7 +118,9 @@ export async function DELETE(
     return NextResponse.json({ message: 'Chat deleted successfully' }, { status: 200 });
 
   } catch (error) {
-    console.error(`Error in DELETE /api/chats/${params.chatId}:`, error);
+    // It's good practice to check if params exists before trying to access chatId
+    const chatIdForError = params ? params.chatId : 'unknown';
+    console.error(`Error in DELETE /api/chats/${chatIdForError}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
