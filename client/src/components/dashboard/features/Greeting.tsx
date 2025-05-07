@@ -2,15 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { IconSend2, IconFlameFilled } from "@tabler/icons-react";
+import { IconFlameFilled } from "@tabler/icons-react";
 import styles from "../../../stylesheets/Greeting.module.css";
-import ChatPanel from "./ai/ChatPanel";
 import { motivationalQuotes } from "../../../app/data/quotes";
 
 const Greeting: React.FC = () => {
-  const [searchValue, setSearchValue] = useState("");
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatQuery, setChatQuery] = useState("");
   const [streak, setStreak] = useState(0);
   const [quote, setQuote] = useState("");
   const { data: session } = useSession();
@@ -49,18 +45,6 @@ const Greeting: React.FC = () => {
     fetchStreak();
   }, []);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(e.target.value);
-  };
-
-  const handleSubmit = () => {
-    if (searchValue.trim()) {
-      setChatQuery(searchValue);
-      setIsChatOpen(true);
-      setSearchValue("");
-    }
-  };
-
   return (
     <div className={styles.container}>
       <div className={styles.background} />
@@ -72,24 +56,7 @@ const Greeting: React.FC = () => {
           &#34;{quote || "Embrace discomfort"}&#34;
         </p>
         <div className="flex justify-between items-center gap-4">
-          <div className="relative flex-grow">
-            <input
-              type="text"
-              placeholder="What do you need help with?"
-              value={searchValue}
-              onChange={handleSearchChange}
-              className="w-full px-4 pr-10 py-2 border rounded-md focus:outline-none border-gray-200/50 dark:border-gray-700/50 focus:border-primary-blue focus:ring-3 focus:ring-blue-200 text-sm text-dark:text-gray-300 placeholder-gray-400 bg-transparent dark:placeholder-primary-white/30 dark:focus:border-primary-blue-dark dark:focus:ring-primary-blue-dark/50"
-              aria-label="Search input"
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            />
-            <button
-              onClick={handleSubmit}
-              className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-primary-black hover:text-blue-500 dark:text-primary-white dark:hover:text-blue-400 transition-colors duration-150 disabled:text-gray-400 dark:disabled:text-gray-700"
-              disabled={!searchValue.trim()}
-              aria-label="Submit search"
-            >
-              <IconSend2 size={20} />
-            </button>
+          <div className="relative flex-grow">Submit search
           </div>
           <div className="flex items-center gap-1 px-3 py-1 rounded-full">
             <IconFlameFilled
@@ -103,11 +70,6 @@ const Greeting: React.FC = () => {
           </div>
         </div>
       </div>
-      <ChatPanel
-        isOpen={isChatOpen}
-        setIsOpen={setIsChatOpen}
-        initialQuery={chatQuery}
-      />
     </div>
   );
 };
