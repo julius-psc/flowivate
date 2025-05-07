@@ -15,7 +15,7 @@ export default function DashboardLayout({
       <div
         className="
     flex flex-col h-screen w-screen 
-    bg-cover bg-no-repeat 
+    bg-cover bg-no-repeat bg-secondary-white
     bg-[url('/assets/illustrations/gradient-bg.svg')] 
     dark:bg-[#151E2F]
   "
