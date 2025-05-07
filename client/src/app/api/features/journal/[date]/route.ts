@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import clientPromise from "../../../../../lib/mongodb"; // Adjust path if necessary
 import { ObjectId } from "mongodb";
@@ -73,11 +73,11 @@ function logApiError(
 
 // GET a single journal entry by date
 export async function GET(
-  request: Request, // Can use NextRequest if specific Next.js features are needed
-  { params }: { params: { date: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ date: string }> }
 ) {
   const operation = "GET";
-  const { date: dateString } = params;
+  const { date: dateString } = await params;
 
   if (!isValidDateString(dateString)) {
     console.warn(`[API_VALIDATION_ERROR] Operation: ${operation}, Endpoint: /api/features/journal/${dateString}, Message: Invalid date format. Expected YYYY-MM-DD.`);
