@@ -5,7 +5,6 @@ import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import type { NextRequest } from 'next/server';
 
-// Interface for chat document
 interface ChatConversation {
   _id: ObjectId;
   userId: ObjectId;
@@ -15,12 +14,6 @@ interface ChatConversation {
   updatedAt: Date;
 }
 
-// Interface for dynamic route parameters
-interface RouteContextParams {
-  chatId: string;
-}
-
-// Error logging helper
 function logApiError(
   operation: 'GET' | 'DELETE',
   chatId: string | undefined,
@@ -55,9 +48,9 @@ function logApiError(
 // GET /api/chats/[chatId]
 export async function GET(
   req: NextRequest,
-  { params }: { params: RouteContextParams }
+  context: { params: { chatId: string } }
 ) {
-  const chatIdFromParams = params.chatId;
+  const { chatId } = context.params;
 
   try {
     const session = await getServerSession(authOptions);
@@ -65,21 +58,8 @@ export async function GET(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const userIdAuth: string = session.user.id;
-
-    let userObjectId: ObjectId;
-    let chatObjectId: ObjectId;
-
-    try {
-      userObjectId = new ObjectId(userIdAuth);
-      chatObjectId = new ObjectId(chatIdFromParams);
-    } catch (idFormatError: unknown) {
-      console.warn(
-        `Invalid ObjectId format. Input userIdAuth: "${userIdAuth}", input chatIdFromParams: "${chatIdFromParams}".`,
-        idFormatError
-      );
-      return NextResponse.json({ message: 'Invalid ID format for resource identification.' }, { status: 400 });
-    }
+    const userObjectId = new ObjectId(session.user.id);
+    const chatObjectId = new ObjectId(chatId);
 
     const client = await clientPromise;
     const db = client.db("Flowivate");
@@ -108,8 +88,8 @@ export async function GET(
 
     return NextResponse.json(chatResponse, { status: 200 });
 
-  } catch (error: unknown) {
-    logApiError('GET', chatIdFromParams, error);
+  } catch (error) {
+    logApiError('GET', chatId, error);
     return NextResponse.json({ message: 'Internal server error. Please try again later.' }, { status: 500 });
   }
 }
@@ -117,9 +97,9 @@ export async function GET(
 // DELETE /api/chats/[chatId]
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: RouteContextParams }
+  context: { params: { chatId: string } }
 ) {
-  const chatIdFromParams = params.chatId;
+  const { chatId } = context.params;
 
   try {
     const session = await getServerSession(authOptions);
@@ -127,21 +107,8 @@ export async function DELETE(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const userIdAuth: string = session.user.id;
-
-    let userObjectId: ObjectId;
-    let chatObjectId: ObjectId;
-
-    try {
-      userObjectId = new ObjectId(userIdAuth);
-      chatObjectId = new ObjectId(chatIdFromParams);
-    } catch (idFormatError: unknown) {
-      console.warn(
-        `Invalid ObjectId format. Input userIdAuth: "${userIdAuth}", input chatIdFromParams: "${chatIdFromParams}".`,
-        idFormatError
-      );
-      return NextResponse.json({ message: 'Invalid ID format for resource identification.' }, { status: 400 });
-    }
+    const userObjectId = new ObjectId(session.user.id);
+    const chatObjectId = new ObjectId(chatId);
 
     const client = await clientPromise;
     const db = client.db("Flowivate");
@@ -158,8 +125,8 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Chat deleted successfully' }, { status: 200 });
 
-  } catch (error: unknown) {
-    logApiError('DELETE', chatIdFromParams, error);
+  } catch (error) {
+    logApiError('DELETE', chatId, error);
     return NextResponse.json({ message: 'Internal server error. Please try again later.' }, { status: 500 });
   }
 }
