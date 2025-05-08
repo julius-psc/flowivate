@@ -1,103 +1,86 @@
-// /api/streaks/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import clientPromise from "../../../../lib/mongodb"; // Adjust path if needed
+import clientPromise from "../../../../lib/mongodb";
 import { authOptions } from "@/lib/authOptions";
-import { ObjectId } from 'mongodb'; // Import ObjectId
+import { ObjectId } from 'mongodb';
+
+interface StreakDocument {
+  _id?: ObjectId; // Automatically added by MongoDB
+  userId: ObjectId;
+  count: number;
+  lastLogin: Date; // Stores the date of the last login that affected the streak
+}
+
+const DEFAULT_DB_NAME = "Flowivate";
+
+function isValidObjectId(id: string): boolean {
+  if (typeof id !== 'string') return false;
+  return ObjectId.isValid(id) && (new ObjectId(id).toString() === id);
+}
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions); // Use authOptions for typed session
-
-    // Check for user ID in the session
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
-    let userObjectId: ObjectId;
-
-    // Validate and convert the string ID to a MongoDB ObjectId
-    try {
-      userObjectId = new ObjectId(userId);
-    } catch (error) {
-      console.log(error);
-      console.error('Invalid user ID format:', userId);
-      return NextResponse.json({ message: 'Invalid user ID format' }, { status: 400 });
+    if (!isValidObjectId(userId)) {
+      console.error(`Error in GET /api/streaks: Invalid session user ID format - ${userId}`);
+      return NextResponse.json({ message: "Invalid user identifier" }, { status: 400 });
     }
+    const userObjectId = new ObjectId(userId);
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize to start of day UTC
+    today.setHours(0, 0, 0, 0); // Normalize to start of the server's current day
 
     const client = await clientPromise;
-    // Ensure your DB name is correct if it's not the default 'test'
-    const db = client.db("Flowivate"); // Or process.env.MONGODB_DB
-    const streaksCollection = db.collection("streaks");
+    const db = client.db(DEFAULT_DB_NAME);
+    const streaksCollection = db.collection<StreakDocument>("streaks");
 
-    // Find streak using userId (which is the MongoDB _id)
-    // Ensure the field name in your database is 'userId' or adjust accordingly
-    const streak = await streaksCollection.findOne({ userId: userObjectId });
+    const existingStreak = await streaksCollection.findOne({ userId: userObjectId });
 
-    if (!streak) {
-      // No existing streak, create a new one for this user
-      const newStreak = { userId: userObjectId, count: 1, lastLogin: today };
-      await streaksCollection.insertOne(newStreak);
-      console.log(`Streak created for user ${userId}`);
+    if (!existingStreak) {
+      const newStreakData: StreakDocument = { userId: userObjectId, count: 1, lastLogin: today };
+      await streaksCollection.insertOne(newStreakData);
       return NextResponse.json({ streak: 1 }, { status: 200 });
     }
 
-    // Streak exists, calculate if it should be updated or reset
-    const lastLogin = new Date(streak.lastLogin); // Assumes lastLogin is stored as ISODate
-    lastLogin.setHours(0, 0, 0, 0); // Normalize last login date UTC
+    const lastLoginDate = new Date(existingStreak.lastLogin);
+    lastLoginDate.setHours(0, 0, 0, 0); // Normalize last login date
 
-    const diffInTime = today.getTime() - lastLogin.getTime();
+    const diffInTime = today.getTime() - lastLoginDate.getTime();
     const diffInDays = Math.floor(diffInTime / (1000 * 60 * 60 * 24));
 
-    let newCount = streak.count;
-    let updated = false;
+    let currentStreakCount = existingStreak.count;
+    let needsDatabaseUpdate = false;
 
     if (diffInDays === 1) {
-      // Consecutive day
-      newCount += 1;
-      updated = true;
-      console.log(`Streak continued for user ${userId}. New count: ${newCount}`);
+      currentStreakCount += 1;
+      needsDatabaseUpdate = true;
     } else if (diffInDays > 1) {
-      // Streak broken
-      newCount = 1; // Reset streak
-      updated = true;
-      console.log(`Streak reset for user ${userId}.`);
-    } else if (diffInDays === 0) {
-       // Same day login, do nothing to the count, but maybe update lastLogin timestamp if needed?
-       // Current logic updates lastLogin only if streak changes, which is fine.
-       console.log(`Same day login for user ${userId}. Streak count: ${newCount}`);
-    } else {
-       // This case (diffInDays < 0) should theoretically not happen if clocks are sync'd
-       console.warn(`Time difference is negative for user ${userId}. Diff: ${diffInDays} days.`);
-       // Decide how to handle this, maybe do nothing or log error
-       updated = false; // Ensure no update happens for negative diff
+      currentStreakCount = 1; // Reset streak
+      needsDatabaseUpdate = true;
+    } else if (diffInDays < 0) {
+      // Time difference is negative, implies an issue or clock skew.
+      // Log this unusual case but don't change the streak.
+      console.error(`Error in GET /api/streaks: Negative time difference for user ${userId}. Current streak preserved. Diff in days: ${diffInDays}`);
+      // needsDatabaseUpdate remains false
     }
+    // If diffInDays === 0 (same day login), currentStreakCount remains unchanged, needsDatabaseUpdate is false.
 
-    // Update only if the count changed or it's the first login today after a break
-    if (updated) {
+    if (needsDatabaseUpdate) {
         await streaksCollection.updateOne(
-          { userId: userObjectId }, // Filter by userId
-          { $set: { count: newCount, lastLogin: today } }
+          { userId: userObjectId },
+          { $set: { count: currentStreakCount, lastLogin: today } }
         );
-    } else {
-        // Optionally update lastLogin even on same-day login if desired,
-        // but current logic only updates if count changes.
-        // Example: To always update lastLogin timestamp:
-        // if (diffInDays === 0) {
-        //    await streaksCollection.updateOne({ userId: userObjectId }, { $set: { lastLogin: today } });
-        // }
     }
 
-
-    return NextResponse.json({ streak: newCount }, { status: 200 });
+    return NextResponse.json({ streak: currentStreakCount }, { status: 200 });
 
   } catch (error) {
     console.error("Error in GET /api/streaks:", error);
-    // Provide a more generic error message to the client
-    return NextResponse.json({ message: "Internal server error processing streak data." }, { status: 500 });
+    return NextResponse.json({ message: "Failed to process streak data" }, { status: 500 });
   }
 }

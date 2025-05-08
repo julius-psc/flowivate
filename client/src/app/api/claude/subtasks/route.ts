@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateClaudeResponse } from "../../../../../services/claude";
-
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/authOptions";
 
-// Define the expected structure of the request body for this specific route
 interface RequestBody {
   taskDescription: string;
 }
 
-// Define the structure for the breakdown prompt specifically
+const MAX_TASK_DESCRIPTION_LENGTH = 2000; // Define a reasonable max length
+
 const breakdownPromptTemplate = (task: string): string => `
 Analyze the complex task below and break it down into a concise list of approximately 5-8 actionable, high-level subtasks.
 
@@ -31,7 +30,7 @@ JSON Array:
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) {
+  if (!session?.user?.id) { // Also check for user.id for completeness
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
@@ -45,29 +44,51 @@ export async function POST(req: NextRequest) {
       taskDescription.trim() === ""
     ) {
       return NextResponse.json(
-        { message: "Valid taskDescription is required" },
+        { message: "Task description is required and must be a non-empty string." },
         { status: 400 }
       );
     }
 
-    const finalPrompt = breakdownPromptTemplate(taskDescription.trim());
+    const trimmedTaskDescription = taskDescription.trim();
 
-    // Call the Claude service with the specific prompt
-    // No conversation history needed for this specific task
+    if (trimmedTaskDescription.length > MAX_TASK_DESCRIPTION_LENGTH) {
+      return NextResponse.json(
+        { message: `Task description exceeds maximum length of ${MAX_TASK_DESCRIPTION_LENGTH} characters.` },
+        { status: 400 }
+      );
+    }
+
+    const finalPrompt = breakdownPromptTemplate(trimmedTaskDescription);
     const aiResponseText = await generateClaudeResponse(finalPrompt);
 
-    // Return the raw text response from Claude.
-    // The client-side will be responsible for parsing the JSON.
-    return NextResponse.json({ response: aiResponseText });
+    try {
+      // Attempt to parse the AI's response to ensure it's valid JSON
+      const parsedJsonResponse = JSON.parse(aiResponseText);
+      return NextResponse.json(parsedJsonResponse); // Return the parsed JSON directly
+    } catch (parseError) {
+      console.error("API route /api/claude/subtasks - AI response JSON parsing error:", {
+        aiResponse: aiResponseText, // Log the problematic response
+        parseErrorDetails: parseError instanceof Error ? { name: parseError.name, message: parseError.message } : parseError,
+      });
+      return NextResponse.json(
+        { message: "AI service returned an invalid response format." },
+        { status: 502 } // Bad Gateway, as our upstream service (Claude) misbehaved
+      );
+    }
+
   } catch (error: unknown) {
-    console.error("API route /api/claude/subtasks error:", error);
-    // Don't expose detailed error messages to the client in production
-    const errorMessage =
-      error instanceof Error ? error.message : "An unknown error occurred.";
+    let errorContext: Record<string, unknown> = {};
+    if (error instanceof Error) {
+        errorContext = { name: error.name, message: error.message, cause: error.cause };
+    } else if (typeof error === 'object' && error !== null) {
+        errorContext = { errorDetails: error };
+    } else {
+        errorContext = { errorInfo: String(error) };
+    }
+    console.error("API route /api/claude/subtasks - General error:", errorContext);
+    
     return NextResponse.json(
-      {
-        message: `Internal server error processing AI request: ${errorMessage}`,
-      },
+      { message: "An internal server error occurred while processing your request." },
       { status: 500 }
     );
   }

@@ -1,163 +1,249 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from "@/lib/authOptions";
-import clientPromise from '../../../lib/mongodb'; // Adjust path if needed
+import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
-interface Message {
-    sender: 'user' | 'assistant';
-    text: string;
-    timestamp: Date;
+interface ChatMessage {
+  sender: 'user' | 'ai' | string;
+  content: string;
+  timestamp: Date;
 }
 
 interface ChatConversation {
-    _id?: ObjectId; // Added by MongoDB
-    userId: ObjectId;
-    title: string;
-    messages: Message[];
-    createdAt: Date;
-    updatedAt: Date;
+  _id: ObjectId;
+  userId: ObjectId;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// GET /api/chats - Fetch recent chat summaries for the logged-in user
-export async function GET() {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-        }
-
-        let userObjectId: ObjectId;
-        try {
-            userObjectId = new ObjectId(session.user.id);
-        } catch (error) {
-            console.log(error);
-            console.error('Invalid user ID format:', session.user.id);
-            return NextResponse.json({ message: 'Invalid user ID format' }, { status: 400 });
-        }
-
-        const client = await clientPromise;
-        const db = client.db();
-        const chatsCollection = db.collection<ChatConversation>('chats'); // Use a 'chats' collection
-
-        // Fetch recent chats, sorted by update time, limit results
-        const recentChats = await chatsCollection
-            .find({ userId: userObjectId })
-            .sort({ updatedAt: -1 }) // Show most recent first
-            .limit(10) // Limit the number of recent chats shown
-            .project({ // Only project necessary fields for summary
-                _id: 1,
-                title: 1,
-                updatedAt: 1,
-                // Optionally add a preview (e.g., first user message) if needed
-                // preview: { $substr: [ "$messages.0.text", 0, 50 ] } // Example preview
-            })
-            .toArray();
-
-        // Format the response
-        const chatSummaries = recentChats.map(chat => ({
-            id: chat._id.toString(),
-            title: chat.title || 'Untitled Chat', // Fallback title
-            // preview: chat.preview || '...', // Use preview if projected
-            timestamp: chat.updatedAt.toISOString(), // Or format as needed
-        }));
-
-        return NextResponse.json(chatSummaries, { status: 200 });
-
-    } catch (error) {
-        console.error('Error in GET /api/chats:', error);
-        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-    }
+function isValidObjectId(id: string): boolean {
+  return ObjectId.isValid(id) && (new ObjectId(id).toString() === id);
 }
 
-// POST /api/chats - Create a new chat or update an existing one
-export async function POST(request: Request) {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-        }
+function logApiError(
+  operation: 'GET' | 'PUT' | 'DELETE',
+  chatId: string | undefined,
+  userId: string | undefined,
+  error: unknown
+): void {
+  const endpointScope = chatId || "[chatId_resolution_failed]";
+  const userScope = userId || "[userId_resolution_failed]";
+  let errorMessage = "An unknown error occurred";
+  let errorDetails: Record<string, unknown> = {
+    name: "UnknownError",
+    cause: "UnknownCause"
+  };
 
-        let userObjectId: ObjectId;
-        try {
-            userObjectId = new ObjectId(session.user.id);
-        } catch (error) {
-            console.log(error);
-            console.error('Invalid user ID format:', session.user.id);
-            return NextResponse.json({ message: 'Invalid user ID format' }, { status: 400 });
-        }
+  if (error instanceof Error) {
+    errorMessage = error.message;
+    errorDetails = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause,
+    };
+  } else if (typeof error === 'string') {
+    errorMessage = error;
+    errorDetails = { errorString: error };
+  } else if (typeof error === 'object' && error !== null) {
+    errorMessage = "Object error, see details.";
+    errorDetails = { errorObject: error };
+  }
 
-        const { messages, conversationId } = await request.json();
+  console.error(
+    `[API_ERROR] Operation: ${operation}, UserID: ${userScope}, Endpoint: /api/chats/${endpointScope}, Message: ${errorMessage}`,
+    errorDetails
+  );
+}
 
-        // Basic validation
-        if (!Array.isArray(messages) || messages.length === 0) {
-            return NextResponse.json({ message: 'Messages array is required' }, { status: 400 });
-        }
+export async function GET(
+  request: NextRequest,
+  context: { params: { chatId: string } }
+) {
+  const { chatId } = context.params;
+  let sessionUserId: string | undefined;
 
-        const client = await clientPromise;
-        const db = client.db();
-        const chatsCollection = db.collection<ChatConversation>('chats');
-
-        const now = new Date();
-        // Use the first user message as a potential title, or generate one
-        const potentialTitle = messages.find(m => m.sender === 'user')?.text.substring(0, 50) || 'New Chat';
-
-        let resultConversationId: string;
-
-        if (conversationId) {
-            // --- Update existing conversation ---
-            let chatObjectId: ObjectId;
-            try {
-                chatObjectId = new ObjectId(conversationId);
-            } catch (error) {
-                return NextResponse.json({ message: 'Invalid conversationId format' }, { status: 400 });
-                console.log(error);
-            }
-
-            const updateResult = await chatsCollection.updateOne(
-                { _id: chatObjectId, userId: userObjectId }, // Ensure user owns the chat
-                {
-                    $set: {
-                        messages: messages.map((m: Message) => ({ ...m, timestamp: new Date(m.timestamp) })), // Ensure dates are stored correctly
-                        updatedAt: now,
-                        // Optionally update title if it's still the default
-                        // title: { $cond: { if: { $eq: ["$title", "New Chat"] }, then: potentialTitle, else: "$title" } } // More complex update
-                    },
-                    $setOnInsert: { // Set these only if inserting (upsert case, though less likely here)
-                        userId: userObjectId,
-                        createdAt: now,
-                        title: potentialTitle // Set initial title
-                    }
-                }
-                // Consider adding upsert: true if you want POST to also create if ID doesn't exist
-                // but it might be cleaner to separate create/update logic fully
-            );
-
-            if (updateResult.matchedCount === 0) {
-                // If upsert is false (or not used), and no match, the chat doesn't exist or doesn't belong to the user
-                 return NextResponse.json({ message: 'Chat not found or unauthorized' }, { status: 404 });
-            }
-             resultConversationId = conversationId; // Return the ID used for update
-
-        } else {
-             // --- Create new conversation ---
-            const newChat: Omit<ChatConversation, '_id'> = {
-                userId: userObjectId,
-                title: potentialTitle, // Use the generated title
-                messages: messages.map((m: Message) => ({ ...m, timestamp: new Date(m.timestamp) })), // Ensure dates
-                createdAt: now,
-                updatedAt: now,
-            };
-
-            const insertResult = await chatsCollection.insertOne(newChat);
-            resultConversationId = insertResult.insertedId.toString(); // Return the new ID
-        }
-
-
-        return NextResponse.json({ message: 'Chat saved', conversationId: resultConversationId }, { status: 200 });
-
-    } catch (error) {
-        console.error('Error in POST /api/chats:', error);
-        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+    sessionUserId = session.user.id;
+
+    if (!isValidObjectId(sessionUserId)) {
+      logApiError('GET', chatId, sessionUserId, new Error('Invalid session user ID format from session'));
+      return NextResponse.json({ message: 'Invalid user identifier' }, { status: 400 });
+    }
+    if (!isValidObjectId(chatId)) {
+      logApiError('GET', chatId, sessionUserId, new Error('Invalid chat ID format from URL params'));
+      return NextResponse.json({ message: 'Invalid chat identifier' }, { status: 400 });
+    }
+
+    const userObjectId = new ObjectId(sessionUserId);
+    const chatObjectId = new ObjectId(chatId);
+
+    const client = await clientPromise;
+    const db = client.db("Flowivate");
+    const chatsCollection = db.collection<ChatConversation>('chats');
+
+    const chat = await chatsCollection.findOne({
+      _id: chatObjectId,
+      userId: userObjectId
+    });
+
+    if (!chat) {
+      return NextResponse.json({ message: 'Chat not found or access denied' }, { status: 404 });
+    }
+
+    const chatResponse = {
+      _id: chat._id.toString(),
+      userId: chat.userId.toString(),
+      title: chat.title,
+      messages: chat.messages.map(msg => ({
+        sender: msg.sender,
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString(),
+      })),
+      createdAt: chat.createdAt.toISOString(),
+      updatedAt: chat.updatedAt.toISOString(),
+    };
+
+    return NextResponse.json(chatResponse, { status: 200 });
+
+  } catch (error) {
+    logApiError('GET', chatId, sessionUserId, error);
+    return NextResponse.json({ message: 'Failed to retrieve chat' }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  context: { params: { chatId: string } }
+) {
+  const { chatId } = context.params;
+  let sessionUserId: string | undefined;
+
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+    sessionUserId = session.user.id;
+
+    if (!isValidObjectId(sessionUserId)) {
+      logApiError('PUT', chatId, sessionUserId, new Error('Invalid session user ID format from session'));
+      return NextResponse.json({ message: 'Invalid user identifier' }, { status: 400 });
+    }
+    if (!isValidObjectId(chatId)) {
+      logApiError('PUT', chatId, sessionUserId, new Error('Invalid chat ID format from URL params'));
+      return NextResponse.json({ message: 'Invalid chat identifier' }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const title = body.title;
+
+    if (typeof title !== 'string' || title.trim() === '' || title.trim().length > 255) {
+      logApiError('PUT', chatId, sessionUserId, new Error(`Invalid title provided: length or type. Length: ${title?.length}`));
+      return NextResponse.json({ message: 'Title is required, must be a non-empty string, and less than 256 characters.' }, { status: 400 });
+    }
+
+    const userObjectId = new ObjectId(sessionUserId);
+    const chatObjectId = new ObjectId(chatId);
+
+    const client = await clientPromise;
+    const db = client.db("Flowivate");
+    const chatsCollection = db.collection<ChatConversation>('chats');
+
+    const trimmedTitle = title.trim();
+
+    const updateResult = await chatsCollection.findOneAndUpdate(
+      { _id: chatObjectId, userId: userObjectId },
+      {
+        $set: {
+          title: trimmedTitle,
+          updatedAt: new Date()
+        }
+      },
+      { returnDocument: 'after' }
+    );
+
+    if (!updateResult) {
+      return NextResponse.json({ message: 'Chat not found or access denied for update' }, { status: 404 });
+    }
+
+    const updatedChat = updateResult;
+
+    const chatResponse = {
+      _id: updatedChat._id.toString(),
+      userId: updatedChat.userId.toString(),
+      title: updatedChat.title,
+      messages: updatedChat.messages.map(msg => ({
+        sender: msg.sender,
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString(),
+      })),
+      createdAt: updatedChat.createdAt.toISOString(),
+      updatedAt: updatedChat.updatedAt.toISOString(),
+    };
+
+    return NextResponse.json(chatResponse, { status: 200 });
+
+  } catch (error: unknown) {
+    if (error instanceof SyntaxError && error.message.includes("JSON")) {
+      logApiError('PUT', chatId, sessionUserId, new Error(`Invalid JSON payload: ${error.message}`));
+      return NextResponse.json({ message: 'Invalid JSON payload' }, { status: 400 });
+    }
+    logApiError('PUT', chatId, sessionUserId, error);
+    return NextResponse.json({ message: 'Failed to update chat' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: { chatId: string } }
+) {
+  const { chatId } = context.params;
+  let sessionUserId: string | undefined;
+
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+    sessionUserId = session.user.id;
+
+    if (!isValidObjectId(sessionUserId)) {
+      logApiError('DELETE', chatId, sessionUserId, new Error('Invalid session user ID format from session'));
+      return NextResponse.json({ message: 'Invalid user identifier' }, { status: 400 });
+    }
+    if (!isValidObjectId(chatId)) {
+      logApiError('DELETE', chatId, sessionUserId, new Error('Invalid chat ID format from URL params'));
+      return NextResponse.json({ message: 'Invalid chat identifier' }, { status: 400 });
+    }
+
+    const userObjectId = new ObjectId(sessionUserId);
+    const chatObjectId = new ObjectId(chatId);
+
+    const client = await clientPromise;
+    const db = client.db("Flowivate");
+    const chatsCollection = db.collection('chats');
+
+    const deleteResult = await chatsCollection.deleteOne({
+      _id: chatObjectId,
+      userId: userObjectId
+    });
+
+    if (deleteResult.deletedCount === 0) {
+      return NextResponse.json({ message: 'Chat not found or access denied for deletion' }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: 'Chat deleted successfully' }, { status: 200 });
+
+  } catch (error) {
+    logApiError('DELETE', chatId, sessionUserId, error);
+    return NextResponse.json({ message: 'Failed to delete chat' }, { status: 500 });
+  }
 }

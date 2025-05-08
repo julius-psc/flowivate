@@ -1,14 +1,17 @@
-import { NextAuthOptions, Session, User } from "next-auth";
-import { JWT as JWTType } from "next-auth/jwt"; // Keep JWT import consistent
+import { NextAuthOptions, User as NextAuthUser, Session } from "next-auth";
+import { JWT as JWTType } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
-import clientPromise from "@/lib/mongodb"; // Ensure this path is correct from the new file location
-import bcrypt from "bcrypt";
-import { MongoClient, ObjectId } from "mongodb";
+import clientPromise from "@/lib/mongodb";
 
-// Extend the default Session type to include user.id and username
+
+import connectDB from "@/lib/mongoose";
+import User, { IUser } from "@/app/models/User";
+
+import bcrypt from "bcrypt";
+
 declare module "next-auth" {
   interface Session {
     user: {
@@ -16,11 +19,15 @@ declare module "next-auth" {
       email?: string | null;
       username?: string | null;
       image?: string | null;
+      name?: string | null;
     };
+  }
+  interface User {
+    id: string;
+    username?: string | null;
   }
 }
 
-// Extend the JWT type to include id and username
 declare module "next-auth/jwt" {
   interface JWT {
     id?: string;
@@ -30,14 +37,15 @@ declare module "next-auth/jwt" {
 
 export const authOptions: NextAuthOptions = {
   adapter: MongoDBAdapter(clientPromise),
+
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!
+      clientSecret: process.env.GITHUB_SECRET!,
     }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -45,40 +53,34 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials): Promise<User | null> {
+      async authorize(credentials): Promise<NextAuthUser | null> {
         if (!credentials?.email || !credentials?.password) {
-          console.log("Missing credentials");
           throw new Error("Missing credentials");
         }
 
-        const client: MongoClient = await clientPromise;
-        const db = client.db("Flowivate"); // Use your actual database name
+        await connectDB();
 
-        const user = await db.collection("users").findOne<{
-          _id: ObjectId;
-          email: string;
-          password: string; // Ensure this is the hashed password
-          username?: string;
-        }>({ email: credentials.email });
+        const user = await User.findOne<IUser>({ email: credentials.email }).exec();
 
         if (!user) {
-          console.log("No user found for email:", credentials.email);
-          throw new Error("No user found");
+          throw new Error("Invalid credentials"); 
+        }
+        if (!user.password) {
+          throw new Error("Invalid credentials - please use your OAuth provider to sign in.");
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) {
-          console.log("Invalid password for email:", credentials.email);
-          throw new Error("Invalid password");
+          throw new Error("Invalid credentials"); 
         }
 
-        const userData = {
+        return {
           id: user._id.toString(),
           email: user.email,
-          username: user.username || null
+          username: user.username,
+          name: user.name,
+          image: user.image,
         };
-        console.log("User authenticated:", userData);
-        return userData;
       },
     }),
   ],
@@ -90,53 +92,53 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user, account }: { token: JWTType; user?: User; account?: Record<string, unknown> | null }): Promise<JWTType> {
+    async jwt({ token, user, account }): Promise<JWTType> {
       if (user) {
         token.id = user.id;
 
         if (account && (account.provider === 'github' || account.provider === 'google')) {
-          const client: MongoClient = await clientPromise;
-          const db = client.db("Flowivate"); // Use your actual database name
+          await connectDB(); 
 
-          const dbUser = await db.collection("users").findOne({ email: user.email });
+          const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
 
-          if (dbUser && dbUser.username) {
+          if (dbUser) {
+            let changed = false;
+            if (user.name && dbUser.name !== user.name) { dbUser.name = user.name; changed = true; }
+            if (user.image && dbUser.image !== user.image) { dbUser.image = user.image; changed = true; }
+
+            if (!dbUser.username) {
+              const baseUsername = user.email?.split('@')[0] || user.name?.replace(/\s+/g, '')?.toLowerCase() || `user${Date.now()}`;
+              let potentialUsername = baseUsername;
+              let attempt = 0;
+              // Check for username uniqueness using Mongoose model
+              while (await User.findOne({ username: potentialUsername }).exec()) {
+                attempt++;
+                potentialUsername = `${baseUsername}${attempt}`;
+              }
+              dbUser.username = potentialUsername;
+              changed = true;
+            }
+            if (changed) {
+                await dbUser.save();
+            }
             token.username = dbUser.username;
           } else {
-            let username = user.email?.split('@')[0] || `user${Date.now()}`; // Ensure username is always set
-
-            let potentialUsername = username;
-            while (await db.collection("users").findOne({ username: potentialUsername })) {
-              potentialUsername = `<span class="math-inline">\{username\}</span>{Math.floor(Math.random() * 1000) + attempt}`;
-            }
-            username = potentialUsername;
-
-            if (dbUser && !dbUser.username) {
-              await db.collection("users").updateOne(
-                { _id: new ObjectId(dbUser._id) },
-                { $set: { username } }
-              );
-            } else if (!dbUser && user.email) { 
-            }
-            token.username = username;
+            console.warn(`JWT: User with email ${user.email} from OAuth not found via Mongoose model. Adapter should have created it.`);
+            token.username = user.email?.split('@')[0];
           }
-        } else if (user) { // For credentials provider
-          token.username = (user as { username?: string }).username;
+        } else if (user.username) { 
+          token.username = user.username;
         }
-        console.log("JWT callback - Token after adding user data:", token);
       }
       return token;
     },
     async session({ session, token }: { session: Session; token: JWTType }): Promise<Session> {
-      console.log("Session callback - Token:", token);
-      if (token) {
-        session.user = {
-          ...session.user, // Spread existing session.user properties like email, image
-          id: token.id as string,
-          username: token.username as string | null,
-        };
+      if (token.id) {
+        session.user.id = token.id;
       }
-      console.log("Session callback - Session:", session);
+      if (token.username) {
+        session.user.username = token.username;
+      }
       return session;
     },
   },
