@@ -64,9 +64,9 @@ function logApiError(
 
 export async function GET(
   request: NextRequest,
-  context: { params: { chatId: string } } 
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
-  const { chatId } = context.params; // Directly access params, Next.js resolves the promise
+  const { chatId } = await params; 
   let sessionUserId: string | undefined;
 
   try {
@@ -124,9 +124,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
-  const { chatId } = context.params;
+  const { chatId } = await params;
   let sessionUserId: string | undefined;
 
   try {

@@ -87,10 +87,10 @@ const transformEntryForResponse = (entry: JournalEntry | null): JournalEntryResp
 
 export async function GET(
   request: NextRequest,
-  context: { params: { date: string } }
+  { params }: { params: Promise<{ date: string }> }
 ) {
   const operation = "GET";
-  const { date: dateString } = context.params;
+  const { date: dateString } = await params;
   let sessionUserId: string | undefined;
 
   try {
@@ -134,10 +134,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { date: string } }
+  { params }: { params: Promise<{ date: string }> }
 ) {
   const operation = "PUT";
-  const { date: dateString } = context.params;
+  const { date: dateString } = await params;
   let sessionUserId: string | undefined;
 
   try {
@@ -211,10 +211,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { date: string } }
+  { params }: { params: Promise<{ date: string }> }
 ) {
   const operation = "DELETE";
-  const { date: dateString } = context.params;
+  const { date: dateString } = await params;
   let sessionUserId: string | undefined;
 
   try {
