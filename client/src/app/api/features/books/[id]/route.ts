@@ -30,10 +30,10 @@ function isValidObjectId(id: string): boolean {
 }
 
 export async function GET(
-  request: NextRequest, // request param often unused in GET by ID, but good practice to include
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ bookId: string }> }
 ) {
-  const { id: bookId } = context.params;
+  const { bookId } = await params;
 
   try {
     if (!isValidObjectId(bookId)) {
@@ -83,9 +83,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ bookId: string }> }
 ) {
-  const { id: bookId } = context.params;
+  const { bookId } = await params;
 
   try {
     if (!isValidObjectId(bookId)) {
@@ -227,9 +227,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ bookId: string }> }
 ) {
-  const { id: bookId } = context.params;
+  const { bookId } = await params;
 
   try {
     if (!isValidObjectId(bookId)) {
