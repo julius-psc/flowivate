@@ -57,6 +57,8 @@ const ChatPanel: React.FC<CommandBarProps> = ({
     "Give me motivation to do my workout",
     "What is a dopamine detox?",
   ]);
+  // Add a state variable to track if initial setup is complete
+  const [initialSetupComplete, setInitialSetupComplete] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -175,11 +177,13 @@ const ChatPanel: React.FC<CommandBarProps> = ({
     [conversationId, debouncedSaveChat]
   );
 
+  // Modified useEffect to only run once when isOpen changes to true
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !initialSetupComplete) {
       setInputText("");
       setIsLoading(false);
       apiCallInProgressRef.current = false;
+
       if (initialMessages && initialMessages.length > 0) {
         setMessages(
           initialMessages.map((m) => ({
@@ -201,12 +205,24 @@ const ChatPanel: React.FC<CommandBarProps> = ({
         setMessages([]);
         setExpanded(false);
       }
+
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 300);
+
+      setInitialSetupComplete(true);
       return () => clearTimeout(timer);
+    } else if (!isOpen) {
+      // Reset initialSetupComplete when closing the panel
+      setInitialSetupComplete(false);
     }
-  }, [isOpen, initialQuery, initialMessages, fetchAndSetClaudeResponse]);
+  }, [
+    isOpen,
+    initialQuery,
+    initialMessages,
+    fetchAndSetClaudeResponse,
+    initialSetupComplete,
+  ]);
 
   useEffect(() => {
     if (expanded) {
@@ -249,8 +265,9 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       setMessages((prev) => [...prev, userMessage]);
       setInputText("");
       setMessages((currentMessages) => {
-        fetchAndSetClaudeResponse(trimmedInput, currentMessages);
-        return currentMessages;
+        const updatedMessages = [...currentMessages];
+        fetchAndSetClaudeResponse(trimmedInput, updatedMessages);
+        return updatedMessages;
       });
     },
     [inputText, isLoading, fetchAndSetClaudeResponse]

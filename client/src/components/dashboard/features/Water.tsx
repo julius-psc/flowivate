@@ -137,38 +137,39 @@ const Water = () => {
 
   const handleSave = async () => {
     if (status !== "authenticated") {
-      // USE TOAST INSTEAD OF setError
       toast.error("You must be logged in to save your water intake.");
       return;
     }
-
+  
     setIsLoading(true); // Indicate saving process
-    // setError(null); // No longer needed
-    // setSuccessMessage(null); // No longer needed
-
+  
     try {
+      // Get the current date and format it as YYYY-MM-DD
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = (today.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed, add 1
+      const day = today.getDate().toString().padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`; // Format as YYYY-MM-DD
+  
       const response = await fetch("/api/features/water", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ waterAmount: waterAmount }),
+        // Include the dateString in the request body
+        body: JSON.stringify({ waterAmount: waterAmount, date: dateString }),
       });
-
-      const result = await response.json().catch(() => ({})); // Attempt to parse JSON, default if fails
-
+  
+      const result = await response.json().catch(() => ({}));
+  
       if (!response.ok) {
-        // Throw error to be caught below, use result.message if available
         throw new Error(result.message || `Failed to save data (${response.status})`);
       }
-
+  
       console.log("Save successful:", result);
-      // USE TOAST INSTEAD OF setSuccessMessage
       toast.success(result.message || "Water intake saved successfully!");
-      // setTimeout(() => setSuccessMessage(null), 3000); // No longer needed
-
+  
     } catch (err) {
       console.error("Failed to save water amount:", err);
-      // USE TOAST INSTEAD OF setError
       const message = err instanceof Error ? err.message : "An unknown error occurred.";
       toast.error(`Error saving water intake: ${message}`);
     } finally {

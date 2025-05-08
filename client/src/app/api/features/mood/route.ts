@@ -124,39 +124,57 @@ export async function POST(request: NextRequest) {
     const db = client.db(DEFAULT_DB_NAME);
     const moodsCollection = db.collection<MoodDocument>("moods");
 
+    // Determine the start and end of the day for the given moodDate
     const startOfDay = new Date(moodDate.getFullYear(), moodDate.getMonth(), moodDate.getDate(), 0, 0, 0, 0);
     const endOfDay = new Date(moodDate.getFullYear(), moodDate.getMonth(), moodDate.getDate(), 23, 59, 59, 999);
+
+    // Check if a mood entry already exists for this user on this day
+    const existingMoodForDay = await moodsCollection.findOne({
+      userId: userObjectId,
+      timestamp: { $gte: startOfDay, $lte: endOfDay }
+    });
 
     const moodToSet = mood.trim();
     const moodEntryData = {
       mood: moodToSet,
       userId: userObjectId,
-      timestamp: moodDate,
+      timestamp: moodDate, // This will be the timestamp of the current submission
     };
 
-    const result = await moodsCollection.findOneAndUpdate(
-      {
+    // findOneAndUpdate now expected to return MoodDocument | null
+    const updatedOrInsertedDoc = await moodsCollection.findOneAndUpdate(
+      { // Filter: find by user and day
         userId: userObjectId,
         timestamp: { $gte: startOfDay, $lte: endOfDay }
       },
-      { $set: moodEntryData, $setOnInsert: { _id: new ObjectId() } }, // Ensure _id on insert
-      { upsert: true, returnDocument: "after" }
-    ) as unknown as import("mongodb").ModifyResult<MoodDocument>;
-    
-    if (!result.value) {
-       console.error(`Error in POST /api/features/mood: Database operation failed for user ${userId}. findOneAndUpdate returned null.`);
-       return NextResponse.json({ message: "Database operation failed." }, { status: 500 });
+      { // Update: set the new mood data, and on insert, ensure _id
+        $set: moodEntryData,
+        $setOnInsert: { _id: new ObjectId() }
+      },
+      { // Options
+        upsert: true,
+        returnDocument: "after" // Return the document after modification
+      }
+    ); // Removed the ModifyResult type assertion
+
+    if (!updatedOrInsertedDoc) {
+       // If null here, the upsert operation truly failed to return a document
+       console.error(`Error in POST /api/features/mood: Database operation failed for user ${userId}. findOneAndUpdate returned null after upsert attempt.`);
+       return NextResponse.json({ message: "Database operation failed to return document." }, { status: 500 });
     }
-    
-    const upsertedMoodDoc = result.value;
-    const responseMood = transformMoodForResponse(upsertedMoodDoc);
-    const finalStatusCode = result.lastErrorObject?.upserted ? 201 : (result.lastErrorObject?.updatedExisting ? 200 : 200);
 
+    // Now, updatedOrInsertedDoc IS the MoodDocument
+    const responseMood = transformMoodForResponse(updatedOrInsertedDoc);
 
-    return NextResponse.json({ message: finalStatusCode === 201 ? "Mood record created." : "Mood record updated.", entry: responseMood }, { status: finalStatusCode });
+    // Determine status code: 201 if it was a new entry (no existingMoodForDay), 200 if it updated an existing one.
+    const finalStatusCode = !existingMoodForDay ? 201 : 200;
+    const message = finalStatusCode === 201 ? "Mood record created." : "Mood record updated.";
+
+    return NextResponse.json({ message: message, entry: responseMood }, { status: finalStatusCode });
 
   } catch (error) {
-    console.error("Error in POST /api/features/mood:", error);
-    return NextResponse.json({ message: "Failed to save mood data" }, { status: 500 });
+    console.error("Outer error in POST /api/features/mood:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return NextResponse.json({ message: "Failed to save mood data", error: errorMessage }, { status: 500 });
   }
 }

@@ -6,8 +6,8 @@ export interface IUser extends Document {
   email: string;
   emailVerified?: Date | null;
   image?: string | null;
-  username: string; 
-  password?: string | null; 
+  username: string;
+  password?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,22 +28,19 @@ const UserSchema = new Schema<IUser>(
     username: {
       type: String,
       required: [true, "Username is required"],
-      unique: true,
+      unique: true, 
       trim: true,
       minlength: [3, "Username must be at least 3 characters long"],
     },
     password: {
       type: String,
-    
     },
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 
-UserSchema.index({ email: 1 });
-UserSchema.index({ username: 1 });
 
 const User: Model<IUser> = models.User || mongoose.model<IUser>('User', UserSchema);
 

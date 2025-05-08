@@ -1,103 +1,163 @@
-import { Task, TaskList } from "@/types/taskTypes";
+import type { Task, TaskList } from "@/types/taskTypes"; // Ensure this path is correct
 
-const API_BASE_URL = "/api/features/tasks"; 
+const API_BASE_URL = "/api/features/tasks";
 
-// --- Task List Operations ---
+// Helper to map an API task list (which contains simple tasks) to the frontend TaskList type
+const mapApiListToFrontendList = (apiList: { _id: string; name?: string; tasks?: { _id: string; name?: string; completed?: boolean }[] }): TaskList => {
+  if (!apiList || typeof apiList._id === 'undefined') {
+    // Handle cases where apiList might be undefined or not what's expected
+    // This could happen if an API call unexpectedly fails or returns an malformed list
+    console.error("mapApiListToFrontendList received invalid apiList:", apiList);
+    // Return a default or minimal TaskList structure to prevent further errors
+    return {
+      _id: `invalid-list-${crypto.randomUUID()}`,
+      name: "Error: Invalid List Data",
+      tasks: [],
+    };
+  }
+  return {
+    _id: apiList._id,
+    name: apiList.name || "Unnamed List",
+    // apiList.tasks from the backend are simple objects: { _id, name, completed }
+    tasks: (apiList.tasks || []).map(
+      (apiSimpleTask: { _id: string; name?: string; completed?: boolean }): Task => {
+        if (!apiSimpleTask || typeof apiSimpleTask._id === 'undefined') {
+            console.error("mapApiListToFrontendList found invalid apiSimpleTask:", apiSimpleTask, "within list:", apiList._id);
+            return {
+                id: `invalid-task-${crypto.randomUUID()}`,
+                name: "Error: Invalid Task Data",
+                completed: false,
+                priority: 0,
+                subtasks: [],
+            };
+        }
+        return {
+            id: apiSimpleTask._id, // API's task._id becomes frontend's Task.id
+            name: apiSimpleTask.name || "",
+            completed: apiSimpleTask.completed || false,
+            priority: 0, // Default: Backend's TaskItem in list doesn't store priority
+            subtasks: [],  // Default: Backend's TaskItem in list doesn't store subtasks
+        };
+      }
+    ),
+    // If your TaskList type in taskTypes.ts includes createdAt/updatedAt, uncomment and map them:
+    // createdAt: apiList.createdAt,
+    // updatedAt: apiList.updatedAt,
+  };
+};
 
 /** Fetches all task lists for the logged-in user */
 export const getTaskLists = async (): Promise<TaskList[]> => {
   const res = await fetch(API_BASE_URL, { credentials: "include" });
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({})); // Try to get error details
-    throw new Error(`Failed to fetch task lists: ${res.status} ${res.statusText} ${errorData.message || ''}`);
+    let errorMessage = `Failed to fetch task lists: ${res.status} ${res.statusText}`;
+    try {
+      const errorData = await res.json();
+      errorMessage += ` - ${errorData.message || 'No additional error message from API'}`;
+    } catch { }
+    throw new Error(errorMessage);
   }
-  const data = await res.json();
-   // Add validation or transformation if necessary, similar to your useEffect
-   if (!Array.isArray(data)) {
-    console.warn("API did not return an array for task lists:", data);
-    return []; // Return empty array or throw a more specific error
+  const responseJson = await res.json();
+
+  // The API GET /api/features/tasks returns { taskLists: [...] }
+  if (!responseJson || !Array.isArray(responseJson.taskLists)) {
+    console.warn("API response for task lists is not in the expected format (expected { taskLists: Array }):", responseJson);
+    return []; // Return empty array to prevent further errors
   }
-   // Perform the same kind of mapping/default value setting as in your original fetch
-   const processedData = data.map((list: Partial<TaskList>): TaskList => ({
-      _id: list._id,
-      name: list.name || "Unnamed List",
-      // isAddingTask: false, // This is UI state, likely not from API
-      tasks: (list.tasks || []).map(
-        (task: Partial<Task>): Task => ({
-          id: task.id || crypto.randomUUID(), // Should ideally come from DB if persisted
-          name: task.name || "",
-          completed: task.completed || false,
-          priority: typeof task.priority === 'number' ? task.priority : 0,
-          subtasks: (task.subtasks || []).map(
-            (sub: Partial<Task>): Task => ({
-              id: sub.id || crypto.randomUUID(),
-              name: sub.name || "",
-              completed: sub.completed || false,
-              priority: typeof sub.priority === 'number' ? sub.priority : 0,
-              subtasks: [], // Assuming subtasks don't have further nesting in API
-            })
-          ),
-        })
-      ),
-    }));
-  return processedData as TaskList[]; // Assert type after processing
+  return responseJson.taskLists.map(mapApiListToFrontendList);
 };
 
 /** Adds a new task list */
-export const addTaskList = async (newListData: { name: string }): Promise<{ id: string }> => {
-    // Add empty tasks array before sending
-    const payload = { ...newListData, tasks: [] };
+export const addTaskList = async (newListData: { name: string }): Promise<TaskList> => {
+    const payload = {
+      name: newListData.name.trim(),
+      tasks: [] // Backend POST for lists expects a 'tasks' array; it will process these into TaskItems.
+    };
     const res = await fetch(API_BASE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
         credentials: "include",
     });
+
     if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(`Failed to add task list: ${res.status} ${res.statusText} ${errorData.message || ''}`);
+        let errorMessage = `Failed to add task list: ${res.status} ${res.statusText}`;
+        try {
+            const errorData = await res.json();
+            errorMessage += ` - ${errorData.message || 'No additional error message from API'}`;
+        } catch { }
+        throw new Error(errorMessage);
     }
-    return res.json(); // Should return { id: newId }
+    const newApiList = await res.json(); // API returns the full new task list object
+    return mapApiListToFrontendList(newApiList); // Map it to the frontend TaskList type
 };
 
-/** Updates tasks (or name) within a specific task list */
-export const updateTaskList = async (updateData: { id: string; tasks?: Task[]; name?: string }): Promise<{ modified: number }> => {
-    const { id, ...payload } = updateData;
-    if (!id) throw new Error("Task list ID is required for update.");
+/**
+ * Updates tasks or name within a specific task list.
+ * Note: The current backend PUT handler for lists (`/api/features/tasks`)
+ * simplifies tasks to store only `{ _id, name, completed }` in the `TaskListDocument.tasks` array.
+ * This means `priority` and `subtasks` sent from the client for tasks within the list
+ * are NOT persisted to the database via this endpoint.
+ */
+export const updateTaskList = async (updateData: { id: string; tasks?: Task[]; name?: string }): Promise<TaskList> => {
+    const { id: listId, tasks, name } = updateData;
+    if (!listId) throw new Error("Task list ID is required for update.");
+
+    const payload: { id: string; name?: string; tasks?: { _id: string; name: string; completed: boolean }[] } = { id: listId };
+    if (name !== undefined) {
+        payload.name = name.trim();
+    }
+
+    if (tasks !== undefined) {
+        // Map frontend Task objects to the simpler structure the backend PUT expects for TaskList.tasks.
+        // The backend will use task._id to identify existing tasks or create new ones.
+        // Frontend Task.id (which is backend's task._id) is sent as _id.
+        payload.tasks = tasks.map(task => ({
+            _id: task.id,
+            name: task.name,
+            completed: task.completed,
+            // Properties like task.priority and task.subtasks are sent,
+            // but the current backend PUT /api/features/tasks will not persist them
+            // into the TaskListDocument.tasks array members.
+        }));
+    }
 
     const res = await fetch(API_BASE_URL, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...payload }), // Send id and fields to update
+        body: JSON.stringify(payload),
         credentials: "include",
     });
+
     if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(`Failed to update task list ${id}: ${res.status} ${res.statusText} ${errorData.message || ''}`);
+        let errorMessage = `Failed to update task list ${listId}: ${res.status} ${res.statusText}`;
+        try {
+            const errorData = await res.json();
+            errorMessage += ` - ${errorData.message || 'No additional error message from API'}`;
+        } catch {}
+        throw new Error(errorMessage);
     }
-    return res.json(); // Should return { modified: count }
+    const updatedApiList = await res.json(); // API returns the full updated task list object
+    return mapApiListToFrontendList(updatedApiList); // Map it to the frontend TaskList type
 };
 
 /** Deletes a task list */
-export const deleteTaskList = async (listId: string): Promise<{ deleted: number }> => {
+export const deleteTaskList = async (listId: string): Promise<{ message: string }> => {
     if (!listId) throw new Error("Task list ID is required for deletion.");
 
     const res = await fetch(API_BASE_URL, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: listId }),
+        body: JSON.stringify({ id: listId }), // Backend DELETE route expects { id: listId }
         credentials: "include",
     });
-    if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(`Failed to delete task list ${listId}: ${res.status} ${res.statusText} ${errorData.message || ''}`);
-    }
-    return res.json(); // Should return { deleted: count }
-};
 
-// Note: The current API updates the *entire* tasks array via PUT.
-// If you wanted finer-grained control (e.g., update just one task's completion status),
-// you might consider adding dedicated API endpoints like:
-// PUT /api/features/tasks/{listId}/tasks/{taskId}
-// PATCH /api/features/tasks/{listId}/tasks/{taskId}
-// For now, we'll stick to updating the whole list's tasks array as per the provided PUT handler.
+    const responseData = await res.json(); // Backend returns { message: "..." } on success/failure
+
+    if (!res.ok) {
+        const message = responseData?.message || `Failed to delete task list ${listId}`;
+        // Combine status text with API message for more context
+        throw new Error(`${message} (Status: ${res.status} ${res.statusText})`);
+    }
+    return responseData; // e.g., { message: "Task list deleted successfully" }
+};
