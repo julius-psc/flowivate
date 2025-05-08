@@ -204,9 +204,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest, 
-  context: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
-  const { chatId } = context.params;
+  const { chatId } = await params;
   let sessionUserId: string | undefined;
 
   try {
