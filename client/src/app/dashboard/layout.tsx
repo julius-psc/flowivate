@@ -12,15 +12,10 @@ export default function DashboardLayout({
 }) {
   return (
     <ClientProvider>
-      <div
-        className="
-    flex flex-col h-screen w-screen 
-    bg-cover bg-no-repeat bg-secondary-white
-    bg-[url('/assets/illustrations/gradient-bg.svg')] 
-    dark:bg-[#151E2F]
-  "
-        id="dashboard-container"
-      >
+<div
+  className="flex flex-col h-screen w-screen bg-secondary-white dark:bg-[#151E2F]"
+  id="dashboard-container"
+>
         <div className="flex-shrink-0">
           <Navbar />
         </div>

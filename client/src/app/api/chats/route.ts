@@ -148,7 +148,6 @@ export async function POST(request: NextRequest) {
     const userObjectId = new ObjectId(sessionUserId);
 
     const body = await request.json();
-    // Expecting an array of messages in the body
     const { messages: rawMessages } = body;
 
     if (!Array.isArray(rawMessages) || rawMessages.length === 0) {

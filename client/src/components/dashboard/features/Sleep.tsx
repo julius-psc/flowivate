@@ -71,46 +71,66 @@ export default function Sleep() {
           setWeeklySleep(Array(7).fill(0));
           return;
       }
-
+  
       setLoading(true);
       try {
         const res = await fetch("/api/features/sleep", { credentials: "include" });
-        if (!res.ok) throw new Error("Server responded with an error while fetching sleep data"); // More specific error
-        const data = await res.json();
-
+        if (!res.ok) throw new Error("Server responded with an error while fetching sleep data");
+        
+        // MODIFICATION START
+        const responseData = await res.json(); // Contains { sleepRecords: [] }
+        const recordsToProcess = responseData.sleepRecords; // Access the actual array
+        // MODIFICATION END
+  
         const sleepArray = Array(7).fill(0);
         const now = new Date();
         const currentWeek = getWeekNumber(now);
         const currentYear = now.getFullYear();
-
-        if (Array.isArray(data)) {
-            data.forEach((entry: { hours: number; timestamp: string }) => {
+  
+        // MODIFICATION: Use recordsToProcess here
+        if (Array.isArray(recordsToProcess)) {
+            recordsToProcess.forEach((entry: { hours: number; timestamp: string }) => { 
                try {
                    const entryDate = new Date(entry.timestamp);
-                   if (isNaN(entryDate.getTime())) return;
+                   if (isNaN(entryDate.getTime())) {
+                      console.warn("Invalid timestamp for entry:", entry);
+                      return; // Skip this entry
+                   }
                    const entryWeek = getWeekNumber(entryDate);
                    const entryYear = entryDate.getFullYear();
                    if (entryWeek === currentWeek && entryYear === currentYear) {
-                     const dayIndex = (entryDate.getDay() + 6) % 7;
+                     const dayIndex = (entryDate.getDay() + 6) % 7; // Monday = 0, ..., Sunday = 6
                      const hours = Number(entry.hours);
                      if (!isNaN(hours) && hours >= 0 && hours <= 24) {
                          sleepArray[dayIndex] = hours;
+                     } else {
+                      console.warn("Invalid hours for entry:", entry);
                      }
                    }
-               } catch(e) { console.error("Error processing sleep entry", e); }
+               } catch(e) { console.error("Error processing sleep entry", e, entry); }
             });
+        } else {
+          console.warn("Expected 'sleepRecords' to be an array in API response, but received:", responseData);
         }
         setWeeklySleep(sleepArray);
+  
+        const todayIndex = (new Date().getDay() + 6) % 7;
+        if (sleepArray[todayIndex] > 0) {
+          setSleepHours(sleepArray[todayIndex]);
+        } else {
+
+        }
+  
       } catch (error) {
         console.error("Failed to fetch sleep data:", error);
-        toast.error(`Failed to load sleep data: ${error instanceof Error ? error.message : 'Unknown error'}`); // Use toast
+        toast.error(`Failed to load sleep data: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchSleepData();
-  }, [session, status]);
+  }, [session, status]); 
 
   const handleIncrement = () => {
     if (sleepHours < 12) setSleepHours(sleepHours + 1);

@@ -38,6 +38,10 @@
   [data-theme='candy'] {
     --color-primary: #f9a8d4;
   }
+
+  [data-theme='forest'] {
+    --color-primary: #48AC5C;
+  }
 }
 
 @layer utilities {

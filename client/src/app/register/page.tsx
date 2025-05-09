@@ -8,7 +8,7 @@ import Image from "next/image";
 import { toast } from "sonner"; 
 import logo from '../../assets/brand/logo-v1.5.svg';
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
-import gradBg from '../../../public/assets/illustrations/gradient-bg.svg';
+import gradBg from '../../../public/assets/illustrations/gradient-bg-blue.svg';
 import github from '../../assets/icons/github-logo.svg';
 import google from '../../assets/icons/google-logo.svg';
 

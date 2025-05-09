@@ -75,49 +75,47 @@ const Water = () => {
   useEffect(() => {
     const fetchInitialWater = async () => {
       if (status === "authenticated") {
-        setIsFetching(true); // Start fetching state
-        // setError(null); // No longer needed
+        setIsFetching(true); 
         try {
           const response = await fetch("/api/features/water", {
             method: "GET",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
           });
-
+  
           if (!response.ok) {
-            const errorData = await response.json().catch(() => ({})); // Attempt to parse JSON error, default to empty obj if fails
+            const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || `Failed to fetch water data (${response.status})`);
           }
-
+  
           const data = await response.json();
-          setWaterAmount(data.waterAmount || 0);
+          setWaterAmount(data.totalAmount || 0); 
+  
         } catch (err) {
           console.error("Failed to fetch initial water amount:", err);
-          // USE TOAST INSTEAD OF setError
           const message = err instanceof Error ? err.message : "An unknown error occurred fetching data.";
           toast.error(`Failed to load water data: ${message}`);
         } finally {
-          setIsFetching(false); // End fetching state
-          setIsLoading(false); // Also end general loading state after fetch
+          setIsFetching(false);
+          setIsLoading(false);
         }
       } else if (status === "unauthenticated") {
         setWaterAmount(0);
-        setIsFetching(false); // Not fetching if not logged in
-        setIsLoading(false); // Not loading if not logged in
+        setIsFetching(false);
+        setIsLoading(false); 
       }
-      // If status is 'loading', we wait for it to resolve, triggering the effect again
-    };
 
-    // Only run fetch if authenticated or unauthenticated, wait if 'loading'
+    };
+  
     if (status === "authenticated" || status === "unauthenticated") {
         fetchInitialWater();
-    } else {
-        // If session status is 'loading', ensure our component state reflects this
+    } else { // status === "loading"
+        
         setIsLoading(true);
         setIsFetching(true);
     }
-
-  }, [status]); // Rerun when session status changes
+  
+  }, [status]);
 
   const handleIncrement = () => {
     if (waterAmount < dailyGoal) {
@@ -223,7 +221,7 @@ const Water = () => {
           >
             <Minus size={20} strokeWidth={2.5} />
           </button>
-          <div className="relative h-6 flex-grow bg-blue-50 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="relative h-6 flex-grow bg-primary/50 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               className="absolute h-full top-0 left-0 transition-all duration-700 ease-out rounded-r-full"
               style={{
@@ -235,7 +233,7 @@ const Water = () => {
             </div>
             <div className="absolute inset-0 flex justify-between items-center px-4 pointer-events-none">
               {[1, 2, 3, 4, 5, 6, 7].map((_, index) => (
-                <div key={index} className="h-3 w-px bg-blue-200 dark:bg-gray-600" />
+                <div key={index} className="h-3 w-px bg-primary/20 dark:bg-gray-600" />
               ))}
             </div>
           </div>

@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner"; // Import Sonner toast
 
-import gradBg from "../../../public/assets/illustrations/gradient-bg.svg";
+import gradBg from "../../../public/assets/illustrations/gradient-bg-blue.svg";
 import logo from "../../assets/brand/logo-v1.5.svg";
 import github from "../../assets/icons/github-logo.svg";
 import google from "../../assets/icons/google-logo.svg";

@@ -4,79 +4,69 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 
 const themeConfigs = [
-  { name: 'default', color: '#0075C4', label: 'Default' }, // Blue
-  { name: 'candy', color: '#f9a8d4', label: 'Candy' },   // Pink
-  // To add new themes, simply add new objects to this array:
-  // { name: 'forest', color: '#228B22', label: 'Forest' },
-  // { name: 'ocean', color: '#0077BE', label: 'Ocean' },
-] as const; // Using 'as const' allows TypeScript to infer a precise ThemeName type.
+  {
+    name: 'default',
+    color: '#0075C4',
+    label: 'Default',
+    bgUrl: "/assets/illustrations/gradient-bg-blue.svg",
+  },
+  {
+    name: 'forest',
+    color: '#48AC5C',
+    label: 'Forest',
+    bgUrl: "/assets/illustrations/gradient-bg-forest.svg",
+  },
+  // Add more themes here...
+] as const;
 
-// Derive the ThemeName type from the names in themeConfigs for type safety.
-type ThemeName = typeof themeConfigs[number]['name'];
+type ThemeName = (typeof themeConfigs)[number]['name'];
 
 const ThemeToggle: React.FC = () => {
-  // The default theme name is taken from the first entry in themeConfigs.
   const defaultThemeName = themeConfigs[0].name;
 
   const [theme, setTheme] = useState<ThemeName>(defaultThemeName);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // Component is mounted, safe to access localStorage.
     setIsMounted(true);
   }, []);
 
-  // Load theme from localStorage after the component has mounted.
   useEffect(() => {
     if (isMounted) {
-      const storedThemeName = localStorage.getItem('theme') as string | null;
-
-      if (storedThemeName === null) {
-        // No theme explicitly stored in localStorage; this implies the default theme.
-        setTheme(defaultThemeName);
-      } else {
-        // A theme name is stored. Validate it against our configurations.
-        const matchedTheme = themeConfigs.find(t => t.name === storedThemeName);
-
-        if (matchedTheme && matchedTheme.name !== defaultThemeName) {
-          // Valid, non-default theme found in localStorage.
-          setTheme(matchedTheme.name);
-        } else {
-          // The stored name is either invalid or it's the default theme's name
-          // (which shouldn't be stored directly according to our logic).
-          // Fallback to the default theme.
-          setTheme(defaultThemeName);
-          // If an invalid theme name was stored, or if the default theme's name
-          // was incorrectly stored, clean up localStorage.
-          if (storedThemeName !== null) {
-             localStorage.removeItem('theme');
-          }
-        }
-      }
+      const storedThemeName = localStorage.getItem('theme') as ThemeName | null;
+      const validTheme = themeConfigs.find(t => t.name === storedThemeName);
+      setTheme(validTheme ? validTheme.name : defaultThemeName);
     }
   }, [isMounted, defaultThemeName]);
 
-  // Apply the current theme to the DOM and update localStorage whenever the theme state changes.
   useEffect(() => {
-    if (isMounted) {
-      const root = document.documentElement;
-      if (theme === defaultThemeName) {
-        // For the default theme, remove the 'data-theme' attribute and the localStorage item.
-        root.removeAttribute('data-theme');
-        localStorage.removeItem('theme');
-      } else {
-        // For other themes, set the 'data-theme' attribute and store the theme name.
-        root.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-      }
+    if (!isMounted) return;
+
+    const root = document.documentElement;
+    const dashboardContainer = document.getElementById('dashboard-container');
+    const selectedThemeConfig = themeConfigs.find(t => t.name === theme);
+
+    if (!selectedThemeConfig || !dashboardContainer) return;
+
+    // Set data-theme
+    if (theme === defaultThemeName) {
+      root.removeAttribute('data-theme');
+      localStorage.removeItem('theme');
+    } else {
+      root.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
     }
+
+    // Set background image using inline style
+    dashboardContainer.style.backgroundImage = `url('${selectedThemeConfig.bgUrl}')`;
+    dashboardContainer.style.backgroundSize = 'cover';
+    dashboardContainer.style.backgroundRepeat = 'no-repeat';
   }, [theme, isMounted, defaultThemeName]);
 
-  const handleThemeSelection = useCallback((newThemeName: ThemeName) => {
-    setTheme(newThemeName);
+  const handleThemeSelection = useCallback((newTheme: ThemeName) => {
+    setTheme(newTheme);
   }, []);
 
-  // Display a loading state until the component is mounted and theme is determined.
   if (!isMounted) {
     const loadingButtonClasses = `
       inline-flex items-center justify-center gap-2 px-4 py-1.5
@@ -90,18 +80,13 @@ const ThemeToggle: React.FC = () => {
       cursor-wait
     `;
     return (
-      <button
-        className={loadingButtonClasses}
-        aria-disabled="true"
-        disabled
-      >
+      <button className={loadingButtonClasses} disabled>
         <Loader2 size={16} className="animate-spin" />
         <span>Loading Themes...</span>
       </button>
     );
   }
 
-  // Render the theme selection circles.
   return (
     <div className="flex items-center space-x-3 p-1" role="radiogroup" aria-label="Theme selection">
       {themeConfigs.map((themeConfig) => (
@@ -117,13 +102,13 @@ const ThemeToggle: React.FC = () => {
             focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950 
             focus:ring-indigo-500 dark:focus:ring-indigo-400
             ${theme === themeConfig.name
-              ? 'ring-2 ring-indigo-500 dark:ring-indigo-400 ring-offset-1 dark:ring-offset-gray-800 scale-110 shadow-md' // Active state
-              : 'hover:scale-110 hover:shadow-sm' // Hover state for inactive circles
+              ? 'ring-2 ring-indigo-500 dark:ring-indigo-400 ring-offset-1 dark:ring-offset-gray-800 scale-110 shadow-md'
+              : 'hover:scale-110 hover:shadow-sm'
             }
           `}
           style={{ backgroundColor: themeConfig.color }}
           aria-label={`Switch to ${themeConfig.label} theme`}
-          title={`Switch to ${themeConfig.label} theme`} // Tooltip for desktop users
+          title={`Switch to ${themeConfig.label} theme`}
         />
       ))}
     </div>
