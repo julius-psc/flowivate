@@ -8,7 +8,6 @@ export interface IUser extends Document {
   image?: string | null;
   username: string;
   password?: string | null;
-  status?: "active" | "inactive" | "banned" | "onboarding";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,11 +34,6 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-    },
-    status: {
-      type: String,
-      enum: ["active", "inactive", "banned", "onboarding"],
-      default: "active",
     },
   },
   {

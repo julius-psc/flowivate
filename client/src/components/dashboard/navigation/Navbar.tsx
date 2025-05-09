@@ -3,11 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image"; // Import next/image
-import {
-  IconCommand,
-  IconBrain,
-  IconChevronDown,
-} from "@tabler/icons-react";
+import { IconCommand, IconBrain, IconChevronDown } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 import ChatPanel from "../features/ai/ChatPanel";
@@ -54,17 +50,40 @@ const Navbar: React.FC = () => {
       setIsStatusLoading(true);
       fetch("/api/features/status")
         .then((res) => {
-          if (!res.ok) throw new Error(`Failed to fetch status: ${res.status} ${res.statusText}`);
+          if (!res.ok) {
+            // Handle specific error codes
+            if (res.status === 404) {
+              console.warn("User status not found, using default");
+              // Create a synthetic response since we can't return an object directly
+              return {
+                json: () => Promise.resolve({ status: statusOptions[0].name }),
+              };
+            }
+            throw new Error(
+              `Failed to fetch status: ${res.status} ${res.statusText}`
+            );
+          }
           return res.json();
         })
         .then((data) => {
           const fetchedStatusName = data.status;
-          const foundStatus = statusOptions.find((option) => option.name === fetchedStatusName);
-          setCurrentStatus(foundStatus || statusOptions[0]);
+          const foundStatus = statusOptions.find(
+            (option) => option.name === fetchedStatusName
+          );
+          if (foundStatus) {
+            setCurrentStatus(foundStatus);
+          } else {
+            console.warn(
+              `Received unknown status: ${fetchedStatusName}, using default`
+            );
+            setCurrentStatus(statusOptions[0]);
+          }
         })
         .catch((error) => {
           console.error("Error fetching initial status:", error);
-          toast.error("Could not load user status.");
+          toast.error("Could not load user status", {
+            description: "Using default status instead.",
+          });
           setCurrentStatus(statusOptions[0]);
         })
         .finally(() => setIsStatusLoading(false));
@@ -120,13 +139,20 @@ const Navbar: React.FC = () => {
           body: JSON.stringify({ status: status.name }),
         });
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: `Request failed: ${response.statusText}` }));
-          throw new Error(errorData.message || `Failed to update status (${response.status})`);
+          const errorData = await response
+            .json()
+            .catch(() => ({
+              message: `Request failed: ${response.statusText}`,
+            }));
+          throw new Error(
+            errorData.message || `Failed to update status (${response.status})`
+          );
         }
         console.log("Status updated successfully on backend.");
       } catch (error) {
         console.error("Error updating status:", error);
-        const message = error instanceof Error ? error.message : "An unknown error occurred.";
+        const message =
+          error instanceof Error ? error.message : "An unknown error occurred.";
         toast.error(`Failed to update status: ${message}`);
       }
     },
@@ -136,9 +162,13 @@ const Navbar: React.FC = () => {
   // Status Indicator Component
   const StatusIndicator = React.memo(() => {
     if (isStatusLoading) {
-      return <div className="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse" />;
+      return (
+        <div className="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse" />
+      );
     }
-    return <div className={`w-2.5 h-2.5 rounded-full ${currentStatus.color}`} />;
+    return (
+      <div className={`w-2.5 h-2.5 rounded-full ${currentStatus.color}`} />
+    );
   });
   StatusIndicator.displayName = "StatusIndicator";
 
@@ -150,7 +180,7 @@ const Navbar: React.FC = () => {
       <nav className="flex items-center justify-between z-40 px-4 py-2 mx-2 mt-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50">
         {/* Left Section */}
         {/* ... (AI Button remains the same) ... */}
-         <div className="flex items-center">
+        <div className="flex items-center">
           <div className="relative">
             <button
               onClick={handleOpenChat}
@@ -179,12 +209,16 @@ const Navbar: React.FC = () => {
             {sessionStatus === "authenticated" && (
               <>
                 <button
-                  onClick={() => { setShowStatusMenu(!showStatusMenu); }}
+                  onClick={() => {
+                    setShowStatusMenu(!showStatusMenu);
+                  }}
                   className="flex items-center space-x-1.5 p-2 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors"
                   aria-label="Change your status"
                   disabled={isStatusLoading}
                 >
-                  <div className={`w-4 h-4 rounded-full ${currentStatus.bgColor} flex items-center justify-center`}>
+                  <div
+                    className={`w-4 h-4 rounded-full ${currentStatus.bgColor} flex items-center justify-center`}
+                  >
                     <StatusIndicator />
                   </div>
                   <IconChevronDown className="w-3 h-3 text-gray-500 dark:text-gray-400" />
@@ -198,56 +232,62 @@ const Navbar: React.FC = () => {
                         onClick={() => changeStatus(option)}
                         className="w-full flex items-center space-x-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 px-2 py-1.5 rounded-md transition-colors"
                       >
-                        <div className={`w-3 h-3 rounded-full ${option.bgColor} flex items-center justify-center flex-shrink-0`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${option.color}`} />
+                        <div
+                          className={`w-3 h-3 rounded-full ${option.bgColor} flex items-center justify-center flex-shrink-0`}
+                        >
+                          <div
+                            className={`w-1.5 h-1.5 rounded-full ${option.color}`}
+                          />
                         </div>
-                        <span className="text-xs font-medium">{option.name}</span>
+                        <span className="text-xs font-medium">
+                          {option.name}
+                        </span>
                       </button>
                     ))}
                   </div>
                 )}
               </>
             )}
-             {sessionStatus === "loading" && (
+            {sessionStatus === "loading" && (
               <div className="p-2">
                 <div className="w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse" />
               </div>
             )}
           </div>
 
-
           {/* Profile Area */}
           <div className="relative profile-container">
-            {sessionStatus === "authenticated" && session.user && ( // Ensure session.user exists
-              <>
-                <button
-                  onClick={() => {
-                    setShowProfileComponent(true);
-                    setShowStatusMenu(false);
-                  }}
-                  className="flex items-center space-x-2 p-1 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors" // Reduced padding slightly for image fit
-                  aria-label="Open User Profile"
-                >
-                  {/* Use next/image */}
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden">
-                    {session.user.image ? (
-                      <Image
-                        src={session.user.image}
-                        alt={session.user.username || "User Avatar"} // Add alt text
-                        width={28} // w-7 = 28px
-                        height={28} // h-7 = 28px
-                        className="object-cover" // Removed w-full h-full as width/height handle size
-                        priority // Prioritize loading avatar in navbar
-                      />
-                    ) : (
-                      <span className="flex items-center justify-center w-full h-full bg-green-500">
-                        {userInitial}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              </>
-            )}
+            {sessionStatus === "authenticated" &&
+              session.user && ( // Ensure session.user exists
+                <>
+                  <button
+                    onClick={() => {
+                      setShowProfileComponent(true);
+                      setShowStatusMenu(false);
+                    }}
+                    className="flex items-center space-x-2 p-1 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors" // Reduced padding slightly for image fit
+                    aria-label="Open User Profile"
+                  >
+                    {/* Use next/image */}
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden">
+                      {session.user.image ? (
+                        <Image
+                          src={session.user.image}
+                          alt={session.user.username || "User Avatar"} // Add alt text
+                          width={28} // w-7 = 28px
+                          height={28} // h-7 = 28px
+                          className="object-cover" // Removed w-full h-full as width/height handle size
+                          priority // Prioritize loading avatar in navbar
+                        />
+                      ) : (
+                        <span className="flex items-center justify-center w-full h-full bg-green-500">
+                          {userInitial}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                </>
+              )}
             {sessionStatus === "loading" && (
               <div className="p-2">
                 <div className="w-7 h-7 rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse" />
