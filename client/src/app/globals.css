@@ -45,6 +45,12 @@
     --color-primary: #48AC5C;
   }
 
+  [data-theme="jungle"] .time-display-text,
+  [data-theme="jungle"] .time-display-greeting,
+  [data-theme="jungle"] .time-display-quote {
+  color: #FCFDFF;
+  }
+
   [data-theme='sunset'] {
     --color-primary: #FF7043;
   }
