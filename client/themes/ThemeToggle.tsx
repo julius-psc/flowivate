@@ -16,6 +16,12 @@ const themeConfigs = [
     label: 'Forest',
     bgUrl: "/assets/illustrations/gradient-bg-forest.svg",
   },
+    {
+    name: 'candy',
+    color: '#f9a8d4',
+    label: 'Candy',
+    bgUrl: "/assets/illustrations/gradient-bg-candy.svg",
+  },
   // Add more themes here...
 ] as const;
 

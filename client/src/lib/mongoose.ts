@@ -1,44 +1,28 @@
-import mongoose, { Mongoose } from 'mongoose';
+import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI || "";
 
-if (!MONGODB_URI) {
-  throw new Error(
-    'Please define the MONGODB_URI environment variable inside .env'
-  );
-}
+const options = {
+  dbName: "Flowivate", // Explicitly target the Flowivate DB
+};
 
-declare global {
-  // eslint-disable-next-line no-var
-  var mongooseConnection: { conn: Mongoose | null; promise: Promise<Mongoose> | null };
-}
-
-let cached = global.mongooseConnection;
-if (!cached) {
-  cached = global.mongooseConnection = { conn: null, promise: null };
-}
-
-async function connectDB(): Promise<Mongoose> {
-  if (cached.conn) {
-    return cached.conn;
+const connectDB = async () => {
+  if (!MONGODB_URI) {
+    throw new Error("❌ MONGODB_URI environment variable not set");
   }
-  if (!cached.promise) {
-    const opts = { bufferCommands: false };
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongooseInstance) => {
-      console.log("Mongoose connected successfully for custom logic!");
-      return mongooseInstance;
-    }).catch(err => {
-        console.error("Mongoose connection error for custom logic:", err);
-        cached.promise = null;
-        throw err;
-    });
+
+  if (mongoose.connection.readyState === 1) {
+    // 1 = connected
+    console.log("✅ MongoDB already connected");
+    return;
   }
+
   try {
-    cached.conn = await cached.promise;
-  } catch (e) {
-    cached.promise = null;
-    throw e;
+    await mongoose.connect(MONGODB_URI, options);
+    console.log("✅ MongoDB connected to Flowivate DB");
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error);
   }
-  return cached.conn;
-}
+};
+
 export default connectDB;

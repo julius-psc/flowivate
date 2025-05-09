@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, models } from 'mongoose';
+import mongoose, { Schema, Document, Model, models } from "mongoose";
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
@@ -8,6 +8,7 @@ export interface IUser extends Document {
   image?: string | null;
   username: string;
   password?: string | null;
+  status?: "active" | "inactive" | "banned" | "onboarding";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,12 +29,17 @@ const UserSchema = new Schema<IUser>(
     username: {
       type: String,
       required: [true, "Username is required"],
-      unique: true, 
+      unique: true,
       trim: true,
       minlength: [3, "Username must be at least 3 characters long"],
     },
     password: {
       type: String,
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive", "banned", "onboarding"],
+      default: "active",
     },
   },
   {
@@ -41,7 +47,7 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-
-const User: Model<IUser> = models.User || mongoose.model<IUser>('User', UserSchema);
+const User: Model<IUser> =
+  models.User || mongoose.model<IUser>("User", UserSchema);
 
 export default User;
