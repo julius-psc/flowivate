@@ -30,10 +30,10 @@ const themeConfigs = [
     bgUrl: "/assets/illustrations/gradient-bg-sunset.svg",
   },
   {
-    name: 'ocean',
+    name: 'teal',
     color: '#26A69A',
-    label: 'Ocean',
-    bgUrl: "/assets/illustrations/gradient-bg-ocean.svg",
+    label: 'Teal',
+    bgUrl: "/assets/illustrations/gradient-bg-teal.svg",
   },
   {
     name: 'desert',
