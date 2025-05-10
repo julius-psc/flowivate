@@ -28,11 +28,11 @@ const Checkbox: React.FC<CheckboxProps> = ({
   `;
 
   const subtaskColors = `
-    border-accent-pink-border dark:border-accent-pink-border-dark
+    border-accent-pink dark:border-accent-pink
     ${checked ? 'bg-accent-pink dark:bg-accent-pink' : 'bg-transparent'}
-    peer-focus:ring-accent-pink-ring/50 dark:peer-focus:ring-accent-pink-ring-dark/50 /* Use variable + /opacity */
-    group-hover:border-accent-pink-hover dark:group-hover:border-accent-pink-hover-dark
-    ${disabled ? 'group-hover:border-accent-pink-border dark:group-hover:border-accent-pink-border-dark' : ''} /* Revert hover on disabled */
+    peer-focus:ring-accent-pink/50 dark:peer-focus:ring-accent-pink/50
+    group-hover:border-accent-pink dark:group-hover:border-accent-pink
+    ${disabled ? 'group-hover:border-accent-pink dark:group-hover:border-accent-pink' : ''} 
   `;
 
   // Determine the color set based on the variant

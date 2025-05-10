@@ -6,6 +6,7 @@ import Navbar from "../../components/dashboard/navigation/Navbar";
 import { DashboardProvider } from "../../context/DashboardContext";
 import { useTheme } from "next-themes";
 import JungleEnv from "../../../themes/animated/JungleEnv";
+import OceanEnv from "../../../themes/animated/OceanEnv";
 
 export default function DashboardLayout({
   children,
@@ -20,8 +21,8 @@ export default function DashboardLayout({
         className="flex flex-col h-screen w-screen bg-secondary-white dark:bg-[#151E2F]"
         id="dashboard-container"
       >
-        {/* JungleEnv rendered only when theme === 'jungle' */}
         {theme === "jungle" && <JungleEnv />}
+        {theme === "ocean" && <OceanEnv />}
 
         <div className="flex-shrink-0">
           <Navbar />

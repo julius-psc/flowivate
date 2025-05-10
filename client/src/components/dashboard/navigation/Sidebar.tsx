@@ -30,7 +30,7 @@ const Sidebar: React.FC = () => {
 
   const navItems: NavItem[] = [
     { name: "Home", icon: IconLayoutDashboard, path: "/dashboard" },
-    { name: "Personal", icon: IconStack2, path: "/dashboard/personal" },
+    { name: "Features", icon: IconStack2, path: "/dashboard/features" },
     { name: "Tasks", icon: IconCircleDashedCheck, path: "/dashboard/tasks" },
     { name: "Journal", icon: IconNotes, path: "/dashboard/journal" },
     { name: "Books", icon: IconBook, path: "/dashboard/books" },
@@ -38,7 +38,7 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <aside className="flex flex-col z-40 px-2 py-4 ml-2 mx-2 my-1 mb-2 w-16 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50">
+      <aside className="flex flex-col z-40 px-2 py-4 ml-2 mx-2 my-1 mb-2 w-16 bg-transparent dark:bg-zinc-900/60 backdrop-blur-xl rounded-xl border border-slate-200/30 dark:border-zinc-800/30">
         <div className="flex flex-col items-center h-full">
           {/* Logo */}
           <div className="mb-8 flex-shrink-0 transition-transform duration-200 hover:scale-105">

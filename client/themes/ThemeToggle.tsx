@@ -45,14 +45,14 @@ const themeConfigs = [
 
 const specialSceneThemes = [
   {
-    name: 'underwater',
-    color: '#4FC3F7',
-    label: 'Underwater',
-  },
-  {
     name: 'jungle',
     color: '#81C784',
     label: 'Jungle',
+  },
+  {
+    name: 'ocean',
+    color: '#26A69A',
+    label: 'Ocean',
   },
 ] as const;
 

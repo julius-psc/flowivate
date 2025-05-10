@@ -17,6 +17,8 @@
   --color-primary-blue-ring: #114162;
   --color-primary-bluelight: #BADEF6;
 
+  --color-accent-pink: #e479b4;
+
   --color-secondary-black: #141618;
   --color-secondary-black-hover: #020202;
 
@@ -38,7 +40,7 @@
 
 @layer base {
   [data-theme='candy'] {
-    --color-primary: #f9a8d4;
+    --color-primary: #d37cac;
   }
 
   [data-theme='forest'] {

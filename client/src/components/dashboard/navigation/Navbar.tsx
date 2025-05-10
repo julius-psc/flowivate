@@ -177,9 +177,8 @@ const Navbar: React.FC = () => {
   // --- Render Logic ---
   return (
     <>
-      <nav className="flex items-center justify-between z-40 px-4 py-2 mx-2 mt-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50">
+      <nav className="flex items-center justify-between z-40 px-4 py-2 mx-2 mt-2 bg-transparent dark:bg-zinc-900/60 backdrop-blur-xl rounded-xl border border-slate-200/30 dark:border-zinc-800/30">
         {/* Left Section */}
-        {/* ... (AI Button remains the same) ... */}
         <div className="flex items-center">
           <div className="relative">
             <button
@@ -204,7 +203,6 @@ const Navbar: React.FC = () => {
         {/* Right Section */}
         <div className="flex items-center space-x-1">
           {/* Status Dropdown Area */}
-          {/* ... (Status dropdown remains the same) ... */}
           <div className="relative status-container">
             {sessionStatus === "authenticated" && (
               <>

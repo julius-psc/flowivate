@@ -121,7 +121,7 @@ const featureCategories = [
   },
 ];
 
-export default function Personal() {
+export default function Features() {
   const { addFeature, isFeatureSelected } = useDashboard();
   const [activeCategory, setActiveCategory] = useState("all");
 

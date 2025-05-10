@@ -25,7 +25,7 @@ import * as tasksApi from "../../../../lib/tasksApi";
 import type { Task, TaskList } from "@/types/taskTypes";
 import { toast } from "sonner";
 
-// --- Helper Functions and Data (Unchanged) ---
+// --- Helper Functions and Data ---
 const createNewTask = (name: string): Task => ({
   id: crypto.randomUUID(),
   name: name.trim(),
@@ -121,7 +121,6 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
       ref={dropdownRef}
       className="absolute right-0 top-full mt-2 w-40 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg shadow-lg z-[1000] py-1.5 transition-all duration-200 ease-out animate-fade-in"
     >
-      {" "}
       {priorityLevels.map(({ level, label, icon: Icon, color }) => (
         <button
           key={level}
@@ -135,19 +134,18 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
               : ""
           }`}
         >
-          {" "}
           <Icon
             size={16}
             className={level === 0 ? "opacity-50 text-slate-400" : color}
-          />{" "}
-          <span>{label}</span>{" "}
+          />
+          <span>{label}</span>
         </button>
-      ))}{" "}
+      ))}
     </div>
   );
 };
 
-// --- Type Definition (Unchanged) ---
+// --- Type Definition ---
 type UpdateTaskListVariables = {
   id: string;
   tasks?: Task[];
@@ -160,7 +158,7 @@ const TaskLogger: React.FC = () => {
   const { data: session, status } = useSession();
   const queryKey: QueryKey = ["tasks"];
 
-  // State Hooks (Unchanged)
+  // State Hooks
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -182,13 +180,13 @@ const TaskLogger: React.FC = () => {
   }>({ listId: null, isLoading: false });
   const [aiPrimedListId, setAiPrimedListId] = useState<string | null>(null);
 
-  // Refs (Unchanged)
+  // Refs
   const editInputRef = useRef<HTMLInputElement>(null);
   const listNameInputRef = useRef<HTMLInputElement>(null);
   const subtaskInputRef = useRef<HTMLInputElement>(null);
   const taskInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  // Data Fetching and Mutations (Unchanged logic)
+  // Data Fetching and Mutations
   const {
     data: taskLists = [],
     isLoading: isLoadingLists,
@@ -297,6 +295,11 @@ const TaskLogger: React.FC = () => {
           setAiPrimedListId(null);
         }
         if (addingSubtaskTo) {
+          setActiveTaskInputValues((prev) => {
+            const newState = { ...prev };
+            delete newState[`subtask-${addingSubtaskTo}`];
+            return newState;
+          });
           setAddingSubtaskTo(null);
         }
       }
@@ -331,7 +334,7 @@ const TaskLogger: React.FC = () => {
     },
   });
 
-  // Task Manipulation Helpers (Unchanged logic)
+  // Task Manipulation Helpers
   const findAndUpdateTask = (
     tasks: Task[],
     taskId: string,
@@ -375,7 +378,7 @@ const TaskLogger: React.FC = () => {
     return { updatedTasks: finalFiltered, taskFound: taskFound };
   };
 
-  // Event Handlers (Unchanged logic, except where noted)
+  // Event Handlers
   const handleAddList = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && newListName.trim() && session?.user?.id) {
       addListMutation.mutate({ name: newListName.trim() });
@@ -406,10 +409,7 @@ const TaskLogger: React.FC = () => {
     let inputStateKey = "";
     if (parentTaskId) {
       inputStateKey = `subtask-${parentTaskId}`;
-      const subInput = document.getElementById(
-        `subtask-input-${parentTaskId}`
-      ) as HTMLInputElement;
-      taskName = subInput?.value?.trim() ?? "";
+      taskName = activeTaskInputValues[inputStateKey]?.trim() ?? "";
     } else {
       inputStateKey = listId;
       taskName = activeTaskInputValues[inputStateKey]?.trim();
@@ -440,7 +440,7 @@ const TaskLogger: React.FC = () => {
     const list = taskLists.find((l) => l._id === listId);
     if (!list || list._id?.startsWith("placeholder-")) return;
     setAiBreakdownState({ listId, isLoading: true });
-    /* Keep listAddingTaskId set */ try {
+    try {
       const response = await fetch("/api/claude/subtasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -513,19 +513,19 @@ const TaskLogger: React.FC = () => {
     listId: string,
     parentTaskId?: string
   ) => {
-    const taskValue = activeTaskInputValues[listId]?.trim();
+    const taskValue = parentTaskId
+      ? activeTaskInputValues[`subtask-${parentTaskId}`]?.trim()
+      : activeTaskInputValues[listId]?.trim();
     const isAiPrimed = aiPrimedListId === listId;
     const isAiCurrentlyLoading =
       aiBreakdownState.isLoading && aiBreakdownState.listId === listId;
     if (e.key === "Enter" && !isAiCurrentlyLoading) {
       e.preventDefault();
-      if (parentTaskId) {
-        /* Handle subtask */
-      } else if (taskValue) {
-        if (isAiPrimed) {
-          handleAiBreakdown(
-            listId
-          ); /* Don't reset priming here, let onSettled handle it */
+      if (taskValue) {
+        if (parentTaskId) {
+          handleAddTask(listId, parentTaskId);
+        } else if (isAiPrimed) {
+          handleAiBreakdown(listId);
         } else {
           handleAddTask(listId);
         }
@@ -536,6 +536,11 @@ const TaskLogger: React.FC = () => {
       }
       if (parentTaskId) {
         setAddingSubtaskTo(null);
+        setActiveTaskInputValues((prev) => {
+          const newState = { ...prev };
+          delete newState[`subtask-${parentTaskId}`];
+          return newState;
+        });
       } else {
         setActiveTaskInputValues((prev) => {
           const newState = { ...prev };
@@ -643,7 +648,7 @@ const TaskLogger: React.FC = () => {
     return totalTasks > 0 ? `${completedTasks}/${totalTasks}` : `0/0`;
   };
 
-  // Focus UseEffects (Unchanged)
+  // Focus UseEffects
   useEffect(() => {
     if (listAddingTaskId) {
       setTimeout(() => {
@@ -662,7 +667,7 @@ const TaskLogger: React.FC = () => {
     }
   }, [addingSubtaskTo]);
 
-  // --- Render Task Function (MODIFIED Icon Order) ---
+  // --- Render Task Function ---
   const renderTask = (
     task: Task,
     listId: string,
@@ -673,7 +678,7 @@ const TaskLogger: React.FC = () => {
     const hasSubtasks = task.subtasks && task.subtasks.length > 0;
     const isPriorityDropdownOpen = openPriorityDropdown === task.id;
     const isSubtask = level > 0;
-    const indentMultiplier = 3;
+    const indentMultiplier = 4; // Increased for more noticeable indentation
     const indentationClass = level > 0 ? `pl-${level * indentMultiplier}` : "";
     const isPlaceholder = listId.startsWith("placeholder-");
     const isListMutating =
@@ -690,13 +695,8 @@ const TaskLogger: React.FC = () => {
           key={`${task.id}-editing`}
           className={`relative ${indentationClass}`}
         >
-          {" "}
           <div className="flex items-center p-2 rounded-lg bg-white/95 dark:bg-zinc-800/95 backdrop-blur-sm border border-slate-200/60 dark:border-zinc-700/60 shadow-sm transition-all duration-200">
-            {" "}
-            <div
-              className="w-5 mr-2 flex-shrink-0"
-              aria-hidden="true"
-            ></div>{" "}
+            <div className="w-5 mr-2 flex-shrink-0" aria-hidden="true"></div>
             <input
               ref={editInputRef}
               type="text"
@@ -707,20 +707,19 @@ const TaskLogger: React.FC = () => {
               className="flex-1 bg-transparent focus:outline-none text-slate-900 dark:text-slate-200 text-sm font-medium"
               autoFocus
               disabled={isListMutating}
-            />{" "}
+            />
             <div className="flex items-center gap-1 ml-auto pl-2 flex-shrink-0 invisible">
-              {" "}
               <div className="p-1">
                 <IconEdit size={14} />
-              </div>{" "}
+              </div>
               <div className="p-1">
                 <IconTrash size={14} />
-              </div>{" "}
+              </div>
               <div className="p-1 relative">
                 <IconFlag size={16} />
-              </div>{" "}
-            </div>{" "}
-          </div>{" "}
+              </div>
+            </div>
+          </div>
         </div>
       );
     }
@@ -731,7 +730,6 @@ const TaskLogger: React.FC = () => {
         <div className="flex items-center p-2 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-100/50 dark:border-zinc-700/50 hover:border-slate-200/70 dark:hover:border-zinc-600/70 hover:shadow-sm transition-all duration-200">
           {/* Chevron */}
           <div className="w-5 flex-shrink-0 flex items-center justify-center mr-2">
-            {" "}
             {hasSubtasks ? (
               <button
                 onClick={() => toggleTaskExpansion(task.id)}
@@ -742,16 +740,15 @@ const TaskLogger: React.FC = () => {
                 aria-expanded={isExpanded}
                 disabled={isDisabled}
               >
-                {" "}
                 {isExpanded ? (
                   <IconChevronDown size={14} />
                 ) : (
                   <IconChevronRight size={14} />
-                )}{" "}
+                )}
               </button>
             ) : (
               <div className="w-5" aria-hidden="true"></div>
-            )}{" "}
+            )}
           </div>
           {/* Checkbox */}
           <div
@@ -761,7 +758,6 @@ const TaskLogger: React.FC = () => {
             }
             title={!isPlaceholder ? "Double-click to edit" : ""}
           >
-            {" "}
             <Checkbox
               checked={task.completed}
               onChange={() =>
@@ -770,13 +766,13 @@ const TaskLogger: React.FC = () => {
               label={task.name}
               variant={isSubtask ? "subtask" : "default"}
               disabled={isDisabled}
-            />{" "}
+            />
           </div>
 
-          {/* --- MODIFIED Action Icons Area (Order Changed) --- */}
+          {/* Action Icons Area */}
           {!isPlaceholder && (
             <div className="flex items-center gap-1 ml-auto pl-1 flex-shrink-0">
-              {/* 1. Edit/Trash Buttons (Hover Visible Group) */}
+              {/* Edit/Trash Buttons */}
               <div className="flex items-center gap-1 opacity-0 group-hover/task:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={() =>
@@ -786,8 +782,7 @@ const TaskLogger: React.FC = () => {
                   className="p-1 rounded hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 text-slate-500 dark:text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isDisabled}
                 >
-                  {" "}
-                  <IconEdit size={14} />{" "}
+                  <IconEdit size={14} />
                 </button>
                 <button
                   onClick={() =>
@@ -797,14 +792,11 @@ const TaskLogger: React.FC = () => {
                   className="p-1 rounded hover:bg-red-100/80 dark:hover:bg-red-900/50 text-red-500 dark:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isDisabled}
                 >
-                  {" "}
-                  <IconTrash size={14} />{" "}
+                  <IconTrash size={14} />
                 </button>
               </div>
-              {/* 2. Priority Button (Always Visible) */}
+              {/* Priority Button */}
               <div className="relative z-10">
-                {" "}
-                {/* Ensure dropdown is clickable */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -819,8 +811,7 @@ const TaskLogger: React.FC = () => {
                   aria-expanded={isPriorityDropdownOpen}
                   disabled={isDisabled}
                 >
-                  {" "}
-                  <PriorityIconDisplay level={task.priority} />{" "}
+                  <PriorityIconDisplay level={task.priority} />
                 </button>
                 {isPriorityDropdownOpen && (
                   <PriorityDropdown
@@ -837,43 +828,52 @@ const TaskLogger: React.FC = () => {
           {/* Placeholder spacing */}
           {isPlaceholder && (
             <div className="flex items-center gap-1 ml-auto pl-1 flex-shrink-0 invisible">
-              {" "}
               <div className="p-1">
                 <IconEdit size={14} />
-              </div>{" "}
+              </div>
               <div className="p-1">
                 <IconTrash size={14} />
-              </div>{" "}
+              </div>
               <div className="p-1 relative">
                 <IconFlag size={16} />
-              </div>{" "}
+              </div>
             </div>
           )}
-          {/* --- END MODIFIED Action Icons Area --- */}
-        </div>{" "}
-        {/* End InnerFlexDiv */}
-        {/* Subtasks and Add Subtask Input (Unchanged) */}
+        </div>
+        {/* Subtasks and Add Subtask Input */}
         {hasSubtasks && isExpanded && (
           <div className="mt-1 space-y-1 animate-fade-in">
-            {" "}
             {task.subtasks
               .sort((a, b) => b.priority - a.priority)
-              .map((subtask) => renderTask(subtask, listId, level + 1))}{" "}
+              .map((subtask) => renderTask(subtask, listId, level + 1))}
           </div>
         )}
         {!isPlaceholder && level === 0 && (
           <div className={`mt-1 mb-2 pl-${(level + 1) * indentMultiplier}`}>
-            {" "}
             {addingSubtaskTo === task.id ? (
               <input
                 ref={subtaskInputRef}
                 id={`subtask-input-${task.id}`}
                 type="text"
+                value={activeTaskInputValues[`subtask-${task.id}`] ?? ""}
+                onChange={(e) => {
+                  const { value } = e.target;
+                  setActiveTaskInputValues((prev) => ({
+                    ...prev,
+                    [`subtask-${task.id}`]: value,
+                  }));
+                }}
                 onKeyDown={(e) => handleKeyDownTaskInput(e, listId, task.id)}
                 onBlur={(e) => {
                   setTimeout(() => {
-                    if (!e.target.value.trim() && addingSubtaskTo === task.id)
+                    if (!e.target.value.trim() && addingSubtaskTo === task.id) {
                       setAddingSubtaskTo(null);
+                      setActiveTaskInputValues((prev) => {
+                        const newState = { ...prev };
+                        delete newState[`subtask-${task.id}`];
+                        return newState;
+                      });
+                    }
                   }, 150);
                 }}
                 className="w-full p-2 bg-slate-50/90 dark:bg-zinc-800/90 backdrop-blur-md rounded-lg border border-slate-200/50 dark:border-zinc-700/50 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:focus:ring-pink-400 text-sm text-slate-900 dark:text-slate-200 transition-all duration-200 disabled:opacity-50"
@@ -888,25 +888,23 @@ const TaskLogger: React.FC = () => {
                 title="Add subtask"
                 disabled={isDisabled}
               >
-                {" "}
-                <IconCopyPlus size={14} /> <span>Add subtask</span>{" "}
+                <IconCopyPlus size={14} /> <span>Add subtask</span>
               </button>
-            )}{" "}
+            )}
           </div>
         )}
-      </div> // End OuterDiv
+      </div>
     );
-  }; // End of renderTask
+  };
 
   // --- Main Return JSX ---
   if (
     status === "loading" ||
     (status === "authenticated" && isLoadingLists && !taskLists.length)
   ) {
-    /* ... Loading ... */ return (
+    return (
       <div className="p-4 text-center text-slate-500 dark:text-slate-400">
-        {" "}
-        Loading Tasks...{" "}
+        Loading Tasks...
       </div>
     );
   }
@@ -926,17 +924,14 @@ const TaskLogger: React.FC = () => {
     <div className="p-4 flex flex-col h-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-4 flex-shrink-0 max-w-3xl mx-auto w-full px-2">
-        {" "}
         <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-          {" "}
-          My Tasks{" "}
-        </h1>{" "}
+          My Tasks
+        </h1>
         {updateListMutation.isPending && (
           <span className="text-xs text-blue-500 dark:text-blue-400 animate-pulse flex items-center gap-1">
-            {" "}
-            <IconLoader2 size={12} className="animate-spin" /> Saving...{" "}
+            <IconLoader2 size={12} className="animate-spin" /> Saving...
           </span>
-        )}{" "}
+        )}
       </div>
 
       {/* Task Lists Area */}
@@ -944,14 +939,12 @@ const TaskLogger: React.FC = () => {
         <div className="max-w-3xl mx-auto w-full px-2">
           {showNoListsMessage && (
             <div className="text-center text-slate-400 dark:text-slate-500 py-10">
-              {" "}
-              No task lists yet. Add one below!{" "}
+              No task lists yet. Add one below!
             </div>
           )}
           {showSignInMessage && (
             <div className="p-4 text-center text-slate-500 dark:text-slate-400">
-              {" "}
-              Please sign in to manage your tasks.{" "}
+              Please sign in to manage your tasks.
             </div>
           )}
 
@@ -960,18 +953,14 @@ const TaskLogger: React.FC = () => {
             <div key={list._id || list.name} className="mb-6 group/list">
               {/* List Header */}
               <div className="flex items-center justify-between mb-3">
-                {" "}
                 <h2 className="text-lg font-medium text-slate-700 dark:text-slate-300">
-                  {" "}
-                  {list.name}{" "}
-                </h2>{" "}
-                <div className="flex-1 mx-3 border-t border-slate-200 dark:border-zinc-700 border-dashed"></div>{" "}
+                  {list.name}
+                </h2>
+                <div className="flex-1 mx-3 border-t border-slate-200 dark:border-zinc-700 border-dashed"></div>
                 <div className="flex items-center gap-2">
-                  {" "}
                   <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100/80 dark:bg-zinc-800/80 backdrop-blur-md px-2 py-1 rounded-full">
-                    {" "}
-                    {getCompletionRatio(list.tasks)}{" "}
-                  </span>{" "}
+                    {getCompletionRatio(list.tasks)}
+                  </span>
                   {!list._id?.startsWith("placeholder-") && (
                     <button
                       onClick={() => handleDeleteList(list._id)}
@@ -982,16 +971,15 @@ const TaskLogger: React.FC = () => {
                         deleteListMutation.variables === list._id
                       }
                     >
-                      {" "}
                       {deleteListMutation.isPending &&
                       deleteListMutation.variables === list._id ? (
                         <IconLoader2 size={16} className="animate-spin" />
                       ) : (
                         <IconTrash size={16} />
-                      )}{" "}
+                      )}
                     </button>
-                  )}{" "}
-                </div>{" "}
+                  )}
+                </div>
               </div>
 
               {/* Render Tasks */}
@@ -999,7 +987,7 @@ const TaskLogger: React.FC = () => {
                 .sort((a, b) => b.priority - a.priority)
                 .map((task) => renderTask(task, list._id!, 0))}
 
-              {/* Add Task Input Area (MODIFIED - Added Spinner) */}
+              {/* Add Task Input Area */}
               {!list._id?.startsWith("placeholder-") && (
                 <>
                   {listAddingTaskId === list._id && (
@@ -1016,14 +1004,12 @@ const TaskLogger: React.FC = () => {
                             ? "text-blue-600 dark:text-blue-400 bg-blue-100/50 dark:bg-blue-900/30"
                             : ""
                         }`}
-                        // Disable button completely while AI is processing
                         disabled={
                           updateListMutation.isPending ||
                           (aiBreakdownState.isLoading &&
                             aiBreakdownState.listId === list._id)
                         }
                       >
-                        {/* Show loader ONLY in button if AI is loading - Keep it simple */}
                         {aiBreakdownState.isLoading &&
                         aiBreakdownState.listId === list._id ? (
                           <IconLoader2 size={16} className="animate-spin" />
@@ -1084,17 +1070,8 @@ const TaskLogger: React.FC = () => {
                           updateListMutation.isPending ||
                           (aiBreakdownState.isLoading &&
                             aiBreakdownState.listId === list._id)
-                        } // Disable input during AI processing
+                        }
                       />
-
-                      {/* --- ADDED Minimalist Loader Indicator (Optional: if button loader isn't enough) --- */}
-                      {/* You can uncomment this if you prefer a spinner next to the input instead of ONLY in the button */}
-                      {/* {(aiBreakdownState.isLoading && aiBreakdownState.listId === list._id) && (
-                           <div className="pl-2">
-                               <IconLoader2 size={16} className="animate-spin text-blue-500 dark:text-blue-400" />
-                           </div>
-                       )} */}
-                      {/* --- */}
                     </div>
                   )}
                   {/* Add Task Button */}
@@ -1118,19 +1095,17 @@ const TaskLogger: React.FC = () => {
                       title="Add task manually"
                       disabled={updateListMutation.isPending}
                     >
-                      {" "}
-                      <IconCopyPlus size={14} /> <span>Add task</span>{" "}
+                      <IconCopyPlus size={14} /> <span>Add task</span>
                     </button>
                   )}
                 </>
               )}
-            </div> // End list group div
+            </div>
           ))}
 
           {/* Add New List Input Area */}
           {status === "authenticated" && isAddingList && (
             <div className="mb-6 mt-4">
-              {" "}
               <input
                 ref={listNameInputRef}
                 type="text"
@@ -1149,11 +1124,10 @@ const TaskLogger: React.FC = () => {
                 placeholder="New list name..."
                 autoFocus
                 disabled={addListMutation.isPending}
-              />{" "}
+              />
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {" "}
-                Press Enter to save or Escape to cancel{" "}
-              </p>{" "}
+                Press Enter to save or Escape to cancel
+              </p>
             </div>
           )}
         </div>
@@ -1161,8 +1135,7 @@ const TaskLogger: React.FC = () => {
 
       {/* Add List Button */}
       {status === "authenticated" && (
-        <div className="max-w-3xl mx-auto w-full px-2 mt-4 flex-shrink-0">
-          {" "}
+        <div className="max-w-3xl mx-auto w-full px-2 mt-4 flex-shrink-0 z-200">
           {!isAddingList && (
             <button
               onClick={() => {
@@ -1171,29 +1144,26 @@ const TaskLogger: React.FC = () => {
                   setTimeout(() => listNameInputRef.current?.focus(), 0);
                 }
               }}
-              className="flex items-center justify-center p-2 w-full rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center p-2 w-full rounded-lg text-slate-400 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={addListMutation.isPending}
               title="Add a new task list"
             >
-              {" "}
               {addListMutation.isPending ? (
                 <>
-                  {" "}
-                  <IconLoader2 size={18} className="mr-2 animate-spin" />{" "}
-                  <span>Adding...</span>{" "}
+                  <IconLoader2 size={18} className="mr-2 animate-spin" />
+                  <span>Adding...</span>
                 </>
               ) : (
                 <>
-                  {" "}
-                  <IconSquareRoundedPlus2 size={18} className="mr-2" />{" "}
-                  <span className="font-medium">Add new list</span>{" "}
+                  <IconSquareRoundedPlus2 size={18} className="mr-2" />
+                  <span className="font-medium">Add new list</span>
                 </>
-              )}{" "}
+              )}
             </button>
-          )}{" "}
+          )}
         </div>
       )}
-    </div> // End component div
+    </div>
   );
 };
 
