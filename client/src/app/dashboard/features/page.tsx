@@ -134,7 +134,7 @@ export default function Features() {
     <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="max-w-4xl mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 z-20">
           Your Productivity Hub
         </h2>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-lg">

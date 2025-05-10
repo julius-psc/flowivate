@@ -1,12 +1,15 @@
 'use client';
 
-import ClientProvider from "../providers/ClientProvider";
-import Sidebar from "../../components/dashboard/navigation/Sidebar";
-import Navbar from "../../components/dashboard/navigation/Navbar";
-import { DashboardProvider } from "../../context/DashboardContext";
-import { useTheme } from "next-themes";
-import JungleEnv from "../../../themes/animated/JungleEnv";
-import OceanEnv from "../../../themes/animated/OceanEnv";
+import dynamic from 'next/dynamic';
+import ClientProvider from '../providers/ClientProvider';
+import Sidebar from '../../components/dashboard/navigation/Sidebar';
+import Navbar from '../../components/dashboard/navigation/Navbar';
+import { DashboardProvider } from '../../context/DashboardContext';
+import { useTheme } from 'next-themes';
+
+// Dynamically import environments with no SSR to avoid hydration mismatches
+const JungleEnv = dynamic(() => import('../../../themes/animated/JungleEnv'), { ssr: false });
+const OceanEnv = dynamic(() => import('../../../themes/animated/OceanEnv'), { ssr: false });
 
 export default function DashboardLayout({
   children,
@@ -17,21 +20,29 @@ export default function DashboardLayout({
 
   return (
     <ClientProvider>
-      <div
-        className="flex flex-col h-screen w-screen bg-secondary-white dark:bg-[#151E2F]"
-        id="dashboard-container"
-      >
-        {theme === "jungle" && <JungleEnv />}
-        {theme === "ocean" && <OceanEnv />}
-
-        <div className="flex-shrink-0">
-          <Navbar />
+      <div className="relative h-screen w-screen bg-secondary-white dark:bg-[#151E2F]" id="dashboard-container">
+        {/* Background Environments */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          {theme === 'jungle' && <JungleEnv />}
+          {theme === 'ocean' && <OceanEnv />}
         </div>
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar />
-          <DashboardProvider>
-            <main className="flex-1 overflow-y-auto">{children}</main>
-          </DashboardProvider>
+
+        {/* Main App Layout Content */}
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Navbar */}
+          <div className="z-20">
+            <Navbar />
+          </div>
+
+          {/* Sidebar + Content */}
+          <div className="flex flex-1 overflow-hidden z-10">
+            <Sidebar />
+            <DashboardProvider>
+              <main className="flex-1 overflow-y-auto relative z-10">
+                {children}
+              </main>
+            </DashboardProvider>
+          </div>
         </div>
       </div>
     </ClientProvider>
