@@ -13,7 +13,7 @@ import {
   IconH3,
   IconList,
   IconListNumbers,
-  IconGraph, // Assuming this is for Paragraph
+  IconGraph, 
   IconMoodSmile
 } from '@tabler/icons-react';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -25,7 +25,7 @@ interface ContextMenuProps {
 // Helper function to create button classes
 const getButtonClasses = (isActive: boolean) => {
   const base = "p-1.5 rounded-md hover:bg-white/20 transition-colors duration-150 text-neutral-800"; // Smaller padding, updated hover/text
-  const active = isActive ? "bg-white/30" : ""; // Updated active bg
+  const active = isActive ? "bg-white/30" : ""; 
   return `${base} ${active}`;
 };
 
@@ -241,22 +241,15 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
       {showEmojiPicker && (
         <div
           ref={emojiRef} // Assign ref
-          // --- MODIFICATION START: Emoji Picker Container Styling ---
-          className="absolute mt-2 rounded-lg border border-white/30 bg-white/75 backdrop-blur-lg shadow-lg z-[51] overflow-hidden" // Apply glass effect, ensure z-index
-          // --- MODIFICATION END: Emoji Picker Container Styling ---
+          className="absolute mt-2 rounded-lg border border-white/30 bg-white/75 backdrop-blur-lg shadow-lg z-[51] overflow-hidden" 
           style={{
             // Position below the main menu
-            top: '100%', // Place it right below the menu
-            left: '0', // Align left edge with menu's left edge
-            // Optional: Adjust left based on where the emoji button is, if needed
-            // left: `${emojiButtonRef.current?.offsetLeft || 0}px`,
+            top: '100%',
+            left: '0', 
           }}
         >
           <EmojiPicker
             onEmojiClick={handleEmojiClick}
-            // Attempt to make picker background transparent if the library supports it
-             // Example: pickerStyle={{ background: 'transparent', border: 'none' }}
-             // Check EmojiPicker component documentation for exact props
           />
         </div>
       )}

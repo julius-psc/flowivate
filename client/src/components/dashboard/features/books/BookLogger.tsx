@@ -154,16 +154,15 @@ const BookLogger: React.FC = () => {
     fetchBooks();
   }, []);
 
-  useEffect(() => {
-    if (notesEditor && isEditing) {
-      notesEditor.commands.setContent(formData.notes || "");
-    }
-  }, [isEditing, formData.notes, notesEditor]);
+useEffect(() => {
+  if (notesEditor && isEditing) {
+    notesEditor.commands.setContent(formData.notes || "", false, { preserveWhitespace: "full" });
+  }
+}, [isEditing, formData.notes, notesEditor]);
 
   const fetchBooks = async () => {
     try {
       setLoading(true);
-      // setError(null); // REMOVE
       const response = await fetch("/api/features/books");
       if (!response.ok) {
         throw new Error("Failed to fetch books");
@@ -171,8 +170,7 @@ const BookLogger: React.FC = () => {
       const data = await response.json();
       setBooks(data.books);
     } catch (err) {
-      // setError("Error loading books. Please try again."); // REMOVE
-      toast.error("Error loading books. Please try again."); // Use toast
+      toast.error("Error loading books. Please try again."); 
       console.error(err);
     } finally {
       setLoading(false);

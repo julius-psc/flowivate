@@ -88,8 +88,6 @@ export const Journal: React.FC<JournalProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  // const [error, setError] = useState<string | null>(null); // REMOVE error state
-  // const [feedback, setFeedback] = useState<string | null>(null); // REMOVE feedback state
   const editorRef = useRef<Editor | null>(null);
 
   const editor = useEditor({

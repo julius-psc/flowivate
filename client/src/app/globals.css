@@ -427,3 +427,15 @@ html {
     scrollbar-color: #4C4E50;
   }
 }
+
+
+/* Restore List Styles */
+.tiptap ul,
+.tiptap ol {
+  list-style-type: disc; 
+  padding-left: 1.5rem;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+}
