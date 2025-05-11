@@ -770,7 +770,7 @@ useEffect(() => {
                   Notes
                 </label>
                 {notesEditor && (
-                  <div className="border border-bdr-light dark:border-bdr-dark rounded-lg p-4 bg-secondary-white dark:bg-secondary-black min-h-[200px] focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-primary focus-within:border-transparent transition-all duration-200">
+                  <div className="relative border border-bdr-light dark:border-bdr-dark rounded-lg p-4 bg-secondary-white dark:bg-secondary-black min-h-[200px] focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-primary focus-within:border-transparent transition-all duration-200">
                     <EditorContent editor={notesEditor} />
                     {notesEditor && <ContextMenu editor={notesEditor} />}
                   </div>
