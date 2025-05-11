@@ -1,21 +1,23 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
-import clientPromise from "@/lib/mongodb";
-import { authOptions } from "@/lib/authOptions";
-import { MongoClient, ObjectId } from "mongodb";
+import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import connectDB from "@/lib/mongoose";
+import { authOptions } from "@/lib/authOptions";
 
-const DB_NAME = process.env.MONGODB_DB || "Flowivate";
 const MIN_PASSWORD_LENGTH = 8;
+const MAX_USERNAME_LENGTH = 30;
+const MAX_EMAIL_LENGTH = 100;
 const BCRYPT_SALT_ROUNDS = 10;
-const USER_COLLECTION = "users";
 
-interface UserDocument {
-  _id: ObjectId;
-  username?: string;
-  email?: string;
-  password?: string; 
-}
+// Define User Schema
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+  username: { type: String, required: false, unique: true, trim: true },
+  password: { type: String, required: false }, // Allow null for OAuth users
+}, { timestamps: true });
+
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 interface ProfileUpdateBody {
   username?: string;
@@ -23,302 +25,210 @@ interface ProfileUpdateBody {
 }
 
 interface PasswordUpdateBody {
-  currentPassword?: string;
-  newPassword?: string;
+  currentPassword: string;
+  newPassword: string;
 }
 
-function isValidObjectId(id: string): boolean {
-  if (typeof id !== "string") return false;
-  return ObjectId.isValid(id) && new ObjectId(id).toString() === id;
-}
+// Validation Functions
+const isValidEmail = (email: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+const isValidObjectId = (id: string): boolean =>
+  mongoose.Types.ObjectId.isValid(id);
 
-async function getUserObjectId(): Promise<ObjectId | null> {
+// Get Authenticated User ID
+async function getUserObjectId(): Promise<mongoose.Types.ObjectId | null> {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  if (!session?.user?.id || !isValidObjectId(session.user.id)) {
+    console.error(`Invalid or missing user ID in session: ${session?.user?.id || 'none'}`);
     return null;
   }
-  if (!isValidObjectId(session.user.id)) {
-    console.error(`Invalid user ID format in session: ${session.user.id}`);
-    return null;
-  }
-  try {
-    return new ObjectId(session.user.id);
-  } catch (error) {
-    console.error(
-      "Error creating ObjectId from session user ID:",
-      session.user.id,
-      error
-    );
-    return null;
-  }
+  return new mongoose.Types.ObjectId(session.user.id);
 }
 
 export async function PUT(request: NextRequest) {
-  let userObjectId: ObjectId | null = null;
   try {
-    userObjectId = await getUserObjectId();
+    const userObjectId = await getUserObjectId();
     if (!userObjectId) {
-      return NextResponse.json(
-        { message: "Unauthorized or invalid user session" },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "Unauthorized or invalid user session" }, { status: 401 });
     }
 
     let body: ProfileUpdateBody;
     try {
       body = await request.json();
-    } catch (jsonError) {
-      console.error(`Error parsing JSON in PUT /api/profile:`, jsonError);
-      return NextResponse.json(
-        { message: "Invalid JSON payload" },
-        { status: 400 }
-      );
+    } catch (error) {
+      console.error("Error parsing JSON in PUT /api/user:", error);
+      return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 });
     }
 
     const { username, email } = body;
-
     if (!username && !email) {
-      return NextResponse.json(
-        { message: "Username or email must be provided for update." },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "Username or email required" }, { status: 400 });
     }
 
-    const updateData: Record<string, string> = {};
-
-    if (username !== undefined) {
-      if (
-        typeof username !== "string" ||
-        username.trim().length < 3 ||
-        username.trim().length > 30
-      ) {
+    const updateData: ProfileUpdateBody = {};
+    if (username) {
+      if (typeof username !== "string" || username.trim().length < 3 || username.trim().length > MAX_USERNAME_LENGTH) {
         return NextResponse.json(
-          { message: "Username must be a string between 3 and 30 characters." },
+          { message: `Username must be 3-${MAX_USERNAME_LENGTH} characters` },
           { status: 400 }
         );
       }
-      // Add additional username validation if needed (e.g., allowed characters)
       updateData.username = username.trim();
     }
 
-    if (email !== undefined) {
-      if (typeof email !== "string" || !isValidEmail(email)) {
+    if (email) {
+      if (typeof email !== "string" || !isValidEmail(email) || email.length > MAX_EMAIL_LENGTH) {
+        return NextResponse.json({ message: "Invalid email format" }, { status: 400 });
+      }
+      updateData.email = email.trim().toLowerCase();
+    }
+
+    await connectDB();
+    if (updateData.email || updateData.username) {
+      const existingUser = await User.findOne({
+        $or: [
+          ...(updateData.email ? [{ email: updateData.email }] : []),
+          ...(updateData.username ? [{ username: updateData.username }] : []),
+        ],
+        _id: { $ne: userObjectId },
+      });
+
+      if (existingUser) {
         return NextResponse.json(
-          { message: "Invalid email format provided." },
-          { status: 400 }
+          { message: updateData.email && existingUser?.email === updateData.email ? "Email already in use" : "Username already taken" },
+          { status: 409 }
         );
       }
-      updateData.email = email.toLowerCase().trim(); // Store emails consistently
     }
 
-    const client: MongoClient = await clientPromise;
-    const db = client.db(DB_NAME);
-    const usersCollection = db.collection<UserDocument>(USER_COLLECTION);
-
-    if (updateData.email) {
-      const existingUser = await usersCollection.findOne({
-        email: updateData.email,
-        _id: { $ne: userObjectId },
-      });
-      if (existingUser) {
-        return NextResponse.json(
-          { message: "Email is already associated with another account." },
-          { status: 409 }
-        ); // 409 Conflict
-      }
-    }
-
-    if (updateData.username) {
-      const existingUser = await usersCollection.findOne({
-        username: updateData.username,
-        _id: { $ne: userObjectId },
-      });
-      if (existingUser) {
-        return NextResponse.json(
-          { message: "Username is already taken." },
-          { status: 409 }
-        ); // 409 Conflict
-      }
-    }
-
-    const result = await usersCollection.updateOne(
-      { _id: userObjectId },
-      { $set: updateData }
+    const user = await User.findByIdAndUpdate(
+      userObjectId,
+      { $set: updateData },
+      { new: true, runValidators: true, select: "email username" }
     );
-
-    if (result.matchedCount === 0) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Profile updated successfully",
-        updatedFields: Object.keys(updateData),
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error in PUT /api/profile:", error);
-    return NextResponse.json(
-      { message: "Failed to update profile" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  let userObjectId: ObjectId | null = null;
-  try {
-    userObjectId = await getUserObjectId();
-    if (!userObjectId) {
-      return NextResponse.json(
-        { message: "Unauthorized or invalid user session" },
-        { status: 401 }
-      );
-    }
-
-    let body: PasswordUpdateBody;
-    try {
-      body = await request.json();
-    } catch (jsonError) {
-      console.error(`Error parsing JSON in PATCH /api/profile:`, jsonError);
-      return NextResponse.json(
-        { message: "Invalid JSON payload" },
-        { status: 400 }
-      );
-    }
-
-    const { currentPassword, newPassword } = body;
-
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json(
-        { message: "Current password and new password are required." },
-        { status: 400 }
-      );
-    }
-
-    if (
-      typeof newPassword !== "string" ||
-      newPassword.length < MIN_PASSWORD_LENGTH
-    ) {
-      return NextResponse.json(
-        {
-          message: `New password must be a string of at least ${MIN_PASSWORD_LENGTH} characters.`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const client: MongoClient = await clientPromise;
-    const db = client.db(DB_NAME);
-    const usersCollection = db.collection<UserDocument>(USER_COLLECTION);
-
-    const user = await usersCollection.findOne({ _id: userObjectId });
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    // Check if the user has a password set (might not if OAuth only)
+    return NextResponse.json({
+      success: true,
+      message: "Profile updated successfully",
+      user: { email: user.email, username: user.username },
+    }, { status: 200 });
+  } catch (error: unknown) {
+    console.error("Error in PUT /api/user:", error);
+    if ((error as { code?: number })?.code === 11000) {
+      return NextResponse.json({ message: "Username or email already exists" }, { status: 409 });
+    }
+    return NextResponse.json({ message: "Failed to update profile" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const userObjectId = await getUserObjectId();
+    if (!userObjectId) {
+      return NextResponse.json({ message: "Unauthorized or invalid user session" }, { status: 401 });
+    }
+
+    let body: PasswordUpdateBody;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error("Error parsing JSON in PATCH /api/user:", error);
+      return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 });
+    }
+
+    const { currentPassword, newPassword } = body;
+    if (!currentPassword || !newPassword) {
+      return NextResponse.json({ message: "Current and new passwords required" }, { status: 400 });
+    }
+
+    if (typeof newPassword !== "string" || newPassword.length < MIN_PASSWORD_LENGTH) {
+      return NextResponse.json(
+        { message: `New password must be at least ${MIN_PASSWORD_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+    const user = await User.findById(userObjectId);
+    if (!user) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+
     if (!user.password) {
       return NextResponse.json(
-        {
-          message:
-            "Cannot update password. No current password is set for this account (possibly OAuth login only).",
-        },
+        { message: "Password update not supported for OAuth-only accounts" },
         { status: 400 }
       );
     }
 
     const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) {
-      return NextResponse.json(
-        { message: "Incorrect current password provided." },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "Incorrect current password" }, { status: 401 });
     }
 
     if (currentPassword === newPassword) {
       return NextResponse.json(
-        { message: "New password cannot be the same as the current password." },
+        { message: "New password must differ from current password" },
         { status: 400 }
       );
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+    user.password = hashedPassword;
+    await user.save();
 
-    await usersCollection.updateOne(
-      { _id: userObjectId },
-      { $set: { password: hashedPassword } }
-    );
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Password updated successfully",
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      success: true,
+      message: "Password updated successfully",
+    }, { status: 200 });
   } catch (error) {
-    console.error("Error in PATCH /api/profile:", error);
-    return NextResponse.json(
-      { message: "Failed to update password" },
-      { status: 500 }
-    );
+    console.error("Error in PATCH /api/user:", error);
+    return NextResponse.json({ message: "Failed to update password" }, { status: 500 });
   }
 }
 
 export async function DELETE() {
-  let userObjectId: ObjectId | null = null;
   try {
-    userObjectId = await getUserObjectId();
+    const userObjectId = await getUserObjectId();
     if (!userObjectId) {
-      return NextResponse.json(
-        { message: "Unauthorized or invalid user session" },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "Unauthorized or invalid user session" }, { status: 401 });
     }
 
-    const client: MongoClient = await clientPromise;
-    const db = client.db(DB_NAME);
-    const usersCollection = db.collection(USER_COLLECTION);
+    await connectDB();
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const user = await User.findByIdAndDelete(userObjectId, { session });
+        if (!user) {
+          throw new Error("User not found");
+        }
 
-    const result = await usersCollection.deleteOne({
-      _id: userObjectId,
-    });
-
-    if (result.deletedCount === 0) {
-      // This technically shouldn't happen if getUserObjectId succeeded, but good safety check
-      return NextResponse.json(
-        { message: "User not found for deletion" },
-        { status: 404 }
-      );
+        // Cascade delete related collections
+        await mongoose.model("layouts").deleteOne({ userId: userObjectId }, { session });
+        await mongoose.model("task_lists").deleteMany({ userId: userObjectId }, { session });
+        await mongoose.model("journalEntries").deleteMany({ userId: userObjectId }, { session });
+        await mongoose.model("sleep").deleteMany({ userId: userObjectId }, { session });
+        await mongoose.model("moods").deleteMany({ userId: userObjectId }, { session });
+        await mongoose.model("pomodoro").deleteOne({ userId: userObjectId }, { session });
+      });
+    } finally {
+      session.endSession();
     }
 
-    await db.collection("layouts").deleteOne({ userId: userObjectId });
-    await db.collection("task_lists").deleteMany({ userId: userObjectId });
-    await db.collection("journalEntries").deleteMany({ userId: userObjectId });
-    await db.collection("sleep").deleteMany({ userId: userObjectId });
-    await db.collection("moods").deleteMany({ userId: userObjectId });
-    await db.collection("pomodoro").deleteOne({ userId: userObjectId });
-
+    return NextResponse.json({
+      success: true,
+      message: "Account and associated data deleted successfully",
+    }, { status: 200 });
+  } catch (error: unknown) {
+    console.error("Error in DELETE /api/user:", error);
     return NextResponse.json(
-      {
-        success: true,
-        message: "Account deleted successfully",
-      },
-      { status: 200 }
-    ); // 200 or 204
-  } catch (error) {
-    console.error("Error in DELETE /api/profile:", error);
-    return NextResponse.json(
-      { message: "Failed to delete account" },
-      { status: 500 }
+      { message: (error instanceof Error && error.message === "User not found") ? "User not found" : "Failed to delete account" },
+      { status: error instanceof Error && error.message === "User not found" ? 404 : 500 }
     );
   }
 }
