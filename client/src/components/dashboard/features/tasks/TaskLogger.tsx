@@ -119,7 +119,7 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-40 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg shadow-lg z-[1000] py-1.5 transition-all duration-200 ease-out animate-fade-in"
+      className="absolute right-0 bottom-full mt-2 w-40 z-[1000] bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg shadow-lg py-1.5 transition-all duration-200 ease-out animate-fade-in"
     >
       {priorityLevels.map(({ level, label, icon: Icon, color }) => (
         <button
@@ -128,7 +128,7 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
             onSetPriority(listId, taskId, level);
             onClose();
           }}
-          className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 transition-colors ${
+          className={`flex items-center gap-2 w-full px-3 py-2 z-[100] text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 transition-colors ${
             currentPriority === level
               ? "bg-slate-50/80 dark:bg-zinc-700/80 font-semibold"
               : ""
@@ -796,7 +796,7 @@ const TaskLogger: React.FC = () => {
                 </button>
               </div>
               {/* Priority Button */}
-              <div className="relative z-10">
+              <div className="relative">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
