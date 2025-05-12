@@ -756,7 +756,6 @@ const TaskLogger: React.FC = () => {
             onDoubleClick={() =>
               !isDisabled && handleStartEditing(listId, task)
             }
-            title={!isPlaceholder ? "Double-click to edit" : ""}
           >
             <Checkbox
               checked={task.completed}
