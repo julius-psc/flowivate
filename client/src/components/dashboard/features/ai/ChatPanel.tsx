@@ -412,7 +412,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                   disabled={!inputText.trim() || isLoading}
                   className={`p-1 rounded-md flex items-center justify-center ${
                     inputText.trim() && !isLoading
-                      ? "bg-blue-500 hover:bg-blue-600 text-white"
+                      ? "bg-primary hover:bg-primary/80 text-white"
                       : "bg-gray-200 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                   } transition-colors`}
                   aria-label="Send message"
@@ -440,7 +440,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                     }}
                     className="px-2.5 py-1 bg-gray-100 dark:bg-zinc-800/70 hover:bg-gray-200 dark:hover:bg-zinc-700/70 rounded-md text-xs text-gray-700 dark:text-gray-300 transition-colors flex items-center gap-1.5"
                   >
-                    <IconSparkles className="w-3 h-3 text-blue-500" />
+                    <IconSparkles className="w-3 h-3 text-primary" />
                     {suggestion}
                   </button>
                 ))}

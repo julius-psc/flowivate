@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   IconCircleDashedPlus,
-  IconChevronRight,
   IconMessage,
   IconTrash,
   IconLock,
@@ -12,7 +11,7 @@ import {
 import logo from "../../../../assets/brand/logo-v1.5.svg";
 import Image from "next/image";
 import ChatPanel from "./ChatPanel";
-import { toast } from "sonner"; // Import Sonner toast
+import { toast } from "sonner"; 
 
 interface RecentChatSummary {
   id: string;
@@ -38,7 +37,6 @@ const Assistant: React.FC = () => {
   const [showRecentChats, setShowRecentChats] = useState(false);
   const [recentChats, setRecentChats] = useState<RecentChatSummary[]>([]);
   const [isLoadingRecents, setIsLoadingRecents] = useState(false);
-  // const [errorRecents, setErrorRecents] = useState<string | null>(null); // REMOVE error state
 
   const fetchRecentChats = useCallback(async () => {
     setIsLoadingRecents(true);
@@ -57,8 +55,7 @@ const Assistant: React.FC = () => {
       setRecentChats(formattedData);
     } catch (error) {
       console.error("Error fetching recent chats:", error);
-      // setErrorRecents("Could not load recent chats."); // REMOVE
-      toast.error("Could not load recent chats."); // Use toast
+      toast.error("Could not load recent chats."); 
       setRecentChats([]);
     } finally {
       setIsLoadingRecents(false);
@@ -93,8 +90,8 @@ const Assistant: React.FC = () => {
       starter: "I would like to plan my day effectively...",
     },
     {
-      text: "Organize my dashboard",
-      starter: "I want to better organize my productivity dashboard...",
+      text: "Identify my blockers",
+      starter: "What might be preventing me from achieving...",
     },
     { text: "Give me ideas", starter: "I would like ideas for..." },
     {
@@ -143,12 +140,10 @@ const Assistant: React.FC = () => {
       setShowRecentChats(false);
     } catch (error) {
       console.error("Error loading chat history:", error);
-      // setErrorRecents("Could not load the selected chat."); // REMOVE
-      toast.error("Could not load the selected chat."); // Use toast
-      setIsChatOpen(false); // Keep panel closed on error
-      setIsLoadingRecents(false); // Stop loading indicator if staying in Assistant view
+      toast.error("Could not load the selected chat.");
+      setIsChatOpen(false);
+      setIsLoadingRecents(false); 
     }
-    // No finally needed here if ChatPanel handles its own loading
   };
 
   const handleDeleteChat = async (e: React.MouseEvent, chatId: string) => {
@@ -220,20 +215,15 @@ const Assistant: React.FC = () => {
                   <span>Privacy is our priority</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 w-full mb-4">
+              <div className="grid grid-cols-2 gap-1.5 w-full mb-4">
                 {assistantOptions.map((option, index) => (
                   <button
                     key={index}
                     onClick={() => handleNewChat(option.starter)}
-                    className="flex items-center justify-between bg-primary-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30 group"
+                    className="flex items-center justify-center bg-primary-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30 group text-sm text-gray-700 dark:text-gray-300 font-medium"
                     title={option.text}
                   >
-                    <div className="flex items-center">
-                      <span className="text-sm text-gray-700 dark:text-gray-300 ml-2 my-1 font-medium">
-                        {option.text}
-                      </span>
-                    </div>
-                    <IconChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {option.text}
                   </button>
                 ))}
               </div>
