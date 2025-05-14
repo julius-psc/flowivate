@@ -77,10 +77,8 @@ export default function Sleep() {
         const res = await fetch("/api/features/sleep", { credentials: "include" });
         if (!res.ok) throw new Error("Server responded with an error while fetching sleep data");
         
-        // MODIFICATION START
         const responseData = await res.json(); // Contains { sleepRecords: [] }
         const recordsToProcess = responseData.sleepRecords; // Access the actual array
-        // MODIFICATION END
   
         const sleepArray = Array(7).fill(0);
         const now = new Date();
@@ -215,11 +213,11 @@ export default function Sleep() {
             const { height, colorClass } = getSleepBarStyle(value);
             return (
               <div key={index} className="flex flex-col items-center">
-                {value === 0 ? (
-                  <div className={`h-2.5 w-2.5 rounded-full opacity-20 ${colorClass}`}></div>
-                ) : (
-                  <div className={`w-2 rounded-lg ${colorClass}`} style={{ height }}></div>
-                )}
+{value === 0 ? (
+  <div className={`h-2.5 w-2.5 rounded-full opacity-20 ${colorClass} dark:bg-gray-600 dark:opacity-70`}></div>
+) : (
+  <div className={`w-2 rounded-lg ${colorClass}`} style={{ height }}></div>
+)}
               </div>
             );
           })}
