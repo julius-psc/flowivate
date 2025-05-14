@@ -991,31 +991,37 @@ const TaskLogger: React.FC = () => {
                 <>
                   {listAddingTaskId === list._id && (
                     <div className="mt-2 flex items-center gap-2 relative">
-                      {/* AI Button */}
-                      <button
-                        onClick={() => {
-                          setAiPrimedListId(list._id!);
-                          taskInputRefs.current[list._id!]?.focus();
-                        }}
-                        title="Prime AI Task Breakdown"
-                        className={`p-2 rounded text-slate-500 hover:bg-blue-100/80 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                          aiPrimedListId === list._id
-                            ? "text-blue-600 dark:text-blue-400 bg-blue-100/50 dark:bg-blue-900/30"
-                            : ""
-                        }`}
-                        disabled={
-                          updateListMutation.isPending ||
-                          (aiBreakdownState.isLoading &&
-                            aiBreakdownState.listId === list._id)
-                        }
-                      >
-                        {aiBreakdownState.isLoading &&
-                        aiBreakdownState.listId === list._id ? (
-                          <IconLoader2 size={16} className="animate-spin" />
-                        ) : (
-                          <IconSparkles size={16} />
-                        )}
-                      </button>
+{/* AI Button */}
+<button
+  onClick={() => {
+    setAiPrimedListId(list._id!);
+    taskInputRefs.current[list._id!]?.focus();
+  }}
+  title="AI Task Breakdown"
+  className={`
+    relative inline-flex items-center justify-center
+    w-8 h-8 rounded-full  
+    p-0 // Remove padding
+    bg-primary 
+    text-white shadow-primary/50 
+    transition-all duration-300 ease-in-out 
+    hover:shadow-xl hover:shadow-primary/70
+    active:scale-95 
+    disabled:opacity-50 disabled:cursor-not-allowed
+  `}
+  disabled={
+    updateListMutation.isPending ||
+    (aiBreakdownState.isLoading && aiBreakdownState.listId === list._id)
+  }
+>
+  {aiBreakdownState.isLoading &&
+  aiBreakdownState.listId === list._id ? (
+    <IconLoader2 size={16} className="animate-spin" /> // Loader icon (inherits text-white)
+  ) : (
+    <IconSparkles size={16} /> // Sparkles icon (inherits text-white)
+  )}
+  {/* Removed the "AI" text span */}
+</button>
 
                       {/* Task Input */}
                       <input
