@@ -3,15 +3,18 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   format,
-  startOfWeek,
-  endOfWeek,
+  startOfMonth,
+  endOfMonth,
   eachDayOfInterval,
   getDay,
   isToday,
-  addWeeks,
-  subWeeks,
+  addMonths,
+  subMonths,
   isValid,
   parse,
+  isSameDay,
+  addDays,
+  subDays,
 } from "date-fns";
 import { EditorContent, useEditor, Editor } from "@tiptap/react";
 import { Extension } from "@tiptap/core";
@@ -24,8 +27,14 @@ import typescript from "highlight.js/lib/languages/typescript";
 import javascript from "highlight.js/lib/languages/javascript";
 import { SlashCommands } from "../../recyclable/markdown/SlashCommands";
 import { ContextMenu } from "../../recyclable/markdown/ContextMenu";
-import { ChevronLeft, ChevronRight, Save, Trash2 } from "lucide-react";
-import { toast } from "sonner"; // Import Sonner toast
+import {
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  Calendar,
+  Clock,
+} from "lucide-react";
+import { toast } from "sonner";
 
 interface JournalEntryData {
   _id: string;
@@ -35,64 +44,83 @@ interface JournalEntryData {
   createdAt: string;
   updatedAt: string;
 }
+
 interface JournalProps {
   initialDate?: Date;
 }
+
 const lowlight = createLowlight();
 lowlight.register("typescript", typescript);
 lowlight.register("javascript", javascript);
 
 const slashCommandItems = [
-    {
-        title: "Heading 1",
-        command: ({ editor }: { editor: Editor }) => { editor.chain().focus().toggleHeading({ level: 1 }).run(); },
-        icon: <span className="text-xl font-bold">H1</span>,
+  {
+    title: "Heading 1",
+    command: ({ editor }: { editor: Editor }) => {
+      editor.chain().focus().toggleHeading({ level: 1 }).run();
     },
-    {
-        title: "Heading 2",
-        command: ({ editor }: { editor: Editor }) => { editor.chain().focus().toggleHeading({ level: 2 }).run(); },
-        icon: <span className="text-lg font-bold">H2</span>,
+    icon: <span className="text-xl font-bold">H1</span>,
+  },
+  {
+    title: "Heading 2",
+    command: ({ editor }: { editor: Editor }) => {
+      editor.chain().focus().toggleHeading({ level: 2 }).run();
     },
-    {
-        title: "Heading 3",
-        command: ({ editor }: { editor: Editor }) => { editor.chain().focus().toggleHeading({ level: 3 }).run(); },
-        icon: <span className="text-base font-bold">H3</span>,
+    icon: <span className="text-lg font-bold">H2</span>,
+  },
+  {
+    title: "Heading 3",
+    command: ({ editor }: { editor: Editor }) => {
+      editor.chain().focus().toggleHeading({ level: 3 }).run();
     },
-    {
-        title: "Bullet List",
-        command: ({ editor }: { editor: Editor }) => { editor.chain().focus().toggleBulletList().run(); },
-        icon: <span className="text-sm">•</span>,
+    icon: <span className="text-base font-bold">H3</span>,
+  },
+  {
+    title: "Bullet List",
+    command: ({ editor }: { editor: Editor }) => {
+      editor.chain().focus().toggleBulletList().run();
     },
-    {
-        title: "Numbered List",
-        command: ({ editor }: { editor: Editor }) => { editor.chain().focus().toggleOrderedList().run(); },
-        icon: <span className="text-sm">1.</span>,
+    icon: <span className="text-sm">•</span>,
+  },
+  {
+    title: "Numbered List",
+    command: ({ editor }: { editor: Editor }) => {
+      editor.chain().focus().toggleOrderedList().run();
     },
-    {
-        title: "Paragraph",
-        command: ({ editor }: { editor: Editor }) => { editor.chain().focus().setParagraph().run(); },
-        icon: <span className="text-sm">P</span>,
+    icon: <span className="text-sm">1.</span>,
+  },
+  {
+    title: "Paragraph",
+    command: ({ editor }: { editor: Editor }) => {
+      editor.chain().focus().setParagraph().run();
     },
-    {
-        title: "Emoji",
-        command: ({}: { editor: Editor }) => { /* Handled in SlashCommands render */ },
-        icon: <span>😊</span>,
+    icon: <span className="text-sm">P</span>,
+  },
+  {
+    title: "Emoji",
+    command: ({}: { editor: Editor }) => {
+      /* Handled in SlashCommands render */
     },
+    icon: <span>😊</span>,
+  },
 ];
 
 export const Journal: React.FC<JournalProps> = ({
   initialDate = new Date(),
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
-  const [displayMonthDate, setDisplayMonthDate] = useState<Date>(initialDate);
+  const [currentMonth, setCurrentMonth] = useState<Date>(initialDate);
+  const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const editorRef = useRef<Editor | null>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const calendarButtonRef = useRef<HTMLButtonElement>(null);
 
   const editor = useEditor({
     extensions: [
-       StarterKit.configure({
+      StarterKit.configure({
         heading: { levels: [1, 2, 3] },
         bulletList: { keepMarks: true, keepAttributes: false },
         orderedList: { keepMarks: true, keepAttributes: false },
@@ -100,10 +128,11 @@ export const Journal: React.FC<JournalProps> = ({
       }),
       Placeholder.configure({
         placeholder: ({ node }) => {
-          if (node.type.name === "heading") return `Heading ${node.attrs.level}`;
+          if (node.type.name === "heading")
+            return `Heading ${node.attrs.level}`;
           if (node.type.name === "bulletList") return "List item";
           if (node.type.name === "orderedList") return "List item";
-          return "Type $ for commands or start writing your daily progress...";
+          return "Type $ for commands or start writing your thoughts...";
         },
         showOnlyWhenEditable: true,
         showOnlyCurrent: true,
@@ -136,16 +165,12 @@ export const Journal: React.FC<JournalProps> = ({
     content: "",
     editorProps: {
       attributes: {
-        class: "prose dark:prose-invert focus:outline-none flex-grow p-4 text-secondary-black dark:text-secondary-white",
+        class:
+          "prose dark:prose-invert focus:outline-none w-full h-full px-6 py-4 text-secondary-black dark:text-secondary-white",
       },
     },
     injectCSS: false,
     immediatelyRender: false,
-    onUpdate: () => {
-      // REMOVE feedback/error clearing logic
-      // if (feedback) setFeedback(null);
-      // if (error) setError(null);
-    },
   });
 
   useEffect(() => {
@@ -154,14 +179,30 @@ export const Journal: React.FC<JournalProps> = ({
     }
   }, [editor]);
 
+  // Handle clicks outside calendar
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        calendarRef.current &&
+        !calendarRef.current.contains(event.target as Node) &&
+        calendarButtonRef.current &&
+        !calendarButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsCalendarOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const fetchJournalEntry = useCallback(
-     async (date: Date) => {
+    async (date: Date) => {
       if (!editorRef.current || !isValid(date)) return;
       setIsLoading(true);
-      // setError(null); // REMOVE
-      // setFeedback(null); // REMOVE
       const formattedDate = format(date, "yyyy-MM-dd");
-      console.log(`Workspaceing journal entry for: ${formattedDate}`);
+      console.log(`Fetching journal entry for: ${formattedDate}`);
       editorRef.current.commands.setContent("<p></p>");
       try {
         const response = await fetch(`/api/features/journal/${formattedDate}`);
@@ -186,22 +227,26 @@ export const Journal: React.FC<JournalProps> = ({
           }
         } else {
           const errorData = await response.json();
-          const errorMessage = `Failed to load entry: ${errorData.message || response.statusText}`;
-          console.error(`Failed to fetch entry (${response.status}):`, errorData.message);
+          const errorMessage = `Failed to load entry: ${
+            errorData.message || response.statusText
+          }`;
+          console.error(
+            `Failed to fetch entry (${response.status}):`,
+            errorData.message
+          );
           if (format(selectedDate, "yyyy-MM-dd") === formattedDate) {
-            // setError(errorMessage); // REMOVE
-            toast.error(errorMessage); // Use toast
+            toast.error(errorMessage);
             editorRef.current.commands.setContent(
               "<p>Error loading content.</p>"
             );
           }
         }
       } catch (err) {
-        const errorMessage = "A network error occurred while loading the entry.";
+        const errorMessage =
+          "A network error occurred while loading the entry.";
         console.error("Network or other error fetching entry:", err);
         if (format(selectedDate, "yyyy-MM-dd") === formattedDate) {
-          // setError(errorMessage); // REMOVE
-          toast.error(errorMessage); // Use toast
+          toast.error(errorMessage);
           if (editorRef.current)
             editorRef.current.commands.setContent(
               "<p>Error loading content.</p>"
@@ -211,21 +256,18 @@ export const Journal: React.FC<JournalProps> = ({
         setIsLoading(false);
       }
     },
-    [selectedDate] // Keep selectedDate dependency
+    [selectedDate]
   );
 
   useEffect(() => {
-     if (editorRef.current && isValid(selectedDate)) {
-      setDisplayMonthDate(selectedDate);
+    if (editorRef.current && isValid(selectedDate)) {
       fetchJournalEntry(selectedDate);
     }
   }, [selectedDate, fetchJournalEntry]);
 
   const handleSave = async () => {
-     if (!editorRef.current || isSaving || isLoading) return;
+    if (!editorRef.current || isSaving || isLoading) return;
     setIsSaving(true);
-    // setError(null); // REMOVE
-    // setFeedback(null); // REMOVE
     const content = editorRef.current.getHTML();
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
     console.log(`Saving journal entry for: ${formattedDate}`);
@@ -238,32 +280,38 @@ export const Journal: React.FC<JournalProps> = ({
       if (response.ok) {
         const data: { entry: JournalEntryData } = await response.json();
         console.log("Saved entry:", data.entry._id);
-        // setFeedback(response.status === 201 ? "Created!" : "Saved!"); // REMOVE
-        toast.success(response.status === 201 ? "Entry created!" : "Entry saved!"); // Use toast
-        // setTimeout(() => setFeedback(null), 2000); // REMOVE timeout
+        toast.success(
+          response.status === 201 ? "Entry created" : "Entry saved"
+        );
       } else {
         const errorData = await response.json();
-        const errorMessage = `Save failed: ${errorData.message || response.statusText}`;
-        console.error(`Failed to save entry (${response.status}):`, errorData.message);
-        // setError(errorMessage); // REMOVE
-        toast.error(errorMessage); // Use toast
+        const errorMessage = `Save failed: ${
+          errorData.message || response.statusText
+        }`;
+        console.error(
+          `Failed to save entry (${response.status}):`,
+          errorData.message
+        );
+        toast.error(errorMessage);
       }
     } catch (err) {
       const errorMessage = "A network error occurred while saving.";
       console.error("Network or other error saving entry:", err);
-      // setError(errorMessage); // REMOVE
-      toast.error(errorMessage); // Use toast
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
-     if (isDeleting || !editorRef.current || isLoading) return;
-    if (!window.confirm(`Delete entry for ${format(selectedDate, "MMMM d, yyyy")}?`)) return;
+    if (isDeleting || !editorRef.current || isLoading) return;
+    if (
+      !window.confirm(
+        `Delete entry for ${format(selectedDate, "MMMM d, yyyy")}?`
+      )
+    )
+      return;
     setIsDeleting(true);
-    // setError(null); // REMOVE
-    // setFeedback(null); // REMOVE
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
     console.log(`Deleting journal entry for: ${formattedDate}`);
     try {
@@ -272,205 +320,262 @@ export const Journal: React.FC<JournalProps> = ({
       });
       if (response.ok) {
         console.log(`Successfully deleted entry for ${formattedDate}`);
-        // setFeedback("Deleted!"); // REMOVE
-        toast.success("Entry deleted!"); // Use toast
+        toast.success("Entry deleted");
         editorRef.current.commands.setContent("<p></p>");
-        // setTimeout(() => setFeedback(null), 2000); // REMOVE timeout
       } else if (response.status === 404) {
-        console.warn(`Attempted to delete non-existent entry for ${formattedDate}`);
-        // setError("Entry not found."); // REMOVE
-        toast.error("Entry not found."); // Use toast
+        console.warn(
+          `Attempted to delete non-existent entry for ${formattedDate}`
+        );
+        toast.error("Entry not found.");
         editorRef.current.commands.setContent("<p></p>");
       } else {
         const errorData = await response.json();
-        const errorMessage = `Delete failed: ${errorData.message || response.statusText}`;
-        console.error(`Failed to delete entry (${response.status}):`, errorData.message);
-        // setError(errorMessage); // REMOVE
-        toast.error(errorMessage); // Use toast
+        const errorMessage = `Delete failed: ${
+          errorData.message || response.statusText
+        }`;
+        console.error(
+          `Failed to delete entry (${response.status}):`,
+          errorData.message
+        );
+        toast.error(errorMessage);
       }
     } catch (err) {
       const errorMessage = "A network error occurred while deleting.";
       console.error("Network or other error deleting entry:", err);
-      // setError(errorMessage); // REMOVE
-      toast.error(errorMessage); // Use toast
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handlePreviousWeek = () => {
-     if (isLoading || isSaving || isDeleting) return;
-    setSelectedDate(subWeeks(selectedDate, 1));
+  const handlePrevMonth = () => {
+    if (isLoading || isSaving || isDeleting) return;
+    setCurrentMonth(subMonths(currentMonth, 1));
   };
 
-  const handleNextWeek = () => {
-     if (isLoading || isSaving || isDeleting) return;
-    setSelectedDate(addWeeks(selectedDate, 1));
+  const handleNextMonth = () => {
+    if (isLoading || isSaving || isDeleting) return;
+    setCurrentMonth(addMonths(currentMonth, 1));
   };
 
   const handleDateSelect = (date: Date) => {
-     if (isLoading || isSaving || isDeleting) return;
+    if (isLoading || isSaving || isDeleting) return;
     setSelectedDate(date);
+    setCurrentMonth(date); // Update currentMonth to match selected date
+    setIsCalendarOpen(false);
   };
 
-  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
-  const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
-
-  const getDayLabel = (dayIndex: number): string => {
-    const labels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-    return labels[dayIndex];
+  const toggleCalendar = () => {
+    setIsCalendarOpen(!isCalendarOpen);
   };
+
+  // Date helpers for calendar
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  // Get days of the week starting with Sunday
+  const dayOfWeekNames = ["S", "M", "T", "W", "T", "F", "S"];
+
+  // Create day grid with leading and trailing days
+  const startDay = getDay(monthStart);
+  const daysGrid = [...Array(startDay).fill(null), ...daysInMonth];
 
   if (!editor) {
     return (
-      <div className="flex items-center justify-center h-full w-full text-accent-grey-hover dark:text-accent-grey">
+      <div className="flex items-center justify-center h-full w-full text-secondary-black dark:text-secondary-white">
         Loading editor...
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden text-secondary-black dark:text-secondary-white">
-      <div className="flex flex-1 gap-4 p-3 md:p-4 overflow-hidden mx-auto max-w-4xl w-full">
-
-        <div className="flex flex-col w-20 flex-shrink-0">
-          <div className="flex items-center justify-between w-full my-2 px-1">
-            <button
-              onClick={handlePreviousWeek}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-30"
-              aria-label="Previous week"
-              disabled={isLoading || isSaving || isDeleting}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span
-              className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center whitespace-nowrap"
-              title={format(displayMonthDate, "MMMM d, yyyy")}
-            >
-               {format(displayMonthDate, "MMM yy")}
-            </span>
-            <button
-              onClick={handleNextWeek}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-30"
-              aria-label="Next week"
-              disabled={isLoading || isSaving || isDeleting}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            {daysInWeek.map((day) => {
-              const dayOfWeekIndex = getDay(day);
-              const isSelected =
-                format(selectedDate, "yyyy-MM-dd") ===
-                format(day, "yyyy-MM-dd");
-              const isTodayDate = isToday(day);
-
-              return (
-                <button
-                  key={format(day, "yyyy-MM-dd")}
-                  onClick={() => handleDateSelect(day)}
-                  disabled={isLoading || isSaving || isDeleting}
-                  className={`
-                        flex flex-col items-center p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 dark:focus:ring-offset-zinc-900 focus:ring-black dark:focus:ring-white
-                        ${
-                          isSelected
-                            ? "bg-black text-white dark:bg-white dark:text-black"
-                            : "hover:bg-gray-200 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300"
-                        }
-                        ${
-                          isTodayDate && !isSelected
-                            ? "border border-gray-400 dark:border-zinc-600"
-                            : "border border-transparent"
-                        }
-                        ${
-                          isLoading || isSaving || isDeleting
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }
-                    `}
-                >
-                  <span className="text-xs font-medium opacity-80">
-                    {getDayLabel(dayOfWeekIndex)}
-                  </span>
-                  <span className="text-sm font-semibold mt-0.5">
-                    {format(day, "d")}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="w-px bg-gray-200 dark:bg-zinc-700 opacity-50 flex-shrink-0" />
-
-        <div className="relative w-full p-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between p-4 flex-shrink-0">
-            <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">JOURNAL</h1>
-            <div className="text-sm text-accent-grey-hover dark:text-accent-grey opacity-90">
-              {format(selectedDate, "EEEE, MMMM d, yyyy")}
+    <div className="flex flex-col h-full w-full text-secondary-black dark:text-secondary-white">
+      {/* Header */}
+      <div className="px-4 py-4">
+        <div className="max-w-screen-lg mx-auto flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <h1 className="text-xl font-bold">Daily Journal</h1>
+            <div className="h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
+            <div className="text-sm opacity-70">
+              {format(selectedDate, "EEEE, MMM d")}{" "}
+              {/* Fixed to show selectedDate */}
             </div>
           </div>
 
-          {isLoading && (
-            <div className="absolute inset-0 bg-white/70 dark:bg-zinc-900/70 flex items-center justify-center z-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary dark:border-primary-bluelight border-t-transparent"></div>
-            </div>
-          )}
+          <div className="flex items-center space-x-1">
+            <button
+              ref={calendarButtonRef}
+              onClick={toggleCalendar}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 relative"
+              aria-label="Select date"
+            >
+              <Calendar size={18} />
+            </button>
 
-          <div className="flex-grow overflow-y-auto prose dark:prose-invert max-w-none focus:outline-none relative px-0 pb-16">
-            <EditorContent editor={editor} className="min-h-[200px] p-4" />
-            {editor && <ContextMenu editor={editor} />}
-          </div>
+            {/* Calendar popup - Positioned relative to calendar button */}
+            {isCalendarOpen && (
+              <div
+                ref={calendarRef}
+                className="absolute z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg p-3"
+                style={{
+                  minWidth: "250px",
+                  top: calendarButtonRef.current
+                    ? calendarButtonRef.current.getBoundingClientRect().bottom +
+                      window.scrollY
+                    : "auto",
+                  right: calendarButtonRef.current
+                    ? window.innerWidth -
+                      calendarButtonRef.current.getBoundingClientRect().right
+                    : "auto",
+                }}
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <button
+                    onClick={handlePrevMonth}
+                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="font-medium">
+                    {format(currentMonth, "MMMM yyyy")}
+                  </span>
+                  <button
+                    onClick={handleNextMonth}
+                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
 
-          <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
-            {/* REMOVE error and feedback spans */}
-            {/* {error && (
-              <span className="text-xs text-red-800 dark:text-third-red bg-third-red/10 dark:bg-third-red/20 px-2 py-1 rounded">
-                {error}
-              </span>
+                <div className="grid grid-cols-7 gap-1 text-center">
+                  {dayOfWeekNames.map((day, index) => (
+                    <div
+                      key={index}
+                      className="text-xs font-medium text-gray-500 dark:text-gray-400 p-1"
+                    >
+                      {day}
+                    </div>
+                  ))}
+
+                  {daysGrid.map((day, index) => {
+                    if (!day) {
+                      return <div key={`empty-${index}`} className="p-1" />;
+                    }
+
+                    const isSelectedDay = isSameDay(day, selectedDate);
+                    const isTodayDate = isToday(day);
+
+                    return (
+                      <button
+                        key={format(day, "yyyy-MM-dd")}
+                        onClick={() => handleDateSelect(day)}
+                        className={`
+                          h-8 w-8 rounded-full flex items-center justify-center text-sm
+                          ${
+                            isSelectedDay
+                              ? "bg-secondary-black dark:bg-white text-white dark:text-secondary-black font-medium"
+                              : ""
+                          }
+                          ${
+                            isTodayDate && !isSelectedDay
+                              ? "border border-gray-400 dark:border-gray-600"
+                              : ""
+                          }
+                          ${
+                            !isSelectedDay
+                              ? "hover:bg-gray-100 dark:hover:bg-gray-800"
+                              : ""
+                          }
+                        `}
+                      >
+                        {format(day, "d")}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             )}
-            {feedback && (
-               <span className="text-xs text-green-800 dark:text-third-green bg-third-green/10 dark:bg-third-green/20 px-2 py-1 rounded">
-                {feedback}
-              </span>
-            )} */}
 
             <button
               onClick={handleDelete}
-              className={`p-2 rounded-md border border-bdr-light dark:border-bdr-dark hover:bg-accent-lightgrey/40 dark:hover:bg-bdr-dark/60 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
-              aria-label="Delete journal entry"
-              title="Delete Entry"
               disabled={isLoading || isSaving || isDeleting}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Delete entry"
             >
               {isDeleting ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-third-red border-t-transparent"></div>
+                <div className="h-4 w-4 border-2 border-gray-500 dark:border-gray-400 border-t-transparent rounded-full animate-spin"></div>
               ) : (
-                <Trash2 size={16} className="text-third-red" />
+                <Trash2
+                  size={18}
+                  className="text-gray-700 dark:text-gray-300"
+                />
               )}
             </button>
 
             <button
               onClick={handleSave}
-              className={`flex items-center justify-center gap-1.5 px-4 py-2 min-w-[80px] bg-primary hover:bg-primary-hover text-secondary-white font-medium rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
-              aria-label="Save journal entry"
               disabled={isLoading || isSaving || isDeleting}
+              className="flex items-center space-x-1 px-3 py-1.5 bg-secondary-black dark:bg-white text-white dark:text-secondary-black rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-              ) : (
-                <Save size={16} />
-              )}
-              <span className={`hidden sm:inline ${isSaving ? 'ml-1' : ''}`}>
-                {isSaving ? "Saving..." : "Save"}
-              </span>
-               <span className={`sm:hidden ${isSaving ? 'ml-1' : ''}`}>
-                 {isSaving ? "" : "Save"}
-              </span>
+              <span className="text-sm font-medium">Save</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 overflow-hidden max-w-screen-lg mx-auto w-full">
+        {/* Date indicator - Fixed to show selected date */}
+        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => handleDateSelect(subDays(selectedDate, 1))} // Fixed to cycle days
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              disabled={isLoading}
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <span className="text-3xl font-bold">
+              {format(selectedDate, "d")}
+            </span>
+
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">
+                {format(selectedDate, "EEEE")}
+              </span>
+              <span className="text-xs opacity-70">
+                {format(selectedDate, "MMMM yyyy")}
+              </span>
+            </div>
+
+            <button
+              onClick={() => handleDateSelect(addDays(selectedDate, 1))} // Fixed to cycle days
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              disabled={isLoading}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
+          <div className="flex items-center space-x-1 text-xs opacity-70">
+            <Clock size={14} />
+            <span>{format(new Date(), "HH:mm")}</span>{" "}
+            {/* Fixed to 24-hour format */}
+          </div>
+        </div>
+
+        {/* Editor */}
+        <div className="relative flex-1 overflow-auto">
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/90 dark:bg-secondary-black/90 z-10">
+              <div className="h-8 w-8 border-2 border-secondary-black dark:border-white border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+
+          <EditorContent editor={editor} className="h-full" />
+          {editor && <ContextMenu editor={editor} />}
         </div>
       </div>
     </div>
