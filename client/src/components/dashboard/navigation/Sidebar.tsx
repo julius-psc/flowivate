@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import Settings from "../privacy/Settings";
+import Settings from "../privacy/settings";
 
 import {
   IconLayoutDashboard,
