@@ -221,7 +221,7 @@ const Water = () => {
           >
             <Minus size={20} strokeWidth={2.5} />
           </button>
-          <div className="relative h-6 flex-grow bg-primary/50 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="relative h-6 flex-grow bg-secondary-black/5 rounded-full overflow-hidden">
             <div
               className="absolute h-full top-0 left-0 transition-all duration-700 ease-out rounded-r-full"
               style={{
@@ -260,10 +260,10 @@ const Water = () => {
         <button
           onClick={handleSave}
           disabled={isSaveDisabled}
-          className={`dark:bg-secondary-black bg-secondary-white dark:text-secondary-white text-primary-black mx-2.5 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${isSaveDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
+          className={` bg-primary text-secondary-white text-primary-black mx-2.5 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${isSaveDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
         >
           {/* Text inside button now indicates saving state */}
-          {isLoading && !isFetching ? "Saving..." : "Save Water Intake"}
+          {isLoading && !isFetching ? "Saving..." : "Log water"}
           {status !== "authenticated" && " (Login Required)"}
         </button>
       </div>

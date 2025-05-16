@@ -231,7 +231,7 @@ export default function Sleep() {
 
       <div className="flex justify-center">
         <button
-          className="dark:bg-secondary-black bg-secondary-white dark:text-secondary-white text-primary-black mx-2.5 px-6 py-2 rounded-full text-sm font-normal transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed" // Added disabled styles
+          className="dark:bg-primary dark:text-secondary-white mx-2.5 px-6 py-2 rounded-full text-sm font-normal transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed" 
           onClick={handleSave}
           disabled={!session || loading} // Disable if not logged in or loading
         >

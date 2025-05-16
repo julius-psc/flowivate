@@ -119,7 +119,7 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 bottom-full mt-2 w-40 z-[1000] bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg shadow-lg py-1.5 transition-all duration-200 ease-out animate-fade-in"
+      className="absolute left-full mt-2 ml-4 w-40 z-20 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg shadow-lg py-1.5 transition-all duration-200 ease-out animate-fade-in"
     >
       {priorityLevels.map(({ level, label, icon: Icon, color }) => (
         <button

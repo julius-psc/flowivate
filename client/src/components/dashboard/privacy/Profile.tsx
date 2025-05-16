@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { IconX } from "@tabler/icons-react";
@@ -12,20 +12,37 @@ interface ProfileProps {
 
 const Profile: React.FC<ProfileProps> = ({ onClose }) => {
   const { data: session, status } = useSession();
-  const isLoading = status === "loading";
+  const isLoadingSession = status === "loading";
 
   const username = session?.user?.username || "Guest";
   const email = session?.user?.email || "No email provided";
   const userImage = session?.user?.image;
-  const joinedDate = "2024-06-01"; // Placeholder
   const userInitial = username.charAt(0).toUpperCase();
-  const badge = "OG User";
 
-  const stats = {
-    streak: 5,
-    tasksToday: 8,
-    focusTime: "3h 25m"
-  };
+  // ← new state to hold the fetched date
+  const [joinedDate, setJoinedDate] = useState<string | null>(null);
+  const [loadingDate, setLoadingDate] = useState<boolean>(true);
+
+  useEffect(() => {
+    // only fetch once on mount
+    const fetchJoined = async () => {
+      try {
+        const res = await fetch("/api/user", {
+          method: "GET",
+          credentials: "include",     // include auth cookies
+        });
+        if (!res.ok) throw new Error("Failed to load join date");
+        const data = await res.json();
+        setJoinedDate(data.joinedDate); // ISO string from backend
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingDate(false);
+      }
+    };
+
+    fetchJoined();
+  }, []);
 
   return (
     <div
@@ -36,13 +53,12 @@ const Profile: React.FC<ProfileProps> = ({ onClose }) => {
     >
       <motion.div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-3xl flex rounded-xl bg-transparent dark:bg-zinc-900/60 backdrop-blur-xl border border-slate-200/30 dark:border-zinc-800/30 overflow-hidden"
+        className="relative w-full max-w-3xl flex rounded-xl bg-secondary-white dark:bg-zinc-900/60 backdrop-blur-xl border border-slate-200/30 dark:border-zinc-800/30 overflow-hidden"
       >
-
         {/* Left Panel */}
         <div className="relative z-10 flex flex-col items-center justify-center p-6 min-w-[200px] border-r border-slate-200/30 dark:border-zinc-800/30">
           <div className="w-24 h-24 rounded-full border border-neutral-300 dark:border-neutral-700 overflow-hidden flex items-center justify-center text-3xl font-semibold text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800">
-            {isLoading ? (
+            {isLoadingSession ? (
               <div className="w-full h-full animate-pulse bg-neutral-200 dark:bg-neutral-700" />
             ) : userImage ? (
               <Image
@@ -57,12 +73,13 @@ const Profile: React.FC<ProfileProps> = ({ onClose }) => {
             )}
           </div>
 
+          {/* show spinner/text until we have the date */}
           <span className="mt-3 text-xs text-neutral-500">
-            Joined {new Date(joinedDate).toLocaleDateString()}
-          </span>
-
-          <span className="mt-2 px-3 py-1 text-xs rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 font-medium">
-            {badge}
+            {loadingDate
+              ? "Loading…"
+              : joinedDate
+              ? `Joined ${new Date(joinedDate).toLocaleDateString()}`
+              : "Joined date unavailable"}
           </span>
         </div>
 
@@ -83,24 +100,9 @@ const Profile: React.FC<ProfileProps> = ({ onClose }) => {
             <p className="text-sm text-neutral-500 mt-1">{email}</p>
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-4 text-sm text-neutral-800 dark:text-neutral-200">
-            <div className="flex flex-col">
-              <span className="text-xs text-neutral-500">Streak</span>
-              <span className="font-medium">{stats.streak} days</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-neutral-500">Tasks Today</span>
-              <span className="font-medium">{stats.tasksToday}</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-neutral-500">Focus Time</span>
-              <span className="font-medium">{stats.focusTime}</span>
-            </div>
-          </div>
-
-          <div className="mt-8">
+          <div>
             <p className="text-sm text-neutral-500 mb-2">
-              Love Flowivate? Share it with your team.
+              Love Flowivate? Share it with your friends! 🚀
             </p>
             <button
               onClick={() => {
