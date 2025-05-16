@@ -145,7 +145,6 @@ export default function Affirmations() {
         return response.json();
       }),
       {
-        loading: "Adding affirmation...",
         success: (data) => {
           setAffirmations((prev) => [...prev, data.affirmation]);
           setNewAffirmation("");
@@ -194,7 +193,6 @@ export default function Affirmations() {
         return response.json();
       }),
       {
-        loading: "Deleting affirmation...",
         success: () => {
           setAffirmations((prev) => prev.filter((_, i) => i !== index));
           return "Affirmation deleted successfully!";
@@ -301,16 +299,16 @@ export default function Affirmations() {
             placeholder="I am..."
             value={newAffirmation}
             onChange={(e) => setNewAffirmation(e.target.value)}
-            className="flex-1 rounded-xl border-2 border-slate-300 dark:border-zinc-700  dark:bg-zinc-800/90 px-4 py-3 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 dark:focus:ring-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex-1 rounded-xl border-2 text-secondary-black dark:text-secondary-white border-slate-300 dark:border-zinc-700  dark:bg-zinc-800/90 px-2 py-2 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 dark:focus:ring-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={isAdding} // Only disable based on isAdding here
             autoComplete="off"
           />
           <button
             type="submit"
-            className="rounded-lg bg-primary text-sm px-4 py-2 text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-lg bg-primary text-sm px-4 py-2 text-secondary-white hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isAdding || !newAffirmation.trim()}
           >
-            {isAdding ? "Adding..." : "Add"}
+            Add
           </button>
         </form>
       )}

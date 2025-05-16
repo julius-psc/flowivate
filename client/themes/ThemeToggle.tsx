@@ -98,9 +98,9 @@ const ThemeToggle: React.FC = () => {
                 w-6 h-6 rounded-full cursor-pointer
                 transition-all duration-200 ease-in-out
                 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950
-                focus:ring-indigo-500 dark:focus:ring-indigo-400
+                focus:ring-secondary-black dark:focus:ring-secondary-white
                 ${theme === themeConfig.name
-                  ? 'ring-2 ring-indigo-500 dark:ring-indigo-400 ring-offset-1 dark:ring-offset-gray-800 scale-110 shadow-md'
+                  ? 'ring-2 ring-secondary-black dark:ring-secondary-white ring-offset-1 dark:ring-offset-gray-800 scale-110 shadow-md'
                   : 'hover:scale-110 hover:shadow-sm'
                 }
               `}
@@ -121,7 +121,7 @@ const ThemeToggle: React.FC = () => {
               key={sceneTheme.name}
               type="button"
               onClick={() => handleThemeSelection(sceneTheme.name)}
-              className="flex flex-col items-center cursor-pointer group p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+              className="flex flex-col items-center cursor-pointer group p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-secondary-black dark:focus:ring-secondary-white"
               aria-label={`Select ${sceneTheme.label} scene theme`}
               title={`Select ${sceneTheme.label} scene theme`}
             >
@@ -129,11 +129,11 @@ const ThemeToggle: React.FC = () => {
                 style={{ backgroundColor: sceneTheme.color }}
                 className={`
                   w-12 h-8 rounded border border-gray-300 dark:border-gray-600 group-hover:shadow-md transition-shadow duration-150
-                  ${theme === sceneTheme.name ? 'ring-2 ring-indigo-500 dark:ring-indigo-400' : ''}
+                  ${theme === sceneTheme.name ? 'ring-2 ring-secondary-black dark:ring-secondary-white' : ''}
                 `}
                 aria-hidden="true"
               />
-              <span className="text-xs mt-1.5 text-gray-600 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
+              <span className="text-xs mt-1.5 text-gray-600 dark:text-gray-400 group-hover:text-secondary-black dark:group-hover:text-secondary-white">
                 {sceneTheme.label}
               </span>
             </button>
