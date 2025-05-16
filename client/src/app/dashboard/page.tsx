@@ -29,13 +29,11 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import Masonry from "react-masonry-css";
 import type { FeatureKey } from "@/components/dashboard/features/featureMap";
-import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
 
   const { selectedFeatures, removeFeature, reorderFeatures } = useDashboard();
   const [activeId, setActiveId] = useState<FeatureKey | null>(null);
-  const router = useRouter();
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -72,7 +70,7 @@ export default function Dashboard() {
               Your dashboard is empty
             </p>
             <Link
-              href="/dashboard/personal"
+              href="/dashboard/features"
               className="flex items-center gap-2 px-6 transition-colors text-primary-white hover:text-primary-black focus:outline-none"
             >
               <span className="font-medium">Add features</span>
@@ -125,15 +123,6 @@ export default function Dashboard() {
               ) : null}
             </DragOverlay>
           </DndContext>
-
-          {selectedFeatures.length > 0 && (
-            <button
-              onClick={() => router.push("/dashboard/personal")}
-              className="absolute bottom-2 right-4 text-secondary-black opacity-100 hover:opacity-60 dark:text-secondary-white focus:outline-none p-3 flex items-center"
-            >
-              <IconCubePlus size={24} />
-            </button>
-          )}
         </div>
       )}
     </div>
