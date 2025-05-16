@@ -394,10 +394,9 @@ const BookLogger: React.FC = () => {
           <div className="flex items-center space-x-1">
             <button
               onClick={handleAddNewBook}
-              className="flex items-center space-x-1 px-3 py-1.5 bg-secondary-black dark:bg-white text-white dark:text-secondary-black rounded-md hover:opacity-90"
+              className="flex items-center px-1 py-1 bg-secondary-black dark:bg-white text-white dark:text-secondary-black rounded-lg hover:opacity-90"
             >
               <IconPlus size={18} />
-              <span className="text-sm font-medium">Add Book</span>
             </button>
           </div>
         </div>
@@ -658,7 +657,7 @@ const BookLogger: React.FC = () => {
                     name="title"
                     value={formData.title || ""}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-secondary-black dark:text-secondary-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 max-w-full"
+                    className="w-[80%] ml-1 mb-4 px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-secondary-black dark:text-secondary-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400"
                     placeholder="Book title"
                     required
                   />
@@ -672,7 +671,7 @@ const BookLogger: React.FC = () => {
                     name="author"
                     value={formData.author || ""}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-secondary-black dark:text-secondary-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 max-w-full"
+                    className="w-[80%] ml-1 mb-4 px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-secondary-black dark:text-secondary-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 max-w-full"
                     placeholder="Author name"
                     required
                   />
@@ -686,7 +685,7 @@ const BookLogger: React.FC = () => {
                       name="status"
                       value={formData.status || "not-started"}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-secondary-black dark:text-secondary-white focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400"
+                      className="w-[80%] ml-1 mb-4 px-2 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-secondary-black dark:text-secondary-white focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400"
                     >
                       <option value="not-started">Not Started</option>
                       <option value="in-progress">Reading</option>
@@ -702,7 +701,7 @@ const BookLogger: React.FC = () => {
                       name="genre"
                       value={formData.genre || ""}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-secondary-black dark:text-secondary-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 max-w-full"
+                      className="w-[80%] ml-1 mb-4 px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-secondary-black dark:text-secondary-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 max-w-full"
                       placeholder="Fiction, Non-fiction, etc."
                     />
                   </div>
@@ -737,7 +736,7 @@ const BookLogger: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 mt-4">
                     Notes
                   </label>
                   <div className="border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-100 dark:bg-gray-800 p-4 min-h-[200px]">
@@ -749,7 +748,7 @@ const BookLogger: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 my-4">
                   <button
                     onClick={() => setIsEditing(false)}
                     className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
