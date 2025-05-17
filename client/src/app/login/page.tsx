@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { toast } from "sonner"; // Import Sonner toast
+import { toast } from "sonner";
 
 import gradBg from "../../../public/assets/illustrations/gradient-bg-blue.svg";
 import logo from "../../assets/brand/logo-v1.5.svg";

@@ -8,8 +8,13 @@ import clientPromise from "@/lib/mongodb";
 
 import connectDB from "@/lib/mongoose";
 import User, { IUser } from "@/app/models/User";
-
 import bcrypt from "bcrypt";
+
+// Grab the same DB name you use in mongoose.ts
+const MONGODB_DB = process.env.MONGODB_DB;
+if (!MONGODB_DB) {
+  throw new Error("❌ MONGODB_DB environment variable not set");
+}
 
 declare module "next-auth" {
   interface Session {
@@ -35,16 +40,20 @@ declare module "next-auth/jwt" {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: MongoDBAdapter(clientPromise),
+  adapter: MongoDBAdapter(clientPromise, { databaseName: MONGODB_DB }),
 
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
       clientSecret: process.env.GITHUB_SECRET!,
+      // ← Allow linking to existing email-based accounts
+      allowDangerousEmailAccountLinking: true,
     }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // ← Same here
+      allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -58,14 +67,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         await connectDB();
-
         const user = await User.findOne<IUser>({ email: credentials.email }).exec();
-
-        if (!user) {
+        if (!user || !user.password) {
           throw new Error("Invalid credentials");
-        }
-        if (!user.password) {
-          throw new Error("Invalid credentials - please use your OAuth provider to sign in.");
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
@@ -83,26 +87,20 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+
   secret: process.env.AUTH_SECRET,
-  pages: {
-    signIn: "/login",
-  },
-  session: {
-    strategy: "jwt",
-  },
+  pages: { signIn: "/login" },
+  session: { strategy: "jwt" },
+
   callbacks: {
     async jwt({ token, user, account }): Promise<JWTType> {
-      if (user) {
-        token.id = user.id; // Handles credentials login
-      }
+      if (user) token.id = user.id;
 
-      if (account && (account.provider === "github" || account.provider === "google")) {
+      if (account && ["github", "google"].includes(account.provider)) {
         await connectDB();
         const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
-
         if (dbUser) {
-          token.id = dbUser._id.toString(); // ✅ Ensure ID is stored in token for OAuth users
-
+          token.id = dbUser._id.toString();
           let changed = false;
           if (user.name && dbUser.name !== user.name) {
             dbUser.name = user.name;
@@ -112,47 +110,35 @@ export const authOptions: NextAuthOptions = {
             dbUser.image = user.image;
             changed = true;
           }
-
           if (!dbUser.username) {
             const baseUsername =
               user.email?.split("@")[0] ||
-              user.name?.replace(/\s+/g, "")?.toLowerCase() ||
+              user.name?.replace(/\s+/g, "").toLowerCase() ||
               `user${Date.now()}`;
-            let potentialUsername = baseUsername;
-            let attempt = 0;
-
-            while (await User.findOne({ username: potentialUsername }).exec()) {
-              attempt++;
-              potentialUsername = `${baseUsername}${attempt}`;
+            let potential = baseUsername;
+            let i = 0;
+            while (await User.findOne({ username: potential }).exec()) {
+              i++;
+              potential = `${baseUsername}${i}`;
             }
-
-            dbUser.username = potentialUsername;
+            dbUser.username = potential;
             changed = true;
           }
-
-          if (changed) {
-            await dbUser.save();
-          }
-
+          if (changed) await dbUser.save();
           token.username = dbUser.username;
         } else {
-          console.warn(`JWT: User with email ${user.email} from OAuth not found via Mongoose model.`);
+          console.warn(`No user in Mongoose for OAuth email ${user.email}`);
           token.username = user.email?.split("@")[0];
         }
       } else if (user?.username) {
         token.username = user.username;
       }
-
       return token;
     },
 
     async session({ session, token }: { session: Session; token: JWTType }): Promise<Session> {
-      if (token.id) {
-        session.user.id = token.id;
-      }
-      if (token.username) {
-        session.user.username = token.username;
-      }
+      if (token.id) session.user.id = token.id;
+      if (token.username) session.user.username = token.username;
       return session;
     },
   },
