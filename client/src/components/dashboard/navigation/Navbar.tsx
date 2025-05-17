@@ -223,7 +223,7 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {showStatusMenu && (
-                  <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 p-1.5 z-20">
+                  <div className="absolute right-0 mt-1 w-36 bg-transparent dark:bg-zinc-900/80 backdrop-blur-xl rounded-xl border border-slate-200/30 dark:border-zinc-800/30 p-1.5 z-20">
                     {statusOptions.map((option) => (
                       <button
                         key={option.name}

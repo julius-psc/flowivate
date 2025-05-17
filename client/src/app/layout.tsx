@@ -27,22 +27,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-secondary-black`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider
           attribute="data-theme"
-          defaultTheme="default"                 
-          enableSystem                           
-          disableTransitionOnChange         
-          themes={[
-            "default",
-            "forest",
-            "candy",
-            "sunset",
-            "teal",
-            "desert",
-            "jungle",
-            "ocean",
-          ]}                                     
+          defaultTheme="default"      
+          storageKey="background-theme"
+          disableTransitionOnChange    
         >
           {children}
         </ThemeProvider>

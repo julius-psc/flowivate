@@ -39,6 +39,7 @@ export const useSettings = () => {
     } else {
       root.classList.toggle("dark", theme === "dark");
     }
+    // this theme key is now purely for UI mode
     localStorage.setItem("theme", theme);
   }, [theme]);
 

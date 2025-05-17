@@ -31,7 +31,9 @@ export default function ThemeBackground() {
   if (theme === 'jungle') return <JungleEnv />;
   if (theme === 'ocean') return <OceanEnv />;
 
-  const bgUrl = theme && themeConfigs[theme as keyof typeof themeConfigs];
+  // ensure unknown keys fall back to default
+  const bgKey = ((theme ?? 'default') in themeConfigs ? theme ?? 'default' : 'default') as keyof typeof themeConfigs;
+  const bgUrl = themeConfigs[bgKey];
 
   return bgUrl ? (
     <Image
