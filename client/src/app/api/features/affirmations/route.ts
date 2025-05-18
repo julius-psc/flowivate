@@ -10,7 +10,7 @@ interface UserDocument {
 }
 
 const MAX_AFFIRMATION_LENGTH = 500;
-const DEFAULT_DB_NAME = "Flowivate";
+const DEFAULT_DB_NAME = process.env.MONGODB_DB || "Flowivate";
 
 export async function GET() {
   try {

@@ -89,7 +89,7 @@ export async function GET(
     const chatObjectId = new ObjectId(chatId);
 
     const client = await clientPromise;
-    const db = client.db("Flowivate"); 
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const chatsCollection = db.collection<ChatConversation>('chats');
 
     const chat = await chatsCollection.findOne({
@@ -155,7 +155,7 @@ export async function PUT(
     const chatObjectId = new ObjectId(chatId);
 
     const client = await clientPromise;
-    const db = client.db("Flowivate");
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const chatsCollection = db.collection<ChatConversation>('chats');
 
     const updateResult = await chatsCollection.findOneAndUpdate(
@@ -229,7 +229,7 @@ export async function DELETE(
     const chatObjectId = new ObjectId(chatId);
 
     const client = await clientPromise;
-    const db = client.db("Flowivate");
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const chatsCollection = db.collection('chats');
 
     const deleteResult = await chatsCollection.deleteOne({

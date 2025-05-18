@@ -18,7 +18,7 @@ interface PomodoroData {
   focusSessions: number;
 }
 
-const DEFAULT_DB_NAME = "Flowivate";
+const DEFAULT_DB_NAME = process.env.MONGODB_DB || "Flowivate";
 
 const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
   focusTime: 25 * 60,      // 25 minutes in seconds

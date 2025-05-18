@@ -18,7 +18,7 @@ interface MoodResponse {
   timestamp: string;
 }
 
-const DEFAULT_DB_NAME = "Flowivate";
+const DEFAULT_DB_NAME = process.env.MONGODB_DB || "Flowivate";
 const MAX_MOOD_STRING_LENGTH = 100;
 
 function isValidObjectId(id: string): boolean {

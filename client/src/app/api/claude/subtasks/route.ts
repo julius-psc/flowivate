@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     try {
       // Attempt to parse the AI's response to ensure it's valid JSON
       const parsedJsonResponse = JSON.parse(aiResponseText);
-      return NextResponse.json(parsedJsonResponse); // Return the parsed JSON directly
+      return NextResponse.json({ response: JSON.stringify(parsedJsonResponse) });
     } catch (parseError) {
       console.error("API route /api/claude/subtasks - AI response JSON parsing error:", {
         aiResponse: aiResponseText, // Log the problematic response

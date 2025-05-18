@@ -54,7 +54,7 @@ export async function GET(
     const bookObjectId = new ObjectId(bookId);
 
     const client = await clientPromise;
-    const db = client.db("Flowivate");
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const booksCollection = db.collection<Book>("books");
 
     const book = await booksCollection.findOne({
@@ -106,7 +106,7 @@ export async function PUT(
     const bookObjectId = new ObjectId(bookId);
 
     const client = await clientPromise;
-    const db = client.db("Flowivate");
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const booksCollection = db.collection<Book>("books");
 
     const existingBook = await booksCollection.findOne({
@@ -250,7 +250,7 @@ export async function DELETE(
     const bookObjectId = new ObjectId(bookId);
 
     const client = await clientPromise;
-    const db = client.db("Flowivate");
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const booksCollection = db.collection("books");
 
     const result = await booksCollection.deleteOne({

@@ -97,7 +97,7 @@ export async function GET() {
     const userObjectId = new ObjectId(sessionUserId);
 
     const client = await clientPromise;
-    const db = client.db("Flowivate"); // Replace with your actual database name
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const chatsCollection = db.collection<ChatConversation>('chats');
 
     // Find chats belonging to the user, sort by updatedAt descending, and limit results (e.g., to 20)
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
     };
 
     const client = await clientPromise;
-    const db = client.db("Flowivate"); // Replace with your actual database name
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const chatsCollection = db.collection<ChatConversation>('chats');
 
     // Insert the new chat document into the collection

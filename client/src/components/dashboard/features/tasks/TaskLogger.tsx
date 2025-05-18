@@ -228,27 +228,22 @@ const TaskLogger: React.FC = () => {
   const updateListMutation = useMutation({
     mutationFn: tasksApi.updateTaskList,
     onMutate: async (variables: UpdateTaskListVariables) => {
-      if (!variables.tasks && !variables.name) {
-        const previousTaskLists =
-          queryClient.getQueryData<TaskList[]>(queryKey);
-        return { previousTaskLists };
-      }
-      await queryClient.cancelQueries({ queryKey: queryKey });
+      await queryClient.cancelQueries({ queryKey });
       const previousTaskLists = queryClient.getQueryData<TaskList[]>(queryKey);
-      if (previousTaskLists) {
+      if (variables.tasks?.length) {
+        const newTask = variables.tasks[variables.tasks.length - 1];
+        setExpandedTasks((prev) => ({
+          ...prev,
+          [newTask.id]: true,
+        }));
         queryClient.setQueryData<TaskList[]>(
           queryKey,
           (old) =>
-            old?.map((list) => {
-              if (list._id === variables.id) {
-                return {
-                  ...list,
-                  ...(variables.tasks && { tasks: variables.tasks }),
-                  ...(variables.name && { name: variables.name }),
-                };
-              }
-              return list;
-            }) ?? []
+            old?.map((list) =>
+              list._id === variables.id
+                ? { ...list, tasks: variables.tasks! }
+                : list
+            ) ?? []
         );
       }
       return { previousTaskLists };
@@ -264,44 +259,30 @@ const TaskLogger: React.FC = () => {
             err instanceof Error ? err.message : "Unknown error"
           }`
         );
-      }
-      if (aiBreakdownState.listId === variables.id) {
+      } else {
         setAiBreakdownState((prev) => ({ ...prev, isLoading: false }));
       }
     },
+    onSuccess: (data, variables) => {
+      if (variables.tasks?.length) {
+        const newTask = variables.tasks[variables.tasks.length - 1];
+        setExpandedTasks((prev) => ({
+          ...prev,
+          [newTask.id]: true,
+        }));
+      }
+    },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKey });
-      if (!error || (error && aiBreakdownState.listId !== variables.id)) {
-        if (editingTaskId) {
-          setEditingTaskId(null);
-          setEditingTaskValue("");
-        }
-        if (listAddingTaskId === variables.id) {
-          setActiveTaskInputValues((prev) => {
-            const newState = { ...prev };
-            delete newState[variables.id];
-            return newState;
-          });
-          setListAddingTaskId(null);
-          setAiPrimedListId(null);
-        }
-        if (aiBreakdownState.listId === variables.id) {
-          setActiveTaskInputValues((prev) => {
-            const newState = { ...prev };
-            delete newState[variables.id];
-            return newState;
-          });
-          setAiBreakdownState({ listId: null, isLoading: false });
-          setAiPrimedListId(null);
-        }
-        if (addingSubtaskTo) {
-          setActiveTaskInputValues((prev) => {
-            const newState = { ...prev };
-            delete newState[`subtask-${addingSubtaskTo}`];
-            return newState;
-          });
-          setAddingSubtaskTo(null);
-        }
+      queryClient.invalidateQueries({ queryKey });
+      const isAiList = aiBreakdownState.listId === variables.id;
+      if (!error || !isAiList) {
+        setEditingTaskId(null);
+        setEditingTaskValue("");
+        setListAddingTaskId(null);
+        setAddingSubtaskTo(null);
+        setAiPrimedListId(null);
+        setAiBreakdownState({ listId: null, isLoading: false });
+        setActiveTaskInputValues({});
       }
     },
   });
@@ -427,7 +408,6 @@ const TaskLogger: React.FC = () => {
       );
       if (!result.taskFound) return;
       finalTasks = result.updatedTasks;
-      setExpandedTasks((prev) => ({ ...prev, [parentTaskId]: true }));
       setAddingSubtaskTo(null);
     } else {
       finalTasks = [...list.tasks, newTask];
@@ -497,9 +477,6 @@ const TaskLogger: React.FC = () => {
       const mainTask = createNewTask(taskName);
       mainTask.subtasks = subtasks;
       const finalTasks = [...list.tasks, mainTask];
-      if (subtasks.length > 0) {
-        setExpandedTasks((prev) => ({ ...prev, [mainTask.id]: true }));
-      }
       triggerListUpdate(listId, finalTasks);
     } catch (error: unknown) {
       const errorMessage =
@@ -678,7 +655,7 @@ const TaskLogger: React.FC = () => {
     const hasSubtasks = task.subtasks && task.subtasks.length > 0;
     const isPriorityDropdownOpen = openPriorityDropdown === task.id;
     const isSubtask = level > 0;
-    const indentMultiplier = 4; // Increased for more noticeable indentation
+    const indentMultiplier = 4;
     const indentationClass = level > 0 ? `pl-${level * indentMultiplier}` : "";
     const isPlaceholder = listId.startsWith("placeholder-");
     const isListMutating =
@@ -991,17 +968,17 @@ const TaskLogger: React.FC = () => {
                 <>
                   {listAddingTaskId === list._id && (
                     <div className="mt-2 flex items-center gap-2 relative">
-{/* AI Button */}
-<button
-  onClick={() => {
-    setAiPrimedListId(list._id!);
-    taskInputRefs.current[list._id!]?.focus();
-  }}
-  title="AI Task Breakdown"
-  className={`
+                      {/* AI Button */}
+                      <button
+                        onClick={() => {
+                          setAiPrimedListId(list._id!);
+                          taskInputRefs.current[list._id!]?.focus();
+                        }}
+                        title="AI Task Breakdown"
+                        className={`
     relative inline-flex items-center justify-center
     w-8 h-8 rounded-full  
-    p-0 // Remove padding
+    p-0
     bg-primary 
     text-white shadow-primary/50 
     transition-all duration-300 ease-in-out 
@@ -1009,19 +986,19 @@ const TaskLogger: React.FC = () => {
     active:scale-95 
     disabled:opacity-50 disabled:cursor-not-allowed
   `}
-  disabled={
-    updateListMutation.isPending ||
-    (aiBreakdownState.isLoading && aiBreakdownState.listId === list._id)
-  }
->
-  {aiBreakdownState.isLoading &&
-  aiBreakdownState.listId === list._id ? (
-    <IconLoader2 size={16} className="animate-spin" /> // Loader icon (inherits text-white)
-  ) : (
-    <IconSparkles size={16} /> // Sparkles icon (inherits text-white)
-  )}
-  {/* Removed the "AI" text span */}
-</button>
+                        disabled={
+                          updateListMutation.isPending ||
+                          (aiBreakdownState.isLoading &&
+                            aiBreakdownState.listId === list._id)
+                        }
+                      >
+                        {aiBreakdownState.isLoading &&
+                        aiBreakdownState.listId === list._id ? (
+                          <IconLoader2 size={16} className="animate-spin" />
+                        ) : (
+                          <IconSparkles size={16} />
+                        )}
+                      </button>
 
                       {/* Task Input */}
                       <input
@@ -1149,7 +1126,7 @@ const TaskLogger: React.FC = () => {
                   setTimeout(() => listNameInputRef.current?.focus(), 0);
                 }
               }}
-              className="flex items-center justify-center p-2 w-full rounded-lg text-slate-400 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center p-2 w-full rounded-lg text-secondary-black hover:text-secondary-black/40 dark:hover:text-secondary-white transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={addListMutation.isPending}
               title="Add a new task list"
             >

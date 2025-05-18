@@ -5,6 +5,7 @@ import Sidebar from '../../components/dashboard/navigation/Sidebar';
 import Navbar from '../../components/dashboard/navigation/Navbar';
 import { DashboardProvider } from '../../context/DashboardContext';
 import ThemeBackground from '../../../themes/ThemeBackground';
+import ProductivityBuddy from '@/components/dashboard/features/ai/ProductivityBuddy';
 
 export default function DashboardLayout({
   children,
@@ -35,6 +36,7 @@ export default function DashboardLayout({
               </main>
             </DashboardProvider>
           </div>
+          <ProductivityBuddy/>
         </div>
       </div>
     </ClientProvider>

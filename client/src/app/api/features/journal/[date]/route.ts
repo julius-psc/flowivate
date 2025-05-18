@@ -24,7 +24,8 @@ interface JournalEntryResponse {
 }
 
 const MAX_CONTENT_LENGTH = 10000; // Max length for journal content
-const DEFAULT_DB_NAME = "Flowivate";
+const DEFAULT_DB_NAME = process.env.MONGODB_DB || "Flowivate";
+
 
 function isValidDateString(dateStr: string): boolean {
   if (typeof dateStr !== 'string') return false;

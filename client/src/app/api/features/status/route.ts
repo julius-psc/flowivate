@@ -14,7 +14,7 @@ interface UserStatusDocument {
   lastUpdatedAt: Date;
 }
 
-const DEFAULT_DB_NAME = "Flowivate";
+const DEFAULT_DB_NAME = process.env.MONGODB_DB || "Flowivate";
 const DEFAULT_STATUS_COLLECTION_NAME = "statuses";
 const DEFAULT_STATUS_VALUE = "Active";
 const ALLOWED_STATUSES = ["Active", "Focusing", "Idle", "DND"];

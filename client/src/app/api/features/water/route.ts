@@ -22,7 +22,7 @@ interface WaterIntakeResponse {
   updatedAt: string; // ISO string
 }
 
-const DEFAULT_DB_NAME = "Flowivate";
+const DEFAULT_DB_NAME = process.env.MONGODB_DB || "Flowivate";
 
 function isValidObjectId(id: string): boolean {
   if (typeof id !== 'string') return false;

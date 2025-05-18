@@ -56,7 +56,7 @@ export async function GET() {
     const userObjectId = new ObjectId(userId);
 
     const client = await clientPromise;
-    const db = client.db("Flowivate");
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const booksCollection = db.collection<Book>("books");
 
     const booksArray = await booksCollection
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
     };
 
     const client = await clientPromise;
-    const db = client.db("Flowivate");
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const booksCollection = db.collection<Book>("books");
     const result = await booksCollection.insertOne(newBookData as Book); // MongoDB driver expects _id to be potentially there
 
