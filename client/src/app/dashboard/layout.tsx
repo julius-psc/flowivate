@@ -39,7 +39,7 @@ export default function DashboardLayout({
             />
           </div>
           <h1 className="text-2xl font-semibold text-secondary-white mb-4">
-            Coming soon 🚧
+            Under construction... 🚧
           </h1>
           <p className="text-center text-lg text-secondary-white leading-relaxed">
             Flowivate is coming soon to Android and IOS devices,

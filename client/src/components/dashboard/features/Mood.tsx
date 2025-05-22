@@ -12,7 +12,7 @@ import {
   IconChevronLeft,
 } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
-import { toast } from "sonner"; // Import Sonner toast
+import { toast } from "sonner";
 
 const moodIcons = [
   { icon: IconMoodAngry, value: "angry", color: "bg-[#f12828]", hoverColor: "bg-[#f34747]", textColor: "text-[#f12828] dark:text-[#f85c5c]", label: "Angry" },
@@ -38,30 +38,36 @@ const MoodInsights: React.FC<{ moodHistory: MoodEntry[]; onBack: () => void }> =
 
   const grid = Array(daysInMonth).fill(null).map((_, index) => {
     const day = index + 1;
-    const moodEntry = moodHistory.find(entry => {
-      const entryDate = new Date(entry.timestamp);
+    const entry = moodHistory.find((e) => {
+      const entryDate = new Date(e.timestamp);
       return entryDate.getDate() === day && entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
     });
-    if (moodEntry) {
-      return { day, color: moodIcons.find(m => m.value === moodEntry.mood)?.color || "bg-gray-500", isLogged: true };
+    if (entry) {
+      return { day, isLogged: true, color: moodIcons.find(m => m.value === entry.mood)?.color || "bg-gray-200" };
     }
-    const isPastUnlogged = day < currentDay;
-    return { day, color: isPastUnlogged ? "bg-secondary-white opacity-20 dark:bg-zinc-700 dark:opacity-30" : "bg-gray-300 dark:bg-zinc-600 opacity-50", isLogged: false };
+    const isPast = day < currentDay;
+    return {
+      day,
+      isLogged: false,
+      baseClass: isPast
+        ? "border border-gray-300 bg-transparent"
+        : "border border-gray-200 bg-transparent opacity-50",
+    };
   });
 
   const positiveMoods = moodHistory.filter(entry => {
-      const entryDate = new Date(entry.timestamp);
-      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear && ["ecstatic", "happy"].includes(entry.mood);
+    const entryDate = new Date(entry.timestamp);
+    return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear && ["ecstatic", "happy"].includes(entry.mood);
   }).length;
   const entriesThisMonth = moodHistory.filter(entry => {
-      const entryDate = new Date(entry.timestamp);
-      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+    const entryDate = new Date(entry.timestamp);
+    return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
   }).length;
   const monthlyPercentage = entriesThisMonth > 0 ? Math.round((positiveMoods / entriesThisMonth) * 100) : 0;
 
   const oneWeekAgo = new Date(now);
   oneWeekAgo.setDate(now.getDate() - 7);
-  const weekHistory = moodHistory.filter(entry => new Date(entry.timestamp) >= oneWeekAgo);
+  const weekHistory: MoodEntry[] = moodHistory.filter((entry: MoodEntry) => new Date(entry.timestamp) >= oneWeekAgo);
   const weeklyPositive = weekHistory.filter(entry => ["ecstatic", "happy"].includes(entry.mood)).length;
   const weeklyPercentage = weekHistory.length > 0 ? Math.round((weeklyPositive / weekHistory.length) * 100) : 0;
 
@@ -82,16 +88,19 @@ const MoodInsights: React.FC<{ moodHistory: MoodEntry[]; onBack: () => void }> =
       <div className="flex flex-1 mt-4">
         <div className="grid grid-cols-7 gap-x-4 gap-y-3 mr-4">
           {grid.map((item, index) => (
-            <div key={index} className={`w-6 h-6 rounded-full ${item.color} flex items-center justify-center`}>
-              {(item.day >= currentDay || item.isLogged) && (
-                <span className="text-xs font-medium text-black dark:text-white opacity-75">
-                  {item.day}
-                </span>
-              )}
+            <div
+              key={index}
+              className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                item.isLogged ? item.color : item.baseClass
+              }`}
+            >
+              <span className="text-xs font-medium text-black dark:text-white opacity-75">
+                {item.day}
+              </span>
             </div>
           ))}
         </div>
-        <div className="ml-2 text-secondary-black dark:text-secondary-white ">
+        <div className="ml-2 text-secondary-black dark:text-secondary-white">
           <div className="mb-4">
             <div className="text-3xl font-extrabold">{monthlyPercentage}%</div>
             <div className="text-sm opacity-40">Monthly positivity</div>
@@ -138,31 +147,37 @@ const MoodPicker: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { data: session, status } = useSession();
 
+  const todayStr = new Date().toDateString();
+  const todayEntry = moodHistory.find(e => new Date(e.timestamp).toDateString() === todayStr);
+  const displayMood = selectedMood ?? todayEntry?.mood ?? null;
+
   useEffect(() => {
     const fetchMoodHistory = async () => {
       if (status === "loading") {
-          setLoading(true);
-          return;
+        setLoading(true);
+        return;
       }
-       if (!session?.user?.email) {
-          setLoading(false);
-          setMoodHistory([]);
-          return;
+      if (!session?.user?.email) {
+        setLoading(false);
+        setMoodHistory([]);
+        return;
       }
 
       setLoading(true);
       try {
         const res = await fetch("/api/features/mood", { credentials: "include" });
         if (!res.ok) throw new Error("Failed to fetch mood history");
-        const data = await res.json();
-        if (Array.isArray(data)) {
-            setMoodHistory(data.map((entry: { mood: string; timestamp: string }) => ({ ...entry, timestamp: new Date(entry.timestamp) })));
-        } else {
-            setMoodHistory([]);
-        }
+        const payload = await res.json();
+        const arr = Array.isArray(payload) ? payload : [];
+        setMoodHistory(
+          arr.map((e: { mood: string; timestamp: string }) => ({
+            mood: e.mood,
+            timestamp: new Date(e.timestamp),
+          }))
+        );
       } catch (error) {
         console.error("Failed to fetch mood history:", error);
-        toast.error(`Failed to load mood history: ${error instanceof Error ? error.message : 'Unknown error'}`); // Use toast
+        toast.error(`Failed to load mood history: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setMoodHistory([]);
       } finally {
         setLoading(false);
@@ -177,17 +192,17 @@ const MoodPicker: React.FC = () => {
 
   const handleLogMood = async () => {
     if (!selectedMood) {
-        toast.warning("Please select a mood first."); // Use toast for validation
-        return;
+      toast.warning("Please select a mood first.");
+      return;
     }
     if (!session?.user?.email) {
-        toast.error("You must be signed in to log your mood."); // Use toast if somehow button is enabled while logged out
-        return;
-    };
+      toast.error("You must be signed in to log your mood.");
+      return;
+    }
 
     if (!moodIcons.some(m => m.value === selectedMood)) {
       console.error("Invalid mood value selected:", selectedMood);
-      toast.error("Invalid mood selected."); // Use toast for internal error
+      toast.error("Invalid mood selected.");
       return;
     }
 
@@ -200,7 +215,7 @@ const MoodPicker: React.FC = () => {
     if (todayMoodIndex > -1) updatedHistory[todayMoodIndex] = newMoodEntry;
     else updatedHistory.unshift(newMoodEntry);
     updatedHistory.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-    setMoodHistory(updatedHistory); // Optimistic UI update
+    setMoodHistory(updatedHistory);
 
     try {
       const res = await fetch("/api/features/mood", {
@@ -210,18 +225,17 @@ const MoodPicker: React.FC = () => {
         credentials: "include",
       });
       if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          // Instead of throwing, show toast and rollback
-          toast.error(errorData.message || `Failed to log mood (${res.status})`); // Use toast for API error
-          setMoodHistory(previousHistory); // Rollback on failure
-          return; // Exit after handling error
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(errorData.message || `Failed to log mood (${res.status})`);
+        setMoodHistory(previousHistory);
+        return;
       }
-      toast.success("Mood logged successfully!"); // Use toast for success
-      setSelectedMood(null); // Clear selection on success
+      toast.success("Mood logged successfully!");
+      setSelectedMood(null);
     } catch (error) {
       console.error("Error logging mood:", error);
-      toast.error(`Error logging mood: ${error instanceof Error ? error.message : 'Unknown error'}`); // Use toast for network/other errors
-      setMoodHistory(previousHistory); // Rollback UI on failure
+      toast.error(`Error logging mood: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setMoodHistory(previousHistory);
     }
   };
 
@@ -234,11 +248,11 @@ const MoodPicker: React.FC = () => {
   }
 
   if (!session) {
-      return (
-        <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full justify-center items-center">
-            <p className="text-center text-gray-600 dark:text-gray-400">Please sign in to track your mood.</p>
-        </div>
-      );
+    return (
+      <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full justify-center items-center">
+        <p className="text-center text-gray-600 dark:text-gray-400">Please sign in to track your mood.</p>
+      </div>
+    );
   }
 
   if (showInsights) {
@@ -260,7 +274,7 @@ const MoodPicker: React.FC = () => {
       <div className="grid grid-cols-7 gap-2 mb-8">
         {moodIcons.map((mood) => {
           const IconComponent = mood.icon;
-          const isSelected = selectedMood === mood.value;
+          const isSelected = displayMood === mood.value;
           const isHovered = hoveredMood === mood.value;
 
           return (
@@ -301,11 +315,11 @@ const MoodPicker: React.FC = () => {
               : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-80"}
           `}
           onClick={handleLogMood}
-          disabled={!selectedMood || loading} // Keep disabled logic
+          disabled={!selectedMood || loading}
         >
           Log mood
         </button>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs text-gray Selma-gray-500 dark:text-gray-400">
           Mood editable until midnight
         </span>
       </div>

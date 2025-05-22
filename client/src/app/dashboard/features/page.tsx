@@ -62,7 +62,7 @@ const featureCategories = [
     ],
   },
   {
-    name: "Focus Mode",
+    name: "Focus",
     icon: <IconBulb size={20} />,
     features: [
       {
@@ -83,7 +83,7 @@ const featureCategories = [
     ],
   },
   {
-    name: "Mindful Balance",
+    name: "Balance",
     icon: <IconBrain size={20} />,
     features: [
       {
@@ -104,7 +104,7 @@ const featureCategories = [
     ],
   },
   {
-    name: "Wellness Core",
+    name: "Wellness",
     icon: <IconChartLine size={20} />,
     features: [
       {

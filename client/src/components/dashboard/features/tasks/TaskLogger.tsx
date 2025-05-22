@@ -976,14 +976,14 @@ const TaskLogger: React.FC = () => {
                         }}
                         title="AI Task Breakdown"
                         className={`
-    relative inline-flex items-center justify-center
-    w-8 h-8 rounded-full  
-    p-0
-    bg-primary 
-    text-white shadow-primary/50 
-    transition-all duration-300 ease-in-out 
-    hover:shadow-xl hover:shadow-primary/70
-    active:scale-95 
+    relative flex items-center justify-center
+    w-10 h-10 rounded-full
+    bg-primary
+    text-secondary-white
+    transform transition duration-300 ease-out
+    hover:scale-110
+    focus:outline-none focus:ring-4 focus:ring-secondary-white/50
+    active:scale-95
     disabled:opacity-50 disabled:cursor-not-allowed
   `}
                         disabled={
