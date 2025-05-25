@@ -2,6 +2,76 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Particle definition and loop engine
+const FloatingParticles: React.FC = () => {
+  const [particles, setParticles] = useState<
+    {
+      key: string;
+      angle: number;
+      distance: number;
+      size: number;
+      duration: number;
+      delay: number;
+    }[]
+  >([]);
+
+  useEffect(() => {
+const generateParticles = () =>
+  Array.from({ length: 20 }, (_, i) => ({
+    key: `${i}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+    angle: Math.random() * 2 * Math.PI,
+    distance: 30 + Math.random() * 30,
+    size: 2 + Math.random() * 1.5,
+    duration: 2.5 + Math.random() * 2,
+    delay: Math.random() * 0.5,
+  }));
+
+
+    setParticles(generateParticles());
+
+    const interval = setInterval(() => {
+      setParticles(generateParticles());
+    }, 3000); // Reset every few seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <>
+      <AnimatePresence>
+        {particles.map((p) => {
+          const x = Math.cos(p.angle) * p.distance;
+          const y = Math.sin(p.angle) * p.distance;
+
+          return (
+            <motion.div
+              key={p.key}
+              className="absolute rounded-full bg-blue-400 pointer-events-none"
+              style={
+                {
+                  width: `${p.size}px`,
+                  height: `${p.size}px`,
+                  left: "50%",
+                  top: "50%",
+                  transform: `translate(-50%, -50%)`,
+                } as React.CSSProperties
+              }
+              initial={{ x: 0, y: 0, opacity: 0.7, scale: 1 }}
+              animate={{ x, y, opacity: 0, scale: 0.9 }}
+              exit={{ opacity: 0 }}
+              transition={{
+                duration: p.duration,
+                delay: p.delay,
+                ease: "easeOut",
+              }}
+            />
+          );
+        })}
+      </AnimatePresence>
+    </>
+  );
+};
+
 export default function ProductivityBuddy() {
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<string | null>(null);
@@ -16,15 +86,13 @@ export default function ProductivityBuddy() {
       const res = await fetch("/api/claude/buddy", { method: "POST" });
       const data = await res.json();
       setResponse(data.reply);
-      // Transition back to blue when response appears
-      setIsActive(false);
     } catch (err) {
       console.error(err);
       setResponse("Something went wrong.");
-      setIsActive(false);
     }
     setTimeout(() => {
       setLoading(false);
+      setIsActive(false);
     }, 1000);
   };
 
@@ -45,60 +113,66 @@ export default function ProductivityBuddy() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-      {/* Animated Orb Container */}
       <div className="relative">
-        {/* Gentle Wave Effect */}
+        {/* Orb ripple ring */}
         <motion.div
-          className="absolute inset-0 w-16 h-16 rounded-full"
+          className="absolute inset-0 rounded-full"
           animate={{
-            scale: [1, 1.15, 1],
-            rotate: [0, 180, 360]
+            scale: [1, 1.1, 1],
+            rotate: [0, 180, 360],
           }}
           transition={{
             scale: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-            rotate: { duration: 8, repeat: Infinity, ease: "linear" }
+            rotate: { duration: 10, repeat: Infinity, ease: "linear" },
           }}
-          style={{
-            background: isActive 
-              ? 'conic-gradient(from 0deg, rgba(244,114,182,0.1), rgba(244,114,182,0.3), rgba(244,114,182,0.1))'
-              : 'conic-gradient(from 0deg, rgba(59,130,246,0.1), rgba(59,130,246,0.3), rgba(59,130,246,0.1))'
-          }}
+          style={
+            {
+              width: "4rem",
+              height: "4rem",
+              backgroundImage: isActive
+                ? "conic-gradient(from 0deg, rgba(244,114,182,0.2), rgba(244,114,182,0.4), rgba(244,114,182,0.2))"
+                : "conic-gradient(from 0deg, rgba(59,130,246,0.2), rgba(59,130,246,0.4), rgba(59,130,246,0.2))",
+            } as React.CSSProperties
+          }
         />
 
-        {/* Soft Background Glow */}
+        {/* Blue Floating Particles */}
+        <FloatingParticles />
+
+        {/* Soft background glow */}
         <motion.div
-          className={`absolute inset-0 w-20 h-20 -m-2 rounded-full blur-lg transition-all duration-1000 ${
-            isActive ? 'bg-pink-400/20' : 'bg-blue-400/20'
+          className={`absolute inset-0 w-20 h-20 -m-2 rounded-full blur-xl transition-all duration-1000 ${
+            isActive ? "bg-pink-400/20" : "bg-blue-400/20"
           }`}
           animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.4, 0.7, 0.4]
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.6, 0.3],
           }}
           transition={{
-            duration: 2.5,
+            duration: 3,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
         />
 
-        {/* Main Button */}
+        {/* Orb button */}
         <motion.button
           onClick={fetchBuddyContext}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-1000 ${
-            isActive 
-              ? 'bg-gradient-to-br from-pink-400 to-rose-500'
-              : 'bg-gradient-to-br from-blue-500 to-white dark:from-blue-400 dark:to-zinc-800'
+            isActive
+              ? "bg-gradient-to-br from-pink-400 to-rose-500"
+              : "bg-gradient-to-br from-blue-500 to-white dark:from-blue-400 dark:to-zinc-800"
           }`}
-          style={{
-            boxShadow: isActive 
-              ? '0 0 25px rgba(244,114,182,0.6)'
-              : '0 0 20px rgba(59,130,246,0.6)'
-          }}
+          style={
+            {
+              boxShadow: isActive
+                ? "0 0 25px rgba(244,114,182,0.6)"
+                : "0 0 20px rgba(59,130,246,0.6)",
+            } as React.CSSProperties
+          }
         >
-          
-          {/* Smiley Face */}
           <div className="relative z-10 w-full h-full flex items-center justify-center">
             <motion.svg
               width="40"
@@ -108,36 +182,61 @@ export default function ProductivityBuddy() {
               animate={loading ? { rotate: [0, 5, -5, 0] } : {}}
               transition={loading ? { duration: 0.5, repeat: Infinity } : {}}
             >
-              {/* Left Eye - Parabola */}
               <motion.path
                 d="M8 9 Q9 7 10 9"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 fill="none"
                 strokeLinecap="round"
-                animate={loading ? { d: ["M8 9 Q9 7 10 9", "M8 9 Q9 9 10 9", "M8 9 Q9 7 10 9"] } : {}}
+                animate={
+                  loading
+                    ? {
+                        d: [
+                          "M8 9 Q9 7 10 9",
+                          "M8 9 Q9 9 10 9",
+                          "M8 9 Q9 7 10 9",
+                        ],
+                      }
+                    : {}
+                }
                 transition={loading ? { duration: 1, repeat: Infinity } : {}}
               />
-              {/* Right Eye - Parabola */}
               <motion.path
                 d="M14 9 Q15 7 16 9"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 fill="none"
                 strokeLinecap="round"
-                animate={loading ? { d: ["M14 9 Q15 7 16 9", "M14 9 Q15 9 16 9", "M14 9 Q15 7 16 9"] } : {}}
+                animate={
+                  loading
+                    ? {
+                        d: [
+                          "M14 9 Q15 7 16 9",
+                          "M14 9 Q15 9 16 9",
+                          "M14 9 Q15 7 16 9",
+                        ],
+                      }
+                    : {}
+                }
                 transition={loading ? { duration: 1, repeat: Infinity } : {}}
               />
-              {/* Smile - Inverted Parabola */}
               <motion.path
                 d="M8 15 Q12 18 16 15"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 fill="none"
                 strokeLinecap="round"
-                animate={loading ? { 
-                  d: ["M8 15 Q12 18 16 15", "M8 16 Q12 19 16 16", "M8 15 Q12 18 16 15"] 
-                } : {}}
+                animate={
+                  loading
+                    ? {
+                        d: [
+                          "M8 15 Q12 18 16 15",
+                          "M8 16 Q12 19 16 16",
+                          "M8 15 Q12 18 16 15",
+                        ],
+                      }
+                    : {}
+                }
                 transition={loading ? { duration: 1, repeat: Infinity } : {}}
               />
             </motion.svg>
@@ -165,13 +264,13 @@ export default function ProductivityBuddy() {
                         className="w-3 h-3 rounded-full bg-pink-400"
                         animate={{
                           y: [0, -12, 0],
-                          opacity: [0.4, 1, 0.4]
+                          opacity: [0.4, 1, 0.4],
                         }}
                         transition={{
                           duration: 1.2,
                           repeat: Infinity,
                           delay: i * 0.2,
-                          ease: "easeInOut"
+                          ease: "easeInOut",
                         }}
                       />
                     ))}
@@ -188,7 +287,7 @@ export default function ProductivityBuddy() {
                           key={i}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.1 }}
+                          transition={{ delay: i * 0.05 }}
                           className="mb-3 leading-relaxed"
                         >
                           {line}
