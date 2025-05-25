@@ -861,7 +861,7 @@ const TaskLogger: React.FC = () => {
               <div className="group-hover/task:flex hidden animate-fade-in items-center gap-1">
                 <button
                   onClick={() => !isDisabled && setAddingSubtaskTo(task.id)}
-                  className="flex items-center gap-1 text-secondary-black dark:text-secondary-white hover:text-pink-500 dark:hover:text-pink-400 text-sm transition-colors duration-200 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 text-secondary-black dark:text-secondary-white hover:text-secondary-black/80 dark:hover:text-secondary-white/80 text-sm transition-colors duration-200 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Add subtask"
                   disabled={isDisabled}
                 >
@@ -1075,7 +1075,7 @@ const TaskLogger: React.FC = () => {
                           });
                         }
                       }}
-                      className="flex items-center gap-1 text-secondary-black dark:text-secondary-white hover:text-secondary-black/80 dark:hover:text-secondary-black/80 text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-1 text-secondary-black dark:text-secondary-white hover:text-secondary-black/80 dark:hover:text-secondary-white/80 text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Add task"
                       disabled={updateListMutation.isPending}
                     >

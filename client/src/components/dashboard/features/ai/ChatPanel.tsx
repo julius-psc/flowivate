@@ -388,8 +388,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-xl flex flex-col bg-white/90 dark:bg-zinc-900/95 backdrop-blur-md border border-gray-200/50 dark:border-zinc-700/30 rounded-lg overflow-hidden z-[51]"
-            style={{ boxShadow: "0 4px 24px rgba(0, 0, 0, 0.08)" }}
+            className="relative w-full max-w-xl flex flex-col bg-white/90 dark:bg-zinc-900/95 backdrop-blur-md border border-gray-200/50 dark:border-zinc-700/30 rounded-lg overflow-hidden z-[51] shadow-lg"
           >
             <div className="relative flex items-center px-3 py-3">
               <div className="absolute left-3 text-gray-400 dark:text-gray-500">
