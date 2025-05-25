@@ -222,7 +222,7 @@ export default function Features() {
 
                     {/* Benefit Tag */}
                     <div className="mb-3">
-                      <span className="inline-block px-2 py-1 text-xs font-medium text-primary dark:text-primary/30 bg-primary/20 dark:bg-primary/20 rounded-md">
+                      <span className="inline-block px-2 py-1 text-xs font-medium text-primary dark:text-primary/80 bg-primary/20 dark:bg-primary/20 rounded-md">
                         {benefit}
                       </span>
                     </div>

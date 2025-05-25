@@ -453,7 +453,6 @@ const DeepWork: React.FC = () => {
           </button>
         ) : (
           <div className="flex gap-2">
-            {/* **MODIFIED:** Applied user's className, added min-w-0, Enter/Esc handlers */}
             <input
               ref={customTaskInputRef}
               type="text"
@@ -463,36 +462,20 @@ const DeepWork: React.FC = () => {
               }
               onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                 if (e.key === "Enter") {
-                  handleConfirmCustomTask(); // Confirm on Enter
+                  handleConfirmCustomTask(); 
                 } else if (e.key === "Escape") {
-                  setShowCustomTaskInput(false); // Cancel on Escape
+                  setShowCustomTaskInput(false);
                   setCustomTaskName("");
                 }
               }}
               onBlur={() => {
-                // Optional: confirm on blur if input is valid and non-empty
                 if (customTaskName.trim()) {
-                  // Maybe only confirm if user *intended* to move on?
-                  // For now, Enter/Esc are primary actions. Blur just loses focus.
                 } else {
-                  // If blurred while empty, maybe hide it?
-                  // setShowCustomTaskInput(false);
                 }
               }}
               placeholder="Enter custom task name"
-              className={`${inputClassName} min-w-0`} // Applied requested style + min-w-0
+              className={`${inputClassName} min-w-0 text-secondary-black dark:text-secondary-white`} 
             />
-            {/* **REMOVED:** Check button removed as per Enter/Esc request */}
-            {/*
-            <button
-              onClick={handleConfirmCustomTask} // Changed from handleSelectCustomTask
-              disabled={!customTaskName.trim()}
-              className="p-3 aspect-square bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center flex-shrink-0"
-              aria-label="Confirm custom task"
-            >
-              <Check size={16} />
-            </button>
-             */}
           </div>
         )}
       </div>
@@ -503,7 +486,6 @@ const DeepWork: React.FC = () => {
     <>
       <div className="flex items-center mb-3">
         {" "}
-        {/* **MODIFIED:** Reduced mb */}
         <button
           onClick={() => setSetupStep("task")}
           aria-label="Back to task selection"
@@ -515,10 +497,8 @@ const DeepWork: React.FC = () => {
           Set Duration
         </h2>
       </div>
-      {/* Task display */}
       <div className="p-3 bg-secondary-black/5 dark:bg-secondary-white/5 rounded-md mb-3">
         {" "}
-        {/* **MODIFIED:** Reduced p and mb */}
         <div className="flex items-center">
           <Target
             size={16}
@@ -538,21 +518,17 @@ const DeepWork: React.FC = () => {
         </div>
       </div>
 
-      {/* **MODIFIED:** Reduced space-y, added max-h and overflow */}
       <div className="flex-grow space-y-2 overflow-y-auto pr-1 max-h-[calc(100%-150px)]">
         {" "}
-        {/* Adjust max-h */}
         <h3 className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider mb-1">
           Focus Duration (minutes)
         </h3>
         <div className="grid grid-cols-2 gap-2">
           {" "}
-          {/* Reduced gap */}
           {DURATION_OPTIONS.map((duration) => (
             <button
               key={duration}
               onClick={() => handleSetDurationPreset(duration)}
-              // **MODIFIED:** Removed scale-105 from selected state to prevent border distortion
               className={`p-3 rounded-md text-center transition-all duration-150 text-sm border ${
                 !isCustomDurationSelected && focusDuration === duration
                   ? "bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black border-transparent shadow-md ring-1 ring-black/10 dark:ring-white/10" // Added subtle ring instead of scale
@@ -566,7 +542,6 @@ const DeepWork: React.FC = () => {
         </div>
         <div className="pt-2">
           {" "}
-          {/* **MODIFIED:** Reduced pt */}
           <label
             htmlFor="custom-duration"
             className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider block mb-1" // Reduced mb
@@ -574,7 +549,6 @@ const DeepWork: React.FC = () => {
             Custom Duration
           </label>
           <div className="flex gap-2 items-center">
-            {/* **MODIFIED:** Applied user's className, added min-w-0, Enter/Esc handlers */}
             <input
               ref={customDurationInputRef}
               id="custom-duration"
@@ -596,7 +570,6 @@ const DeepWork: React.FC = () => {
               }}
               onFocus={selectCustomDurationInput} // Select custom style on focus
               onBlur={() => {
-                // Validate on blur only if custom is still selected and input is invalid
                 const numericValue = parseInt(customDurationInput, 10);
                 if (
                   isCustomDurationSelected &&
@@ -627,7 +600,6 @@ const DeepWork: React.FC = () => {
           </div>
         </div>
       </div>{" "}
-      {/* End of scrollable duration area */}
       <button
         onClick={handleConfirmDurationStep} // Use updated handler
         disabled={focusDuration <= 0} // Simple validation: must be > 0
@@ -642,7 +614,6 @@ const DeepWork: React.FC = () => {
     <>
       <div className="flex items-center mb-3">
         {" "}
-        {/* Reduced mb */}
         <button
           onClick={() => setSetupStep("duration")}
           aria-label="Back to duration selection"
@@ -656,13 +627,10 @@ const DeepWork: React.FC = () => {
       </div>
       <p className="text-sm text-secondary-black/60 dark:text-secondary-white/60 mb-3 flex-shrink-0">
         {" "}
-        {/* Reduced mb */}
         Select an optional ambient sound to play during your session.
       </p>
-      {/* **MODIFIED:** Reduced space-y, added max-h and overflow */}
       <div className="flex-grow overflow-y-auto space-y-2 pr-1 max-h-[calc(100%-110px)]">
         {" "}
-        {/* Adjust max-h */}
         {ambientSoundNames.map((name) => (
           <button
             key={name}
@@ -691,7 +659,6 @@ const DeepWork: React.FC = () => {
           </button>
         ))}
       </div>{" "}
-      {/* End scrollable music list */}
       <button
         onClick={handleStartFocusSession}
         className="mt-auto pt-3 w-full py-3 bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black rounded-md text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 flex-shrink-0" // Pushed to bottom
@@ -705,10 +672,7 @@ const DeepWork: React.FC = () => {
   const renderActive = () => (
     <div className="flex flex-col h-full items-center justify-between p-6 bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white relative">
       {" "}
-      {/* Slightly less padding */}
-      {/* **MODIFIED:** Only Top Right Controls */}
       <div className="absolute top-4 right-4 flex items-center gap-3 z-10">
-        {/* Volume Toggle Button */}
         {ambientSoundHook.currentSound &&
           ambientSoundHook.currentSound !== "None" && (
             <button
@@ -732,7 +696,6 @@ const DeepWork: React.FC = () => {
               )}
             </button>
           )}
-        {/* Close Button */}
         <button
           onClick={handleStopFocus}
           className="p-2 rounded-md bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 transition-colors text-secondary-black/80 dark:text-secondary-white/80"
@@ -742,10 +705,8 @@ const DeepWork: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Content Area (Centered) */}
       <div className="flex flex-col items-center justify-center text-center space-y-4 flex-grow pt-10">
         {" "}
-        {/* Added flex-grow and some padding-top */}
         <h2 className="text-xl font-medium text-secondary-black/80 dark:text-secondary-white/80 break-words max-w-md px-4">
           {selectedTask?.name || "Deep Work"}
         </h2>
@@ -780,11 +741,8 @@ const DeepWork: React.FC = () => {
           )}
       </div>
 
-      {/* Bottom Buttons Area */}
       <div className="flex items-center justify-center gap-4 pb-4 flex-shrink-0">
         {" "}
-        {/* Centered the button */}
-        {/* **REMOVED:** Mute button from the bottom/middle area */}
         <button
           onClick={handleStopFocus}
           className="px-6 py-2 border border-secondary-black/20 dark:border-secondary-white/20 rounded-md text-sm hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-secondary-black/80 dark:text-secondary-white/80"
@@ -795,30 +753,26 @@ const DeepWork: React.FC = () => {
     </div>
   );
 
-  // --- Main Return ---
+
   return (
     <div
       ref={componentRef}
-      // **MODIFIED:** Adjusted height for setup steps for better spacing
       className={`relative rounded-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/50 dark:border-zinc-800/50 ${
         setupStep === "active"
           ? "h-full !bg-secondary-white dark:!bg-secondary-black !border-transparent" // Active styles override
           : setupStep === "idle"
           ? "h-80"
-          : "h-[500px]" // Reduced height for setup steps
+          : "h-[500px]" 
       }`}
       id="deep-work-container"
     >
       {setupStep === "active" ? (
         renderActive()
       ) : (
-        // Container for setup steps (non-active)
         <div className="relative p-4 flex flex-col h-full overflow-hidden">
-          {/* Widget Heading */}
           <h1 className="text-sm font-medium text-secondary-black dark:text-secondary-white opacity-40 mb-2 uppercase tracking-wider flex-shrink-0">
             DEEP WORK
           </h1>
-          {/* Inner container for steps */}
           <div className="flex-grow flex flex-col overflow-hidden">
             {setupStep === "idle" && renderIdle()}
             {setupStep === "task" && renderTaskSelection()}

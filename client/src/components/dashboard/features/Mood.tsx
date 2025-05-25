@@ -15,13 +15,62 @@ import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
 const moodIcons = [
-  { icon: IconMoodAngry, value: "angry", color: "bg-[#f12828]", hoverColor: "bg-[#f34747]", textColor: "text-[#f12828] dark:text-[#f85c5c]", label: "Angry" },
-  { icon: IconMoodCry, value: "miserable", color: "bg-[#FF5151]", hoverColor: "bg-[#ff7070]", textColor: "text-[#FF5151] dark:text-[#ff7b7b]", label: "Miserable" },
-  { icon: IconMoodSad, value: "sad", color: "bg-[#FF7449]", hoverColor: "bg-[#ff8d68]", textColor: "text-[#FF7449] dark:text-[#ff9a76]", label: "Sad" },
-  { icon: IconMoodEmpty, value: "neutral", color: "bg-[#FF9B19]", hoverColor: "bg-[#ffac45]", textColor: "text-[#FF9B19] dark:text-[#ffbc5c]", label: "Neutral" },
-  { icon: IconMoodTongueWink, value: "cheerful", color: "bg-[#75DB74]", hoverColor: "bg-[#8fe28e]", textColor: "text-[#75DB74] dark:text-[#9cea9c]", label: "Cheerful" },
-  { icon: IconMoodHappy, value: "happy", color: "bg-[#46AE3A]", hoverColor: "bg-[#55c248]", textColor: "text-[#46AE3A] dark:text-[#6cd45e]", label: "Happy" },
-  { icon: IconMoodSmileDizzy, value: "ecstatic", color: "bg-[#186922]", hoverColor: "bg-[#1f8a2c]", textColor: "text-[#186922] dark:text-[#2ea13a]", label: "Ecstatic" },
+  {
+    icon: IconMoodAngry,
+    value: "angry",
+    color: "bg-[#f12828]",
+    hoverColor: "bg-[#f34747]",
+    textColor: "text-[#f12828] dark:text-[#f85c5c]",
+    label: "Angry",
+  },
+  {
+    icon: IconMoodCry,
+    value: "miserable",
+    color: "bg-[#FF5151]",
+    hoverColor: "bg-[#ff7070]",
+    textColor: "text-[#FF5151] dark:text-[#ff7b7b]",
+    label: "Miserable",
+  },
+  {
+    icon: IconMoodSad,
+    value: "sad",
+    color: "bg-[#FF7449]",
+    hoverColor: "bg-[#ff8d68]",
+    textColor: "text-[#FF7449] dark:text-[#ff9a76]",
+    label: "Sad",
+  },
+  {
+    icon: IconMoodEmpty,
+    value: "neutral",
+    color: "bg-[#FF9B19]",
+    hoverColor: "bg-[#ffac45]",
+    textColor: "text-[#FF9B19] dark:text-[#ffbc5c]",
+    label: "Neutral",
+  },
+  {
+    icon: IconMoodTongueWink,
+    value: "cheerful",
+    color: "bg-[#75DB74]",
+    hoverColor: "bg-[#8fe28e]",
+    textColor: "text-[#75DB74] dark:text-[#9cea9c]",
+    label: "Cheerful",
+  },
+  {
+    icon: IconMoodHappy,
+    value: "happy",
+    color: "bg-[#46AE3A]",
+    hoverColor: "bg-[#55c248]",
+    textColor: "text-[#46AE3A] dark:text-[#6cd45e]",
+    label: "Happy",
+  },
+  {
+    icon: IconMoodSmileDizzy,
+    value: "ecstatic",
+    color: "bg-[#186922]",
+    hoverColor: "bg-[#1f8a2c]",
+    textColor: "text-[#186922] dark:text-[#2ea13a]",
+    label: "Ecstatic",
+  },
 ];
 
 interface MoodEntry {
@@ -29,55 +78,93 @@ interface MoodEntry {
   timestamp: Date;
 }
 
-const MoodInsights: React.FC<{ moodHistory: MoodEntry[]; onBack: () => void }> = ({ moodHistory, onBack }) => {
+const MoodInsights: React.FC<{
+  moodHistory: MoodEntry[];
+  onBack: () => void;
+}> = ({ moodHistory, onBack }) => {
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const currentDay = now.getDate();
 
-  const grid = Array(daysInMonth).fill(null).map((_, index) => {
-    const day = index + 1;
-    const entry = moodHistory.find((e) => {
-      const entryDate = new Date(e.timestamp);
-      return entryDate.getDate() === day && entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+  const grid = Array(daysInMonth)
+    .fill(null)
+    .map((_, index) => {
+      const day = index + 1;
+      const entry = moodHistory.find((e) => {
+        const entryDate = new Date(e.timestamp);
+        return (
+          entryDate.getDate() === day &&
+          entryDate.getMonth() === currentMonth &&
+          entryDate.getFullYear() === currentYear
+        );
+      });
+      if (entry) {
+        return {
+          day,
+          isLogged: true,
+          color:
+            moodIcons.find((m) => m.value === entry.mood)?.color ||
+            "bg-gray-200",
+        };
+      }
+      const isPast = day < currentDay;
+      return {
+        day,
+        isLogged: false,
+        baseClass: isPast
+          ? "border border-gray-300 bg-transparent"
+          : "border border-gray-200 bg-transparent opacity-50",
+      };
     });
-    if (entry) {
-      return { day, isLogged: true, color: moodIcons.find(m => m.value === entry.mood)?.color || "bg-gray-200" };
-    }
-    const isPast = day < currentDay;
-    return {
-      day,
-      isLogged: false,
-      baseClass: isPast
-        ? "border border-gray-300 bg-transparent"
-        : "border border-gray-200 bg-transparent opacity-50",
-    };
-  });
 
-  const positiveMoods = moodHistory.filter(entry => {
+  const positiveMoods = moodHistory.filter((entry) => {
     const entryDate = new Date(entry.timestamp);
-    return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear && ["ecstatic", "happy"].includes(entry.mood);
+    return (
+      entryDate.getMonth() === currentMonth &&
+      entryDate.getFullYear() === currentYear &&
+      ["ecstatic", "happy"].includes(entry.mood)
+    );
   }).length;
-  const entriesThisMonth = moodHistory.filter(entry => {
+  const entriesThisMonth = moodHistory.filter((entry) => {
     const entryDate = new Date(entry.timestamp);
-    return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+    return (
+      entryDate.getMonth() === currentMonth &&
+      entryDate.getFullYear() === currentYear
+    );
   }).length;
-  const monthlyPercentage = entriesThisMonth > 0 ? Math.round((positiveMoods / entriesThisMonth) * 100) : 0;
+  const monthlyPercentage =
+    entriesThisMonth > 0
+      ? Math.round((positiveMoods / entriesThisMonth) * 100)
+      : 0;
 
   const oneWeekAgo = new Date(now);
   oneWeekAgo.setDate(now.getDate() - 7);
-  const weekHistory: MoodEntry[] = moodHistory.filter((entry: MoodEntry) => new Date(entry.timestamp) >= oneWeekAgo);
-  const weeklyPositive = weekHistory.filter(entry => ["ecstatic", "happy"].includes(entry.mood)).length;
-  const weeklyPercentage = weekHistory.length > 0 ? Math.round((weeklyPositive / weekHistory.length) * 100) : 0;
+  const weekHistory: MoodEntry[] = moodHistory.filter(
+    (entry: MoodEntry) => new Date(entry.timestamp) >= oneWeekAgo
+  );
+  const weeklyPositive = weekHistory.filter((entry) =>
+    ["ecstatic", "happy"].includes(entry.mood)
+  ).length;
+  const weeklyPercentage =
+    weekHistory.length > 0
+      ? Math.round((weeklyPositive / weekHistory.length) * 100)
+      : 0;
 
   const currentMonthName = now.toLocaleString("default", { month: "long" });
 
   return (
     <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
       <div className="flex items-center mb-4">
-        <button onClick={onBack} className="mr-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors">
-          <IconChevronLeft size={20} className="text-gray-800 dark:text-gray-200" />
+        <button
+          onClick={onBack}
+          className="mr-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+        >
+          <IconChevronLeft
+            size={20}
+            className="text-gray-800 dark:text-gray-200"
+          />
         </button>
       </div>
       <div className="mt-1">
@@ -124,11 +211,13 @@ const MoodPickerSkeleton = () => {
       </div>
       <div className="animate-pulse flex-grow flex flex-col justify-between pt-2">
         <div className="grid grid-cols-7 gap-2 mb-8">
-          {Array(7).fill(null).map((_, index) => (
-            <div key={index} className="flex justify-center">
-              <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-700 rounded-full"></div>
-            </div>
-          ))}
+          {Array(7)
+            .fill(null)
+            .map((_, index) => (
+              <div key={index} className="flex justify-center">
+                <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-700 rounded-full"></div>
+              </div>
+            ))}
         </div>
         <div className="flex justify-center items-center gap-4 mt-auto mb-2">
           <div className="h-9 w-24 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
@@ -148,7 +237,9 @@ const MoodPicker: React.FC = () => {
   const { data: session, status } = useSession();
 
   const todayStr = new Date().toDateString();
-  const todayEntry = moodHistory.find(e => new Date(e.timestamp).toDateString() === todayStr);
+  const todayEntry = moodHistory.find(
+    (e) => new Date(e.timestamp).toDateString() === todayStr
+  );
   const displayMood = selectedMood ?? todayEntry?.mood ?? null;
 
   useEffect(() => {
@@ -165,7 +256,9 @@ const MoodPicker: React.FC = () => {
 
       setLoading(true);
       try {
-        const res = await fetch("/api/features/mood", { credentials: "include" });
+        const res = await fetch("/api/features/mood", {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error("Failed to fetch mood history");
         const payload = await res.json();
         const arr = Array.isArray(payload) ? payload : [];
@@ -177,7 +270,11 @@ const MoodPicker: React.FC = () => {
         );
       } catch (error) {
         console.error("Failed to fetch mood history:", error);
-        toast.error(`Failed to load mood history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        toast.error(
+          `Failed to load mood history: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
         setMoodHistory([]);
       } finally {
         setLoading(false);
@@ -200,28 +297,35 @@ const MoodPicker: React.FC = () => {
       return;
     }
 
-    if (!moodIcons.some(m => m.value === selectedMood)) {
+    if (!moodIcons.some((m) => m.value === selectedMood)) {
       console.error("Invalid mood value selected:", selectedMood);
       toast.error("Invalid mood selected.");
       return;
     }
 
     const now = new Date();
-    const todayMoodIndex = moodHistory.findIndex(entry => new Date(entry.timestamp).toDateString() === now.toDateString());
+    const todayMoodIndex = moodHistory.findIndex(
+      (entry) => new Date(entry.timestamp).toDateString() === now.toDateString()
+    );
     const newMoodEntry = { mood: selectedMood, timestamp: now };
     const previousHistory = [...moodHistory];
     const updatedHistory = [...moodHistory];
 
     if (todayMoodIndex > -1) updatedHistory[todayMoodIndex] = newMoodEntry;
     else updatedHistory.unshift(newMoodEntry);
-    updatedHistory.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    updatedHistory.sort(
+      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+    );
     setMoodHistory(updatedHistory);
 
     try {
       const res = await fetch("/api/features/mood", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mood: selectedMood, timestamp: now.toISOString() }),
+        body: JSON.stringify({
+          mood: selectedMood,
+          timestamp: now.toISOString(),
+        }),
         credentials: "include",
       });
       if (!res.ok) {
@@ -232,9 +336,14 @@ const MoodPicker: React.FC = () => {
       }
       toast.success("Mood logged successfully!");
       setSelectedMood(null);
+      setShowInsights(true);
     } catch (error) {
       console.error("Error logging mood:", error);
-      toast.error(`Error logging mood: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `Error logging mood: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
       setMoodHistory(previousHistory);
     }
   };
@@ -250,19 +359,25 @@ const MoodPicker: React.FC = () => {
   if (!session) {
     return (
       <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full justify-center items-center">
-        <p className="text-center text-gray-600 dark:text-gray-400">Please sign in to track your mood.</p>
+        <p className="text-center text-gray-600 dark:text-gray-400">
+          Please sign in to track your mood.
+        </p>
       </div>
     );
   }
 
   if (showInsights) {
-    return <MoodInsights moodHistory={moodHistory} onBack={handleToggleInsights} />;
+    return (
+      <MoodInsights moodHistory={moodHistory} onBack={handleToggleInsights} />
+    );
   }
 
   return (
     <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
       <div className="flex justify-between items-center mb-6 flex-shrink-0">
-        <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">MOOD</h1>
+        <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
+          MOOD
+        </h1>
         <button
           onClick={handleToggleInsights}
           className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
@@ -288,16 +403,22 @@ const MoodPicker: React.FC = () => {
               <div
                 className={`
                   p-2 rounded-full transition-transform duration-200 cursor-pointer
-                  ${isSelected ? mood.color : "bg-gray-200 dark:bg-secondary-black"}
+                  ${
+                    isSelected
+                      ? mood.color
+                      : "bg-gray-200 dark:bg-secondary-black"
+                  }
                   ${isSelected || isHovered ? "transform scale-110" : ""}
                 `}
               >
                 <IconComponent
                   size={24}
                   className={`transition-colors duration-200 ${
-                    isSelected ? "text-white" :
-                    isHovered ? "text-gray-700 dark:text-gray-200" :
-                    "text-gray-500 dark:text-gray-400"
+                    isSelected
+                      ? "text-white"
+                      : isHovered
+                      ? "text-gray-700 dark:text-gray-200"
+                      : "text-gray-500 dark:text-gray-400"
                   }`}
                 />
               </div>
@@ -310,9 +431,13 @@ const MoodPicker: React.FC = () => {
         <button
           className={`
             px-6 py-2 rounded-full text-sm font-normal transition-all duration-200 ease-in-out
-            ${selectedMood
-              ? `${moodIcons.find(m => m.value === selectedMood)?.color} text-white cursor-pointer hover:opacity-90 transform active:scale-95`
-              : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-80"}
+            ${
+              selectedMood
+                ? `${
+                    moodIcons.find((m) => m.value === selectedMood)?.color
+                  } text-white cursor-pointer hover:opacity-90 transform active:scale-95`
+                : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-80"
+            }
           `}
           onClick={handleLogMood}
           disabled={!selectedMood || loading}

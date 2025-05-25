@@ -858,14 +858,16 @@ const TaskLogger: React.FC = () => {
                 autoFocus
               />
             ) : (
-              <button
-                onClick={() => !isDisabled && setAddingSubtaskTo(task.id)}
-                className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-pink-500 dark:hover:text-pink-400 text-sm transition-colors duration-200 py-1 opacity-0 group-hover/task:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Add subtask"
-                disabled={isDisabled}
-              >
-                <IconCopyPlus size={14} /> <span>Add subtask</span>
-              </button>
+              <div className="group-hover/task:flex hidden animate-fade-in items-center gap-1">
+                <button
+                  onClick={() => !isDisabled && setAddingSubtaskTo(task.id)}
+                  className="flex items-center gap-1 text-secondary-black dark:text-secondary-white hover:text-pink-500 dark:hover:text-pink-400 text-sm transition-colors duration-200 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Add subtask"
+                  disabled={isDisabled}
+                >
+                  <IconCopyPlus size={14} /> <span>Add subtask</span>
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -899,7 +901,7 @@ const TaskLogger: React.FC = () => {
   return (
     <div className="p-4 flex flex-col h-full">
       {/* Header */}
-      <div className="flex justify-between items-center mb-4 flex-shrink-0 max-w-3xl mx-auto w-full px-2">
+      <div className="flex justify-between items-center mb-4 flex-shrink-0 max-w-3xl mx-auto w-full">
         <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
           My Tasks
         </h1>
@@ -1073,8 +1075,8 @@ const TaskLogger: React.FC = () => {
                           });
                         }
                       }}
-                      className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Add task manually"
+                      className="flex items-center gap-1 text-secondary-black dark:text-secondary-white hover:text-secondary-black/80 dark:hover:text-secondary-black/80 text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Add task"
                       disabled={updateListMutation.isPending}
                     >
                       <IconCopyPlus size={14} /> <span>Add task</span>
@@ -1102,7 +1104,7 @@ const TaskLogger: React.FC = () => {
                     }
                   }, 100);
                 }}
-                className="w-full text-lg font-medium text-slate-700 dark:text-slate-300 bg-transparent border-b-2 border-slate-300/50 dark:border-zinc-600/50 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 disabled:opacity-50"
+                className="w-full text-lg font-medium text-slate-700 dark:text-slate-300 bg-transparent border-b-2 border-slate-300/50 dark:border-zinc-600/50 focus:outline-none focus:border-secondary-black dark:focus:border-secondary-black transition-all duration-200 disabled:opacity-50"
                 placeholder="New list name..."
                 autoFocus
                 disabled={addListMutation.isPending}
@@ -1136,10 +1138,10 @@ const TaskLogger: React.FC = () => {
                   <span>Adding...</span>
                 </>
               ) : (
-                <>
+                <div className="flex items-center justify-center px-4 py-2 border-2 border-dotted border-secondary-black/40 hover:border-secondary-black hover:text-secondary-black rounded-2xl text-secondary-black/40 hover:bg-primary/5 transition-colors duration-200">
                   <IconSquareRoundedPlus2 size={18} className="mr-2" />
                   <span className="font-medium">Add new list</span>
-                </>
+                </div>
               )}
             </button>
           )}

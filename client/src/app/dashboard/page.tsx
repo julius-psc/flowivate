@@ -73,8 +73,10 @@ export default function Dashboard() {
               href="/dashboard/features"
               className="flex items-center gap-2 px-6 transition-colors text-primary-white hover:text-primary-black focus:outline-none"
             >
-              <span className="font-medium">Add features</span>
-              <IconCubePlus size={20} />
+              <div className="flex justify-center items-center text-secondary-black dark:text-secondary-white hover:text-secondary-black/80  dark:hover:text-secondary-white/80">
+                <span className="font-medium">Add features</span>
+                <IconCubePlus className="ml-2" size={20} />
+              </div>
             </Link>
           </div>
         </div>
