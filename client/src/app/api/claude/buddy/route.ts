@@ -19,7 +19,7 @@ export async function POST() {
   const db = client.db(DB_NAME);
 
   // Fetch user data
-  const [affirmations, tasks, mood, journal] = await Promise.all([
+  const [affirmations, tasks, mood, journal, sleep] = await Promise.all([
     db
       .collection("users")
       .findOne({ _id: userId }, { projection: { affirmations: 1 } }),
@@ -34,6 +34,12 @@ export async function POST() {
       .collection("journalEntries")
       .find({ userId })
       .sort({ date: -1 })
+      .limit(1)
+      .toArray(),
+    db
+      .collection("sleep")
+      .find({ userId })
+      .sort({ timestamp: -1 })
       .limit(1)
       .toArray(),
   ]);
@@ -58,12 +64,12 @@ export async function POST() {
     };
   });
 
-  // Prepare context for Claude
   const context = {
     affirmations: affirmations?.affirmations || [],
     tasks: formattedTasks,
     mood: mood[0]?.mood || "Unknown",
     journal: journal[0]?.content || "",
+    sleepHours: sleep[0]?.hours || null,
   };
 
   // Create prompt for Claude that encourages a more JARVIS-like interaction
@@ -72,10 +78,11 @@ export async function POST() {
       role: "user",
       content: `You're Flowivate's concise and friendly productivity buddy.
 
-Based on the following user context, generate a short, modern summary (no more than 4 lines), starting with a friendly greeting (e.g. "Hey Julius!"). Use a grid-style format separated by emoji headers if helpful (e.g. 📋, 🧠, 💧).
+Based on the following user context, generate a short, modern summary (no more than 4 lines), starting with a friendly greeting (e.g. "Hey Julius!"). Use a grid-style format separated by emoji headers if helpful (e.g. 📋, 🧠, 😴, 💧).
 
 - Be positive but realistic.
 - If mood is "sad", include a suggestion like "Want to talk about it?".
+- If sleepHours < 6, suggest resting more. If >8, acknowledge good rest.
 - If no journal or tasks, say something like "Ready to start your day?".
 - If very productive, acknowledge with something like "Great job today! 👏".
 
