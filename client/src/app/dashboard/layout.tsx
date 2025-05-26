@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -15,7 +16,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Mobile detect exactly like in your page
+  // 1) Mobile detect
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 700);
@@ -24,15 +25,48 @@ export default function DashboardLayout({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Early return a full-screen mobile notice
+  // 2) Fullscreen state + listeners
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onFullChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", onFullChange);
+    return () => document.removeEventListener("fullscreenchange", onFullChange);
+  }, []);
+
+  // Exit on ESC
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // Toggle fullscreen
+  const toggleFullscreen = () => {
+    const el = document.getElementById("dashboard-container");
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  // 3) Mobile‐only screen
   if (isMobile) {
     return (
       <div className="flex flex-col items-center justify-center h-screen px-4 bg-secondary-black">
         <div className="text-center">
           <div className="mb-8">
-            <Image 
-              src={logo} 
-              alt="Flowivate" 
+            <Image
+              src={logo}
+              alt="Flowivate"
               width={120}
               height={40}
               className="mx-auto"
@@ -42,7 +76,7 @@ export default function DashboardLayout({
             Under construction... 🚧
           </h1>
           <p className="text-center text-lg text-secondary-white leading-relaxed">
-            Flowivate is coming soon to Android and IOS devices,
+            Flowivate is coming soon to Android and iOS devices,
             <br />
             head to desktop for the full experience!
           </p>
@@ -51,32 +85,43 @@ export default function DashboardLayout({
     );
   }
 
-  // Otherwise render your usual dashboard shell + children
+  // 4) Main dashboard shell
   return (
     <ClientProvider>
       <div
-        className="relative h-screen w-screen bg-secondary-white dark:bg-[#151E2F]"
         id="dashboard-container"
+        className="relative h-screen w-screen bg-secondary-white dark:bg-[#151E2F]"
       >
         {/* Background */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <ThemeBackground />
         </div>
 
-        {/* Main Layout */}
         <div className="relative z-10 flex flex-col h-full">
+          {/* Navbar */}
           <div className="z-20">
             <Navbar />
           </div>
+
           <div className="flex flex-1 overflow-hidden z-10">
-            <Sidebar />
+            {/* Sidebar (now with fullscreen button) */}
+            <Sidebar
+              isFullscreen={isFullscreen}
+              toggleFullscreen={toggleFullscreen}
+            />
+
+            {/* Page content */}
             <DashboardProvider>
               <main className="flex-1 overflow-y-auto relative z-10">
                 {children}
               </main>
             </DashboardProvider>
           </div>
-          <ProductivityBuddy />
+
+          {/* Productivity Buddy */}
+          <div className="relative z-10">
+            <ProductivityBuddy />
+          </div>
         </div>
       </div>
     </ClientProvider>

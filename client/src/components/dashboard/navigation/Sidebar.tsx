@@ -1,3 +1,4 @@
+// app/components/dashboard/navigation/Sidebar.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -15,8 +16,10 @@ import {
   IconBook,
   IconCircleDashedCheck
 } from "@tabler/icons-react";
+
+import { Maximize2, Minimize2 } from "lucide-react";
 import logo from "../../../assets/brand/logo-v1.5.svg";
-import { usePathname } from 'next/navigation'; 
+import { usePathname } from 'next/navigation';
 
 interface NavItem {
   name: string;
@@ -24,8 +27,13 @@ interface NavItem {
   path: string;
 }
 
-const Sidebar: React.FC = () => {
-  const pathname = usePathname(); // <--- Get the current URL path
+interface SidebarProps {
+  isFullscreen: boolean;
+  toggleFullscreen: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isFullscreen, toggleFullscreen }) => {
+  const pathname = usePathname();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const navItems: NavItem[] = [
@@ -51,19 +59,15 @@ const Sidebar: React.FC = () => {
               {navItems.map((item) => (
                 <li key={item.name} className="relative group">
                   <Link href={item.path}>
-                     {/* Remove onClick from this div */}
                     <div
                       className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                        // Compare current pathname with item's path
                         pathname === item.path
                           ? "bg-primary/10 dark:bg-primary/10 border border-primary/80 dark:border-primary/40"
                           : "hover:bg-gray-100/60 dark:hover:bg-gray-800/30"
                       }`}
-                      // onClick={() => setActiveLink(item.name)} // <-- Remove this line
                     >
                       <item.icon
                         className={`w-5 h-5 ${
-                          // Compare current pathname with item's path
                           pathname === item.path
                             ? "text-primary"
                             : "text-gray-600 dark:text-gray-300"
@@ -81,8 +85,20 @@ const Sidebar: React.FC = () => {
             </ul>
           </div>
 
-          {/* Bottom Actions */}
+          {/* Fullscreen Toggle */}
           <div className="flex flex-col items-center space-y-2 mt-4">
+            <button
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              className="p-2 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors"
+            >
+              {isFullscreen
+                ? <Minimize2 className="w-4 h-auto text-gray-600 dark:text-gray-300" />
+                : <Maximize2 className="w-4 h-auto text-gray-600 dark:text-gray-300" />
+              }
+            </button>
+
+            {/* Settings & Logout */}
             <button
               onClick={() => setIsSettingsOpen(true)}
               className="p-2 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors"
