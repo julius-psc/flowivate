@@ -260,10 +260,10 @@ export const Journal: React.FC<JournalProps> = ({
   );
 
   useEffect(() => {
-    if (editorRef.current && isValid(selectedDate)) {
+    if (editor && editorRef.current && isValid(selectedDate)) {
       fetchJournalEntry(selectedDate);
     }
-  }, [selectedDate, fetchJournalEntry]);
+  }, [editor, fetchJournalEntry, selectedDate]);
 
   const handleSave = async () => {
     if (!editorRef.current || isSaving || isLoading) return;
@@ -568,11 +568,15 @@ export const Journal: React.FC<JournalProps> = ({
 
         {/* Editor */}
         <div className="relative flex-1 overflow-auto">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/90 dark:bg-secondary-black/90 z-10">
-              <div className="h-8 w-8 border-2 border-secondary-black dark:border-white border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
+          <div
+            className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-10 ${
+              isLoading
+                ? "opacity-100 pointer-events-auto"
+                : "opacity-0 pointer-events-none"
+            } bg-white/80 dark:bg-secondary-black/80`}
+          >
+            <div className="h-8 w-8 border-2 border-secondary-black dark:border-white border-t-transparent rounded-full animate-spin" />
+          </div>
 
           <EditorContent editor={editor} className="h-full" />
           {editor && <ContextMenu editor={editor} />}
