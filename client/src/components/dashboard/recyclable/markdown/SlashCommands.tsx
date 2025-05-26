@@ -61,7 +61,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
             );
           },
           render: () => {
-            const popup: HTMLElement = document.createElement("div");
+            let popup: HTMLElement | null = document.createElement("div");
             let emojiPickerContainer: HTMLElement | null = null;
             let selectedIndex = 0;
             let currentItems: CommandItem[] = [];
@@ -73,13 +73,18 @@ export const SlashCommands = (commands: SlashCommandProps) => {
             const cleanup = () => {
               iconRoots.forEach((root) => root.unmount());
               iconRoots.clear();
-              if (emojiRoot) emojiRoot.unmount();
-              emojiRoot = null;
-              if (emojiPickerContainer) emojiPickerContainer.remove();
-              emojiPickerContainer = null;
+              if (emojiRoot) {
+                emojiRoot.unmount();
+                emojiRoot = null;
+              }
+              if (emojiPickerContainer) {
+                emojiPickerContainer.remove();
+                emojiPickerContainer = null;
+              }
               if (popup) {
                 document.removeEventListener("mousedown", handleClickOutside);
                 popup.remove();
+                popup = null;
               }
               selectedIndex = 0;
               currentItems = [];
@@ -98,6 +103,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
             };
 
             const createPopup = () => {
+              popup = document.createElement("div");
               popup.classList.add(
                 "absolute",
                 "z-50",
@@ -117,6 +123,49 @@ export const SlashCommands = (commands: SlashCommandProps) => {
               return popup;
             };
 
+            const setPopupPosition = (props: SuggestionPropsWithClientRect) => {
+              if (!props.clientRect || !popup) return;
+
+              const rect = props.clientRect();
+              if (!rect) {
+                // Fallback positioning if rect is not available
+                popup.style.position = "fixed";
+                popup.style.top = "50%";
+                popup.style.left = "50%";
+                popup.style.transform = "translate(-50%, -50%)";
+                return;
+              }
+
+              popup.style.position = "absolute";
+              popup.style.transform = "translateY(0)";
+
+              // Measure dimensions
+              const popupHeight = popup.offsetHeight || 150;
+              const popupWidth = popup.offsetWidth || 224;
+              const bodyWidth = document.body.clientWidth;
+              const viewportHeight = window.innerHeight;
+
+              // Horizontal positioning
+              let finalLeft = rect.left + window.scrollX;
+              if (finalLeft + popupWidth > bodyWidth) {
+                finalLeft = bodyWidth - popupWidth - 10;
+              }
+              if (finalLeft < 0) {
+                finalLeft = 10;
+              }
+              popup.style.left = `${finalLeft}px`;
+
+              // Vertical positioning
+              const spaceBelow = viewportHeight - rect.bottom;
+              const spaceAbove = rect.top;
+              let finalTop = rect.bottom + window.scrollY + 5;
+
+              if (popupHeight > spaceBelow && spaceAbove > popupHeight) {
+                finalTop = rect.top + window.scrollY - popupHeight - 5;
+              }
+              popup.style.top = `${finalTop}px`;
+            };
+
             const showEmojiPicker = (
               editor: Editor,
               range: { from: number; to: number },
@@ -127,7 +176,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
 
               emojiPickerContainer = document.createElement("div");
               emojiPickerContainer.classList.add(
-                "absolute",
+                "absolute", // Changed to absolute to align with popup
                 "z-[51]",
                 "rounded-lg",
                 "border",
@@ -138,7 +187,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                 "backdrop-blur-lg",
                 "shadow-lg"
               );
-              document.body.appendChild(emojiPickerContainer);
+              popup?.appendChild(emojiPickerContainer); // Append to popup for better stacking
               emojiRoot = createRoot(emojiPickerContainer);
 
               const handleEmojiClick = (emojiData: EmojiClickData) => {
@@ -155,14 +204,14 @@ export const SlashCommands = (commands: SlashCommandProps) => {
 
               const rect = clientRect?.();
               if (rect) {
-                const top = rect.bottom + window.scrollY + 5;
-                const left = rect.left + window.scrollX;
-                emojiPickerContainer.style.top = `${top}px`;
-                emojiPickerContainer.style.left = `${left}px`;
+                // Position below the popup
+                emojiPickerContainer.style.top = `100%`;
+                emojiPickerContainer.style.left = `0px`;
               } else {
-                emojiPickerContainer.style.top = `50%`;
-                emojiPickerContainer.style.left = `50%`;
-                emojiPickerContainer.style.transform = `translate(-50%, -50%)`;
+                // Fallback to center
+                emojiPickerContainer.style.top = `100%`;
+                emojiPickerContainer.style.left = `0px`;
+                emojiPickerContainer.style.transform = `translateY(5px)`;
               }
             };
 
@@ -173,6 +222,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
               clientRect?: (() => DOMRect | null | undefined) | null
             ) => {
               currentItems = items;
+              if (!popup) return;
               popup.innerHTML = "";
               if (items.length === 0) {
                 const emptyMessage = document.createElement("div");
@@ -247,7 +297,9 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                   }
                 });
 
-                popup.appendChild(button);
+                if (popup) {
+                  popup.appendChild(button);
+                }
               });
             };
 
@@ -263,20 +315,28 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                   props.range,
                   props.clientRect
                 );
-                document.body.appendChild(popup);
-                setTimeout(
-                  () =>
-                    document.addEventListener("mousedown", handleClickOutside),
-                  0
-                );
+                if (popup) {
+                  document.body.appendChild(popup);
+                  setPopupPosition(props); // Set initial position
+                  setTimeout(
+                    () =>
+                      document.addEventListener(
+                        "mousedown",
+                        handleClickOutside
+                      ),
+                    0
+                  );
+                }
               },
               onUpdate: (props: SuggestionPropsWithClientRect) => {
+                if (!popup) return;
                 updatePopup(
                   props.items,
                   this.editor,
                   props.range,
                   props.clientRect
                 );
+                setPopupPosition(props); // Update position
               },
               onKeyDown: (props: SuggestionKeyDownProps) => {
                 const { event, range } = props;
@@ -285,7 +345,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
 
                 if (event.key === " ") {
                   cleanup();
-                  return false; 
+                  return false;
                 }
 
                 if (event.key === "Escape") {
@@ -301,7 +361,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                   if (event.key === "ArrowDown") {
                     selectedIndex = (selectedIndex + 1) % currentItems.length;
                     updatePopup(currentItems, editor, range, clientRect);
-                    popup.children[selectedIndex]?.scrollIntoView({
+                    popup?.children[selectedIndex]?.scrollIntoView({
                       block: "nearest",
                     });
                     return true;
@@ -311,7 +371,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                       (selectedIndex - 1 + currentItems.length) %
                       currentItems.length;
                     updatePopup(currentItems, editor, range, clientRect);
-                    popup.children[selectedIndex]?.scrollIntoView({
+                    popup?.children[selectedIndex]?.scrollIntoView({
                       block: "nearest",
                     });
                     return true;
