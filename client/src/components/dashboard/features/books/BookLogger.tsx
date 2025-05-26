@@ -17,6 +17,7 @@ import {
 } from "@tabler/icons-react";
 import { EditorContent, useEditor, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { Extension } from "@tiptap/core";
 import Placeholder from "@tiptap/extension-placeholder";
 import Highlight from "@tiptap/extension-highlight";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
@@ -112,43 +113,58 @@ const BookLogger: React.FC = () => {
     },
   ];
 
-  const notesEditor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-        bulletList: { keepMarks: true, keepAttributes: false },
-        orderedList: { keepMarks: true, keepAttributes: false },
-        codeBlock: false,
-      }),
-      Placeholder.configure({
-        placeholder: ({ node }) => {
-          if (node.type.name === "heading")
-            return `Heading ${node.attrs.level}`;
-          if (node.type.name === "bulletList") return "List item";
-          if (node.type.name === "orderedList") return "List item";
-          return "Type $ for commands or start writing your notes...";
-        },
-        showOnlyWhenEditable: true,
-        showOnlyCurrent: true,
-      }),
-      Highlight,
-      CodeBlockLowlight.configure({ lowlight }),
-      SlashCommands(slashCommandItems),
-    ],
-    content: formData.notes || "",
-    onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      setFormData((prev) => ({ ...prev, notes: html }));
-    },
-    editorProps: {
-      attributes: {
-        class:
-          "prose dark:prose-invert focus:outline-none w-full px-4 py-2 text-secondary-black dark:text-secondary-white",
+const notesEditor = useEditor({
+  extensions: [
+    // 1) Core editing features (including the default space keymap)
+    StarterKit.configure({
+      heading:    { levels: [1, 2, 3] },
+      bulletList: { keepMarks: true, keepAttributes: false },
+      orderedList:{ keepMarks: true, keepAttributes: false },
+      codeBlock:  false,
+    }),
+
+    // 2) Placeholder
+    Placeholder.configure({
+      placeholder: ({ node }) => {
+        if (node.type.name === "heading")   return `Heading ${node.attrs.level}`;
+        if (node.type.name === "bulletList") return "List item";
+        if (node.type.name === "orderedList")return "List item";
+        return "Type $ for commands or start writing your notes…";
       },
+      showOnlyWhenEditable: true,
+      showOnlyCurrent:      true,
+    }),
+
+    // 3) Highlighting, code‐block support, etc.
+    Highlight,
+    CodeBlockLowlight.configure({ lowlight }),
+
+    SlashCommands(slashCommandItems),
+    Extension.create({
+  name: "spaceHandler",
+  addKeyboardShortcuts() {
+    return {
+      " ": () => {
+        this.editor.commands.insertContent(" ");
+        return true;
+      },
+    };
+  },
+})
+
+  ],
+
+  content: formData.notes || "",
+  editorProps: {
+    attributes: {
+      class:
+        "prose dark:prose-invert focus:outline-none w-full px-4 py-2 text-secondary-black dark:text-secondary-white",
     },
-    injectCSS: false,
-    immediatelyRender: false, // Fix for SSR hydration mismatch
-  });
+  },
+  injectCSS: false,
+  immediatelyRender: false,
+});
+
 
   useEffect(() => {
     fetchBooks();
