@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import {
   Clock,
   X,
-  Target, // Using Target for task icon
+  Target,
   Loader,
   Volume2,
   VolumeX,
@@ -15,7 +15,6 @@ import {
   Plus,
   Focus,
   CheckCircle,
-  // VolumeOff, // Removed as per request (only top-right volume)
 } from "lucide-react";
 import * as tasksApi from "../../../lib/tasksApi";
 import type { Task, TaskList } from "@/types/taskTypes";
@@ -24,6 +23,11 @@ import {
   AmbientSoundName,
   ambientSoundNames,
 } from "@/hooks/useAmbientSound";
+
+// Extend the type to include setVolume if missing
+type AmbientSoundHookWithVolume = ReturnType<typeof useAmbientSound> & {
+  setVolume?: (volume: number) => void;
+};
 import { toast } from "sonner";
 
 type SetupStep = "idle" | "task" | "duration" | "music" | "active";
@@ -36,15 +40,15 @@ interface SelectedTask {
 
 const DURATION_OPTIONS = [25, 50, 75, 90]; // in minutes
 
-// --- Define the requested input className ---
 const inputClassName =
-  "flex-1 rounded-xl border-2 border-slate-300 dark:border-zinc-700  dark:bg-zinc-800/90 px-4 py-3 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 dark:focus:ring-primary/10 disabled:opacity-60 disabled:cursor-not-allowed";
+  "flex-1 rounded-xl border-2 border-slate-300 dark:border-zinc-700 dark:bg-zinc-800/90 px-4 py-3 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 dark:focus:ring-primary/10 disabled:opacity-60 disabled:cursor-not-allowed";
 
 const DeepWork: React.FC = () => {
   const { data: session, status } = useSession();
   const queryKey = ["tasks", session?.user?.id];
+  const componentRef = useRef<HTMLDivElement>(null);
 
-  // --- State ---
+  // State
   const [setupStep, setSetupStep] = useState<SetupStep>("idle");
   const [, setIsFullscreen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
@@ -61,16 +65,15 @@ const DeepWork: React.FC = () => {
   const [timerIntervalId, setTimerIntervalId] = useState<NodeJS.Timeout | null>(
     null
   );
+  // --- NEW: Volume state ---
+  const [volume, setVolume] = useState<number>(0.5); // Default volume (0 to 1)
 
-  // --- Refs ---
-  const componentRef = useRef<HTMLDivElement>(null);
+  // Hooks
+  const ambientSoundHook = useAmbientSound() as AmbientSoundHookWithVolume;
   const customTaskInputRef = useRef<HTMLInputElement>(null);
   const customDurationInputRef = useRef<HTMLInputElement>(null);
 
-  // --- Hooks ---
-  const ambientSoundHook = useAmbientSound();
-
-  // --- Task Fetching ---
+  // Task Fetching
   const {
     data: taskLists = [],
     isLoading: isLoadingTasks,
@@ -99,7 +102,7 @@ const DeepWork: React.FC = () => {
     }
   }, [isErrorTasks, errorTasks]);
 
-  // --- Timer Logic ---
+  // Timer Logic
   const formatTime = (date: Date): string => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
@@ -113,7 +116,7 @@ const DeepWork: React.FC = () => {
       .padStart(2, "0")}`;
   };
 
-  // --- Fullscreen Logic ---
+  // Fullscreen Logic
   const enterFullscreen = useCallback(() => {
     if (componentRef.current && !document.fullscreenElement) {
       componentRef.current.requestFullscreen().catch((err) => {
@@ -145,7 +148,7 @@ const DeepWork: React.FC = () => {
     };
   }, []);
 
-  // --- Callbacks ---
+  // Callbacks
   const stopTimer = useCallback(() => {
     if (timerIntervalId) {
       clearInterval(timerIntervalId);
@@ -157,7 +160,7 @@ const DeepWork: React.FC = () => {
 
   const resetState = useCallback(() => {
     stopTimer();
-    ambientSoundHook.stopSound(); // Ensure sound stops on reset
+    ambientSoundHook.stopSound();
     exitFullscreen();
     setSelectedTask(null);
     setCustomTaskName("");
@@ -166,6 +169,7 @@ const DeepWork: React.FC = () => {
     setCustomDurationInput("");
     setIsCustomDurationSelected(false);
     setSetupStep("idle");
+    setVolume(0.5); // --- NEW: Reset volume to default ---
   }, [stopTimer, ambientSoundHook, exitFullscreen]);
 
   const handleSessionEnd = useCallback(() => {
@@ -212,7 +216,7 @@ const DeepWork: React.FC = () => {
     toast.info("Focus session ended.");
   }, [resetState]);
 
-  // --- State Transitions and Actions ---
+  // State Transitions and Actions
   const handleStartSetup = () => setSetupStep("task");
 
   const handleSelectTaskListTask = (task: Task) => {
@@ -222,7 +226,6 @@ const DeepWork: React.FC = () => {
     setSetupStep("duration");
   };
 
-  // **MODIFIED:** Action triggered by Enter key or input blur (if valid)
   const handleConfirmCustomTask = () => {
     const trimmedName = customTaskName.trim();
     if (!trimmedName) {
@@ -240,20 +243,18 @@ const DeepWork: React.FC = () => {
     setCustomDurationInput("");
   };
 
-  // **MODIFIED:** Action triggered by Enter key or input blur (if valid)
   const handleConfirmCustomDuration = () => {
     const numericValue = parseInt(customDurationInput, 10);
     if (!isNaN(numericValue) && numericValue > 0) {
       setFocusDuration(numericValue);
-      setIsCustomDurationSelected(true); // Ensure this is true if confirming via Enter/blur
-      setSetupStep("music"); // Proceed to next step if valid
+      setIsCustomDurationSelected(true);
+      setSetupStep("music");
     } else if (customDurationInput === "" && !isCustomDurationSelected) {
-      // Allow proceeding if input is empty but a preset was selected
-      setFocusDuration(focusDuration > 0 ? focusDuration : DURATION_OPTIONS[0]); // Use current valid focus duration
+      setFocusDuration(focusDuration > 0 ? focusDuration : DURATION_OPTIONS[0]);
       setSetupStep("music");
     } else {
       toast.error("Please enter a valid positive number for duration.");
-      setIsCustomDurationSelected(true); // Keep custom selected to indicate input attempt
+      setIsCustomDurationSelected(true);
       customDurationInputRef.current?.focus();
     }
   };
@@ -265,36 +266,28 @@ const DeepWork: React.FC = () => {
     setCustomDurationInput(value);
     const numericValue = parseInt(value, 10);
     if (!isNaN(numericValue) && numericValue > 0) {
-      setFocusDuration(numericValue); // Update duration state immediately for potential confirmation
+      setFocusDuration(numericValue);
       setIsCustomDurationSelected(true);
     } else if (value === "") {
-      // If input is cleared, revert to the last *preset* or default, and deselect custom
-      // Find the currently selected preset or default
       const currentPreset = DURATION_OPTIONS.includes(focusDuration)
         ? focusDuration
         : DURATION_OPTIONS[0];
       setFocusDuration(currentPreset);
       setIsCustomDurationSelected(false);
     } else {
-      // Invalid input like text or zero/negative
-      setIsCustomDurationSelected(true); // Still mark as custom input attempt
-      setFocusDuration(0); // Set focus duration to an invalid state to prevent proceeding
+      setIsCustomDurationSelected(true);
+      setFocusDuration(0);
     }
   };
 
-  // Selects custom duration input visually when clicked
   const selectCustomDurationInput = () => {
     setIsCustomDurationSelected(true);
-    // Don't change focusDuration here, only on valid input change or confirmation
   };
 
-  // **MODIFIED:** Renamed for clarity, now moves to music step
   const handleConfirmDurationStep = () => {
     if (isCustomDurationSelected) {
-      // If custom is selected, try to confirm it
-      handleConfirmCustomDuration(); // This will validate and potentially move step
+      handleConfirmCustomDuration();
     } else if (focusDuration > 0) {
-      // If a valid preset is selected
       setSetupStep("music");
     } else {
       toast.error(
@@ -307,12 +300,10 @@ const DeepWork: React.FC = () => {
     ambientSoundHook.selectSound(soundName);
   };
 
-  // **REMOVED:** handleMuteSound (as per request for single top-right control)
-
   const handleStartFocusSession = useCallback(() => {
     if (!selectedTask || focusDuration <= 0) {
       toast.error("Configuration incomplete. Cannot start focus session.");
-      resetState(); // Go back to idle if config is bad
+      resetState();
       return;
     }
     enterFullscreen();
@@ -322,6 +313,7 @@ const DeepWork: React.FC = () => {
       ambientSoundHook.currentSound !== "None"
     ) {
       ambientSoundHook.playSound();
+      ambientSoundHook.setVolume?.(volume); // --- NEW: Set initial volume ---
     }
     setSetupStep("active");
     toast.success(`Focus session started for ${selectedTask.name}`);
@@ -331,8 +323,18 @@ const DeepWork: React.FC = () => {
     enterFullscreen,
     startTimer,
     ambientSoundHook,
-    resetState, // Added resetState dependency
+    resetState,
+    volume, // --- NEW: Added volume dependency ---
   ]);
+
+  // --- NEW: Handle volume change ---
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (ambientSoundHook.setVolume) {
+      ambientSoundHook.setVolume(newVolume); // Update volume in the hook
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -343,8 +345,7 @@ const DeepWork: React.FC = () => {
     };
   }, [timerIntervalId, exitFullscreen]);
 
-  // --- Render Logic ---
-
+  // Render Logic
   const renderIdle = () => (
     <div className="flex flex-col items-center justify-center gap-6 py-4 w-full h-full">
       <div className="flex flex-col items-center gap-2">
@@ -373,8 +374,6 @@ const DeepWork: React.FC = () => {
   const renderTaskSelection = () => (
     <>
       <div className="flex items-center justify-between mb-3">
-        {" "}
-        {/* **MODIFIED:** Reduced mb */}
         <h2 className="text-lg font-semibold text-secondary-black dark:text-secondary-white">
           Choose Your Task
         </h2>
@@ -386,10 +385,7 @@ const DeepWork: React.FC = () => {
           <X size={18} />
         </button>
       </div>
-      {/* **MODIFIED:** Reduced space-y, added max-h-[calc(100%-...)] and overflow-y-auto */}
       <div className="flex-grow space-y-2 overflow-y-auto pr-1 max-h-[calc(100%-130px)]">
-        {" "}
-        {/* Adjust max-h based on surrounding elements */}
         {status === "authenticated" && (
           <>
             <h3 className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider mb-1">
@@ -432,11 +428,8 @@ const DeepWork: React.FC = () => {
             Sign in to select from your saved tasks.
           </p>
         )}
-      </div> {/* End of scrollable task list */}
-      {/* Custom Task Section - Outside the scrollable list area */}
+      </div>
       <div className="mt-auto pt-3 flex-shrink-0">
-        {" "}
-        {/* Pushes to bottom, adds padding top */}
         <h3 className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider mb-1.5">
           Custom Task
         </h3>
@@ -462,7 +455,7 @@ const DeepWork: React.FC = () => {
               }
               onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                 if (e.key === "Enter") {
-                  handleConfirmCustomTask(); 
+                  handleConfirmCustomTask();
                 } else if (e.key === "Escape") {
                   setShowCustomTaskInput(false);
                   setCustomTaskName("");
@@ -470,11 +463,13 @@ const DeepWork: React.FC = () => {
               }}
               onBlur={() => {
                 if (customTaskName.trim()) {
+                  // No action needed on blur if valid
                 } else {
+                  // No action needed if empty
                 }
               }}
               placeholder="Enter custom task name"
-              className={`${inputClassName} min-w-0 text-secondary-black dark:text-secondary-white`} 
+              className={`${inputClassName} min-w-0 text-secondary-black dark:text-secondary-white`}
             />
           </div>
         )}
@@ -485,7 +480,6 @@ const DeepWork: React.FC = () => {
   const renderDurationSelection = () => (
     <>
       <div className="flex items-center mb-3">
-        {" "}
         <button
           onClick={() => setSetupStep("task")}
           aria-label="Back to task selection"
@@ -498,11 +492,10 @@ const DeepWork: React.FC = () => {
         </h2>
       </div>
       <div className="p-3 bg-secondary-black/5 dark:bg-secondary-white/5 rounded-md mb-3">
-        {" "}
         <div className="flex items-center">
           <Target
             size={16}
-            className="mr-2 text-secondary-black/60 dark:text-secondary-white/60 flex-shrink-0" // Reduced mr
+            className="mr-2 text-secondary-black/60 dark:text-secondary-white/60 flex-shrink-0"
           />
           <div className="min-w-0 flex-1">
             <p className="text-xs text-secondary-black/60 dark:text-secondary-white/60">
@@ -517,21 +510,18 @@ const DeepWork: React.FC = () => {
           </div>
         </div>
       </div>
-
       <div className="flex-grow space-y-2 overflow-y-auto pr-1 max-h-[calc(100%-150px)]">
-        {" "}
         <h3 className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider mb-1">
           Focus Duration (minutes)
         </h3>
         <div className="grid grid-cols-2 gap-2">
-          {" "}
           {DURATION_OPTIONS.map((duration) => (
             <button
               key={duration}
               onClick={() => handleSetDurationPreset(duration)}
               className={`p-3 rounded-md text-center transition-all duration-150 text-sm border ${
                 !isCustomDurationSelected && focusDuration === duration
-                  ? "bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black border-transparent shadow-md ring-1 ring-black/10 dark:ring-white/10" // Added subtle ring instead of scale
+                  ? "bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black border-transparent shadow-md ring-1 ring-black/10 dark:ring-white/10"
                   : "bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white border-secondary-black/20 dark:border-secondary-white/20 hover:bg-secondary-black/5 dark:hover:bg-secondary-white/10 hover:border-secondary-black/40 dark:hover:border-secondary-white/40"
               }`}
             >
@@ -541,10 +531,9 @@ const DeepWork: React.FC = () => {
           ))}
         </div>
         <div className="pt-2">
-          {" "}
           <label
             htmlFor="custom-duration"
-            className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider block mb-1" // Reduced mb
+            className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider block mb-1"
           >
             Custom Duration
           </label>
@@ -558,52 +547,47 @@ const DeepWork: React.FC = () => {
               onChange={handleCustomDurationChange}
               onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                 if (e.key === "Enter") {
-                  handleConfirmDurationStep(); // Confirm Step on Enter (will validate)
+                  handleConfirmDurationStep();
                 } else if (e.key === "Escape") {
-                  // Revert to last preset on Escape
                   const lastPreset = DURATION_OPTIONS.includes(focusDuration)
                     ? focusDuration
                     : DURATION_OPTIONS[0];
                   handleSetDurationPreset(lastPreset);
-                  (e.target as HTMLInputElement).blur(); // Remove focus
+                  (e.target as HTMLInputElement).blur();
                 }
               }}
-              onFocus={selectCustomDurationInput} // Select custom style on focus
+              onFocus={selectCustomDurationInput}
               onBlur={() => {
                 const numericValue = parseInt(customDurationInput, 10);
                 if (
                   isCustomDurationSelected &&
                   (isNaN(numericValue) || numericValue <= 0) &&
-                  customDurationInput !== "" // Don't invalidate if just cleared
+                  customDurationInput !== ""
                 ) {
                   toast.error(
                     "Invalid custom duration. Please enter a positive number."
                   );
-                  // Optionally revert or keep focus
-                  // customDurationInputRef.current?.focus();
                 } else if (
                   isCustomDurationSelected &&
                   customDurationInput === ""
                 ) {
-                  // If blurred while empty and custom was selected, revert to default
                   handleSetDurationPreset(DURATION_OPTIONS[0]);
                 }
               }}
               placeholder="e.g., 45"
-              // **MODIFIED:** Applied requested style + min-w-0, conditional styling adjusted
               className={`${inputClassName} min-w-0 ${
                 isCustomDurationSelected
-                  ? "border-primary ring-1 ring-primary/20 dark:ring-primary/10" // Use focus style when selected
-                  : "" // Default style from inputClassName handles non-selected
+                  ? "border-primary ring-1 ring-primary/20 dark:ring-primary/10"
+                  : ""
               }`}
             />
           </div>
         </div>
-      </div>{" "}
+      </div>
       <button
-        onClick={handleConfirmDurationStep} // Use updated handler
-        disabled={focusDuration <= 0} // Simple validation: must be > 0
-        className="mt-auto pt-3 w-full py-3 bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex-shrink-0" // Pushes to bottom
+        onClick={handleConfirmDurationStep}
+        disabled={focusDuration <= 0}
+        className="mt-auto pt-3 w-full py-3 bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex-shrink-0"
       >
         Next
       </button>
@@ -613,7 +597,6 @@ const DeepWork: React.FC = () => {
   const renderMusicSelection = () => (
     <>
       <div className="flex items-center mb-3">
-        {" "}
         <button
           onClick={() => setSetupStep("duration")}
           aria-label="Back to duration selection"
@@ -626,11 +609,9 @@ const DeepWork: React.FC = () => {
         </h2>
       </div>
       <p className="text-sm text-secondary-black/60 dark:text-secondary-white/60 mb-3 flex-shrink-0">
-        {" "}
         Select an optional ambient sound to play during your session.
       </p>
       <div className="flex-grow overflow-y-auto space-y-2 pr-1 max-h-[calc(100%-110px)]">
-        {" "}
         {ambientSoundNames.map((name) => (
           <button
             key={name}
@@ -658,10 +639,10 @@ const DeepWork: React.FC = () => {
             )}
           </button>
         ))}
-      </div>{" "}
+      </div>
       <button
         onClick={handleStartFocusSession}
-        className="mt-auto pt-3 w-full py-3 bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black rounded-md text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 flex-shrink-0" // Pushed to bottom
+        className="mt-auto pt-3 w-full py-3 bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black rounded-md text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 flex-shrink-0"
       >
         <Play size={16} />
         Start Focus
@@ -671,30 +652,42 @@ const DeepWork: React.FC = () => {
 
   const renderActive = () => (
     <div className="flex flex-col h-full items-center justify-between p-6 bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white relative">
-      {" "}
       <div className="absolute top-4 right-4 flex items-center gap-3 z-10">
         {ambientSoundHook.currentSound &&
           ambientSoundHook.currentSound !== "None" && (
-            <button
-              onClick={
-                ambientSoundHook.isPlaying
-                  ? ambientSoundHook.pauseSound // Pause action
-                  : ambientSoundHook.playSound // Play action
-              }
-              className="p-2 rounded-md bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 transition-colors text-secondary-black/80 dark:text-secondary-white/80"
-              aria-label={
-                ambientSoundHook.isPlaying
-                  ? "Pause ambient sound"
-                  : "Play ambient sound"
-              }
-            >
-              {/* Icon changes based on isPlaying state */}
-              {ambientSoundHook.isPlaying ? (
-                <Volume2 size={18} /> // Icon when playing
-              ) : (
-                <VolumeX size={18} /> // Icon when paused or stopped
-              )}
-            </button>
+            <>
+              <button
+                onClick={
+                  ambientSoundHook.isPlaying
+                    ? ambientSoundHook.pauseSound
+                    : ambientSoundHook.playSound
+                }
+                className="p-2 rounded-md bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 transition-colors text-secondary-black/80 dark:text-secondary-white/80"
+                aria-label={
+                  ambientSoundHook.isPlaying
+                    ? "Pause ambient sound"
+                    : "Play ambient sound"
+                }
+              >
+                {ambientSoundHook.isPlaying ? (
+                  <Volume2 size={18} />
+                ) : (
+                  <VolumeX size={18} />
+                )}
+              </button>
+              {/* --- NEW: Volume Slider --- */}
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={handleVolumeChange}
+                className="w-24 accent-primary cursor-pointer"
+                aria-label="Adjust ambient sound volume"
+                title={`Volume: ${Math.round(volume * 100)}%`}
+              />
+            </>
           )}
         <button
           onClick={handleStopFocus}
@@ -706,7 +699,6 @@ const DeepWork: React.FC = () => {
       </div>
 
       <div className="flex flex-col items-center justify-center text-center space-y-4 flex-grow pt-10">
-        {" "}
         <h2 className="text-xl font-medium text-secondary-black/80 dark:text-secondary-white/80 break-words max-w-md px-4">
           {selectedTask?.name || "Deep Work"}
         </h2>
@@ -742,7 +734,6 @@ const DeepWork: React.FC = () => {
       </div>
 
       <div className="flex items-center justify-center gap-4 pb-4 flex-shrink-0">
-        {" "}
         <button
           onClick={handleStopFocus}
           className="px-6 py-2 border border-secondary-black/20 dark:border-secondary-white/20 rounded-md text-sm hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-secondary-black/80 dark:text-secondary-white/80"
@@ -753,16 +744,15 @@ const DeepWork: React.FC = () => {
     </div>
   );
 
-
   return (
     <div
       ref={componentRef}
       className={`relative rounded-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/50 dark:border-zinc-800/50 ${
         setupStep === "active"
-          ? "h-full !bg-secondary-white dark:!bg-secondary-black !border-transparent" // Active styles override
+          ? "h-full !bg-secondary-white dark:!bg-secondary-black !border-transparent"
           : setupStep === "idle"
           ? "h-80"
-          : "h-[500px]" 
+          : "h-[500px]"
       }`}
       id="deep-work-container"
     >

@@ -8,8 +8,11 @@
   }
 }
 
+html {
+  font-family: var(--font-display);
+}
+
 @theme {
-  --font-display: "Sans Pro 3", "sans-serif";
   --color-primary: #0075C4;
 
   --color-primary-blue-hover: #105C8E;
