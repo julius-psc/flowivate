@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDashboard } from "../../../context/DashboardContext";
 import { FeatureKey } from "../../../components/dashboard/features/featureMap";
+import { useTheme } from "next-themes";
+
 import {
   IconPlus,
   IconCheck,
@@ -129,8 +131,25 @@ const featureCategories = [
 export default function Features() {
   const { addFeature, isFeatureSelected } = useDashboard();
   const [activeCategory, setActiveCategory] = useState("all");
+  const { theme } = useTheme();
 
-  // Filter categories based on active selection
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const headingColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-gray-900 dark:text-gray-100";
+
+    const categoryColor = !mounted
+  ? "text-transparent"
+  : theme === "jungle"
+  ? "text-white"
+  : "text-gray-900 dark:text-gray-100";
+
   const filteredCategories =
     activeCategory === "all"
       ? featureCategories
@@ -142,7 +161,7 @@ export default function Features() {
     <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="max-w-4xl mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 z-20">
+        <h2 className={`text-3xl font-bold z-20 ${headingColor}`}>
           Your Productivity Hub
         </h2>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-lg">
@@ -164,20 +183,29 @@ export default function Features() {
             <IconApps size={14} />
             All
           </button>
-          {featureCategories.map((category) => (
-            <button
-              key={category.name}
-              onClick={() => setActiveCategory(category.name)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5 ${
-                activeCategory === category.name
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white"
-              }`}
-            >
-              {React.cloneElement(category.icon, { size: 14 })}
-              {category.name}
-            </button>
-          ))}
+          {featureCategories.map((category) => {
+            const isActive = activeCategory === category.name;
+            const baseClasses =
+              "px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5";
+
+            const activeClass = "bg-primary text-white";
+            const inactiveClass = !mounted
+              ? "text-transparent"
+              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white";
+
+            return (
+              <button
+                key={category.name}
+                onClick={() => setActiveCategory(category.name)}
+                className={`${baseClasses} ${
+                  isActive ? activeClass : inactiveClass
+                }`}
+              >
+                {React.cloneElement(category.icon, { size: 14 })}
+                {category.name}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -186,7 +214,7 @@ export default function Features() {
         {filteredCategories.map((category) => (
           <div key={category.name} className="mb-12">
             <div className="flex items-center mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <h3 className={`text-lg font-semibold flex items-center gap-2 ${categoryColor}`}>
                 {React.cloneElement(category.icon, {
                   className: "text-primary",
                 })}

@@ -7,11 +7,8 @@ import {
   IconX,
   IconArrowRight,
   IconHistory,
-  IconCopy,
-  IconCheck,
   IconMaximize,
   IconMinimize,
-  IconVolume,
   IconSparkles,
 } from "@tabler/icons-react";
 import { useDebouncedCallback } from "use-debounce";
@@ -50,14 +47,12 @@ const ChatPanel: React.FC<CommandBarProps> = ({
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [suggestions] = useState([
     "How can i be more focused?",
     "I feel overwhelmed by work, what do I do?",
     "Give me motivation to do my workout",
     "What is a dopamine detox?",
   ]);
-  // Add a state variable to track if initial setup is complete
   const [initialSetupComplete, setInitialSetupComplete] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -177,7 +172,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
     [conversationId, debouncedSaveChat]
   );
 
-  // Modified useEffect to only run once when isOpen changes to true
   useEffect(() => {
     if (isOpen && !initialSetupComplete) {
       setInputText("");
@@ -213,7 +207,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       setInitialSetupComplete(true);
       return () => clearTimeout(timer);
     } else if (!isOpen) {
-      // Reset initialSetupComplete when closing the panel
       setInitialSetupComplete(false);
     }
   }, [
@@ -232,13 +225,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       return () => clearTimeout(timer);
     }
   }, [messages, expanded]);
-
-  useEffect(() => {
-    if (copiedMessageId) {
-      const timer = setTimeout(() => setCopiedMessageId(null), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [copiedMessageId]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -284,31 +270,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       return "--:--";
     }
     return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  };
-
-  const copyMessageToClipboard = (text: string, messageId: string) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => setCopiedMessageId(messageId))
-      .catch((err) => {
-        console.error("Failed to copy text: ", err);
-        toast.error("Failed to copy text to clipboard.");
-      });
-  };
-
-  const speakMessage = (text: string) => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.onerror = (event) => {
-        console.error("Speech synthesis error:", event.error);
-        toast.error(`Could not speak message: ${event.error}`);
-      };
-      window.speechSynthesis.speak(utterance);
-    } else {
-      console.warn("Speech synthesis not supported in this browser.");
-      toast.warning("Speech synthesis is not supported in this browser.");
-    }
   };
 
   const overlayVariants = {
@@ -447,7 +408,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
             )}
 
             <AnimatePresence mode="wait">
-              {(expanded || messages.length > 0) && (
+              {messages.length > 0 && expanded && (
                 <motion.div
                   key="messages-container"
                   initial="collapsed"
@@ -468,7 +429,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                           initial="initial"
                           animate="animate"
                           layout
-                          className="mb-4 group"
+                          className="mb-4"
                         >
                           {msg.sender === "user" ? (
                             <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 pl-1">
@@ -486,33 +447,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                               <div className="whitespace-pre-wrap leading-relaxed break-words">
                                 {msg.text}
                               </div>
-                            </div>
-
-                            <div
-                              className={`flex items-center self-start opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-1`}
-                            >
-                              <button
-                                onClick={() =>
-                                  copyMessageToClipboard(msg.text, msg.id)
-                                }
-                                className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800/70 transition-colors"
-                                aria-label="Copy message"
-                              >
-                                {copiedMessageId === msg.id ? (
-                                  <IconCheck className="w-3 h-3 text-green-500" />
-                                ) : (
-                                  <IconCopy className="w-3 h-3" />
-                                )}
-                              </button>
-                              {msg.sender === "assistant" && !msg.isTyping && (
-                                <button
-                                  onClick={() => speakMessage(msg.text)}
-                                  className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800/70 transition-colors"
-                                  aria-label="Listen to message"
-                                >
-                                  <IconVolume className="w-3 h-3" />
-                                </button>
-                              )}
                             </div>
                           </div>
                           <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 text-right pr-2">

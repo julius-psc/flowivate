@@ -35,6 +35,7 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 
 interface JournalEntryData {
   _id: string;
@@ -118,6 +119,19 @@ export const Journal: React.FC<JournalProps> = ({
   const calendarRef = useRef<HTMLDivElement>(null);
   const calendarButtonRef = useRef<HTMLButtonElement>(null);
 
+  const { theme } = useTheme();
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const journalEditorText = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-secondary-black dark:text-secondary-white";
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -165,8 +179,7 @@ export const Journal: React.FC<JournalProps> = ({
     content: "",
     editorProps: {
       attributes: {
-        class:
-          "prose dark:prose-invert focus:outline-none w-full h-full px-6 py-4 text-secondary-black dark:text-secondary-white",
+        class: `prose dark:prose-invert focus:outline-none w-full h-full px-6 py-4 ${journalEditorText}`,
       },
     },
     injectCSS: false,
@@ -389,15 +402,53 @@ export const Journal: React.FC<JournalProps> = ({
     );
   }
 
+  const journalHeadingColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-xl font-bold text-gray-900 dark:text-gray-100";
+
+  const journalDateColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white opacity-70"
+    : "text-sm opacity-70 text-gray-700 dark:text-gray-300";
+
+  const jungleText = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "";
+
+  const jungleMutedText = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white opacity-70"
+    : "text-gray-700 dark:text-gray-300 opacity-70";
+
+  const jungleButton = !mounted
+    ? ""
+    : theme === "jungle"
+    ? "hover:bg-white/10 text-white"
+    : "hover:bg-gray-100 dark:hover:bg-gray-800";
+
+  const jungleIcon = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-gray-700 dark:text-gray-300";
+
   return (
     <div className="flex flex-col h-full w-full text-secondary-black dark:text-secondary-white">
       {/* Header */}
       <div className="px-4 py-4">
         <div className="max-w-screen-lg mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold">Daily Journal</h1>
+            <h1 className={`text-xl font-bold ${journalHeadingColor}`}>
+              Daily Journal
+            </h1>
             <div className="h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
-            <div className="text-sm opacity-70">
+            <div className={`${journalDateColor}`}>
               {format(selectedDate, "EEEE, MMM d")}{" "}
               {/* Fixed to show selectedDate */}
             </div>
@@ -407,10 +458,10 @@ export const Journal: React.FC<JournalProps> = ({
             <button
               ref={calendarButtonRef}
               onClick={toggleCalendar}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 relative"
+              className={`p-2 rounded-full relative ${jungleButton}`}
               aria-label="Select date"
             >
-              <Calendar size={18} />
+              <Calendar size={18} className={jungleIcon} />
             </button>
 
             {/* Calendar popup - Positioned relative to calendar button */}
@@ -506,10 +557,7 @@ export const Journal: React.FC<JournalProps> = ({
               {isDeleting ? (
                 <div className="h-4 w-4 border-2 border-gray-500 dark:border-gray-400 border-t-transparent rounded-full animate-spin"></div>
               ) : (
-                <Trash2
-                  size={18}
-                  className="text-gray-700 dark:text-gray-300"
-                />
+                <Trash2 size={18} className={jungleIcon} />
               )}
             </button>
 
@@ -537,15 +585,15 @@ export const Journal: React.FC<JournalProps> = ({
               <ChevronLeft size={16} />
             </button>
 
-            <span className="text-3xl font-bold">
+            <span className={`text-3xl font-bold ${jungleText}`}>
               {format(selectedDate, "d")}
             </span>
 
             <div className="flex flex-col">
-              <span className="text-sm font-medium">
+              <span className={`text-sm font-medium ${jungleText}`}>
                 {format(selectedDate, "EEEE")}
               </span>
-              <span className="text-xs opacity-70">
+              <span className={`text-xs ${jungleMutedText}`}>
                 {format(selectedDate, "MMMM yyyy")}
               </span>
             </div>
@@ -559,10 +607,11 @@ export const Journal: React.FC<JournalProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center space-x-1 text-xs opacity-70">
-            <Clock size={14} />
-            <span>{format(new Date(), "HH:mm")}</span>{" "}
-            {/* Fixed to 24-hour format */}
+          <div
+            className={`flex items-center space-x-1 text-xs ${jungleMutedText}`}
+          >
+            <Clock size={14} className={jungleIcon} />
+            <span>{format(new Date(), "HH:mm")}</span>
           </div>
         </div>
 
@@ -587,3 +636,4 @@ export const Journal: React.FC<JournalProps> = ({
 };
 
 export default Journal;
+

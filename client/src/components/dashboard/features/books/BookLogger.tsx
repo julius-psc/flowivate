@@ -27,6 +27,7 @@ import javascript from "highlight.js/lib/languages/javascript";
 import { SlashCommands } from "../../recyclable/markdown/SlashCommands";
 import { ContextMenu } from "../../recyclable/markdown/ContextMenu";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 import { format } from "date-fns";
 
 interface Book {
@@ -53,6 +54,7 @@ const BookLogger: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
 
   const [formData, setFormData] = useState<Partial<Book>>({
     title: "",
@@ -113,58 +115,57 @@ const BookLogger: React.FC = () => {
     },
   ];
 
-const notesEditor = useEditor({
-  extensions: [
-    // 1) Core editing features (including the default space keymap)
-    StarterKit.configure({
-      heading:    { levels: [1, 2, 3] },
-      bulletList: { keepMarks: true, keepAttributes: false },
-      orderedList:{ keepMarks: true, keepAttributes: false },
-      codeBlock:  false,
-    }),
+  const notesEditor = useEditor({
+    extensions: [
+      // 1) Core editing features (including the default space keymap)
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+        bulletList: { keepMarks: true, keepAttributes: false },
+        orderedList: { keepMarks: true, keepAttributes: false },
+        codeBlock: false,
+      }),
 
-    // 2) Placeholder
-    Placeholder.configure({
-      placeholder: ({ node }) => {
-        if (node.type.name === "heading")   return `Heading ${node.attrs.level}`;
-        if (node.type.name === "bulletList") return "List item";
-        if (node.type.name === "orderedList")return "List item";
-        return "Type $ for commands or start writing your notes…";
-      },
-      showOnlyWhenEditable: true,
-      showOnlyCurrent:      true,
-    }),
+      // 2) Placeholder
+      Placeholder.configure({
+        placeholder: ({ node }) => {
+          if (node.type.name === "heading")
+            return `Heading ${node.attrs.level}`;
+          if (node.type.name === "bulletList") return "List item";
+          if (node.type.name === "orderedList") return "List item";
+          return "Type $ for commands or start writing your notes…";
+        },
+        showOnlyWhenEditable: true,
+        showOnlyCurrent: true,
+      }),
 
-    // 3) Highlighting, code‐block support, etc.
-    Highlight,
-    CodeBlockLowlight.configure({ lowlight }),
+      // 3) Highlighting, code‐block support, etc.
+      Highlight,
+      CodeBlockLowlight.configure({ lowlight }),
 
-    SlashCommands(slashCommandItems),
-    Extension.create({
-  name: "spaceHandler",
-  addKeyboardShortcuts() {
-    return {
-      " ": () => {
-        this.editor.commands.insertContent(" ");
-        return true;
-      },
-    };
+      SlashCommands(slashCommandItems),
+      Extension.create({
+        name: "spaceHandler",
+        addKeyboardShortcuts() {
+          return {
+            " ": () => {
+              this.editor.commands.insertContent(" ");
+              return true;
+            },
+          };
+        },
+      }),
+    ],
+
+    content: formData.notes || "",
+    editorProps: {
+  attributes: {
+    class: `prose dark:prose-invert focus:outline-none w-full px-4 py-2}`,
   },
-})
+},
 
-  ],
-
-  content: formData.notes || "",
-  editorProps: {
-    attributes: {
-      class:
-        "prose dark:prose-invert focus:outline-none w-full px-4 py-2 text-secondary-black dark:text-secondary-white",
-    },
-  },
-  injectCSS: false,
-  immediatelyRender: false,
-});
-
+    injectCSS: false,
+    immediatelyRender: false,
+  });
 
   useEffect(() => {
     fetchBooks();
@@ -393,15 +394,75 @@ const notesEditor = useEditor({
     return books.filter((book) => book.status === status).length;
   };
 
+  const { theme } = useTheme();
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const bookHeadingColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-xl font-bold text-gray-900 dark:text-gray-100";
+
+  const bookSubtextColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white opacity-70"
+    : "text-sm opacity-70 text-gray-700 dark:text-gray-300";
+
+  const jungleGlassBg = !mounted
+    ? ""
+    : theme === "jungle"
+    ? "bg-white/10 backdrop-blur-md rounded-xl"
+    : "";
+
+  const bookEmptyIconColor = !mounted
+  ? ""
+  : theme === "jungle"
+  ? "text-white"
+  : "";
+
+const bookEmptyTitleColor = !mounted
+  ? "text-transparent"
+  : theme === "jungle"
+  ? "text-white"
+  : "text-xl font-semibold text-gray-900 dark:text-gray-100";
+
+  const bookTitleColor = !mounted
+  ? "text-transparent"
+  : theme === "jungle"
+  ? "text-white"
+  : "text-gray-900 dark:text-gray-100";
+
+const bookAuthorColor = !mounted
+  ? "text-transparent"
+  : theme === "jungle"
+  ? "text-white opacity-80"
+  : "text-gray-500 dark:text-gray-400";
+
+const bookGenreColor = !mounted
+  ? "text-transparent"
+  : theme === "jungle"
+  ? "bg-white/10 text-white"
+  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300";
+
+
   return (
-    <div className="flex flex-col h-full w-full text-secondary-black dark:text-secondary-white">
+    <div
+      className={`flex flex-col w-full h-full text-secondary-black dark:text-secondary-white ${jungleGlassBg}`}
+    >
       {/* Header */}
       <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-screen-lg mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold">Book Logger</h1>
+            <h1 className={`text-xl font-bold ${bookHeadingColor}`}>
+              Book Logger
+            </h1>
             <div className="h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
-            <div className="text-sm opacity-70">
+            <div className={`${bookSubtextColor}`}>
               {selectedBook
                 ? `${selectedBook.title} by ${selectedBook.author}`
                 : "Your Digital Bookshelf"}
@@ -436,24 +497,26 @@ const notesEditor = useEditor({
             />
           </div>
           <div className="flex flex-wrap gap-2 mb-4">
-            {["all", "not-started", "in-progress", "completed"].map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  statusFilter === status
-                    ? "bg-gray-500 text-white dark:bg-gray-400 dark:text-secondary-black"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                }`}
-              >
-                {status === "all"
-                  ? "All"
-                  : getStatusLabel(status as Book["status"])}
-                <span className="ml-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-full px-2 py-0.5">
-                  {getBookCountByStatus(status)}
-                </span>
-              </button>
-            ))}
+            {["all", "not-started", "in-progress", "completed"].map(
+              (status) => (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    statusFilter === status
+                      ? "bg-gray-500 text-white dark:bg-gray-400 dark:text-secondary-black"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  {status === "all"
+                    ? "All"
+                    : getStatusLabel(status as Book["status"])}
+                  <span className="ml-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-full px-2 py-0.5">
+                    {getBookCountByStatus(status)}
+                  </span>
+                </button>
+              )
+            )}
           </div>
           <div className="flex-1 overflow-y-auto">
             {loading ? (
@@ -474,13 +537,13 @@ const notesEditor = useEditor({
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-medium line-clamp-1">
-                          {book.title}
-                        </h4>
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          <IconUser size={14} className="mr-1" />
-                          <span className="line-clamp-1">{book.author}</span>
-                        </div>
+<h4 className={`font-medium line-clamp-1 ${bookTitleColor}`}>
+  {book.title}
+</h4>
+<div className={`flex items-center text-sm mt-1 ${bookAuthorColor}`}>
+  <IconUser size={14} className="mr-1" />
+  <span className="line-clamp-1">{book.author}</span>
+</div>
                         <div className="flex items-center gap-2 mt-2">
                           <span
                             className={`px-2 py-0.5 text-xs rounded-md ${getStatusColor(
@@ -490,10 +553,10 @@ const notesEditor = useEditor({
                             {getStatusLabel(book.status)}
                           </span>
                           {book.genre && (
-                            <span className="flex items-center text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md">
-                              <IconTag size={12} className="mr-1" />
-                              {book.genre}
-                            </span>
+  <span className={`flex items-center text-xs px-2 py-0.5 rounded-md ${bookGenreColor}`}>
+    <IconTag size={12} className="mr-1" />
+    {book.genre}
+  </span>
                           )}
                         </div>
                       </div>
@@ -758,7 +821,10 @@ const notesEditor = useEditor({
                   <div className="border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-100 dark:bg-gray-800 p-4 min-h-[200px]">
                     {notesEditor && (
                       <>
-                        <EditorContent editor={notesEditor} className="h-full max-w-full" />
+                        <EditorContent
+                          editor={notesEditor}
+                          className="h-full max-w-full"
+                        />
                         <ContextMenu editor={notesEditor} />
                       </>
                     )}
@@ -782,11 +848,14 @@ const notesEditor = useEditor({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
-              <IconBook2 size={48} className="mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Your Digital Bookshelf</h3>
+<IconBook2 size={48} className={`mb-4 ${bookEmptyIconColor}`} />
+<h3 className={`text-xl font-semibold mb-2 ${bookEmptyTitleColor}`}>
+  Your Digital Bookshelf
+</h3>
+
               <p className="text-center max-w-md mb-4">
-                Track your reading journey, capture your thoughts, and never forget
-                a book you&#39;ve read.
+                Track your reading journey, capture your thoughts, and never
+                forget a book you&#39;ve read.
               </p>
               <button
                 onClick={handleAddNewBook}
@@ -804,3 +873,7 @@ const notesEditor = useEditor({
 };
 
 export default BookLogger;
+
+
+
+

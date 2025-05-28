@@ -23,6 +23,7 @@ import {
 import Checkbox from "../../recyclable/Checkbox"; // Assuming path is correct
 import * as tasksApi from "../../../../lib/tasksApi";
 import type { Task, TaskList } from "@/types/taskTypes";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
 // --- Helper Functions and Data ---
@@ -157,6 +158,29 @@ const TaskLogger: React.FC = () => {
   const queryClient = useQueryClient();
   const { data: session, status } = useSession();
   const queryKey: QueryKey = ["tasks"];
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const headingColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-gray-900 dark:text-gray-100";
+
+  const addListStyle = !mounted
+    ? "text-transparent border-transparent"
+    : theme === "jungle"
+    ? "border-white text-white hover:border-white hover:text-white"
+    : "border-secondary-black/40 hover:border-secondary-black hover:text-secondary-black";
+
+  const inputStyle = !mounted
+    ? "text-transparent border-transparent"
+    : theme === "jungle"
+    ? "text-white border-white focus:border-white"
+    : "text-slate-700 dark:text-slate-300 border-slate-300/50 dark:border-zinc-600/50 focus:border-secondary-black dark:focus:border-secondary-black";
 
   // State Hooks
   const [isAddingList, setIsAddingList] = useState(false);
@@ -861,7 +885,7 @@ const TaskLogger: React.FC = () => {
               <div className="group-hover/task:flex hidden animate-fade-in items-center gap-1">
                 <button
                   onClick={() => !isDisabled && setAddingSubtaskTo(task.id)}
-                  className="flex items-center gap-1 text-secondary-black dark:text-secondary-white hover:text-secondary-black/80 dark:hover:text-secondary-white/80 text-sm transition-colors duration-200 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`flex items-center gap-1  ${headingColor} hover:text-secondary-black/80 dark:hover:text-secondary-white/80 text-sm transition-colors duration-200 py-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                   title="Add subtask"
                   disabled={isDisabled}
                 >
@@ -902,9 +926,7 @@ const TaskLogger: React.FC = () => {
     <div className="p-4 flex flex-col h-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-4 flex-shrink-0 max-w-3xl mx-auto w-full">
-        <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-          My Tasks
-        </h1>
+        <h1 className={`text-lg font-semibold ${headingColor}`}>My Tasks</h1>
         {updateListMutation.isPending && (
           <span className="text-xs text-blue-500 dark:text-blue-400 animate-pulse flex items-center gap-1">
             <IconLoader2 size={12} className="animate-spin" /> Saving...
@@ -931,7 +953,7 @@ const TaskLogger: React.FC = () => {
             <div key={list._id || list.name} className="mb-6 group/list">
               {/* List Header */}
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-medium text-slate-700 dark:text-slate-300">
+                <h2 className={`text-lg font-medium  ${headingColor}`}>
                   {list.name}
                 </h2>
                 <div className="flex-1 mx-3 border-t border-slate-200 dark:border-zinc-700 border-dashed"></div>
@@ -1075,7 +1097,7 @@ const TaskLogger: React.FC = () => {
                           });
                         }
                       }}
-                      className="flex items-center gap-1 text-secondary-black dark:text-secondary-white hover:text-secondary-black/80 dark:hover:text-secondary-white/80 text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`flex items-center gap-1 ${headingColor} hover:text-secondary-black/80 dark:hover:text-secondary-white/80 text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                       title="Add task"
                       disabled={updateListMutation.isPending}
                     >
@@ -1104,11 +1126,12 @@ const TaskLogger: React.FC = () => {
                     }
                   }, 100);
                 }}
-                className="w-full text-lg font-medium text-slate-700 dark:text-slate-300 bg-transparent border-b-2 border-slate-300/50 dark:border-zinc-600/50 focus:outline-none focus:border-secondary-black dark:focus:border-secondary-black transition-all duration-200 disabled:opacity-50"
+                className={`w-full text-lg font-medium bg-transparent border-b-2 focus:outline-none transition-all duration-200 disabled:opacity-50 ${inputStyle}`}
                 placeholder="New list name..."
                 autoFocus
                 disabled={addListMutation.isPending}
               />
+
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Press Enter to save or Escape to cancel
               </p>
@@ -1138,7 +1161,9 @@ const TaskLogger: React.FC = () => {
                   <span>Adding...</span>
                 </>
               ) : (
-                <div className="flex items-center justify-center px-4 py-2 border-2 border-dotted border-secondary-black/40 hover:border-secondary-black hover:text-secondary-black rounded-2xl text-secondary-black/40 hover:bg-primary/5 transition-colors duration-200">
+                <div
+                  className={`flex items-center justify-center px-4 py-2 border-2 border-dotted rounded-2xl hover:bg-primary/5 transition-colors duration-200 ${addListStyle}`}
+                >
                   <IconSquareRoundedPlus2 size={18} className="mr-2" />
                   <span className="font-medium">Add new list</span>
                 </div>

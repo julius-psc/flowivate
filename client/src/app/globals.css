@@ -53,7 +53,19 @@ html {
   [data-theme="jungle"] .time-display-text,
   [data-theme="jungle"] .time-display-greeting,
   [data-theme="jungle"] .time-display-quote {
-  color: #FCFDFF;
+    color: #FCFDFF;
+  }
+
+  [data-theme="jungle"] .ProseMirror h1,
+  [data-theme="jungle"] .ProseMirror h2,
+  [data-theme="jungle"] .ProseMirror h3,
+  [data-theme="jungle"] .ProseMirror p,
+  [data-theme="jungle"] .ProseMirror li {
+    color: #FCFDFF !important;
+  }
+
+  [data-theme="jungle"] .ProseMirror li::marker {
+    color: #FCFDFF;
   }
 
   [data-theme='sunset'] {
@@ -422,7 +434,7 @@ html {
 /* Restore List Styles */
 .tiptap ul,
 .tiptap ol {
-  list-style-type: disc; 
+  list-style-type: disc;
   padding-left: 1.5rem;
 }
 
