@@ -128,7 +128,7 @@ export const Journal: React.FC<JournalProps> = ({
 
   const journalEditorText = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-secondary-black dark:text-secondary-white";
 
@@ -404,37 +404,37 @@ export const Journal: React.FC<JournalProps> = ({
 
   const journalHeadingColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-xl font-bold text-gray-900 dark:text-gray-100";
 
   const journalDateColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white opacity-70"
     : "text-sm opacity-70 text-gray-700 dark:text-gray-300";
 
   const jungleText = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "";
 
   const jungleMutedText = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white opacity-70"
     : "text-gray-700 dark:text-gray-300 opacity-70";
 
   const jungleButton = !mounted
     ? ""
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "hover:bg-white/10 text-white"
     : "hover:bg-gray-100 dark:hover:bg-gray-800";
 
   const jungleIcon = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-gray-700 dark:text-gray-300";
 

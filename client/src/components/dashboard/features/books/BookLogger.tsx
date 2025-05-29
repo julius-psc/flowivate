@@ -64,7 +64,7 @@ const BookLogger: React.FC = () => {
 
   const bookEditorText = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-secondary-black dark:text-secondary-white";
 
@@ -210,19 +210,19 @@ const BookLogger: React.FC = () => {
   const getStatusColor = (status: Book["status"]) => {
     switch (status) {
       case "not-started":
-        return theme === "jungle"
+        return theme === "jungle" || theme === "ocean"
           ? "text-white"
           : "text-gray-700 dark:text-gray-400";
       case "in-progress":
-        return theme === "jungle"
+        return theme === "jungle" || theme === "ocean"
           ? "text-white"
           : "text-yellow-800 dark:text-yellow-400";
       case "completed":
-        return theme === "jungle"
+        return theme === "jungle" || theme === "ocean"
           ? "text-white"
           : "text-green-800 dark:text-green-400";
       default:
-        return theme === "jungle"
+        return theme === "jungle" || theme === "ocean"
           ? "text-white"
           : "text-gray-700 dark:text-gray-300";
     }
@@ -231,19 +231,19 @@ const BookLogger: React.FC = () => {
   const getRightPanelStatusColor = (status: Book["status"]) => {
     switch (status) {
       case "not-started":
-        return theme === "jungle"
+        return theme === "jungle" || theme === "ocean"
           ? "text-white"
           : "text-gray-700 dark:text-gray-400";
       case "in-progress":
-        return theme === "jungle"
+        return theme === "jungle" || theme === "ocean"
           ? "text-white"
           : "text-yellow-800 dark:text-yellow-400";
       case "completed":
-        return theme === "jungle"
+        return theme === "jungle" || theme === "ocean"
           ? "text-white"
           : "text-green-800 dark:text-green-400";
       default:
-        return theme === "jungle"
+        return theme === "jungle" || theme === "ocean"
           ? "text-white"
           : "text-gray-700 dark:text-gray-300";
     }
@@ -440,49 +440,49 @@ const BookLogger: React.FC = () => {
 
   const bookHeadingColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-xl font-bold text-gray-900 dark:text-gray-100";
 
   const bookSubtextColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white opacity-70"
     : "text-sm opacity-70 text-gray-700 dark:text-gray-300";
 
   const bookEmptyIconColor = !mounted
     ? ""
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "";
 
   const bookEmptyTitleColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-xl font-semibold text-gray-900 dark:text-gray-100";
 
   const bookTitleColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-gray-900 dark:text-gray-100";
 
   const bookAuthorColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-gray-500 dark:text-gray-400";
 
   const bookGenreColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-gray-700 dark:text-gray-300";
 
   const bookIconColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-gray-700 dark:text-gray-300";
 
@@ -494,19 +494,19 @@ const BookLogger: React.FC = () => {
 
   const bookLabelColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-secondary-black"
     : "text-gray-500 dark:text-gray-400";
 
   const bookRatingTextColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-gray-500 dark:text-gray-400";
 
   const bookChevronColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-gray-500 dark:text-gray-400";
 
@@ -777,7 +777,7 @@ const BookLogger: React.FC = () => {
                   <div className="bg-transparent rounded-lg p-5 prose dark:prose-invert max-w-none">
                     <div
                       className={`rendered-notes prose dark:prose-invert max-w-none ${
-                        theme === "jungle" ? "text-white" : ""
+                        theme === "jungle"  || theme === "ocean" ? "text-white" : ""
                       }`}
                       dangerouslySetInnerHTML={renderNotesContent(
                         selectedBook.notes

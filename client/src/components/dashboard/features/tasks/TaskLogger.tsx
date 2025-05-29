@@ -166,19 +166,19 @@ const TaskLogger: React.FC = () => {
 
   const headingColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-gray-900 dark:text-gray-100";
 
   const addListStyle = !mounted
     ? "text-transparent border-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "border-white text-white hover:border-white hover:text-white"
     : "border-secondary-black/40 hover:border-secondary-black hover:text-secondary-black";
 
   const inputStyle = !mounted
     ? "text-transparent border-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white border-white focus:border-white"
     : "text-slate-700 dark:text-slate-300 border-slate-300/50 dark:border-zinc-600/50 focus:border-secondary-black dark:focus:border-secondary-black";
 

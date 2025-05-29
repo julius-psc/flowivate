@@ -140,13 +140,13 @@ export default function Features() {
 
   const headingColor = !mounted
     ? "text-transparent"
-    : theme === "jungle"
+    : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-gray-900 dark:text-gray-100";
 
     const categoryColor = !mounted
   ? "text-transparent"
-  : theme === "jungle"
+  : theme === "jungle" || theme === "ocean"
   ? "text-white"
   : "text-gray-900 dark:text-gray-100";
 

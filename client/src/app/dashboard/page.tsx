@@ -1,16 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDashboard } from "@/context/DashboardContext";
 import { featureComponents } from "@/components/dashboard/features/featureMap";
 import TimeDisplay from "@/components/dashboard/TimeDisplay";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 
 import {
   IconEyeOff,
   IconGripVertical,
   IconCubePlus,
 } from "@tabler/icons-react";
+
 import {
   DndContext,
   closestCenter,
@@ -21,19 +23,38 @@ import {
   DragEndEvent,
   DragOverlay,
 } from "@dnd-kit/core";
+
 import {
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+
 import { CSS } from "@dnd-kit/utilities";
 import Masonry from "react-masonry-css";
 import type { FeatureKey } from "@/components/dashboard/features/featureMap";
 
 export default function Dashboard() {
-
   const { selectedFeatures, removeFeature, reorderFeatures } = useDashboard();
   const [activeId, setActiveId] = useState<FeatureKey | null>(null);
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const emptyTextColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle" || theme === "ocean"
+    ? "text-white"
+    : "text-gray-500 dark:text-gray-400";
+
+  const addFeaturesTextColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle" || theme === "ocean"
+    ? "text-white hover:text-white/80"
+    : "text-secondary-black dark:text-secondary-white hover:text-secondary-black/80 dark:hover:text-secondary-white/80";
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -61,20 +82,19 @@ export default function Dashboard() {
 
   return (
     <div className="w-full h-full flex-1 flex flex-col">
-      
       {selectedFeatures.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1">
           <TimeDisplay isCenteredFullScreen={false} />
           <div className="mt-8 flex flex-col items-center justify-center p-8 rounded-lg">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            <p className={`text-sm mb-2 ${emptyTextColor}`}>
               Your dashboard is empty
             </p>
             <Link
               href="/dashboard/features"
               className="flex items-center gap-2 px-6 transition-colors text-primary-white hover:text-primary-black focus:outline-none"
             >
-              <div className="flex justify-center items-center text-secondary-black dark:text-secondary-white hover:text-secondary-black/80  dark:hover:text-secondary-white/80">
-                <span className="font-medium">Add features</span>
+              <div className={`flex justify-center items-center font-medium ${addFeaturesTextColor}`}>
+                <span>Add features</span>
                 <IconCubePlus className="ml-2" size={20} />
               </div>
             </Link>
@@ -103,7 +123,6 @@ export default function Dashboard() {
               >
                 {selectedFeatures.map((featureKey) => {
                   const FeatureComponent = featureComponents[featureKey];
-                  console.log("Mapping feature:", featureKey, "Found component:", FeatureComponent); // Add this log
                   return (
                     <SortableFeature
                       key={featureKey}
@@ -116,7 +135,6 @@ export default function Dashboard() {
               </Masonry>
             </SortableContext>
 
-            {/* Ghost / Drag Preview */}
             <DragOverlay>
               {activeId ? (
                 <div className="rounded-xl border border-dashed border-gray-400 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 p-3 shadow-lg">
@@ -137,11 +155,7 @@ interface SortableFeatureProps {
   onRemove: () => void;
 }
 
-function SortableFeature({
-  id,
-  FeatureComponent,
-  onRemove,
-}: SortableFeatureProps) {
+function SortableFeature({ id, FeatureComponent, onRemove }: SortableFeatureProps) {
   const {
     attributes,
     listeners,
@@ -185,7 +199,6 @@ function SortableFeature({
       <div className="p-2">
         <FeatureComponent />
       </div>
-
     </div>
   );
 }
