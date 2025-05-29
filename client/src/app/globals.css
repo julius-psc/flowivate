@@ -68,6 +68,18 @@ html {
     color: #FCFDFF;
   }
 
+  [data-theme="jungle"] .prose h1,
+  [data-theme="jungle"] .prose h2,
+  [data-theme="jungle"] .prose h3,
+  [data-theme="jungle"] .prose p,
+  [data-theme="jungle"] .prose li {
+    color: #FCFDFF !important;
+  }
+
+  [data-theme="jungle"] .prose li::marker {
+    color: #FCFDFF;
+  }
+
   [data-theme='sunset'] {
     --color-primary: #FF7043;
   }
@@ -299,8 +311,7 @@ html {
 
 .ProseMirror p {
   margin: 0.5rem 0;
-  line-height: 1.6;
-  /* Base color (inherited or set explicitly) */
+  line-height: 1.2;
 }
 
 /* Light Mode Placeholder */
@@ -440,4 +451,21 @@ html {
 
 .tiptap ol {
   list-style-type: decimal;
+}
+
+/* Flattened prose override for Flowivate notes */
+.rendered-notes :is(p, h1, h2, h3, li) {
+  margin: 0.4rem 0 !important;
+  line-height: 1.4 !important;
+  padding-left: 0 !important;
+}
+
+.rendered-notes ul,
+.rendered-notes ol {
+  padding-left: 1rem !important;
+  margin: 0.5rem 0 !important;
+}
+
+.rendered-notes li::marker {
+  color: inherit;
 }

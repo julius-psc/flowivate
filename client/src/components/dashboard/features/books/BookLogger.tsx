@@ -55,13 +55,25 @@ const BookLogger: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
+  const { theme } = useTheme();
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const bookEditorText = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-secondary-black dark:text-secondary-white";
 
   const [formData, setFormData] = useState<Partial<Book>>({
     title: "",
     author: "",
     status: "not-started",
     genre: "",
-    notes: "",
+    notes: "<p></p>",
     rating: 0,
   });
 
@@ -117,15 +129,17 @@ const BookLogger: React.FC = () => {
 
   const notesEditor = useEditor({
     extensions: [
-      // 1) Core editing features (including the default space keymap)
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
         bulletList: { keepMarks: true, keepAttributes: false },
         orderedList: { keepMarks: true, keepAttributes: false },
         codeBlock: false,
+        paragraph: {
+          HTMLAttributes: {
+            class: "leading-relaxed my-1",
+          },
+        },
       }),
-
-      // 2) Placeholder
       Placeholder.configure({
         placeholder: ({ node }) => {
           if (node.type.name === "heading")
@@ -137,11 +151,8 @@ const BookLogger: React.FC = () => {
         showOnlyWhenEditable: true,
         showOnlyCurrent: true,
       }),
-
-      // 3) Highlighting, code‐block support, etc.
       Highlight,
       CodeBlockLowlight.configure({ lowlight }),
-
       SlashCommands(slashCommandItems),
       Extension.create({
         name: "spaceHandler",
@@ -155,16 +166,18 @@ const BookLogger: React.FC = () => {
         },
       }),
     ],
-
-    content: formData.notes || "",
+    content: formData.notes || "<p></p>",
     editorProps: {
-  attributes: {
-    class: `prose dark:prose-invert focus:outline-none w-full px-4 py-2}`,
-  },
-},
-
+      attributes: {
+        class: `prose dark:prose-invert focus:outline-none w-full px-4 py-2 ${bookEditorText} leading-relaxed`,
+      },
+    },
     injectCSS: false,
     immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      const content = editor.getHTML();
+      setFormData((prev) => ({ ...prev, notes: content }));
+    },
   });
 
   useEffect(() => {
@@ -197,13 +210,42 @@ const BookLogger: React.FC = () => {
   const getStatusColor = (status: Book["status"]) => {
     switch (status) {
       case "not-started":
-        return "bg-gray-500/30 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400";
+        return theme === "jungle"
+          ? "text-white"
+          : "text-gray-700 dark:text-gray-400";
       case "in-progress":
-        return "bg-yellow-500/30 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400";
+        return theme === "jungle"
+          ? "text-white"
+          : "text-yellow-800 dark:text-yellow-400";
       case "completed":
-        return "bg-green-500/30 text-green-800 dark:bg-green-500/20 dark:text-green-400";
+        return theme === "jungle"
+          ? "text-white"
+          : "text-green-800 dark:text-green-400";
       default:
-        return "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300";
+        return theme === "jungle"
+          ? "text-white"
+          : "text-gray-700 dark:text-gray-300";
+    }
+  };
+
+  const getRightPanelStatusColor = (status: Book["status"]) => {
+    switch (status) {
+      case "not-started":
+        return theme === "jungle"
+          ? "text-white"
+          : "text-gray-700 dark:text-gray-400";
+      case "in-progress":
+        return theme === "jungle"
+          ? "text-white"
+          : "text-yellow-800 dark:text-yellow-400";
+      case "completed":
+        return theme === "jungle"
+          ? "text-white"
+          : "text-green-800 dark:text-green-400";
+      default:
+        return theme === "jungle"
+          ? "text-white"
+          : "text-gray-700 dark:text-gray-300";
     }
   };
 
@@ -265,6 +307,8 @@ const BookLogger: React.FC = () => {
         : "/api/features/books";
       const method = selectedBook ? "PUT" : "POST";
 
+      const notesContent = notesEditor?.getHTML() || "<p></p>";
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -273,7 +317,7 @@ const BookLogger: React.FC = () => {
           title: formData.title?.trim(),
           author: formData.author?.trim(),
           genre: formData.genre?.trim() || null,
-          notes: formData.notes || null,
+          notes: notesContent,
           rating: formData.rating || null,
           dateCompleted:
             formData.status === "completed" && !formData.dateCompleted
@@ -394,13 +438,6 @@ const BookLogger: React.FC = () => {
     return books.filter((book) => book.status === status).length;
   };
 
-  const { theme } = useTheme();
-
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const bookHeadingColor = !mounted
     ? "text-transparent"
     : theme === "jungle"
@@ -413,55 +450,82 @@ const BookLogger: React.FC = () => {
     ? "text-white opacity-70"
     : "text-sm opacity-70 text-gray-700 dark:text-gray-300";
 
-  const jungleGlassBg = !mounted
+  const bookEmptyIconColor = !mounted
     ? ""
     : theme === "jungle"
-    ? "bg-white/10 backdrop-blur-md rounded-xl"
+    ? "text-white"
     : "";
 
-  const bookEmptyIconColor = !mounted
-  ? ""
-  : theme === "jungle"
-  ? "text-white"
-  : "";
-
-const bookEmptyTitleColor = !mounted
-  ? "text-transparent"
-  : theme === "jungle"
-  ? "text-white"
-  : "text-xl font-semibold text-gray-900 dark:text-gray-100";
+  const bookEmptyTitleColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-xl font-semibold text-gray-900 dark:text-gray-100";
 
   const bookTitleColor = !mounted
-  ? "text-transparent"
-  : theme === "jungle"
-  ? "text-white"
-  : "text-gray-900 dark:text-gray-100";
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-gray-900 dark:text-gray-100";
 
-const bookAuthorColor = !mounted
-  ? "text-transparent"
-  : theme === "jungle"
-  ? "text-white opacity-80"
-  : "text-gray-500 dark:text-gray-400";
+  const bookAuthorColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-gray-500 dark:text-gray-400";
 
-const bookGenreColor = !mounted
-  ? "text-transparent"
-  : theme === "jungle"
-  ? "bg-white/10 text-white"
-  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300";
+  const bookGenreColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-gray-700 dark:text-gray-300";
 
+  const bookIconColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-gray-700 dark:text-gray-300";
+
+  const bookAddButtonColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-white dark:text-secondary-black";
+
+  const bookLabelColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-secondary-black"
+    : "text-gray-500 dark:text-gray-400";
+
+  const bookRatingTextColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-gray-500 dark:text-gray-400";
+
+  const bookChevronColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle"
+    ? "text-white"
+    : "text-gray-500 dark:text-gray-400";
 
   return (
-    <div
-      className={`flex flex-col w-full h-full text-secondary-black dark:text-secondary-white ${jungleGlassBg}`}
-    >
+    <div className="flex flex-col w-full h-full text-secondary-black dark:text-secondary-white">
+      <style jsx>{`
+        .prose p {
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+          line-height: 1.5;
+        }
+      `}</style>
       {/* Header */}
-      <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-800">
+      <div className="px-4 py-4">
         <div className="max-w-screen-lg mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <h1 className={`text-xl font-bold ${bookHeadingColor}`}>
               Book Logger
             </h1>
-            <div className="h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
             <div className={`${bookSubtextColor}`}>
               {selectedBook
                 ? `${selectedBook.title} by ${selectedBook.author}`
@@ -471,7 +535,7 @@ const bookGenreColor = !mounted
           <div className="flex items-center space-x-1">
             <button
               onClick={handleAddNewBook}
-              className="flex items-center px-1 py-1 bg-secondary-black dark:bg-white text-white dark:text-secondary-black rounded-lg hover:opacity-90"
+              className={`flex items-center px-1 py-1 bg-secondary-black dark:bg-white ${bookAddButtonColor} rounded-lg hover:opacity-90`}
             >
               <IconPlus size={18} />
             </button>
@@ -482,7 +546,7 @@ const bookGenreColor = !mounted
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden max-w-screen-lg mx-auto w-full">
         {/* Left Panel - Book List */}
-        <div className="w-1/3 p-4 border-r border-gray-200 dark:border-gray-800 flex flex-col">
+        <div className="w-1/3 p-4 flex flex-col">
           <div className="relative mb-4">
             <input
               type="text"
@@ -531,44 +595,50 @@ const bookGenreColor = !mounted
                     onClick={() => handleSelectBook(book)}
                     className={`p-4 rounded-md cursor-pointer mb-2 transition-colors ${
                       selectedBook?._id === book._id
-                        ? "bg-gray-200 dark:bg-gray-700"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? "bg-gray-200/50 dark:bg-gray-700/50"
+                        : "hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <div>
-<h4 className={`font-medium line-clamp-1 ${bookTitleColor}`}>
-  {book.title}
-</h4>
-<div className={`flex items-center text-sm mt-1 ${bookAuthorColor}`}>
-  <IconUser size={14} className="mr-1" />
-  <span className="line-clamp-1">{book.author}</span>
-</div>
+                        <h4
+                          className={`font-medium line-clamp-1 ${bookTitleColor}`}
+                        >
+                          {book.title}
+                        </h4>
+                        <div
+                          className={`flex items-center text-sm mt-1 ${bookAuthorColor}`}
+                        >
+                          <IconUser size={14} className="mr-1" />
+                          <span className="line-clamp-1">{book.author}</span>
+                        </div>
                         <div className="flex items-center gap-2 mt-2">
                           <span
-                            className={`px-2 py-0.5 text-xs rounded-md ${getStatusColor(
+                            className={`px-2 py-0.5 text-xs ${getStatusColor(
                               book.status
                             )}`}
                           >
                             {getStatusLabel(book.status)}
                           </span>
                           {book.genre && (
-  <span className={`flex items-center text-xs px-2 py-0.5 rounded-md ${bookGenreColor}`}>
-    <IconTag size={12} className="mr-1" />
-    {book.genre}
-  </span>
+                            <span
+                              className={`flex items-center text-xs px-2 py-0.5 rounded-md ${bookGenreColor}`}
+                            >
+                              <IconTag size={12} className="mr-1" />
+                              {book.genre}
+                            </span>
                           )}
                         </div>
                       </div>
                       <div className="flex flex-col items-end">
                         {book.rating ? (
-                          <div className="flex items-center bg-yellow-500/20 px-2 py-1 rounded-md">
-                            <span className="text-yellow-800 dark:text-yellow-400 text-sm mr-1">
-                              {book.rating}
+                          <div className="flex items-center px-2 py-1">
+                            <span className={`text-sm ${bookRatingTextColor}`}>
+                              {book.rating}/5
                             </span>
                             <IconStarFilled
                               size={14}
-                              className="text-yellow-500"
+                              className="text-yellow-500 ml-1"
                             />
                           </div>
                         ) : (
@@ -576,7 +646,7 @@ const bookGenreColor = !mounted
                         )}
                         <IconChevronRight
                           size={18}
-                          className="text-gray-500 dark:text-gray-400 mt-4"
+                          className={`mt-4 ${bookChevronColor}`}
                         />
                       </div>
                     </div>
@@ -596,39 +666,40 @@ const bookGenreColor = !mounted
         {/* Right Panel - Book Details / Edit Form */}
         <div className="w-2/3 p-4 flex flex-col">
           {selectedBook && !isEditing ? (
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto opacity-90">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <span
-                      className={`px-2 py-0.5 text-xs font-medium rounded-md ${getStatusColor(
+                      className={`px-2 py-0.5 text-xs font-medium ${getRightPanelStatusColor(
                         selectedBook.status
                       )}`}
                     >
                       {getStatusLabel(selectedBook.status)}
                     </span>
                     {selectedBook.genre && (
-                      <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded flex items-center">
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded ${bookGenreColor}`}
+                      >
                         <IconTag size={12} className="mr-1" />
                         {selectedBook.genre}
                       </span>
                     )}
                   </div>
-                  <h2 className="text-2xl font-bold">{selectedBook.title}</h2>
-                  <p className="text-gray-500 dark:text-gray-400 text-lg mt-1">
+                  <h2 className={`text-2xl font-bold ${bookTitleColor}`}>
+                    {selectedBook.title}
+                  </h2>
+                  <p className={`text-lg mt-1 ${bookAuthorColor}`}>
                     by {selectedBook.author}
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleEditBook}
-                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="p-2 rounded-full"
                     aria-label="Edit book"
                   >
-                    <IconEdit
-                      size={18}
-                      className="text-gray-700 dark:text-gray-300"
-                    />
+                    <IconEdit size={18} className={bookIconColor} />
                   </button>
                   <button
                     onClick={handleDeleteBook}
@@ -644,11 +715,13 @@ const bookGenreColor = !mounted
               </div>
               {selectedBook.rating ? (
                 <div className="mb-6">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  <p className={`text-sm font-medium ${bookLabelColor} mb-2`}>
                     Rating
                   </p>
                   <div className="flex items-center gap-1">
-                    <span className="text-lg font-medium">
+                    <span
+                      className={`text-lg font-medium ${bookRatingTextColor}`}
+                    >
                       {selectedBook.rating}/5
                     </span>
                     <div className="flex ml-2">
@@ -674,7 +747,7 @@ const bookGenreColor = !mounted
                       size={16}
                       className="text-gray-500 dark:text-gray-400 mr-2"
                     />
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <p className={`text-sm font-medium ${bookLabelColor}`}>
                       Date Added
                     </p>
                   </div>
@@ -688,7 +761,7 @@ const bookGenreColor = !mounted
                           size={16}
                           className="text-green-500 mr-2"
                         />
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <p className={`text-sm font-medium ${bookLabelColor}`}>
                           Date Completed
                         </p>
                       </div>
@@ -698,9 +771,14 @@ const bookGenreColor = !mounted
               </div>
               {selectedBook.notes && (
                 <div>
-                  <h3 className="text-lg font-medium mb-3">Notes</h3>
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-5 prose dark:prose-invert max-w-none">
+                  <h3 className={`text-sm font-medium mb-3 ${bookLabelColor}`}>
+                    Notes
+                  </h3>
+                  <div className="bg-transparent rounded-lg p-5 prose dark:prose-invert max-w-none">
                     <div
+                      className={`rendered-notes prose dark:prose-invert max-w-none ${
+                        theme === "jungle" ? "text-white" : ""
+                      }`}
                       dangerouslySetInnerHTML={renderNotesContent(
                         selectedBook.notes
                       )}
@@ -712,7 +790,7 @@ const bookGenreColor = !mounted
           ) : isEditing ? (
             <div className="flex-1 overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">
+                <h2 className={`text-2xl font-bold ${bookTitleColor}`}>
                   {selectedBook ? "Edit Book" : "Add New Book"}
                 </h2>
                 <button
@@ -728,7 +806,9 @@ const bookGenreColor = !mounted
               </div>
               <div className="py-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  <label
+                    className={`block text-sm font-medium ${bookLabelColor} mb-2`}
+                  >
                     Title
                   </label>
                   <input
@@ -742,7 +822,9 @@ const bookGenreColor = !mounted
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  <label
+                    className={`block text-sm font-medium ${bookLabelColor} mb-2`}
+                  >
                     Author
                   </label>
                   <input
@@ -757,7 +839,9 @@ const bookGenreColor = !mounted
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                    <label
+                      className={`block text-sm font-medium ${bookLabelColor} mb-2`}
+                    >
                       Status
                     </label>
                     <select
@@ -772,7 +856,9 @@ const bookGenreColor = !mounted
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                    <label
+                      className={`block text-sm font-medium ${bookLabelColor} mb-2`}
+                    >
                       Genre
                     </label>
                     <input
@@ -786,7 +872,9 @@ const bookGenreColor = !mounted
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  <label
+                    className={`block text-sm font-medium ${bookLabelColor} mb-2`}
+                  >
                     Rating
                   </label>
                   <div className="flex items-center gap-2">
@@ -809,16 +897,18 @@ const bookGenreColor = !mounted
                         </button>
                       ))}
                     </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className={`text-sm ${bookRatingTextColor}`}>
                       {formData.rating ? `${formData.rating}/5` : "Not rated"}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 mt-4">
+                  <label
+                    className={`block text-sm font-medium ${bookLabelColor} mb-2 mt-4`}
+                  >
                     Notes
                   </label>
-                  <div className="border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-100 dark:bg-gray-800 p-4 min-h-[200px]">
+                  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 min-h-[200px] bg-transparent">
                     {notesEditor && (
                       <>
                         <EditorContent
@@ -848,18 +938,19 @@ const bookGenreColor = !mounted
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
-<IconBook2 size={48} className={`mb-4 ${bookEmptyIconColor}`} />
-<h3 className={`text-xl font-semibold mb-2 ${bookEmptyTitleColor}`}>
-  Your Digital Bookshelf
-</h3>
-
+              <IconBook2 size={48} className={`mb-4 ${bookEmptyIconColor}`} />
+              <h3
+                className={`text-xl font-semibold mb-2 ${bookEmptyTitleColor}`}
+              >
+                Your Digital Bookshelf
+              </h3>
               <p className="text-center max-w-md mb-4">
                 Track your reading journey, capture your thoughts, and never
                 forget a book you&#39;ve read.
               </p>
               <button
                 onClick={handleAddNewBook}
-                className="flex items-center space-x-1 px-4 py-2 bg-secondary-black dark:bg-white text-white dark:text-secondary-black rounded-md hover:opacity-90"
+                className={`flex items-center space-x-1 px-4 py-2 bg-secondary-black dark:bg-white ${bookAddButtonColor} rounded-md hover:opacity-90`}
               >
                 <IconPlus size={18} />
                 <span>Add Your First Book</span>
@@ -873,7 +964,3 @@ const bookGenreColor = !mounted
 };
 
 export default BookLogger;
-
-
-
-
