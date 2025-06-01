@@ -1,30 +1,23 @@
-import type { NextConfig } from 'next';
-import type { Configuration as WebpackConfig } from 'webpack';
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
+        hostname: 'lh3.googleusercontent.com', // Example for Google profile pictures
         port: '',
         pathname: '/a/**',
       },
       {
         protocol: 'https',
-        hostname: 'avatars.githubusercontent.com',
+        hostname: 'avatars.githubusercontent.com', // Example for GitHub avatars
         port: '',
         pathname: '/u/**',
       },
+      // Add other hostnames your app might use for user images
     ],
   },
-  webpack: (config: WebpackConfig) => {
-    config.module?.rules?.push({
-      test: /\.svg$/,
-      use: ['@svgr/webpack'],
-    });
-    return config;
-  },
 };
-export default nextConfig;
+
+module.exports = nextConfig;

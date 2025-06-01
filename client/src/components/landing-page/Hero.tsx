@@ -1,6 +1,8 @@
 "use client";
 import React from "react";
+import Image from "next/image";
 import Navbar from "./Navbar";
+import landingGrad from "../../../public/assets/illustrations/landing-gradient.svg";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
@@ -9,21 +11,20 @@ export default function Hero() {
     <div className="flex h-screen items-center justify-center bg-background px-2 py-2">
       <div className="w-full h-full rounded-3xl overflow-hidden border border-white/10 backdrop-blur-xl bg-white/5 relative">
         {/* Gradient background */}
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-80 pointer-events-none"
-          style={{
-            backgroundImage:
-              "url('/assets/illustrations/landing-gradient.svg')",
-          }}
+        <Image
+          src={landingGrad}
+          alt="Gradient Background"
+          fill
+          className="absolute inset-0 object-cover opacity-80 pointer-events-none"
         />
-
+        
         {/* Content */}
         <div className="relative z-10 flex flex-col h-full">
           {/* Navbar */}
           <div className="p-10 pb-0">
             <Navbar />
           </div>
-
+          
           {/* Main content - centered vertically */}
           <div className="flex-1 flex flex-col items-center justify-center px-10 -mt-20">
             {/* Status badge */}
@@ -31,7 +32,7 @@ export default function Hero() {
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               30+ users onboard
             </div>
-
+            
             {/* Headings */}
             <div className="flex flex-col gap-6 text-center max-w-4xl">
               <h1 className="text-6xl md:text-7xl font-bold text-white leading-tight tracking-tight">
@@ -40,11 +41,10 @@ export default function Hero() {
                 <span className="text-white/90">Personalize your flow.</span>
               </h1>
               <p className="text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
-                An intelligent workspace designed for deep work, seamless
-                progress, and unparalleled productivity.
+                An intelligent workspace designed for deep work, seamless progress, and unparalleled productivity.
               </p>
             </div>
-
+            
             {/* CTA buttons */}
             <div className="flex gap-4 mt-10">
               {/* Enhanced primary CTA */}
@@ -54,7 +54,7 @@ export default function Hero() {
               >
                 {/* Glow ring */}
                 <span className="absolute inset-0 rounded-full ring-2 ring-primary-blue/20 animate-pulse pointer-events-none"></span>
-
+                
                 {/* Optional particles */}
                 <span className="absolute -top-1 -left-1 w-2 h-2 bg-primary-blue/50 rounded-full blur-sm animate-ping"></span>
                 <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-primary-blue/50 rounded-full blur-sm animate-ping delay-150"></span>
@@ -62,7 +62,7 @@ export default function Hero() {
                 {/* Button text */}
                 <span className="relative z-10">Start crafting your flow</span>
               </Link>
-
+              
               {/* Secondary CTA */}
               <Link
                 href="#learn-more"
