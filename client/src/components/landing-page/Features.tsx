@@ -1,6 +1,5 @@
 "use client";
-import React, { useEffect, useRef } from "react";
-import Image from "next/image";
+import React, { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -13,9 +12,9 @@ import {
   Coffee,
   Zap,
 } from "lucide-react";
-import logo from "../../assets/brand/logo-v1.5-white.svg";
+import Logo from "../../assets/brand/logo-v1.5-white.svg";
 
-// Register GSAP plugin
+// Only register GSAP plugin on the client
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
@@ -57,33 +56,66 @@ const features = [
 ];
 
 export default function Features() {
-  const sectionRef = useRef(null);
-  const containerRef = useRef(null);
-  const featuresRef = useRef<(HTMLDivElement | null)[]>([]);
-  const centralBoxRef = useRef(null);
-  const logoRef = useRef(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const featuresRef = useRef<Array<HTMLDivElement | null>>([]);
+  const centralBoxRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
+
+  // 1) CLIENT‐only state for random particles:
+  const [particleData, setParticleData] = useState<
+    {
+      left: string;
+      top: string;
+      animationDelay: string;
+      animationDuration: string;
+    }[]
+  >([]);
 
   useEffect(() => {
+    // Generate particles only on the client after mount
+    const randomParticles = Array.from({ length: 20 }).map(() => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animationDelay: `${Math.random() * 3}s`,
+      animationDuration: `${2 + Math.random() * 3}s`,
+    }));
+    setParticleData(randomParticles);
+  }, []);
+
+  useEffect(() => {
+    // Your existing GSAP animation logic:
+    // • Scatter features around
+    // • On scroll, animate toward center
+    // • Show central box & logo at thresholds
+    // • Hover timelines, etc.
+
     const ctx = gsap.context(() => {
-      // Initial state - features scattered around
+      // 1) Position each feature randomly around
       featuresRef.current.forEach((feature, index) => {
+        if (!feature) return;
         const angle = (index / features.length) * Math.PI * 2;
         const radius = 300 + Math.random() * 200;
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
 
         gsap.set(feature, {
-          x: x,
-          y: y,
+          x,
+          y,
           rotation: Math.random() * 360,
           scale: 0.8 + Math.random() * 0.4,
         });
       });
 
-      // Hide central box and logo initially
-      gsap.set(centralBoxRef.current, { scale: 0, opacity: 0 });
-      gsap.set(logoRef.current, { scale: 0, opacity: 0 });
+      // 2) Hide central box & logo initially
+      if (centralBoxRef.current) {
+        gsap.set(centralBoxRef.current, { scale: 0, opacity: 0 });
+      }
+      if (logoRef.current) {
+        gsap.set(logoRef.current, { scale: 0, opacity: 0 });
+      }
 
+      // 3) Create a scrollTrigger timeline
       gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
@@ -93,13 +125,13 @@ export default function Features() {
           onUpdate: (self) => {
             const progress = self.progress;
 
-            // Animate features moving to center
             featuresRef.current.forEach((feature, index) => {
+              if (!feature) return;
               const targetAngle = (index / features.length) * Math.PI * 2;
               const targetRadius = 120;
               const targetX = Math.cos(targetAngle) * targetRadius;
               const targetY = Math.sin(targetAngle) * targetRadius;
-
+              // Move features inward as you scroll down
               gsap.to(feature, {
                 x: targetX * (1 - progress),
                 y: targetY * (1 - progress),
@@ -110,8 +142,8 @@ export default function Features() {
               });
             });
 
-            // Show central container
-            if (progress > 0.3) {
+            // Reveal central box once progress > 0.3
+            if (progress > 0.3 && centralBoxRef.current) {
               gsap.to(centralBoxRef.current, {
                 scale: 1,
                 opacity: 1,
@@ -120,8 +152,8 @@ export default function Features() {
               });
             }
 
-            // Show logo
-            if (progress > 0.6) {
+            // Reveal logo once progress > 0.6
+            if (progress > 0.6 && logoRef.current) {
               gsap.to(logoRef.current, {
                 scale: 1,
                 opacity: 1,
@@ -133,23 +165,24 @@ export default function Features() {
         },
       });
 
-      // Hover animations for individual features
-      featuresRef.current.forEach((feature) => {
-        if (!feature) return;
+      // 4) Hover animation for each feature
+      featuresRef.current.forEach((featureEl) => {
+        if (!featureEl) return;
         const hoverTl = gsap.timeline({ paused: true });
-        hoverTl.to(feature, {
+        hoverTl.to(featureEl, {
           scale: 1.1,
           rotation: 5,
           duration: 0.3,
           ease: "power2.out",
         });
-
-        feature.addEventListener("mouseenter", () => hoverTl.play());
-        feature.addEventListener("mouseleave", () => hoverTl.reverse());
+        featureEl.addEventListener("mouseenter", () => hoverTl.play());
+        featureEl.addEventListener("mouseleave", () => hoverTl.reverse());
       });
     }, sectionRef);
 
-    return () => ctx.revert();
+    return () => {
+      ctx.revert();
+    };
   }, []);
 
   return (
@@ -157,7 +190,6 @@ export default function Features() {
       ref={sectionRef}
       className="min-h-screen bg-background py-20 overflow-hidden bg-secondary-black relative"
     >
-
       {/* Section heading */}
       <div className="text-center mb-20 relative z-10">
         <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
@@ -166,7 +198,7 @@ export default function Features() {
           <span className="text-white/80">in one space.</span>
         </h2>
         <p className="text-xl text-white/60 max-w-2xl mx-auto">
-          Everything you need for productivity, focus, and personal growth -
+          Everything you need for productivity, focus, and personal growth –
           unified in a single, intelligent workspace.
         </p>
       </div>
@@ -182,14 +214,10 @@ export default function Features() {
           className="absolute w-80 h-80 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 flex items-center justify-center"
         >
           {/* Logo */}
-          <div ref={logoRef} className="w-24 h-24 relative">
-            <Image
-              src={logo}
-              alt="Logo"
-              fill
-              className="object-contain opacity-90"
-            />
-          </div>
+          <div ref={logoRef} className="w-24 h-24 relative flex items-center justify-center">
+  <Logo className="w-full h-full opacity-90" />
+</div>
+
         </div>
 
         {/* Feature squares */}
@@ -213,17 +241,17 @@ export default function Features() {
           </div>
         ))}
 
-        {/* Floating particles for ambiance */}
+        {/* Floating particles for ambiance (client‐only) */}
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(20)].map((_, i) => (
+          {particleData.map((particle, i) => (
             <div
               key={i}
               className="absolute w-1 h-1 bg-white/20 rounded-full animate-pulse"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${2 + Math.random() * 3}s`,
+                left: particle.left,
+                top: particle.top,
+                animationDelay: particle.animationDelay,
+                animationDuration: particle.animationDuration,
               }}
             />
           ))}

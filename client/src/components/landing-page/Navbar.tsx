@@ -1,10 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import React from "react";
+import Link from "next/link";
 import { Fingerprint } from "lucide-react";
-import logo from '../../assets/brand/logo-v1.5-white.svg';
+import Logo from "../../assets/brand/logo-v1.5-white.svg"; // SVGR import
 
 export default function Navbar() {
   return (
@@ -12,14 +11,20 @@ export default function Navbar() {
       <nav className="flex items-center justify-center gap-10 rounded-full backdrop-blur-md bg-white/10 border border-white/10">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <Image src={logo} alt="Flowivate Logo" width={44} height={40} />
+          <Logo className="w-11 h-10" /> {/* SVG inline, scalable, fast */}
         </Link>
 
         {/* Nav Links */}
         <div className="flex items-center gap-6 text-sm font-medium text-secondary-white">
-          <Link href="#product" className="transition">Product</Link>
-          <Link href="#pricing" className="transition">Pricing</Link>
-          <Link href="#updates" className="transition">Updates</Link>
+          <Link href="#product" className="transition">
+            Product
+          </Link>
+          <Link href="#pricing" className="transition">
+            Pricing
+          </Link>
+          <Link href="#updates" className="transition">
+            Updates
+          </Link>
         </div>
 
         {/* Login */}
