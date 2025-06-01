@@ -1,4 +1,3 @@
-// app/api/stripe/webhook/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import connectToDB from "@/lib/mongoose";
@@ -32,20 +31,68 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Webhook Error" }, { status: 400 });
   }
 
+  // Connect to DB once
+  await connectToDB();
+
   // Handle event types
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.metadata?.userId;
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const userId = session.metadata?.userId;
 
-    await connectToDB();
+      await User.findByIdAndUpdate(userId, {
+        stripeCustomerId: session.customer as string,
+        subscriptionStatus: "active",
+        subscriptionPriceId: session.metadata?.priceId,
+      });
 
-    await User.findByIdAndUpdate(userId, {
-      stripeCustomerId: session.customer,
-      subscriptionStatus: "active",
-      subscriptionPriceId: session.metadata?.priceId,
-    });
+      console.log(`✅ [checkout.session.completed] User ${userId} is now active`);
+      break;
+    }
 
-    console.log("✅ User subscription updated");
+    case "invoice.payment_succeeded": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+
+      await User.findOneAndUpdate(
+        { stripeCustomerId: customerId },
+        { subscriptionStatus: "active" }
+      );
+
+      console.log(`✅ [invoice.payment_succeeded] Customer ${customerId} is active`);
+      break;
+    }
+
+    case "customer.subscription.deleted": {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customerId = subscription.customer as string;
+
+      await User.findOneAndUpdate(
+        { stripeCustomerId: customerId },
+        { subscriptionStatus: "canceled" }
+      );
+
+      console.log(`✅ [customer.subscription.deleted] Customer ${customerId} canceled`);
+      break;
+    }
+
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+
+      await User.findOneAndUpdate(
+        { stripeCustomerId: customerId },
+        { subscriptionStatus: "past_due" }
+      );
+
+      console.log(`⚠️ [invoice.payment_failed] Customer ${customerId} payment failed`);
+      break;
+    }
+
+    default: {
+      console.log(`Unhandled event type: ${event.type}`);
+      break;
+    }
   }
 
   return NextResponse.json({ received: true });

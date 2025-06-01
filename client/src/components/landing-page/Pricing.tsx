@@ -51,7 +51,7 @@ export default function Pricing() {
   };
 
   return (
-    <div className="min-h-screen bg-secondary-black px-4 py-20">
+    <div id="pricing" className="min-h-screen bg-secondary-black px-4 py-20">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

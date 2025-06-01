@@ -1,12 +1,46 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSettings } from "../useSettings";
-import { AlertCircle, ArrowRight, ExternalLink, Loader2 } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  ExternalLink,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
 
 const SubscriptionTab = (): React.JSX.Element => {
   const { styling, sessionStatus, session } = useSettings();
+
+  const [subscriptionStatus, setSubscriptionStatus] = useState<
+    "active" | "canceled" | "past_due" | "free"
+  >("free");
+
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      const res = await fetch("/api/user/subscription");
+      const data = await res.json();
+      setSubscriptionStatus(data.subscriptionStatus);
+    };
+
+    if (sessionStatus === "authenticated") {
+      fetchSubscription();
+    }
+  }, [sessionStatus]);
+
+  const handleManageSubscription = async () => {
+    const res = await fetch("/api/stripe/create-portal-session", {
+      method: "POST",
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      console.error("Failed to create portal session", data);
+    }
+  };
 
   const renderContent = () => (
     <div className="space-y-6">
@@ -16,7 +50,9 @@ const SubscriptionTab = (): React.JSX.Element => {
           Manage your plan and billing details.
         </p>
       </div>
+
       <div className="space-y-5">
+        {/* CURRENT PLAN */}
         <div className="p-3 bg-gray-50 dark:bg-gray-900/30 rounded-md border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
@@ -24,14 +60,57 @@ const SubscriptionTab = (): React.JSX.Element => {
                 Current Plan
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                You are currently on the free plan.
+                {subscriptionStatus === "active"
+                  ? "You are on the Pro plan."
+                  : subscriptionStatus === "past_due"
+                  ? "Payment failed — please update your payment method."
+                  : "You are currently on the Free plan."}
               </p>
             </div>
-            <span className="text-sm font-semibold text-primary dark:text-primary/70 px-2 py-0.5 rounded-full bg-primary/10 dark:bg-primary/20">
-              Free
+            <span
+              className={`text-sm font-semibold px-2 py-0.5 rounded-full ${
+                subscriptionStatus === "active"
+                  ? "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20"
+                  : subscriptionStatus === "past_due"
+                  ? "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20"
+                  : "text-primary dark:text-primary/70 bg-primary/10 dark:bg-primary/20"
+              }`}
+            >
+              {subscriptionStatus === "active"
+                ? "Pro"
+                : subscriptionStatus === "past_due"
+                ? "Payment Issue"
+                : "Free"}
             </span>
           </div>
+
+          {/* DYNAMIC BUTTON */}
+          {subscriptionStatus === "active" ? (
+            <button
+              onClick={handleManageSubscription}
+              className="mt-3 rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/80 transition-colors"
+            >
+              Manage Subscription
+            </button>
+          ) : subscriptionStatus === "past_due" ? (
+            <button
+              onClick={handleManageSubscription}
+              className="mt-3 rounded-md px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors flex items-center gap-2"
+            >
+              <AlertTriangle size={16} />
+              Update Payment Method
+            </button>
+          ) : (
+            <Link
+              href="/#pricing"
+              className="mt-3 rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/80 transition-colors inline-block text-center"
+            >
+              Upgrade to Pro
+            </Link>
+          )}
         </div>
+
+        {/* UPGRADE OPTIONS */}
         <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
           <div className="px-3 py-2 bg-gray-50 dark:bg-gray-900/30 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -55,6 +134,7 @@ const SubscriptionTab = (): React.JSX.Element => {
                 Upgrade
               </Link>
             </div>
+
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -87,6 +167,7 @@ const SubscriptionTab = (): React.JSX.Element => {
       </div>
     );
   }
+
   if (sessionStatus === "unauthenticated") {
     return (
       <div className="flex flex-col items-center justify-center h-48 text-center p-4">
@@ -106,9 +187,11 @@ const SubscriptionTab = (): React.JSX.Element => {
       </div>
     );
   }
+
   if (sessionStatus === "authenticated" && session?.user) {
     return renderContent();
   }
+
   return (
     <p className="text-center text-gray-500 dark:text-gray-400">
       Session data not available.

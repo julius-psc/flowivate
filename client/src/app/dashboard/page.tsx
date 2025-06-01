@@ -40,8 +40,23 @@ export default function Dashboard() {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
+  // NEW — Subscription Status
+  const [subscriptionStatus, setSubscriptionStatus] = useState<
+    "active" | "canceled" | "past_due" | "free"
+  >("free");
+
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      const res = await fetch("/api/user/subscription");
+      const data = await res.json();
+      setSubscriptionStatus(data.subscriptionStatus);
+    };
+
+    fetchSubscription();
   }, []);
 
   const emptyTextColor = !mounted
@@ -80,6 +95,9 @@ export default function Dashboard() {
     640: 1,
   };
 
+  // PRO FEATURES ARRAY
+  const proOnlyFeatures: FeatureKey[] = ["Assistant", "DeepWork", "Mood"];
+
   return (
     <div className="w-full h-full flex-1 flex flex-col">
       {selectedFeatures.length === 0 ? (
@@ -93,7 +111,9 @@ export default function Dashboard() {
               href="/dashboard/features"
               className="flex items-center gap-2 px-6 transition-colors text-primary-white hover:text-primary-black focus:outline-none"
             >
-              <div className={`flex justify-center items-center font-medium ${addFeaturesTextColor}`}>
+              <div
+                className={`flex justify-center items-center font-medium ${addFeaturesTextColor}`}
+              >
                 <span>Add features</span>
                 <IconCubePlus className="ml-2" size={20} />
               </div>
@@ -123,12 +143,18 @@ export default function Dashboard() {
               >
                 {selectedFeatures.map((featureKey) => {
                   const FeatureComponent = featureComponents[featureKey];
+
+                  const isProOnly = proOnlyFeatures.includes(featureKey);
+                  const isLocked =
+                    isProOnly && subscriptionStatus !== "active";
+
                   return (
                     <SortableFeature
                       key={featureKey}
                       id={featureKey}
                       FeatureComponent={FeatureComponent}
                       onRemove={() => removeFeature(featureKey)}
+                      isLocked={isLocked}
                     />
                   );
                 })}
@@ -153,9 +179,15 @@ interface SortableFeatureProps {
   id: string;
   FeatureComponent: React.FC;
   onRemove: () => void;
+  isLocked?: boolean;
 }
 
-function SortableFeature({ id, FeatureComponent, onRemove }: SortableFeatureProps) {
+function SortableFeature({
+  id,
+  FeatureComponent,
+  onRemove,
+  isLocked,
+}: SortableFeatureProps) {
   const {
     attributes,
     listeners,
@@ -170,6 +202,8 @@ function SortableFeature({ id, FeatureComponent, onRemove }: SortableFeatureProp
     transition,
     zIndex: isDragging ? 50 : "auto",
     opacity: isDragging ? 0.5 : 1,
+    filter: isLocked ? "grayscale(100%) blur(2px)" : "none",
+    pointerEvents: isLocked ? "none" : "auto",
   };
 
   return (
@@ -179,7 +213,15 @@ function SortableFeature({ id, FeatureComponent, onRemove }: SortableFeatureProp
       {...attributes}
       className="relative group rounded-xl transition-all duration-200 ease-in-out bg-background break-inside-avoid"
     >
-      <div className="absolute -top-4 -right-2 opacity-0 group-hover:opacity-100 flex items-center gap-2 backdrop-blur-lg bg-white/20 dark:bg-gray-900/20 border border-white/30 dark:border-gray-700/30 rounded-full px-3 py-1.5 shadow-lg transition-all duration-200 z-50">
+      {/* Lock overlay */}
+      {isLocked && (
+        <div className="absolute inset-0 bg-black/50 text-white flex items-center justify-center text-sm font-semibold rounded-xl z-50">
+          Pro Feature
+        </div>
+      )}
+
+      {/* Top buttons */}
+      <div className="absolute -top-4 -right-2 opacity-0 group-hover:opacity-100 flex items-center gap-2 backdrop-blur-lg bg-white/20 dark:bg-gray-900/20 border border-white/30 dark:border-gray-700/30 rounded-full px-3 py-1.5 shadow-lg transition-all duration-200 z-40">
         <button
           onClick={onRemove}
           className="text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 rounded-full p-1 transition-colors"
@@ -196,9 +238,12 @@ function SortableFeature({ id, FeatureComponent, onRemove }: SortableFeatureProp
           <IconGripVertical size={16} />
         </div>
       </div>
+
+      {/* Actual Feature */}
       <div className="p-2">
         <FeatureComponent />
       </div>
     </div>
   );
 }
+
