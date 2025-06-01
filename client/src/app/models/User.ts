@@ -10,6 +10,11 @@ export interface IUser extends Document {
   password?: string | null;
   createdAt: Date;
   updatedAt: Date;
+
+  // Stripe fields:
+  stripeCustomerId?: string;
+  subscriptionStatus?: "active" | "canceled" | "past_due" | "unpaid" | "free";
+  subscriptionPriceId?: string;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -35,6 +40,14 @@ const UserSchema = new Schema<IUser>(
     password: {
       type: String,
     },
+    // Stripe fields
+    stripeCustomerId: { type: String, default: null },
+    subscriptionStatus: {
+      type: String,
+      enum: ["active", "canceled", "past_due", "unpaid", "free"],
+      default: "free",
+    },
+    subscriptionPriceId: { type: String, default: null },
   },
   {
     timestamps: true,

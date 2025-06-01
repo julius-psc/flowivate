@@ -7,9 +7,9 @@ export default function Pricing() {
 
   const freeFeatures = [
     "10 journal entries/month",
-    "5 book entries/month", 
+    "5 book entries/month",
     "4 basic components",
-    "Community support"
+    "Community support",
   ];
 
   const proFeatures = [
@@ -25,6 +25,31 @@ export default function Pricing() {
   const annualPrice = monthlyPrice * 12 * 0.7; // 30% off
   const annualMonthlyPrice = annualPrice / 12;
 
+  // TODO: replace with your real price IDs from Stripe!
+  const monthlyPriceId = "price_xxx_monthly";
+  const annualPriceId = "price_xxx_annual";
+
+  // TODO: replace with your real user ID from session (if you use next-auth or similar)
+  const currentUserId = "mock_user_id"; // example placeholder
+
+  const handleCheckout = async () => {
+    const res = await fetch("/api/stripe/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        priceId: isAnnual ? annualPriceId : monthlyPriceId,
+        userId: currentUserId,
+      }),
+    });
+
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      console.error("Failed to create checkout session", data);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-secondary-black px-4 py-20">
       <div className="max-w-4xl mx-auto">
@@ -38,17 +63,17 @@ export default function Pricing() {
             Choose your plan
           </h1>
           <p className="text-lg text-gray-400 max-w-lg mx-auto mb-8">
-            Start free and upgrade when you&#39;re ready to unlock more features
+            Start free and upgrade when you&apos;re ready to unlock more features
           </p>
-          
+
           {/* Fixed Billing Toggle */}
           <div className="inline-flex items-center gap-3 p-1 rounded-full bg-gray-800/50 border border-gray-700">
             <button
               onClick={() => setIsAnnual(false)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                !isAnnual 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-400 hover:text-white'
+                !isAnnual
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-400 hover:text-white"
               }`}
             >
               Monthly
@@ -56,9 +81,9 @@ export default function Pricing() {
             <button
               onClick={() => setIsAnnual(true)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all relative ${
-                isAnnual 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-400 hover:text-white'
+                isAnnual
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-400 hover:text-white"
               }`}
             >
               Annual
@@ -77,7 +102,9 @@ export default function Pricing() {
           <div className="relative rounded-2xl border border-gray-700/50 bg-gray-800/40 backdrop-blur-sm p-6 hover:border-gray-600/50 transition-all">
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-white mb-2">Starter</h3>
-              <p className="text-gray-400 text-sm mb-4">Perfect for getting started</p>
+              <p className="text-gray-400 text-sm mb-4">
+                Perfect for getting started
+              </p>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-bold text-white">$0</span>
                 <span className="text-gray-400 text-sm">/month</span>
@@ -108,19 +135,24 @@ export default function Pricing() {
                 Most Popular
               </div>
             </div>
-            
+
             {/* Subtle glow effect */}
             <div className="absolute inset-0 rounded-2xl bg-primary-blue/20 blur-xl -z-10"></div>
-            
+
             <div className="">
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-2">
                   <h3 className="text-xl font-semibold text-white">Pro</h3>
                 </div>
-                <p className="text-gray-300 text-sm mb-4">Everything you need to excel</p>
+                <p className="text-gray-300 text-sm mb-4">
+                  Everything you need to excel
+                </p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-3xl font-bold text-white">
-                    ${isAnnual ? annualMonthlyPrice.toFixed(2) : monthlyPrice.toFixed(2)}
+                    $
+                    {isAnnual
+                      ? annualMonthlyPrice.toFixed(2)
+                      : monthlyPrice.toFixed(2)}
                   </span>
                   <span className="text-gray-400 text-sm">/month</span>
                 </div>
@@ -140,7 +172,10 @@ export default function Pricing() {
                 ))}
               </ul>
 
-              <button className="relative w-full px-4 py-2.5 rounded-lg bg-primary-blue text-white font-medium text-sm hover:bg-primary-blue transition-all shadow-lg hover:shadow-blue-500/25 flex items-center justify-center gap-2">
+              <button
+                onClick={handleCheckout}
+                className="relative w-full px-4 py-2.5 rounded-lg bg-primary-blue text-white font-medium text-sm hover:bg-primary-blue transition-all shadow-lg hover:shadow-blue-500/25 flex items-center justify-center gap-2"
+              >
                 <span className="relative z-10 flex items-center gap-2">
                   Start Pro trial
                   <ArrowUpRight size={16} />
@@ -153,7 +188,7 @@ export default function Pricing() {
         {/* Bottom Section */}
         <div className="text-center mt-12 space-y-4">
           <p className="text-gray-400 text-sm">
-            Need enterprise features? 
+            Need enterprise features?
             <button className="text-blue-400 hover:text-blue-300 ml-1 underline underline-offset-2">
               Contact sales
             </button>
