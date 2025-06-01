@@ -19,6 +19,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@hello-pangea/dnd": "^18.0.1",
     "@radix-ui/react-slot": "^1.1.2",
+    "@stripe/stripe-js": "^7.3.1",
     "@tabler/icons-react": "^3.31.0",
     "@tanstack/react-query": "^5.74.4",
     "@tanstack/react-query-devtools": "^5.74.6",
@@ -46,6 +47,7 @@
     "react-grid-layout": "^1.5.1",
     "react-masonry-css": "^1.0.16",
     "sonner": "^2.0.3",
+    "stripe": "^18.2.0",
     "tw-animate-css": "^1.2.4",
     "use-debounce": "^10.0.4"
   },

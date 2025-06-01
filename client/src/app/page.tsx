@@ -1,13 +1,13 @@
 import Hero from '../components/landing-page/Hero';
 import Features from '../components/landing-page/Features'
-import Display from '../components/landing-page/Display'
+import Pricing from '../components/landing-page/Pricing'
 
 export default function LandingPage() {
   return (
     <div className="h-screen w-screen bg-secondary-black">
       <Hero />
       <Features />
-      <Display />
+      <Pricing />
     </div>
   );
 }
