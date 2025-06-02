@@ -2,7 +2,7 @@
 import React from "react";
 import Image from "next/image";
 import Navbar from "./Navbar";
-import landingGrad from "../../../public/assets/illustrations/landing-gradient.svg";
+import landingGrad from "../../../public/assets/illustrations/landing-gradient.png";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 

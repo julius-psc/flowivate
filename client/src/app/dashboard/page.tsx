@@ -145,8 +145,7 @@ export default function Dashboard() {
                   const FeatureComponent = featureComponents[featureKey];
 
                   const isProOnly = proOnlyFeatures.includes(featureKey);
-                  const isLocked =
-                    isProOnly && subscriptionStatus !== "active";
+                  const isLocked = isProOnly && subscriptionStatus !== "active";
 
                   return (
                     <SortableFeature
@@ -197,9 +196,9 @@ function SortableFeature({
     isDragging,
   } = useSortable({ id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform) || undefined,
+    transition: transition || undefined,
     zIndex: isDragging ? 50 : "auto",
     opacity: isDragging ? 0.5 : 1,
     filter: isLocked ? "grayscale(100%) blur(2px)" : "none",
@@ -246,4 +245,3 @@ function SortableFeature({
     </div>
   );
 }
-
