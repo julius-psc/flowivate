@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState } from "react";
 import { Check, ArrowUpRight, Sparkles, Crown } from "lucide-react";
 
@@ -25,12 +26,10 @@ export default function Pricing() {
   const annualPrice = monthlyPrice * 12 * 0.7; // 30% off
   const annualMonthlyPrice = annualPrice / 12;
 
-  // TODO: replace with your real price IDs from Stripe!
-  const monthlyPriceId = "price_xxx_monthly";
-  const annualPriceId = "price_xxx_annual";
-
-  // TODO: replace with your real user ID from session (if you use next-auth or similar)
-  const currentUserId = "mock_user_id"; // example placeholder
+const monthlyPriceId =
+  process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID!;
+const annualPriceId =
+  process.env.NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID!;
 
   const handleCheckout = async () => {
     const res = await fetch("/api/stripe/create-checkout-session", {
@@ -38,7 +37,6 @@ export default function Pricing() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         priceId: isAnnual ? annualPriceId : monthlyPriceId,
-        userId: currentUserId,
       }),
     });
 
@@ -63,10 +61,11 @@ export default function Pricing() {
             Choose your plan
           </h1>
           <p className="text-lg text-gray-400 max-w-lg mx-auto mb-8">
-            Start free and upgrade when you&apos;re ready to unlock more features
+            Start free and upgrade when you&apos;re ready to unlock more
+            features
           </p>
 
-          {/* Fixed Billing Toggle */}
+          {/* Billing Toggle */}
           <div className="inline-flex items-center gap-3 p-1 rounded-full bg-gray-800/50 border border-gray-700">
             <button
               onClick={() => setIsAnnual(false)}
@@ -136,7 +135,7 @@ export default function Pricing() {
               </div>
             </div>
 
-            {/* Subtle glow effect */}
+            {/* Subtle glow */}
             <div className="absolute inset-0 rounded-2xl bg-primary-blue/20 blur-xl -z-10"></div>
 
             <div className="">
@@ -185,7 +184,7 @@ export default function Pricing() {
           </div>
         </div>
 
-        {/* Bottom Section */}
+        {/* Bottom */}
         <div className="text-center mt-12 space-y-4">
           <p className="text-gray-400 text-sm">
             Need enterprise features?
