@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useDashboard } from "../../../context/DashboardContext";
 import { FeatureKey } from "../../../components/dashboard/features/featureMap";
 import { useTheme } from "next-themes";
+import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
 
 import {
   IconPlus,
@@ -18,11 +19,10 @@ import {
   IconWaveSine,
   IconRobot,
   IconBook,
+  IconDirections,
   IconTarget,
   IconBulb,
   IconChartLine,
-  IconDirections,
-  IconViewfinder,
 } from "@tabler/icons-react";
 
 // Feature icon mapping
@@ -33,7 +33,7 @@ const featureIcons = {
   Water: <IconGlass size={20} />,
   Sleep: <IconZzz size={20} />,
   Mood: <IconMoodSmile size={20} />,
-  DeepWork: <IconViewfinder size={20} />,
+  DeepWork: <IconBulb size={20} />,
   Ambient: <IconWaveSine size={20} />,
   Assistant: <IconRobot size={20} />,
   Books: <IconBook size={20} />,
@@ -129,7 +129,8 @@ const featureCategories = [
 ];
 
 export default function Features() {
-  const { addFeature, isFeatureSelected } = useDashboard();
+  const { addFeature, isFeatureSelected, selectedFeatures } = useDashboard();
+  const { status: subscriptionStatus, loading } = useSubscriptionStatus();
   const [activeCategory, setActiveCategory] = useState("all");
   const { theme } = useTheme();
 
@@ -138,18 +139,28 @@ export default function Features() {
     setMounted(true);
   }, []);
 
+  // While subscription status is loading, disable all add buttons
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <span className="text-gray-500">Loading features…</span>
+      </div>
+    );
+  }
+
   const headingColor = !mounted
     ? "text-transparent"
     : theme === "jungle" || theme === "ocean"
     ? "text-white"
     : "text-gray-900 dark:text-gray-100";
 
-    const categoryColor = !mounted
-  ? "text-transparent"
-  : theme === "jungle" || theme === "ocean"
-  ? "text-white"
-  : "text-gray-900 dark:text-gray-100";
+  const categoryColor = !mounted
+    ? "text-transparent"
+    : theme === "jungle" || theme === "ocean"
+    ? "text-white"
+    : "text-gray-900 dark:text-gray-100";
 
+  // Filter categories by activeCategory tab
   const filteredCategories =
     activeCategory === "all"
       ? featureCategories
@@ -187,7 +198,6 @@ export default function Features() {
             const isActive = activeCategory === category.name;
             const baseClasses =
               "px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5";
-
             const activeClass = "bg-primary text-white";
             const inactiveClass = !mounted
               ? "text-transparent"
@@ -214,7 +224,9 @@ export default function Features() {
         {filteredCategories.map((category) => (
           <div key={category.name} className="mb-12">
             <div className="flex items-center mb-6">
-              <h3 className={`text-lg font-semibold flex items-center gap-2 ${categoryColor}`}>
+              <h3
+                className={`text-lg font-semibold flex items-center gap-2 ${categoryColor}`}
+              >
                 {React.cloneElement(category.icon, {
                   className: "text-primary",
                 })}
@@ -224,6 +236,28 @@ export default function Features() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {category.features.map(({ key, description, benefit }) => {
                 const isSelected = isFeatureSelected(key as FeatureKey);
+
+                // “Assistant” is the AI feature that should always be locked for free users
+                const isProFeature = key === "Assistant";
+
+                // If free user has 4 already, they cannot add any more (unless this one is already selected)
+                const cannotAddBecauseOfLimit =
+                  subscriptionStatus === "free" &&
+                  selectedFeatures.length >= 4 &&
+                  !isSelected;
+
+                // If free user, always lock AI feature
+                const lockedForFree = isProFeature && subscriptionStatus === "free";
+
+                const isLocked = lockedForFree || cannotAddBecauseOfLimit;
+
+                // Decide button label
+                let buttonLabel = "Add to Dashboard";
+                if (lockedForFree) {
+                  buttonLabel = "Pro Only";
+                } else if (cannotAddBecauseOfLimit) {
+                  buttonLabel = "Limit reached";
+                }
 
                 return (
                   <div
@@ -264,10 +298,15 @@ export default function Features() {
                     {!isSelected && (
                       <button
                         onClick={() => addFeature(key as FeatureKey)}
-                        className="mt-auto py-2 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center gap-2 bg-primary text-white hover:bg-primary-hover focus:ring-2 focus:ring-primary-ring dark:focus:ring-primary-ring focus:outline-none"
+                        disabled={isLocked}
+                        className={`mt-auto py-2 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center gap-2 ${
+                          isLocked
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                            : "bg-primary text-white hover:bg-primary-hover focus:ring-2 focus:ring-primary-ring dark:focus:ring-primary-ring focus:outline-none"
+                        }`}
                       >
-                        <IconPlus size={14} />
-                        Add to Dashboard
+                        {!isLocked && <IconPlus size={14} />}
+                        {buttonLabel}
                       </button>
                     )}
                   </div>

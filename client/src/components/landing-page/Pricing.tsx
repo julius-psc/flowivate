@@ -31,22 +31,24 @@ const monthlyPriceId =
 const annualPriceId =
   process.env.NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID!;
 
-  const handleCheckout = async () => {
-    const res = await fetch("/api/stripe/create-checkout-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        priceId: isAnnual ? annualPriceId : monthlyPriceId,
-      }),
-    });
+const handleCheckout = async () => {
+  const res = await fetch("/api/stripe/create-checkout-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      priceId: isAnnual ? annualPriceId : monthlyPriceId,
+      cancelUrl: window.location.href, // dynamic cancelUrl 🚀
+    }),
+  });
 
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      console.error("Failed to create checkout session", data);
-    }
-  };
+  const data = await res.json();
+  if (data.url) {
+    window.location.href = data.url;
+  } else {
+    console.error("Failed to create checkout session", data);
+  }
+};
+
 
   return (
     <div id="pricing" className="min-h-screen bg-secondary-black px-4 py-20">

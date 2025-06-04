@@ -3,13 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSettings } from "../useSettings";
-import {
-  AlertCircle,
-  ArrowRight,
-  ExternalLink,
-  Loader2,
-  AlertTriangle,
-} from "lucide-react";
+import { AlertCircle, ArrowRight, Loader2, AlertTriangle } from "lucide-react";
 
 const SubscriptionTab = (): React.JSX.Element => {
   const { styling, sessionStatus, session } = useSettings();
@@ -41,6 +35,26 @@ const SubscriptionTab = (): React.JSX.Element => {
       console.error("Failed to create portal session", data);
     }
   };
+
+const handleUpgradeToPro = async () => {
+  const priceId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID!;
+
+  const res = await fetch("/api/stripe/create-checkout-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      priceId,
+      cancelUrl: window.location.href, // dynamic cancelUrl 🚀
+    }),
+  });
+
+  const data = await res.json();
+  if (data.url) {
+    window.location.href = data.url;
+  } else {
+    console.error("Failed to create checkout session", data);
+  }
+};
 
   const renderContent = () => (
     <div className="space-y-6">
@@ -101,57 +115,13 @@ const SubscriptionTab = (): React.JSX.Element => {
               Update Payment Method
             </button>
           ) : (
-            <Link
-              href="/#pricing"
-              className="mt-3 rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/80 transition-colors inline-block text-center"
+            <button
+              onClick={handleUpgradeToPro}
+              className="mt-3 rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/80 transition-colors"
             >
               Upgrade to Pro
-            </Link>
+            </button>
           )}
-        </div>
-
-        {/* UPGRADE OPTIONS */}
-        <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
-          <div className="px-3 py-2 bg-gray-50 dark:bg-gray-900/30 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              Upgrade Options
-            </h3>
-          </div>
-          <div className="p-3 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Pro Plan
-                </h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Unlock premium features and priority support.
-                </p>
-              </div>
-              <Link
-                href="/pricing"
-                className={`${styling.buttonPrimaryClasses} ${styling.linkButtonPrimaryClasses}`}
-              >
-                Upgrade
-              </Link>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Enterprise Plan
-                </h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Custom solutions for teams.
-                </p>
-              </div>
-              <Link
-                href="/contact-sales"
-                className={`${styling.buttonSecondaryClasses} ${styling.linkButtonSecondaryClasses}`}
-              >
-                Contact Sales <ExternalLink size={12} className="ml-1" />
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
     </div>

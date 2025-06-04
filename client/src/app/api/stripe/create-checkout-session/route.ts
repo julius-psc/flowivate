@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { priceId } = await req.json();
+  const { priceId, cancelUrl } = await req.json();
 
   if (!priceId) {
     return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
-    customer: user.stripeCustomerId || undefined, // if you already saved customerId
+    customer: user.stripeCustomerId || undefined,
     line_items: [
       {
         price: priceId,
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       priceId: priceId,
     },
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/#pricing`,
+    cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}`, // dynamic fallback 🚀
   });
 
   return NextResponse.json({ url: checkoutSession.url });

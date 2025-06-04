@@ -34,29 +34,19 @@ import { CSS } from "@dnd-kit/utilities";
 import Masonry from "react-masonry-css";
 import type { FeatureKey } from "@/components/dashboard/features/featureMap";
 
+import WithProGuard from "@/components/dashboard/recyclable/withProGuard";
+import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
+
 export default function Dashboard() {
   const { selectedFeatures, removeFeature, reorderFeatures } = useDashboard();
   const [activeId, setActiveId] = useState<FeatureKey | null>(null);
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // NEW — Subscription Status
-  const [subscriptionStatus, setSubscriptionStatus] = useState<
-    "active" | "canceled" | "past_due" | "free"
-  >("free");
+  const { status: subscriptionStatus } = useSubscriptionStatus();
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      const res = await fetch("/api/user/subscription");
-      const data = await res.json();
-      setSubscriptionStatus(data.subscriptionStatus);
-    };
-
-    fetchSubscription();
   }, []);
 
   const emptyTextColor = !mounted
@@ -94,9 +84,6 @@ export default function Dashboard() {
     1024: 2,
     640: 1,
   };
-
-  // PRO FEATURES ARRAY
-  const proOnlyFeatures: FeatureKey[] = ["Assistant", "DeepWork", "Mood"];
 
   return (
     <div className="w-full h-full flex-1 flex flex-col">
@@ -142,18 +129,22 @@ export default function Dashboard() {
                 columnClassName="flex flex-col"
               >
                 {selectedFeatures.map((featureKey) => {
-                  const FeatureComponent = featureComponents[featureKey];
-
-                  const isProOnly = proOnlyFeatures.includes(featureKey);
-                  const isLocked = isProOnly && subscriptionStatus !== "active";
+                  const { component: FeatureComponent, isPro } =
+                    featureComponents[featureKey];
 
                   return (
                     <SortableFeature
                       key={featureKey}
                       id={featureKey}
-                      FeatureComponent={FeatureComponent}
+                      FeatureComponent={() => (
+                        <WithProGuard
+                          subscriptionStatus={subscriptionStatus}
+                          isProOnly={!!isPro}
+                        >
+                          <FeatureComponent />
+                        </WithProGuard>
+                      )}
                       onRemove={() => removeFeature(featureKey)}
-                      isLocked={isLocked}
                     />
                   );
                 })}
@@ -163,7 +154,7 @@ export default function Dashboard() {
             <DragOverlay>
               {activeId ? (
                 <div className="rounded-xl border border-dashed border-gray-400 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 p-3 shadow-lg">
-                  {React.createElement(featureComponents[activeId])}
+                  {React.createElement(featureComponents[activeId].component)}
                 </div>
               ) : null}
             </DragOverlay>
@@ -178,14 +169,12 @@ interface SortableFeatureProps {
   id: string;
   FeatureComponent: React.FC;
   onRemove: () => void;
-  isLocked?: boolean;
 }
 
 function SortableFeature({
   id,
   FeatureComponent,
   onRemove,
-  isLocked,
 }: SortableFeatureProps) {
   const {
     attributes,
@@ -201,8 +190,6 @@ function SortableFeature({
     transition: transition || undefined,
     zIndex: isDragging ? 50 : "auto",
     opacity: isDragging ? 0.5 : 1,
-    filter: isLocked ? "grayscale(100%) blur(2px)" : "none",
-    pointerEvents: isLocked ? "none" : "auto",
   };
 
   return (
@@ -212,13 +199,6 @@ function SortableFeature({
       {...attributes}
       className="relative group rounded-xl transition-all duration-200 ease-in-out bg-background break-inside-avoid"
     >
-      {/* Lock overlay */}
-      {isLocked && (
-        <div className="absolute inset-0 bg-black/50 text-white flex items-center justify-center text-sm font-semibold rounded-xl z-50">
-          Pro Feature
-        </div>
-      )}
-
       {/* Top buttons */}
       <div className="absolute -top-4 -right-2 opacity-0 group-hover:opacity-100 flex items-center gap-2 backdrop-blur-lg bg-white/20 dark:bg-gray-900/20 border border-white/30 dark:border-gray-700/30 rounded-full px-3 py-1.5 shadow-lg transition-all duration-200 z-40">
         <button
@@ -245,3 +225,5 @@ function SortableFeature({
     </div>
   );
 }
+
+
