@@ -7,10 +7,10 @@ export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
 
   const freeFeatures = [
-    "10 journal entries/month",
-    "5 book entries/month",
     "4 basic components",
     "Community support",
+    "Restricted AI access",
+    "Custom themes"
   ];
 
   const proFeatures = [
@@ -19,7 +19,6 @@ export default function Pricing() {
     "Unlimited components",
     "Advanced analytics",
     "Priority support",
-    "Custom themes",
   ];
 
   const monthlyPrice = 4.99;
