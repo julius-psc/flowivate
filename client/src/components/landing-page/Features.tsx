@@ -56,11 +56,11 @@ export default function Features() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Initial scatter
+      // Initial scatter with tighter radius
       featuresRef.current.forEach((feature, index) => {
         if (!feature) return;
         const angle = (index / features.length) * Math.PI * 2;
-        const radius = 300 + Math.random() * 200;
+        const radius = 150 + Math.random() * 50; // Tighter spacing
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
 
@@ -76,64 +76,53 @@ export default function Features() {
       gsap.set(centralBoxRef.current, { scale: 0.6, opacity: 0, zIndex: 10 });
       gsap.set(logoRef.current, { scale: 0, rotation: -45, opacity: 0 });
 
-      // ScrollTrigger timeline
-      gsap.timeline({
+      // Timeline with pin and smooth scroll
+      const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
-          start: "top 80%",
-          end: "bottom top",
-          scrub: 0.5,
-          onUpdate: (self) => {
-            const progress = self.progress;
-
-            // Animate features inward
-            featuresRef.current.forEach((feature, index) => {
-              if (!feature) return;
-              const targetAngle = (index / features.length) * Math.PI * 2;
-              const targetRadius = 100;
-              const targetX = Math.cos(targetAngle) * targetRadius;
-              const targetY = Math.sin(targetAngle) * targetRadius;
-
-              gsap.to(feature, {
-                x: targetX * (1 - progress),
-                y: targetY * (1 - progress),
-                rotation: 0,
-                scale: 1,
-                duration: 0.3,
-                ease: "power2.out",
-              });
-            });
-
-            // Central box animation
-            gsap.to(centralBoxRef.current, {
-              scale: 0.8 + 0.2 * progress,
-              opacity: Math.min(1, progress * 2),
-              zIndex: progress > 0.5 ? 20 : 10,
-              duration: 0.3,
-              ease: "power2.out",
-            });
-
-            // Logo animation
-            if (progress > 0.6) {
-              gsap.to(logoRef.current, {
-                scale: 1,
-                rotation: 0,
-                opacity: 1,
-                duration: 0.6,
-                ease: "elastic.out(1, 0.4)",
-              });
-            } else {
-              gsap.to(logoRef.current, {
-                scale: 0,
-                rotation: -45,
-                opacity: 0,
-                duration: 0.3,
-                ease: "power2.in",
-              });
-            }
-          },
+          start: "top top",
+          end: "+=100%",
+          pin: true,
+          scrub: 1, // smoother
+          anticipatePin: 1, // prevents glitch when scrolling back up
         },
       });
+
+      // Animate features inward
+      tl.to(featuresRef.current, {
+        x: (i) => {
+          const angle = (i / features.length) * Math.PI * 2;
+          const targetRadius = 100;
+          return Math.cos(angle) * targetRadius;
+        },
+        y: (i) => {
+          const angle = (i / features.length) * Math.PI * 2;
+          const targetRadius = 100;
+          return Math.sin(angle) * targetRadius;
+        },
+        rotation: 0,
+        scale: 1,
+        duration: 1,
+        ease: "power2.out",
+      }, 0);
+
+      // Animate central box
+      tl.to(centralBoxRef.current, {
+        scale: 1,
+        opacity: 1,
+        zIndex: 20,
+        duration: 1,
+        ease: "power2.out",
+      }, 0.2);
+
+      // Animate logo
+      tl.to(logoRef.current, {
+        scale: 1,
+        rotation: 0,
+        opacity: 1,
+        duration: 1,
+        ease: "elastic.out(1, 0.4)",
+      }, 0.5);
 
       // Hover effects
       featuresRef.current.forEach((featureEl) => {
