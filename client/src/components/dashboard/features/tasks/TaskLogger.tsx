@@ -20,9 +20,10 @@ import {
   useQueryClient,
   QueryKey,
 } from "@tanstack/react-query";
-import Checkbox from "../../recyclable/Checkbox"; // Assuming path is correct
+import Checkbox from "../../recyclable/Checkbox";
 import * as tasksApi from "../../../../lib/tasksApi";
 import type { Task, TaskList } from "@/types/taskTypes";
+import useSubscriptionStatus from "../../../../hooks/useSubscriptionStatus";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
@@ -160,6 +161,7 @@ const TaskLogger: React.FC = () => {
   const queryKey: QueryKey = ["tasks"];
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { status: subscriptionStatus } = useSubscriptionStatus();
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -385,13 +387,19 @@ const TaskLogger: React.FC = () => {
 
   // Event Handlers
   const handleAddList = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && newListName.trim() && session?.user?.id) {
+    if (
+      e.key === "Enter" &&
+      newListName.trim() &&
+      session?.user?.id &&
+      canAddList
+    ) {
       addListMutation.mutate({ name: newListName.trim() });
     } else if (e.key === "Escape") {
       setIsAddingList(false);
       setNewListName("");
     }
   };
+
   const handleDeleteList = (listId: string | undefined) => {
     if (!listId || listId.startsWith("placeholder-")) return;
     deleteListMutation.mutate(listId);
@@ -520,6 +528,28 @@ const TaskLogger: React.FC = () => {
     const isAiPrimed = aiPrimedListId === listId;
     const isAiCurrentlyLoading =
       aiBreakdownState.isLoading && aiBreakdownState.listId === listId;
+
+    // === Subscription Status Limit Check ===
+    const list = taskLists.find((l) => l._id === listId);
+    const isAddingTopLevelTask = !parentTaskId;
+    const isFreeUser = subscriptionStatus === "free";
+
+    if (
+      e.key === "Enter" &&
+      !isAiCurrentlyLoading &&
+      isAddingTopLevelTask &&
+      isFreeUser &&
+      list &&
+      list.tasks.length >= 4
+    ) {
+      // Block adding more than 4 tasks for free users
+      e.preventDefault();
+      toast.error(
+        "Free users can only have 4 tasks per list. Upgrade for more!"
+      );
+      return;
+    }
+
     if (e.key === "Enter" && !isAiCurrentlyLoading) {
       e.preventDefault();
       if (taskValue) {
@@ -554,6 +584,7 @@ const TaskLogger: React.FC = () => {
       e.currentTarget?.blur();
     }
   };
+
   const handleDeleteTask = (listId: string, taskId: string) => {
     const list = taskLists.find((l) => l._id === listId);
     if (!list) return;
@@ -922,6 +953,11 @@ const TaskLogger: React.FC = () => {
     status === "unauthenticated" &&
     (!placeholderTaskLists || placeholderTaskLists.length === 0);
 
+  const isFreeUser = subscriptionStatus === "free";
+  const canAddList = !isFreeUser || taskLists.length < 2;
+
+  const canAddTask = (list: TaskList) => !isFreeUser || list.tasks.length < 4;
+
   return (
     <div className="p-4 flex flex-col h-full">
       {/* Header */}
@@ -1084,7 +1120,7 @@ const TaskLogger: React.FC = () => {
                   {listAddingTaskId !== list._id && (
                     <button
                       onClick={() => {
-                        if (!updateListMutation.isPending) {
+                        if (!updateListMutation.isPending && canAddTask(list)) {
                           setListAddingTaskId(list._id!);
                           setAiPrimedListId(null);
                           setActiveTaskInputValues((prev) => ({
@@ -1097,12 +1133,20 @@ const TaskLogger: React.FC = () => {
                           });
                         }
                       }}
+                      disabled={
+                        updateListMutation.isPending || !canAddTask(list)
+                      }
                       className={`flex items-center gap-1 ${headingColor} hover:text-secondary-black/80 dark:hover:text-secondary-white/80 text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                       title="Add task"
-                      disabled={updateListMutation.isPending}
                     >
                       <IconCopyPlus size={14} /> <span>Add task</span>
                     </button>
+                  )}
+                  {isFreeUser && list.tasks.length >= 4 && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Free users can only have 4 tasks per list. Upgrade for
+                      more.
+                    </p>
                   )}
                 </>
               )}
@@ -1152,7 +1196,7 @@ const TaskLogger: React.FC = () => {
                 }
               }}
               className="flex items-center justify-center p-2 w-full rounded-lg text-secondary-black hover:text-secondary-black/40 dark:hover:text-secondary-white transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={addListMutation.isPending}
+              disabled={addListMutation.isPending || !canAddList}
               title="Add a new task list"
             >
               {addListMutation.isPending ? (
