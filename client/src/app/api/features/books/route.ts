@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next";
 import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { authOptions } from "@/lib/authOptions";
+import { isProUser } from "@/lib/subscriptionCheck";
+import { hitRateLimit } from "@/lib/rateLimit";
 
 interface Book {
   _id: ObjectId;
@@ -53,6 +55,14 @@ export async function GET() {
     if (!isValidObjectId(userId)) {
       return NextResponse.json({ message: "Invalid user identifier" }, { status: 400 });
     }
+
+    if (hitRateLimit(`books-list-${userId}`)) {
+      return NextResponse.json({ message: "Too many requests" }, { status: 429 });
+    }
+
+    if (!(await isProUser(userId))) {
+      return NextResponse.json({ message: "Pro subscription required" }, { status: 403 });
+    }
     const userObjectId = new ObjectId(userId);
 
     const client = await clientPromise;
@@ -83,6 +93,13 @@ export async function POST(request: NextRequest) {
     const userId = session.user.id;
     if (!isValidObjectId(userId)) {
       return NextResponse.json({ message: "Invalid user identifier" }, { status: 400 });
+    }
+    if (hitRateLimit(`books-${userId}`)) {
+      return NextResponse.json({ message: "Too many requests" }, { status: 429 });
+    }
+
+    if (!(await isProUser(userId))) {
+      return NextResponse.json({ message: "Pro subscription required" }, { status: 403 });
     }
     const userObjectId = new ObjectId(userId);
 

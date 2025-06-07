@@ -4,6 +4,8 @@ import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { authOptions } from "@/lib/authOptions";
 import { parse, isValid as isValidDateFn, format } from 'date-fns';
+import { isProUser } from "@/lib/subscriptionCheck";
+import { hitRateLimit } from "@/lib/rateLimit";
 
 interface JournalEntry {
   _id: ObjectId;
@@ -109,6 +111,14 @@ export async function GET(
         logApiError(operation, dateString, sessionUserId, new Error('Invalid user ID format in session'));
         return NextResponse.json({ message: 'Invalid user identifier.' }, { status: 400 });
     }
+
+    if (hitRateLimit(`journal-${sessionUserId}`)) {
+      return NextResponse.json({ message: "Too many requests" }, { status: 429 });
+    }
+
+    if (!(await isProUser(sessionUserId))) {
+      return NextResponse.json({ message: "Pro subscription required" }, { status: 403 });
+    }
     const userObjectId = new ObjectId(sessionUserId);
 
     const client = await clientPromise;
@@ -155,6 +165,14 @@ export async function PUT(
     if (!isValidObjectId(sessionUserId)) {
         logApiError(operation, dateString, sessionUserId, new Error('Invalid user ID format in session'));
         return NextResponse.json({ message: 'Invalid user identifier.' }, { status: 400 });
+    }
+
+    if (hitRateLimit(`journal-${sessionUserId}`)) {
+      return NextResponse.json({ message: "Too many requests" }, { status: 429 });
+    }
+
+    if (!(await isProUser(sessionUserId))) {
+      return NextResponse.json({ message: "Pro subscription required" }, { status: 403 });
     }
     const userObjectId = new ObjectId(sessionUserId);
 
@@ -232,6 +250,14 @@ export async function DELETE(
     if (!isValidObjectId(sessionUserId)) {
         logApiError(operation, dateString, sessionUserId, new Error('Invalid user ID format in session'));
         return NextResponse.json({ message: 'Invalid user identifier.' }, { status: 400 });
+    }
+
+    if (hitRateLimit(`journal-${sessionUserId}`)) {
+      return NextResponse.json({ message: "Too many requests" }, { status: 429 });
+    }
+
+    if (!(await isProUser(sessionUserId))) {
+      return NextResponse.json({ message: "Pro subscription required" }, { status: 403 });
     }
     const userObjectId = new ObjectId(sessionUserId);
 

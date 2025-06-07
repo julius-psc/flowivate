@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next";
 import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { authOptions } from "@/lib/authOptions";
+import { isProUser } from "@/lib/subscriptionCheck";
+import { hitRateLimit } from "@/lib/rateLimit";
 
 interface Book {
   _id: ObjectId;
@@ -54,6 +56,14 @@ export async function GET(
         { message: "Invalid user identifier format in session" },
         { status: 400 }
       );
+    }
+
+    if (hitRateLimit(`book-${userId}`)) {
+      return NextResponse.json({ message: "Too many requests" }, { status: 429 });
+    }
+
+    if (!(await isProUser(userId))) {
+      return NextResponse.json({ message: "Pro subscription required" }, { status: 403 });
     }
 
     const userObjectId = new ObjectId(userId);
@@ -117,6 +127,14 @@ export async function PUT(
         { message: "Invalid user identifier format in session" },
         { status: 400 }
       );
+    }
+
+    if (hitRateLimit(`book-${userId}`)) {
+      return NextResponse.json({ message: "Too many requests" }, { status: 429 });
+    }
+
+    if (!(await isProUser(userId))) {
+      return NextResponse.json({ message: "Pro subscription required" }, { status: 403 });
     }
 
     const userObjectId = new ObjectId(userId);
@@ -370,6 +388,14 @@ export async function DELETE(
         { message: "Invalid user identifier format in session" },
         { status: 400 }
       );
+    }
+
+    if (hitRateLimit(`book-${userId}`)) {
+      return NextResponse.json({ message: "Too many requests" }, { status: 429 });
+    }
+
+    if (!(await isProUser(userId))) {
+      return NextResponse.json({ message: "Pro subscription required" }, { status: 403 });
     }
 
     const userObjectId = new ObjectId(userId);

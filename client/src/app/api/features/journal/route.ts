@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next";
 import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { authOptions } from "@/lib/authOptions";
+import { isProUser } from "@/lib/subscriptionCheck";
+import { hitRateLimit } from "@/lib/rateLimit";
 
 interface JournalEntry {
   _id: ObjectId;
@@ -51,6 +53,14 @@ export async function GET() {
     if (!isValidObjectId(userId)) {
         console.error(`Error in GET /api/features/journal: Invalid session user ID format - ${userId}`);
         return NextResponse.json({ message: 'Invalid user identifier' }, { status: 400 });
+    }
+
+    if (hitRateLimit(`journal-list-${userId}`)) {
+      return NextResponse.json({ message: "Too many requests" }, { status: 429 });
+    }
+
+    if (!(await isProUser(userId))) {
+      return NextResponse.json({ message: "Pro subscription required" }, { status: 403 });
     }
     const userObjectId = new ObjectId(userId);
 
