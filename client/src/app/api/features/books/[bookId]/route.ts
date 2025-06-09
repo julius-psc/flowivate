@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { authOptions } from "@/lib/authOptions";
+import { checkRateLimit } from "@/lib/checkRateLimit"; 
 
 interface Book {
   _id: ObjectId;
@@ -55,6 +56,9 @@ export async function GET(
         { status: 400 }
       );
     }
+   const rateLimitResponse = await checkRateLimit(userId, `/api/features/books/GET`, 20);
+if (rateLimitResponse) return rateLimitResponse;
+
 
     const userObjectId = new ObjectId(userId);
     const bookObjectId = new ObjectId(bookId);
@@ -118,6 +122,11 @@ export async function PUT(
         { status: 400 }
       );
     }
+
+   const rateLimitResponse = await checkRateLimit(userId, `/api/features/books/PUT`, 4);
+if (rateLimitResponse) return rateLimitResponse;
+
+
 
     const userObjectId = new ObjectId(userId);
     const bookObjectId = new ObjectId(bookId);
@@ -371,6 +380,11 @@ export async function DELETE(
         { status: 400 }
       );
     }
+
+  const rateLimitResponse = await checkRateLimit(userId, `/api/features/books/DELETE`, 5);
+if (rateLimitResponse) return rateLimitResponse;
+
+
 
     const userObjectId = new ObjectId(userId);
     const bookObjectId = new ObjectId(bookId);

@@ -30,7 +30,7 @@ import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { format } from "date-fns";
 
-interface Book {
+export interface Book {
   _id: string;
   title: string;
   author: string;
