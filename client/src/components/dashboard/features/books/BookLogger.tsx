@@ -546,7 +546,7 @@ const BookLogger: React.FC = () => {
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden max-w-screen-lg mx-auto w-full">
         {/* Left Panel - Book List */}
-        <div className="w-1/3 p-4 flex flex-col">
+        <div className="w-1/3 p-4 flex flex-col bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-md">
           <div className="relative mb-4">
             <input
               type="text"
@@ -664,7 +664,7 @@ const BookLogger: React.FC = () => {
         </div>
 
         {/* Right Panel - Book Details / Edit Form */}
-        <div className="w-2/3 p-4 flex flex-col">
+        <div className="w-2/3 p-4 flex flex-col bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-md mx-2">
           {selectedBook && !isEditing ? (
             <div className="flex-1 overflow-y-auto opacity-90">
               <div className="flex justify-between items-start mb-4">
@@ -913,7 +913,7 @@ const BookLogger: React.FC = () => {
                       <>
                         <EditorContent
                           editor={notesEditor}
-                          className="h-full max-w-full"
+                          className="h-full max-w-full break-words whitespace-pre-wrap"
                         />
                         <ContextMenu editor={notesEditor} />
                       </>

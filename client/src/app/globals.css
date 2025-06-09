@@ -259,8 +259,8 @@ html {
   min-height: 100%;
   outline: none;
   padding: 1rem;
-  /* Define a base text color for light mode if not inherited */
-  /* color: #374151; /* Example: text-gray-700 */
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .ProseMirror h1 {
@@ -456,6 +456,13 @@ html {
 }
 
 /* Flattened prose override for Flowivate notes */
+.rendered-notes {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  overflow-x: hidden;
+}
+
 .rendered-notes :is(p, h1, h2, h3, li) {
   margin: 0.4rem 0 !important;
   line-height: 1.4 !important;
