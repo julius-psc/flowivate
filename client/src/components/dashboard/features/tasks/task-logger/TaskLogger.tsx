@@ -29,6 +29,7 @@ const TaskLogger: React.FC = () => {
     setAddingSubtaskTo,
     editingTaskId,
     editingTaskValue,
+    setEditingTaskValue,
     subscriptionStatus,
     status,
     taskLists,
@@ -153,6 +154,7 @@ const TaskLogger: React.FC = () => {
                       editingTaskValue={editingTaskValue}
                       editInputRef={taskInputRefs}
                       handleStartEditing={handleStartEditing}
+                      setEditingTaskValue={setEditingTaskValue}
                       handleEditInputKeyDown={handleEditInputKeyDown}
                       handleSaveEditing={handleSaveEditing}
                       handleCancelEditing={handleCancelEditing}

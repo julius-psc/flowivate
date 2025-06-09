@@ -455,36 +455,39 @@ export const useTaskLoggerState = () => {
     setEditingTaskValue("");
   };
 
-  const handleSaveEditing = (listId: string) => {
-    if (!editingTaskId) return;
-    const trimmedValue = editingTaskValue.trim();
-    const list = taskLists.find((l) => l._id === listId);
-    if (!list) {
-      handleCancelEditing();
-      return;
-    }
+const handleSaveEditing = (listId: string) => {
+  if (!editingTaskId) return;
 
-    if (!trimmedValue) {
-      handleDeleteTask(listId, editingTaskId);
-      handleCancelEditing();
-      return;
-    }
+  const trimmedValue = editingTaskValue.trim();
+  const list = taskLists.find((l) => l._id === listId);
+  if (!list) {
+    handleCancelEditing();
+    return;
+  }
 
-    const { updatedTasks, taskFound } = findAndUpdateTask(
-      [...list.tasks],
-      editingTaskId,
-      (task) => ({
-        ...task,
-        name: trimmedValue,
-      })
-    );
+  if (!trimmedValue) {
+    handleDeleteTask(listId, editingTaskId);
+    handleCancelEditing(); 
+    return;
+  }
 
-    if (taskFound) {
-      triggerListUpdate(listId, updatedTasks);
-    } else {
-      handleCancelEditing();
-    }
-  };
+  const { updatedTasks, taskFound } = findAndUpdateTask(
+    [...list.tasks],
+    editingTaskId,
+    (task) => ({
+      ...task,
+      name: trimmedValue,
+    })
+  );
+
+  if (taskFound) {
+    triggerListUpdate(listId, updatedTasks);
+    handleCancelEditing(); 
+  } else {
+    handleCancelEditing(); // fallback
+  }
+};
+
 
   const handleEditInputKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,

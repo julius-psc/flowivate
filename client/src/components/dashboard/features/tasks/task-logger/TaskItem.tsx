@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   IconChevronDown,
   IconChevronRight,
@@ -24,6 +24,7 @@ interface TaskItemProps {
   editingTaskValue: string;
   editInputRef: React.RefObject<Record<string, HTMLInputElement | null>>;
   handleStartEditing: (listId: string, task: Task) => void;
+  setEditingTaskValue?: React.Dispatch<React.SetStateAction<string>>;
   handleEditInputKeyDown: (
     e: React.KeyboardEvent<HTMLInputElement>,
     listId: string
@@ -65,6 +66,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   editingTaskValue,
   editInputRef,
   handleStartEditing,
+  setEditingTaskValue,
   handleEditInputKeyDown,
   handleSaveEditing,
   handleCancelEditing,
@@ -99,6 +101,10 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   }, [addingSubtaskTo, task.id, subtaskInputRef]);
 
+  const sortedSubtasks = useMemo(() => {
+    return task.subtasks?.slice().sort((a, b) => b.priority - a.priority) ?? [];
+  }, [task.subtasks]);
+
   // --- Editing View ---
   if (isEditing) {
     return (
@@ -116,9 +122,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
             }}
             type="text"
             value={editingTaskValue}
-            onChange={() => {
-              // Editing value is controlled by parent → do nothing here
-            }}
+            onChange={(e) => setEditingTaskValue?.(e.target.value)}
             onKeyDown={(e) => handleEditInputKeyDown(e, listId)}
             onBlur={() => handleSaveEditing(listId)}
             className="flex-1 bg-transparent focus:outline-none text-slate-900 dark:text-slate-200 text-sm font-medium"
@@ -227,39 +231,37 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
       {/* Subtasks */}
       {hasSubtasks && isExpanded && (
-        <div className="mt-1 space-y-1 animate-fade-in">
-          {task.subtasks
-            .sort((a, b) => b.priority - a.priority)
-            .map((subtask) => (
-              <TaskItem
-                key={subtask.id}
-                task={subtask}
-                listId={listId}
-                level={level + 1}
-                expandedTasks={expandedTasks}
-                toggleTaskExpansion={toggleTaskExpansion}
-                editingTaskId={editingTaskId}
-                editingTaskValue={editingTaskValue}
-                editInputRef={editInputRef}
-                handleStartEditing={handleStartEditing}
-                handleEditInputKeyDown={handleEditInputKeyDown}
-                handleSaveEditing={handleSaveEditing}
-                handleCancelEditing={handleCancelEditing}
-                openPriorityDropdown={openPriorityDropdown}
-                togglePriorityDropdown={togglePriorityDropdown}
-                handleToggleTaskCompletion={handleToggleTaskCompletion}
-                handleDeleteTask={handleDeleteTask}
-                handleSetPriority={handleSetPriority}
-                addingSubtaskTo={addingSubtaskTo}
-                setAddingSubtaskTo={setAddingSubtaskTo}
-                subtaskInputRef={subtaskInputRef}
-                activeTaskInputValues={activeTaskInputValues}
-                setActiveTaskInputValues={setActiveTaskInputValues}
-                handleKeyDownTaskInput={handleKeyDownTaskInput}
-                isPlaceholder={isPlaceholder}
-                isDisabled={isDisabled}
-              />
-            ))}
+        <div className="mt-1 space-y-1">
+          {sortedSubtasks.map((subtask: Task) => (
+            <TaskItem
+              key={subtask.id}
+              task={subtask}
+              listId={listId}
+              level={level + 1}
+              expandedTasks={expandedTasks}
+              toggleTaskExpansion={toggleTaskExpansion}
+              editingTaskId={editingTaskId}
+              editingTaskValue={editingTaskValue}
+              editInputRef={editInputRef}
+              handleStartEditing={handleStartEditing}
+              handleEditInputKeyDown={handleEditInputKeyDown}
+              handleSaveEditing={handleSaveEditing}
+              handleCancelEditing={handleCancelEditing}
+              openPriorityDropdown={openPriorityDropdown}
+              togglePriorityDropdown={togglePriorityDropdown}
+              handleToggleTaskCompletion={handleToggleTaskCompletion}
+              handleDeleteTask={handleDeleteTask}
+              handleSetPriority={handleSetPriority}
+              addingSubtaskTo={addingSubtaskTo}
+              setAddingSubtaskTo={setAddingSubtaskTo}
+              subtaskInputRef={subtaskInputRef}
+              activeTaskInputValues={activeTaskInputValues}
+              setActiveTaskInputValues={setActiveTaskInputValues}
+              handleKeyDownTaskInput={handleKeyDownTaskInput}
+              isPlaceholder={isPlaceholder}
+              isDisabled={isDisabled}
+            />
+          ))}
         </div>
       )}
 
@@ -302,7 +304,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
               autoFocus
             />
           ) : (
-            <div className="group-hover/task:flex hidden animate-fade-in items-center gap-1">
+            <div className="group-hover/task:flex hidden items-center gap-1">
               <button
                 onClick={() => !isDisabled && setAddingSubtaskTo(task.id)}
                 className="flex items-center gap-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 text-sm transition-colors duration-200 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -319,4 +321,4 @@ const TaskItem: React.FC<TaskItemProps> = ({
   );
 };
 
-export default TaskItem;
+export default TaskItem; 
