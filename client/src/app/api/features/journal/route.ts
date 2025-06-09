@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { authOptions } from "@/lib/authOptions";
+import { checkRateLimit } from "@/lib/checkRateLimit";
 
 interface JournalEntry {
   _id: ObjectId;
@@ -25,11 +26,13 @@ interface JournalEntryResponseItem {
 const DEFAULT_DB_NAME = process.env.MONGODB_DB || "Flowivate";
 
 function isValidObjectId(id: string): boolean {
-  if (typeof id !== 'string') return false;
-  return ObjectId.isValid(id) && (new ObjectId(id).toString() === id);
+  if (typeof id !== "string") return false;
+  return ObjectId.isValid(id) && new ObjectId(id).toString() === id;
 }
 
-const transformEntryForResponse = (entry: JournalEntry): JournalEntryResponseItem => {
+const transformEntryForResponse = (
+  entry: JournalEntry
+): JournalEntryResponseItem => {
   return {
     _id: entry._id.toString(),
     userId: entry.userId.toString(),
@@ -49,9 +52,21 @@ export async function GET() {
 
     const userId = session.user.id;
     if (!isValidObjectId(userId)) {
-        console.error(`Error in GET /api/features/journal: Invalid session user ID format - ${userId}`);
-        return NextResponse.json({ message: 'Invalid user identifier' }, { status: 400 });
+      console.error(
+        `Error in GET /api/features/journal: Invalid session user ID format - ${userId}`
+      );
+      return NextResponse.json(
+        { message: "Invalid user identifier" },
+        { status: 400 }
+      );
     }
+    const rateLimitResponse = await checkRateLimit(
+      userId,
+      `/api/features/journal/GET`,
+      20
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const userObjectId = new ObjectId(userId);
 
     const client = await clientPromise;
@@ -66,9 +81,11 @@ export async function GET() {
     const responseEntries = entriesArray.map(transformEntryForResponse);
 
     return NextResponse.json({ entries: responseEntries }, { status: 200 });
-
   } catch (error) {
     console.error("Error in GET /api/features/journal:", error);
-    return NextResponse.json({ message: "Failed to retrieve journal entries" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to retrieve journal entries" },
+      { status: 500 }
+    );
   }
 }
