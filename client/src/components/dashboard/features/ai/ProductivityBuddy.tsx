@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
 import { toast } from "sonner";
-import { Lock, Loader2, Eye, EyeOff } from "lucide-react";
+import { Lock, Loader2 } from "lucide-react";
 
 const FloatingParticles: React.FC = () => {
   const [particles, setParticles] = useState<
@@ -139,11 +139,6 @@ export default function ProductivityBuddy() {
       className="fixed bottom-6 right-16 z-80 w-10 h-10 rounded-full flex items-center justify-center"
       title={isVisible ? "Hide Productivity Buddy" : "Show Productivity Buddy"}
     >
-      {isVisible ? (
-        <EyeOff size={16} className="text-gray-600 dark:text-gray-300" />
-      ) : (
-        <Eye size={16} className="text-gray-600 dark:text-gray-300" />
-      )}
     </motion.button>
   );
 

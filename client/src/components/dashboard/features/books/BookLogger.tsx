@@ -174,10 +174,6 @@ const BookLogger: React.FC = () => {
     },
     injectCSS: false,
     immediatelyRender: false,
-    onUpdate: ({ editor }) => {
-      const content = editor.getHTML();
-      setFormData((prev) => ({ ...prev, notes: content }));
-    },
   });
 
   useEffect(() => {

@@ -4,39 +4,27 @@ import { useState, useEffect, FormEvent, useRef } from "react";
 import { toast } from "sonner";
 import { X, Plus } from "lucide-react";
 
-// --- Skeleton Component for Affirmations ---
-// (Paste the AffirmationsSkeleton component code from above here)
+
 const AffirmationsSkeleton = () => {
   return (
-    // Mimic the main container styles + add animate-pulse
     <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden h-full animate-pulse">
-      {/* Header Skeleton */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        {/* Title placeholder */}
         <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded"></div>
-        {/* 'New' button placeholder */}
         <div className="h-5 w-10 bg-gray-200 dark:bg-zinc-700 rounded-md"></div>
       </div>
 
-      {/* List Area Skeleton */}
       <div className="flex-grow overflow-y-auto mb-4 space-y-2">
-        {/* Placeholder for multiple affirmation items */}
         {[...Array(3)].map((_, index) => (
           <div
             key={index}
             className="flex items-center justify-between px-3 py-1 rounded-lg min-h-[32px]"
           >
             <div className="flex items-center gap-3 flex-1">
-              {/* Bullet placeholder */}
               <div className="h-2 w-2 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
-              {/* Text placeholder */}
               <div className="h-3 flex-1 bg-gray-200 dark:bg-zinc-700 rounded mr-6"></div>{" "}
-              {/* mr-6 leaves space for potential hidden X */}
             </div>
-            {/* No need for X button placeholder as it's hidden */}
           </div>
         ))}
-        {/* Add one slightly shorter line */}
         <div className="flex items-center justify-between px-3 py-1 rounded-lg min-h-[32px]">
           <div className="flex items-center gap-3 flex-1">
             <div className="h-2 w-2 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
@@ -45,13 +33,9 @@ const AffirmationsSkeleton = () => {
         </div>
       </div>
 
-      {/* No skeleton needed for the input form as it's initially hidden */}
-      {/* Add a placeholder for where the form *would* be to maintain height */}
       <div className="mt-auto flex gap-2 flex-shrink-0 pb-1 invisible">
         <div className="h-[46px] flex-1 rounded-xl bg-transparent"></div>{" "}
-        {/* Match input height */}
         <div className="h-[40px] w-[60px] rounded-lg bg-transparent"></div>{" "}
-        {/* Match button size */}
       </div>
     </div>
   );
@@ -73,8 +57,6 @@ export default function Affirmations() {
       setIsLoading(true); // Keep this true at the start
       setError(null);
       try {
-        // Simulate network delay for testing skeleton
-        // await new Promise(resolve => setTimeout(resolve, 2000));
 
         const response = await fetch("/api/features/affirmations");
 
@@ -97,29 +79,27 @@ export default function Affirmations() {
         );
         toast.error("Could not load affirmations.");
       } finally {
-        setIsLoading(false); // Set loading false after fetch attempt
+        setIsLoading(false); 
       }
     };
 
     fetchAffirmations();
   }, []);
 
-  // --- Focus input when it becomes visible ---
+
   useEffect(() => {
     if (isInputVisible) {
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [isInputVisible]);
 
-  // --- Add new affirmation ---
-  // (Keep handleAddAffirmation function exactly as it was)
   const handleAddAffirmation = async (event: FormEvent) => {
     event.preventDefault();
     const trimmedAffirmation = newAffirmation.trim();
 
     if (!trimmedAffirmation) {
       toast.warning("Please enter an affirmation.");
-      inputRef.current?.focus(); // Keep focus if empty
+      inputRef.current?.focus(); 
       return;
     }
 
@@ -254,7 +234,6 @@ export default function Affirmations() {
         )}
       </div>
 
-      {/* Affirmations List */}
       <div className="flex-grow overflow-y-auto mb-4 space-y-2">
         {affirmations.length === 0 && !isInputVisible ? (
           <div className="flex items-center justify-center h-full">
@@ -287,7 +266,6 @@ export default function Affirmations() {
         )}
       </div>
 
-      {/* Input and Add Button Area (Conditionally Rendered) */}
       {isInputVisible && (
         <form
           onSubmit={handleAddAffirmation}
