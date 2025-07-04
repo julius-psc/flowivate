@@ -54,6 +54,7 @@ interface TaskItemProps {
   ) => void;
   isPlaceholder: boolean;
   isDisabled: boolean;
+  subscriptionStatus?: "active" | "canceled" | "past_due" | "free";
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -83,16 +84,20 @@ const TaskItem: React.FC<TaskItemProps> = ({
   handleKeyDownTaskInput,
   isPlaceholder,
   isDisabled,
+  subscriptionStatus = "free", // default to free for safety
 }) => {
+  const MAX_SUBTASKS = 6;
+  const isFreeUser = subscriptionStatus === "free";
   const isEditing = editingTaskId === task.id;
   const isExpanded = !!expandedTasks[task.id];
   const hasSubtasks = task.subtasks && task.subtasks.length > 0;
   const isPriorityDropdownOpen = openPriorityDropdown === task.id;
   const isSubtask = level > 0;
+  const subtaskLimitReached =
+    isFreeUser && (task.subtasks?.length || 0) >= MAX_SUBTASKS;
   const indentMultiplier = 4;
   const indentationClass = level > 0 ? `pl-${level * indentMultiplier}` : "";
 
-  // Focus subtask input when needed
   useEffect(() => {
     if (addingSubtaskTo === task.id) {
       setTimeout(() => {
@@ -105,7 +110,6 @@ const TaskItem: React.FC<TaskItemProps> = ({
     return task.subtasks?.slice().sort((a, b) => b.priority - a.priority) ?? [];
   }, [task.subtasks]);
 
-  // --- Editing View ---
   if (isEditing) {
     return (
       <div
@@ -134,7 +138,6 @@ const TaskItem: React.FC<TaskItemProps> = ({
     );
   }
 
-  // --- Default View ---
   return (
     <div key={task.id} className={`relative group/task ${indentationClass}`}>
       <div className="flex items-center p-2 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-100/50 dark:border-zinc-700/50 hover:border-slate-200/70 dark:hover:border-zinc-600/70 hover:shadow-sm transition-all duration-200">
@@ -260,6 +263,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
               handleKeyDownTaskInput={handleKeyDownTaskInput}
               isPlaceholder={isPlaceholder}
               isDisabled={isDisabled}
+              subscriptionStatus={subscriptionStatus}
             />
           ))}
         </div>
@@ -305,14 +309,16 @@ const TaskItem: React.FC<TaskItemProps> = ({
             />
           ) : (
             <div className="group-hover/task:flex hidden items-center gap-1">
-              <button
-                onClick={() => !isDisabled && setAddingSubtaskTo(task.id)}
-                className="flex items-center gap-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 text-sm transition-colors duration-200 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Add subtask"
-                disabled={isDisabled}
-              >
-                <IconCopyPlus size={14} /> <span>Add subtask</span>
-              </button>
+              {!subtaskLimitReached && (
+                <button
+                  onClick={() => !isDisabled && setAddingSubtaskTo(task.id)}
+                  className="flex items-center gap-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 text-sm transition-colors duration-200 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Add subtask"
+                  disabled={isDisabled}
+                >
+                  <IconCopyPlus size={14} /> <span>Add subtask</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -321,4 +327,4 @@ const TaskItem: React.FC<TaskItemProps> = ({
   );
 };
 
-export default TaskItem; 
+export default TaskItem;

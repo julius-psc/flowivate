@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { IconLoader2, IconSquareRoundedPlus2 } from "@tabler/icons-react";
 import { useTheme } from "next-themes";
+import SubPopup from "@/components/dashboard/recyclable/SubPopup";
 import ListHeader from "./ListHeader";
 import TaskItem from "./TaskItem";
 import AddTaskInput from "./AddTaskInput";
@@ -53,6 +54,7 @@ const TaskLogger: React.FC = () => {
   } = useTaskLoggerState();
 
   const { theme } = useTheme();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const headingColor = !mounted
     ? "text-transparent"
@@ -89,6 +91,12 @@ const TaskLogger: React.FC = () => {
 
   return (
     <div className="p-4 flex flex-col h-full">
+      {/* Modal */}
+      <SubPopup
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
+
       {/* Header */}
       <div className="flex justify-between items-center mb-4 flex-shrink-0 max-w-3xl mx-auto w-full">
         <h1 className={`text-lg font-semibold ${headingColor}`}>My Tasks</h1>
@@ -225,7 +233,11 @@ const TaskLogger: React.FC = () => {
                 {listAddingTaskId !== list._id && (
                   <button
                     onClick={() => {
-                      if (!updateListMutation.isPending && canAddTask(list)) {
+                      if (!updateListMutation.isPending) {
+                        if (!canAddTask(list)) {
+                          setShowUpgradeModal(true);
+                          return;
+                        }
                         setListAddingTaskId(list._id!);
                         setAiPrimedListId(null);
                         setActiveTaskInputValues((prev) => ({
@@ -234,19 +246,12 @@ const TaskLogger: React.FC = () => {
                         }));
                       }
                     }}
-                    disabled={updateListMutation.isPending || !canAddTask(list)}
+                    disabled={updateListMutation.isPending}
                     className={`flex items-center gap-1 ${headingColor} hover:text-secondary-black/80 dark:hover:text-secondary-white/80 text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                     title="Add task"
                   >
                     <IconSquareRoundedPlus2 size={14} /> <span>Add task</span>
                   </button>
-                )}
-
-                {/* Limit message */}
-                {isFreeUser && list.tasks.length >= 4 && (
-                  <p className="text-xs text-red-500 mt-1">
-                    Free users can only have 4 tasks per list. Upgrade for more.
-                  </p>
                 )}
               </div>
             );
@@ -286,12 +291,16 @@ const TaskLogger: React.FC = () => {
           {!isAddingList && (
             <button
               onClick={() => {
+                if (!canAddList) {
+                  setShowUpgradeModal(true);
+                  return;
+                }
                 if (!updateListMutation.isPending) {
                   setIsAddingList(true);
                 }
               }}
               className="flex items-center justify-center p-2 w-full rounded-lg text-secondary-black hover:text-secondary-black/40 dark:hover:text-secondary-white transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={updateListMutation.isPending || !canAddList}
+              disabled={updateListMutation.isPending}
               title="Add a new task list"
             >
               {updateListMutation.isPending ? (
@@ -315,4 +324,4 @@ const TaskLogger: React.FC = () => {
   );
 };
 
-export default TaskLogger;
+export default TaskLogger
