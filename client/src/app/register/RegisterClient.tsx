@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -12,45 +12,62 @@ import logo from "../../assets/brand/logo-v1.5.svg";
 import github from "../../assets/icons/github-logo.svg";
 import google from "../../assets/icons/google-logo.svg";
 
-export default function LoginClient() {
+export default function RegisterClient() {
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const error = searchParams.get("error");
-    if (error) {
-      toast.error(decodeURIComponent(error));
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || "Registration failed. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
       const result = await signIn("credentials", {
         redirect: false,
         email,
         password,
       });
 
-      if (!result) {
-        toast.error("No response from server.");
-      } else if (result.error) {
-        toast.error(result.error);
-      } else if (result.ok && !result.error) {
-        toast.success("Login successful! Redirecting...");
+      if (result?.error) {
+        let signInError =
+          "Login after registration failed. Please try logging in manually.";
+        if (result.error === "CredentialsSignin") {
+          signInError =
+            "Invalid credentials used for automatic login. Please log in manually.";
+        } else if (result.error) {
+          signInError = result.error;
+        }
+        toast.error(signInError);
+      } else if (result?.ok) {
+        toast.success("Registration successful! Welcome.");
         router.push("/dashboard");
         return;
       } else {
-        toast.error("Unexpected login error. Please try again.");
+        toast.warning(
+          "Registration complete, but auto-login failed. Please log in manually."
+        );
+        router.push("/login");
+        return;
       }
     } catch (err) {
-      console.error("Sign-in exception:", err);
-      toast.error("Something went wrong. Try again.");
+      toast.error("An unexpected error occurred during registration.");
+      console.error("Registration error:", err);
     }
 
     setIsLoading(false);
@@ -66,10 +83,10 @@ export default function LoginClient() {
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-2">
             <Image className="w-22 h-auto" src={logo} alt="Flowivate logo" />
-            <h1 className="text-2xl font-bold text-white mb-2">Jump back in</h1>
+            <h1 className="text-2xl font-bold text-white mb-2">Get started</h1>
           </div>
 
-          {/* Social Login Buttons */}
+          {/* Social Buttons */}
           <div className="flex space-x-4 mb-4 justify-center">
             <button
               onClick={() => handleSocialSignIn("github")}
@@ -79,7 +96,7 @@ export default function LoginClient() {
               <Image
                 className="w-20 h-20 hover:scale-110 transition-transform"
                 src={github}
-                alt="Github login"
+                alt="Sign up with Github"
               />
             </button>
             <button
@@ -90,7 +107,7 @@ export default function LoginClient() {
               <Image
                 className="w-20 h-20 hover:scale-110 transition-transform"
                 src={google}
-                alt="Google login"
+                alt="Sign up with Google"
               />
             </button>
           </div>
@@ -107,6 +124,25 @@ export default function LoginClient() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-1">
+              <label
+                htmlFor="username"
+                className="text-sm font-medium text-gray-300 block"
+              >
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="WatermelonFoeDog123"
+                className="w-full h-12 px-4 bg-transparent border border-gray-400/20 rounded-xl focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 text-secondary-white placeholder-gray-400/40 transition-all duration-200"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
             <div className="space-y-1">
               <label
                 htmlFor="email"
@@ -139,7 +175,7 @@ export default function LoginClient() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="veryStrongPassword123@"
-                className="w-full h-12 px-4 bg-transparent border border-gray-400/20 rounded-xl focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-blue-500/20 text-secondary-white placeholder-gray-400/40 transition-all duration-200"
+                className="w-full h-12 px-4 bg-transparent border border-gray-400/20 rounded-xl focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 text-secondary-white placeholder-gray-400/40 transition-all duration-200"
                 required
                 disabled={isLoading}
               />
@@ -153,22 +189,22 @@ export default function LoginClient() {
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Logging in...
+                  Registering...
                 </div>
               ) : (
-                "Login"
+                "Register"
               )}
             </button>
           </form>
 
-          <div className="mt-8 text-center space-y-3 text-sm">
+          <div className="mt-8 text-center space-y-3">
             <p className="text-gray-400">
-              Don’t have an account?{" "}
+              Already have an account?{" "}
               <Link
-                href="/register"
+                href="/login"
                 className="text-primary-blue font-medium hover:text-primary-blue/80 transition"
               >
-                Sign up
+                Login here
               </Link>
             </p>
             <p className="text-gray-400">
@@ -199,3 +235,5 @@ export default function LoginClient() {
     </div>
   );
 }
+
+
