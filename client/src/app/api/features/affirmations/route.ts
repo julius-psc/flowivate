@@ -23,13 +23,6 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    const rateLimitResponse = await checkRateLimit(
-      userId,
-      "/api/features/affirmations",
-      10
-    );
-    if (rateLimitResponse) return rateLimitResponse;
-
     let userObjectId: ObjectId;
     try {
       userObjectId = new ObjectId(userId);

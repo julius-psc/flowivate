@@ -19,6 +19,7 @@ export default function Navbar() {
         <div className="flex items-center gap-6 text-sm font-medium text-secondary-white">
           <Link href="/" className="transition">Product</Link>
           <Link href="#pricing" className="transition">Pricing</Link>
+          <Link href="#updates" className="transition">Updates</Link>
         </div>
 
         {/* Login */}
