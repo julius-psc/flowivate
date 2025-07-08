@@ -285,7 +285,7 @@ export default function Features() {
   return (
     <section
       ref={sectionRef}
-      className="min-h-screen bg-secondary-black py-4 overflow-hidden relative"
+      className="min-h-screen bg-secondary-black py-8 overflow-hidden relative"
     >
       {/* Heading */}
       <div className="text-center mb-20 relative z-10">

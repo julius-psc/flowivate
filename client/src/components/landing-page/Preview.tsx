@@ -14,11 +14,6 @@ export default function Preview({ className = "" }: { className?: string }) {
           <br />
           <span className="text-white/80">designed around your lifestyle.</span>
         </h2>
-        <p className="text-xl text-white/60 max-w-2xl mx-auto text-center">
-          Customize your space with modular widgets, habit tracking, smart AI
-          tools, and more – everything you need to stay focused and grow, your
-          way.
-        </p>
       </div>
 
       {/* Dashboard Preview */}

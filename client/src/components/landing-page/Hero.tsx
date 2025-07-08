@@ -8,7 +8,7 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <div className="w-screen h-screen p-1 pr-3 box-border overflow-hidden">
+    <div className="w-screen h-screen p-2 pr-3 box-border overflow-hidden">
       <div className="w-full h-full rounded-3xl overflow-hidden border border-white/10 backdrop-blur-xl bg-white/5 relative">
         {/* Background Image */}
         <Image
