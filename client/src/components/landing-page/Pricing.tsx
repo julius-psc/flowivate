@@ -13,9 +13,9 @@ export default function Pricing() {
   ];
 
   const proFeatures = [
-    "Unlimited entries",
-    "AI-powered assistant",
     "Unlimited components",
+    "AI-powered assistant",
+    "Unlimited journal / book entries",
     "Advanced analytics",
   ];
 

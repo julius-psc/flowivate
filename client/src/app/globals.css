@@ -10,6 +10,9 @@
 
 html {
   font-family: var(--font-display);
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #dad8d5 transparent;
 }
 
 @theme {
@@ -429,12 +432,6 @@ html {
     background-color: #949597;
     /* Lighter on hover */
   }
-}
-
-/* For Firefox support */
-html {
-  scrollbar-width: thin;
-  scrollbar-color: #dad8d5 transparent;
 }
 
 @media (prefers-color-scheme: dark) {

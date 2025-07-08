@@ -28,7 +28,7 @@ export default function Hero() {
             {/* Badge */}
             <div className="mb-8 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/90 font-medium backdrop-blur-sm flex items-center gap-2">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              Trusted by deep workers worldwide
+              Trusted by 100+ deep workers worldwide
             </div>
             {/* Headings */}
             <div className="flex flex-col gap-6 text-center max-w-4xl">
