@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 import gradBg from "../../../public/assets/illustrations/landing-gradient.png";
 import logo from "../../assets/brand/logo-v1.5.svg";
@@ -15,6 +16,7 @@ import google from "../../assets/icons/google-logo.svg";
 export default function LoginClient() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,7 +63,15 @@ export default function LoginClient() {
   };
 
   return (
-    <div className="min-h-screen bg-secondary-black flex">
+    <div className="min-h-screen bg-secondary-black flex relative">
+      {/* Back Arrow */}
+      <Link
+        href="/"
+        className="absolute top-6 left-6 text-gray-500 hover:text-white transition"
+      >
+        <ArrowLeft size={24} />
+      </Link>
+
       <div className="w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-2">
@@ -126,7 +136,7 @@ export default function LoginClient() {
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 relative">
               <label
                 htmlFor="password"
                 className="text-sm font-medium text-gray-300 block"
@@ -135,14 +145,21 @@ export default function LoginClient() {
               </label>
               <input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="veryStrongPassword123@"
-                className="w-full h-12 px-4 bg-transparent border border-gray-400/20 rounded-xl focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-blue-500/20 text-secondary-white placeholder-gray-400/40 transition-all duration-200"
+                className="w-full h-12 px-4 pr-12 bg-transparent border border-gray-400/20 rounded-xl focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-blue-500/20 text-secondary-white placeholder-gray-400/40 transition-all duration-200"
                 required
                 disabled={isLoading}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-[38px] text-gray-400 hover:text-white transition"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
 
             <button
