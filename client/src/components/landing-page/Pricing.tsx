@@ -45,7 +45,7 @@ export default function Pricing() {
   };
 
   return (
-    <div id="pricing" className="min-h-screen bg-secondary-black px-4 py-20">
+    <div id="pricing" className="bg-secondary-black px-4 py-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -109,13 +109,6 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-
-            <button className="relative w-full px-4 py-2.5 rounded-lg bg-white text-gray-900 font-medium text-sm hover:bg-gray-200 transition-all flex items-center justify-center gap-2 shadow">
-              <span className="relative z-10 flex items-center gap-1">
-                Get started
-                <ArrowUpRight size={16} />
-              </span>
-            </button>
           </div>
 
           {/* Pro Plan */}

@@ -3,6 +3,7 @@ import Features from '../components/landing-page/Features'
 import Pricing from '../components/landing-page/Pricing'
 import Footer from '../components/landing-page/Footer'
 import Preview from '../components/landing-page/Preview'
+import Cta from '../components/landing-page/Cta'
 
 export default function LandingPage() {
   return (
@@ -11,6 +12,7 @@ export default function LandingPage() {
       <Features />
       <Preview />
       <Pricing />
+      <Cta />
       <Footer />
     </div>
   );
