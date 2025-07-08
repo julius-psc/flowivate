@@ -5,22 +5,23 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
-import { toast } from "sonner"; 
-import logo from '../../assets/brand/logo-v1.5.svg';
-import { IconEye, IconEyeOff } from '@tabler/icons-react';
-import gradBg from '../../../public/assets/illustrations/gradient-bg-blue.svg';
-import github from '../../assets/icons/github-logo.svg';
-import google from '../../assets/icons/google-logo.svg';
+import { toast } from "sonner";
+
+import gradBg from "../../../public/assets/illustrations/landing-gradient.png";
+import logo from "../../assets/brand/logo-v1.5.svg";
+import github from "../../assets/icons/github-logo.svg";
+import google from "../../assets/icons/google-logo.svg";
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/auth/register", {
@@ -32,11 +33,12 @@ export default function Register() {
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || "Registration failed. Please try again."); // Use toast
+        toast.error(data.error || "Registration failed. Please try again.");
+        setIsLoading(false);
         return;
       }
 
-      // Registration successful, now attempt sign in
+      // Registration successful, try sign in
       const result = await signIn("credentials", {
         redirect: false,
         email,
@@ -44,139 +46,191 @@ export default function Register() {
       });
 
       if (result?.error) {
-        // Map known errors if desired, otherwise show a generic message
-        let signInError = "Login after registration failed. Please try logging in manually.";
+        let signInError =
+          "Login after registration failed. Please try logging in manually.";
         if (result.error === "CredentialsSignin") {
-           signInError = "Invalid credentials used for automatic login. Please log in manually.";
+          signInError =
+            "Invalid credentials used for automatic login. Please log in manually.";
         } else if (result.error) {
-            signInError = result.error; // Use specific error if available
+          signInError = result.error;
         }
         toast.error(signInError);
       } else if (result?.ok) {
-        toast.success("Registration successful! Welcome."); // Optional success toast
+        toast.success("Registration successful! Welcome.");
         router.push("/dashboard");
+        return;
       } else {
-         // Handle unexpected signIn result after successful registration
-         toast.warning("Registration complete, but auto-login failed. Please log in manually.");
-         router.push("/login"); // Redirect to login page
+        toast.warning(
+          "Registration complete, but auto-login failed. Please log in manually."
+        );
+        router.push("/login");
+        return;
       }
     } catch (err) {
-      toast.error("An unexpected error occurred during registration."); // Use toast
+      toast.error("An unexpected error occurred during registration.");
       console.error("Registration error:", err);
     }
+    setIsLoading(false);
   };
 
   const handleSocialSignIn = (provider: string) => {
-    // No toast.loading as requested
-    signIn(provider, { callbackUrl: '/dashboard' });
+    signIn(provider, { callbackUrl: "/dashboard" });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary-black relative overflow-hidden">
-      <div className="absolute opacity-60 inset-0 w-full h-full">
-        <Image
-          src={gradBg}
-          alt="Gradient background"
-          fill
-          style={{ objectFit: "cover" }}
-          priority
-        />
-      </div>
+    <div className="min-h-screen bg-secondary-black flex">
+      <div className="w-1/2 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          <div className="flex flex-col items-center mb-2">
+            <Image className="w-22 h-auto" src={logo} alt="Flowivate logo" />
+            <h1 className="text-2xl font-bold text-white mb-2">Get started</h1>
+          </div>
 
-      <div className="relative z-10">
-        <div className="flex flex-col justify-center items-center">
-          <Image className="w-24 h-auto mb-2" src={logo} alt="Flowivate logo" />
-          <h1 className="text-3xl font-bold text-center text-secondary-white mb-6">
-            Get started
-          </h1>
-        </div>
+          {/* Social Login Buttons */}
+          <div className="flex space-x-4 mb-4 justify-center">
+            <button
+              onClick={() => handleSocialSignIn("github")}
+              disabled={isLoading}
+              className="w-14 h-14 flex items-center justify-center transition-all duration-200 disabled:opacity-50"
+            >
+              <Image
+                className="w-20 h-20 hover:scale-110 transition-transform"
+                src={github}
+                alt="Sign up with Github"
+              />
+            </button>
+            <button
+              onClick={() => handleSocialSignIn("google")}
+              disabled={isLoading}
+              className="w-14 h-14 flex items-center justify-center transition-all duration-200 disabled:opacity-50"
+            >
+              <Image
+                className="w-20 h-20 hover:scale-110 transition-transform"
+                src={google}
+                alt="Sign up with Google"
+              />
+            </button>
+          </div>
 
-        <div className="flex justify-center items-center space-x-4 mb-4">
-          <button
-            onClick={() => handleSocialSignIn('github')}
-            className="w-14 h-14 flex items-center justify-center rounded-md hover:bg-gray-800 transition-colors duration-200"
-          >
-            <Image className="w-10 h-auto" src={github} alt="Sign up with Github" />
-          </button>
-          <div className="bg-secondary-white opacity-14 h-10 w-px"></div>
-          <button
-            onClick={() => handleSocialSignIn('google')}
-            className="w-14 h-14 flex items-center justify-center rounded-md hover:bg-gray-800 transition-colors duration-200"
-          >
-            <Image className="w-10 h-auto" src={google} alt="Sign up with Google" />
-          </button>
-        </div>
+          <div className="relative mb-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-700"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-3 text-gray-400 bg-secondary-black">
+                or continue with email
+              </span>
+            </div>
+          </div>
 
-        <p className="text-center text-secondary-white py-2">or</p>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <div className="relative">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-1">
+              <label
+                htmlFor="username"
+                className="text-sm font-medium text-gray-300 block"
+              >
+                Username
+              </label>
               <input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username"
-                className="w-full px-4 py-2 border-1 border-accent-grey-hover rounded-md focus:outline-none focus:border-primary-blue focus:ring-3 focus:ring-primary-blue-ring bg-transparent text-secondary-white placeholder-accent-grey-hover"
+                placeholder="WatermelonFoeDog123"
+                className="w-full h-12 px-4 bg-transparent border border-gray-400/20 rounded-xl focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 text-secondary-white placeholder-gray-400/40 transition-all duration-200"
                 required
+                disabled={isLoading}
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <div className="relative">
+            <div className="space-y-1">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-300 block"
+              >
+                Email Address
+              </label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
-                className="w-full px-4 py-2 border-1 border-accent-grey-hover rounded-md focus:outline-none focus:border-primary-blue focus:ring-3 focus:ring-primary-blue-ring bg-transparent text-secondary-white placeholder-accent-grey-hover"
+                placeholder="john.doe@gmail.com"
+                className="w-full h-12 px-4 bg-transparent border border-gray-400/20 rounded-xl focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 text-secondary-white placeholder-gray-400/40 transition-all duration-200"
                 required
+                disabled={isLoading}
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <div className="relative">
+            <div className="space-y-1">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-300 block"
+              >
+                Password
+              </label>
               <input
                 id="password"
-                type={showPassword ? "text" : "password"}
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="w-full px-4 py-2 border-1 border-accent-grey-hover rounded-md focus:outline-none focus:border-primary-blue focus:ring-3 focus:ring-primary-blue-ring bg-transparent text-secondary-white placeholder-accent-grey-hover"
+                placeholder="veryStrongPassword123@"
+                className="w-full h-12 px-4 bg-transparent border border-gray-400/20 rounded-xl focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 text-secondary-white placeholder-gray-400/40 transition-all duration-200"
                 required
+                disabled={isLoading}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-accent-grey-hover hover:text-secondary-white"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <IconEyeOff size={20} />
-                ) : (
-                  <IconEye size={20} />
-                )}
-              </button>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            className="w-full bg-primary-blue hover:bg-primary-blue-hover text-white py-2 rounded-md transition-colors duration-200"
-          >
-            Register
-          </button>
-        </form>
-        <p className="mt-4 text-center text-sm text-secondary-white">
-          Already have an account?{" "}
-          <Link href="/login" className="text-primary-blue hover:underline">
-            Login here
-          </Link>
-        </p>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 bg-primary-blue hover:bg-primary-blue/80 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Registering...
+                </div>
+              ) : (
+                "Register"
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center space-y-3">
+            <p className="text-gray-400">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="text-primary-blue font-medium hover:text-primary-blue/80 transition"
+              >
+                Login here
+              </Link>
+            </p>
+            <p className="text-gray-400">
+              Forgot your password?{" "}
+              <Link
+                href="/forgot-password"
+                className="text-primary-blue font-medium hover:text-primary-blue/80 transition"
+              >
+                Reset it
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-1/2 p-3">
+        <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl">
+          <Image
+            src={gradBg}
+            alt="Gradient background"
+            fill
+            style={{ objectFit: "cover" }}
+            priority
+            className="rounded-3xl"
+          />
+        </div>
       </div>
     </div>
   );

@@ -4,83 +4,110 @@ import connectDB from "@/lib/mongoose";
 import User from "@/app/models/User";
 import mongoose from "mongoose";
 
+type ErrorResponse = {
+  error: string;
+  code?: string; // optional machine-readable error code
+  details?: Record<string, string>;
+};
+
 export async function POST(request: Request) {
   try {
     const { email, username, password } = await request.json();
 
     // --- Basic Input Validation ---
     if (!email || !username || !password) {
-      return NextResponse.json(
-        { error: "Email, username, and password are required" },
+      return NextResponse.json<ErrorResponse>(
+        {
+          error: "Email, username, and password are required",
+          code: "missing_fields",
+        },
         { status: 400 }
       );
     }
 
-    // --- More Specific Input Validation ---
-    if (password.length < 6) { 
-        return NextResponse.json(
-            { error: "Password must be at least 6 characters long" },
-            { status: 400 }
-        );
+    if (password.length < 6) {
+      return NextResponse.json<ErrorResponse>(
+        {
+          error: "Password must be at least 6 characters long",
+          code: "weak_password",
+        },
+        { status: 400 }
+      );
     }
-  
-    await connectDB(); // Connect to MongoDB using Mongoose
 
-    // --- Check if user already exists (by email or username) ---
-    // Using $or to check for either existing email or username
+    await connectDB();
+
+    // --- Check if user exists by email or username ---
     const existingUser = await User.findOne({
-      $or: [{ email: email.toLowerCase() }, { username }], 
-    }).exec(); // .exec() returns a true Promise
+      $or: [{ email: email.toLowerCase() }, { username }],
+    }).exec();
 
-    // --- Hash the password ---
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const lowerEmail = email.toLowerCase();
 
-    // --- Handle Existing User Scenarios ---
     if (existingUser) {
-      // Scenario 1: User exists but doesn't have a password set
+      // User found
+
+      // If user exists but password is empty (e.g. social login user without password)
       if (!existingUser.password) {
-        // Check if the username they are trying to register with is different
-        // and if that new username is already taken by someone else (excluding themselves)
+        // If trying to update username to another taken username (by someone else)
         if (username !== existingUser.username) {
-            const usernameTaken = await User.findOne({ _id: { $ne: existingUser._id }, username: username }).exec();
-            if (usernameTaken) {
-                return NextResponse.json(
-                    { error: "Username is already taken. Try a different one." },
-                    { status: 409 } 
-                );
-            }
-            existingUser.username = username; // Update username
+          const usernameTaken = await User.findOne({
+            _id: { $ne: existingUser._id },
+            username,
+          }).exec();
+
+          if (usernameTaken) {
+            return NextResponse.json<ErrorResponse>(
+              {
+                error: "Username is already taken. Try a different one.",
+                code: "username_taken",
+              },
+              { status: 409 }
+            );
+          }
+          existingUser.username = username;
         }
 
-        existingUser.password = hashedPassword;
+        existingUser.password = await bcrypt.hash(password, 10);
         await existingUser.save();
 
         return NextResponse.json(
           { message: "Account password set and updated successfully." },
           { status: 200 }
         );
-      } else {
-        // Scenario 2: User exists and already has a password (or username conflict)
-        let errorMessage = "User already exists.";
-        if (existingUser.email.toLowerCase() === email.toLowerCase() && existingUser.username === username) {
-            errorMessage = "Account with this email and username already exists.";
-        } else if (existingUser.email.toLowerCase() === email.toLowerCase()) {
-            errorMessage = "Account with this email already exists.";
-        } else if (existingUser.username === username) {
-            errorMessage = "Username is already taken.";
-        }
-        return NextResponse.json(
-          { error: errorMessage },
-          { status: 409 }
-        );
       }
+
+      // User has password - determine conflict reason
+      const conflicts: string[] = [];
+      if (existingUser.email.toLowerCase() === lowerEmail)
+        conflicts.push("email");
+      if (existingUser.username === username) conflicts.push("username");
+
+      let errorMessage = "User already exists.";
+      let errorCode = "user_exists";
+
+      if (conflicts.length === 2) {
+        errorMessage = "Account with this email and username already exists.";
+        errorCode = "email_username_exists";
+      } else if (conflicts.includes("email")) {
+        errorMessage = "Account with this email already exists.";
+        errorCode = "email_exists";
+      } else if (conflicts.includes("username")) {
+        errorMessage = "Username is already taken.";
+        errorCode = "username_taken";
+      }
+
+      return NextResponse.json<ErrorResponse>(
+        { error: errorMessage, code: errorCode },
+        { status: 409 }
+      );
     }
 
     // --- Create New User ---
-    // `createdAt` and `updatedAt` will be automatically handled by Mongoose
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     await User.create({
-      email: email.toLowerCase(), // Store email in lowercase for consistency
+      email: lowerEmail,
       username,
       password: hashedPassword,
     });
@@ -89,40 +116,47 @@ export async function POST(request: Request) {
       { message: "User registered successfully" },
       { status: 201 }
     );
-
   } catch (error: unknown) {
     console.error("Registration error:", error);
 
-    // Handle Mongoose validation errors specifically for better feedback
+    // Handle Mongoose validation errors
     if (error instanceof mongoose.Error.ValidationError) {
-      const errorMessages: { [key: string]: string } = {};
-      for (const field in error.errors) {
-        errorMessages[field] = error.errors[field].message;
+      const details: Record<string, string> = {};
+      for (const key in error.errors) {
+        details[key] = error.errors[key].message;
       }
-      return NextResponse.json(
-        { error: "Validation failed", details: errorMessages },
+      return NextResponse.json<ErrorResponse>(
+        { error: "Validation failed", code: "validation_error", details },
         { status: 400 }
       );
     }
 
-    // Handle Mongoose duplicate key errors (e.g., if unique constraint is violated)
-    // Mongoose wraps these in a generic error, code 11000 is for duplicate key
+    // Handle Mongoose duplicate key errors
     type MongoError = Error & { code?: number; message: string };
     const mongoError = error as MongoError;
 
     if (mongoError.code === 11000) {
-      let field = "unknown";
-      if (mongoError.message.includes('email_1')) field = 'email'; // Adjust based on your index name if needed
-      if (mongoError.message.includes('username_1')) field = 'username';
+      // Extract duplicate key field from error message
+      const message = mongoError.message.toLowerCase();
+      let field = "field";
+      if (message.includes("email")) field = "email";
+      else if (message.includes("username")) field = "username";
 
-      return NextResponse.json(
-        { error: `An account with this ${field} already exists.` },
-        { status: 409 } // 409 Conflict
+      return NextResponse.json<ErrorResponse>(
+        {
+          error: `An account with this ${field} already exists.`,
+          code: `${field}_exists`,
+        },
+        { status: 409 }
       );
     }
 
-    return NextResponse.json(
-      { error: "Registration failed due to an internal error." },
+    // Fallback for unknown error shapes
+    return NextResponse.json<ErrorResponse>(
+      {
+        error: "Registration failed due to an internal error.",
+        code: "internal_error",
+      },
       { status: 500 }
     );
   }

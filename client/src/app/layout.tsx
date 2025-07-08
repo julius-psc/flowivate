@@ -1,6 +1,7 @@
 import "./globals.css";
 import ThemeProvider from "../../themes/ThemeProvider";
 import { Metadata } from "next";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Flowivate",
@@ -27,6 +28,11 @@ export default function RootLayout({
           storageKey="background-theme"
           disableTransitionOnChange
         >
+          <Toaster
+            position="top-center"
+            richColors
+            theme={"system"}
+          />
           {children}
         </ThemeProvider>
       </body>

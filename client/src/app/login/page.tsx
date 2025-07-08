@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
 
-import gradBg from "../../../public/assets/illustrations/gradient-bg-blue.svg";
+import gradBg from "../../../public/assets/illustrations/landing-gradient.png";
 import logo from "../../assets/brand/logo-v1.5.svg";
 import github from "../../assets/icons/github-logo.svg";
 import google from "../../assets/icons/google-logo.svg";
@@ -15,149 +15,190 @@ import google from "../../assets/icons/google-logo.svg";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false); 
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error) {
+      toast.error(decodeURIComponent(error));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true); 
-    const toastId: string | number | undefined = undefined; 
+    setIsLoading(true);
 
     try {
       const result = await signIn("credentials", {
-        redirect: false, 
+        redirect: false,
         email,
         password,
       });
 
-      if (result?.error) {
+      console.log("SignIn Result:", result);
 
-        let errorMessage = "Login failed. Please try again."; // Default error
-        // Map known technical errors to user-friendly messages
-        if (result.error === "CredentialsSignin") {
-          errorMessage = "Invalid email or password.";
-        } else if (result.error) {
-            errorMessage = result.error;
-        }
-
-        // Show error toast
-        toast.error(errorMessage, { id: toastId }); // Update loading toast or show new error
-      } else if (result?.ok && !result?.error) {
-        // Login successful
-        toast.success("Login successful! Redirecting...", { id: toastId });
+      if (!result) {
+        toast.error("No response from server.");
+      } else if (result.error) {
+        toast.error(result.error);
+      } else if (result.ok && !result.error) {
+        toast.success("Login successful! Redirecting...");
         router.push("/dashboard");
-        // No need to set isLoading false here as we are navigating away
-        return; // Exit early on success
+        return;
       } else {
-          // Handle unexpected cases where result is null or not ok but no error specified
-           toast.error("An unexpected error occurred during login.", { id: toastId });
+        toast.error("Unexpected login error. Please try again.");
       }
     } catch (err) {
-        console.error("Login submit error:", err);
-        toast.error("An unexpected error occurred. Please check console.", { id: toastId });
+      console.error("Sign-in exception:", err);
+      toast.error("Something went wrong. Try again.");
     }
 
-    setIsLoading(false); // Set loading to false only if not redirecting
+    setIsLoading(false);
   };
 
   const handleSocialSignIn = (provider: string) => {
-    signIn(provider, { callbackUrl: '/dashboard' });
+    signIn(provider, { callbackUrl: "/dashboard" });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary-black relative overflow-hidden">
-      {/* Gradient Background */}
-      <div className="absolute opacity-60 inset-0 w-full h-full">
-        <Image
-          src={gradBg}
-          alt="Gradient background"
-          fill
-          style={{ objectFit: "cover" }}
-          priority
-        />
-      </div>
+    <div className="min-h-screen bg-secondary-black flex">
+      <div className="w-1/2 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          <div className="flex flex-col items-center mb-2">
+            <Image className="w-22 h-auto" src={logo} alt="Flowivate logo" />
+            <h1 className="text-2xl font-bold text-white mb-2">Jump back in</h1>
+          </div>
 
-      {/* Content with higher z-index */}
-      <div className="relative z-10">
-        <div className="flex flex-col justify-center items-center">
-          <Image className="w-24 h-auto" src={logo} alt="Flowivate logo" />
-          <h1 className="text-3xl font-bold text-center text-secondary-white mb-6">
-            Jump back in
-          </h1>
-        </div>
+          {/* Social Login Buttons */}
+          <div className="flex space-x-4 mb-4 justify-center">
+            <button
+              onClick={() => handleSocialSignIn("github")}
+              disabled={isLoading}
+              className="w-14 h-14 flex items-center justify-center transition-all duration-200 disabled:opacity-50"
+            >
+              <Image
+                className="w-20 h-20 hover:scale-110 transition-transform"
+                src={github}
+                alt="Github login"
+              />
+            </button>
+            <button
+              onClick={() => handleSocialSignIn("google")}
+              disabled={isLoading}
+              className="w-14 h-14 flex items-center justify-center transition-all duration-200 disabled:opacity-50"
+            >
+              <Image
+                className="w-20 h-20 hover:scale-110 transition-transform"
+                src={google}
+                alt="Google login"
+              />
+            </button>
+          </div>
 
-        {/* Social Login Buttons */}
-        <div className="flex justify-center items-center space-x-4 mb-4">
-          <button
-            onClick={() => handleSocialSignIn('github')}
-            disabled={isLoading} // Optional: Disable while credential login is processing
-            className="w-14 h-14 flex items-center justify-center rounded-md hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50"
-          >
-            <Image className="w-14 h-auto" src={github} alt="Github login" />
-          </button>
-          <div className="bg-secondary-white opacity-14 h-10 w-px"></div>
-          <button
-            onClick={() => handleSocialSignIn('google')}
-            disabled={isLoading} // Optional: Disable while credential login is processing
-            className="w-14 h-14 flex items-center justify-center rounded-md hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50"
-          >
-            <Image className="w-14 h-auto" src={google} alt="Google login" />
-          </button>
-        </div>
+          <div className="relative mb-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-700"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-3 text-gray-400 bg-secondary-black">
+                or continue with email
+              </span>
+            </div>
+          </div>
 
-        <p className="text-center text-secondary-white py-4">or</p>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <div className="relative">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-1">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-300 block"
+              >
+                Email Address
+              </label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
-                className="w-full px-4 py-2 border-1 border-accent-grey-hover rounded-md focus:outline-none focus:border-primary-blue focus:ring-3 focus:ring-primary-blue-ring bg-transparent text-secondary-white placeholder-accent-grey-hover"
+                placeholder="john.doe@gmail.com"
+                className="w-full h-12 px-4 bg-transparent border border-gray-400/20 rounded-xl focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 text-secondary-white placeholder-gray-400/40 transition-all duration-200"
                 required
-                disabled={isLoading} // Optional: Disable during submit
+                disabled={isLoading}
               />
             </div>
-          </div>
-          <div className="space-y-2">
-            <div className="relative">
+
+            <div className="space-y-1">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-300 block"
+              >
+                Password
+              </label>
               <input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="w-full px-4 py-2 border-1 border-accent-grey-hover rounded-md focus:outline-none focus:border-primary-blue focus:ring-3 focus:ring-primary-blue-ring bg-transparent text-secondary-white placeholder-accent-grey-hover"
+                placeholder="veryStrongPassword123@"
+                className="w-full h-12 px-4 bg-transparent border border-gray-400/20 rounded-xl focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-blue-500/20 text-secondary-white placeholder-gray-400/40 transition-all duration-200"
                 required
-                disabled={isLoading} // Optional: Disable during submit
+                disabled={isLoading}
               />
             </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 bg-primary-blue hover:bg-primary-blue/80 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Logging in...
+                </div>
+              ) : (
+                "Login"
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center space-y-3">
+            <p className="text-gray-400">
+              Don’t have an account?{" "}
+              <Link
+                href="/register"
+                className="text-primary-blue font-medium hover:text-primary-blue/80 transition"
+              >
+                Sign up
+              </Link>
+            </p>
+            <p className="text-gray-400">
+              Forgot your password?{" "}
+              <Link
+                href="/forgot-password"
+                className="text-primary-blue font-medium hover:text-primary-blue/80 transition"
+              >
+                Reset it
+              </Link>
+            </p>
           </div>
-          {/* REMOVE error display paragraph */}
-          {/* {error && <p className="text-red-500 text-sm text-center">{error}</p>} */}
-          <button
-            type="submit"
-            disabled={isLoading} // Optional: Disable button during submit
-            className="w-full bg-primary-blue hover:bg-primary-blue-hover text-white py-2 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? "Logging in..." : "Log In"} {/* Optional: Change text during load */}
-          </button>
-        </form>
-        <p className="mt-4 text-sm text-secondary-white">
-          Don&#39;t have an account?{" "}
-          <Link href="/register" className="text-primary-blue hover:underline">
-            Create one
-          </Link>
-        </p>
-        <p className="mt-2 text-sm text-secondary-white">
-          Forgot your password?{" "}
-          <Link href="/forgot-password" className="text-primary-blue hover:underline">
-            Reset it
-          </Link>
-        </p>
+        </div>
+      </div>
+
+      
+
+      <div className="w-1/2 p-3">
+        <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl">
+          <Image
+            src={gradBg}
+            alt="Gradient background"
+            fill
+            style={{ objectFit: "cover" }}
+            priority
+            className="rounded-3xl"
+          />
+        </div>
       </div>
     </div>
   );

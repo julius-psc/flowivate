@@ -10,11 +10,8 @@ import connectDB from "@/lib/mongoose";
 import User, { IUser } from "@/app/models/User";
 import bcrypt from "bcrypt";
 
-// Grab the same DB name you use in mongoose.ts
 const MONGODB_DB = process.env.MONGODB_DB;
-if (!MONGODB_DB) {
-  throw new Error("❌ MONGODB_DB environment variable not set");
-}
+if (!MONGODB_DB) throw new Error("❌ MONGODB_DB environment variable not set");
 
 declare module "next-auth" {
   interface Session {
@@ -46,13 +43,11 @@ export const authOptions: NextAuthOptions = {
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
       clientSecret: process.env.GITHUB_SECRET!,
-      // ← Allow linking to existing email-based accounts
       allowDangerousEmailAccountLinking: true,
     }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      // ← Same here
       allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
@@ -62,34 +57,57 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials): Promise<NextAuthUser | null> {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Missing credentials");
-        }
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error("Both email and password are required.");
+          }
 
-        await connectDB();
-        const user = await User.findOne<IUser>({ email: credentials.email }).exec();
-        if (!user || !user.password) {
-          throw new Error("Invalid credentials");
-        }
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(credentials.email)) {
+            throw new Error("Invalid email format.");
+          }
 
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) {
-          throw new Error("Invalid credentials");
-        }
+          await connectDB();
+          const user = await User.findOne<IUser>({
+            email: credentials.email,
+          }).exec();
 
-        return {
-          id: user._id.toString(),
-          email: user.email,
-          username: user.username,
-          name: user.name,
-          image: user.image,
-        };
+          if (!user) {
+            throw new Error("No account found with this email.");
+          }
+
+          if (!user.password) {
+            throw new Error("This account doesn't support password login.");
+          }
+
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+          if (!isValid) {
+            throw new Error("Incorrect password.");
+          }
+
+          return {
+            id: user._id.toString(),
+            email: user.email,
+            username: user.username,
+            name: user.name,
+            image: user.image,
+          };
+        } catch (err) {
+          if (err instanceof Error) throw err;
+          throw new Error("Unexpected error during login.");
+        }
       },
     }),
   ],
 
   secret: process.env.AUTH_SECRET,
-  pages: { signIn: "/login" },
+  pages: {
+    signIn: "/login",
+    error: "/login", // in case you want query-based fallback handling
+  },
   session: { strategy: "jwt" },
 
   callbacks: {
@@ -102,41 +120,53 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           token.id = dbUser._id.toString();
           let changed = false;
+
           if (user.name && dbUser.name !== user.name) {
             dbUser.name = user.name;
             changed = true;
           }
+
           if (user.image && dbUser.image !== user.image) {
             dbUser.image = user.image;
             changed = true;
           }
+
           if (!dbUser.username) {
             const baseUsername =
               user.email?.split("@")[0] ||
               user.name?.replace(/\s+/g, "").toLowerCase() ||
               `user${Date.now()}`;
+
             let potential = baseUsername;
             let i = 0;
             while (await User.findOne({ username: potential }).exec()) {
               i++;
               potential = `${baseUsername}${i}`;
             }
+
             dbUser.username = potential;
             changed = true;
           }
+
           if (changed) await dbUser.save();
           token.username = dbUser.username;
         } else {
-          console.warn(`No user in Mongoose for OAuth email ${user.email}`);
           token.username = user.email?.split("@")[0];
         }
       } else if (user?.username) {
         token.username = user.username;
       }
+
       return token;
     },
 
-    async session({ session, token }: { session: Session; token: JWTType }): Promise<Session> {
+    async session({
+      session,
+      token,
+    }: {
+      session: Session;
+      token: JWTType;
+    }): Promise<Session> {
       if (token.id) session.user.id = token.id;
       if (token.username) session.user.username = token.username;
       return session;
