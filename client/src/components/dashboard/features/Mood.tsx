@@ -66,9 +66,9 @@ const moodIcons = [
   {
     icon: IconMoodSmileDizzy,
     value: "ecstatic",
-    color: "bg-[#186922]",
-    hoverColor: "bg-[#1f8a2c]",
-    textColor: "text-[#186922] dark:text-[#2ea13a]",
+    color: "bg-[#22C55E]",
+    hoverColor: "bg-[#1FAD55]",
+    textColor: "text-[#22C55E] dark:text-[#34D399]",
     label: "Ecstatic",
   },
 ];
@@ -173,11 +173,11 @@ const MoodInsights: React.FC<{
         </span>
       </div>
       <div className="flex flex-1 mt-4">
-        <div className="grid grid-cols-7 gap-x-4 gap-y-3 mr-4">
+        <div className="grid grid-cols-7 gap-2 mr-6">
           {grid.map((item, index) => (
             <div
               key={index}
-              className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              className={`w-5 h-5 rounded-full flex items-center justify-center ${
                 item.isLogged ? item.color : item.baseClass
               }`}
             >
@@ -187,7 +187,7 @@ const MoodInsights: React.FC<{
             </div>
           ))}
         </div>
-        <div className="ml-2 text-secondary-black dark:text-secondary-white">
+        <div className="text-secondary-black dark:text-secondary-white">
           <div className="mb-4">
             <div className="text-3xl font-extrabold">{monthlyPercentage}%</div>
             <div className="text-sm opacity-40">Monthly positivity</div>
@@ -209,8 +209,8 @@ const MoodPickerSkeleton = () => {
         <div className="h-3 w-12 bg-gray-200 dark:bg-zinc-700 rounded"></div>
         <div className="h-4 w-20 bg-gray-200 dark:bg-zinc-700 rounded"></div>
       </div>
-      <div className="animate-pulse flex-grow flex flex-col justify-between pt-2">
-        <div className="grid grid-cols-7 gap-2 mb-8">
+      <div className="animate-pulse flex-grow flex flex-col justify-center">
+        <div className="flex flex-wrap justify-center gap-4 mb-6">
           {Array(7)
             .fill(null)
             .map((_, index) => (
@@ -219,9 +219,8 @@ const MoodPickerSkeleton = () => {
               </div>
             ))}
         </div>
-        <div className="flex justify-center items-center gap-4 mt-auto mb-2">
-          <div className="h-9 w-24 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
-          <div className="h-3 w-32 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+        <div className="flex justify-center items-center gap-4">
+          <div className="h-9 w-28 bg-gray-300 dark:bg-zinc-600 rounded-lg"></div>
         </div>
       </div>
     </div>
@@ -373,7 +372,7 @@ const MoodPicker: React.FC = () => {
   }
 
   return (
-    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/5m-0 flex flex-col h-full">
       <div className="flex justify-between items-center mb-6 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
           MOOD
@@ -386,22 +385,23 @@ const MoodPicker: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 mb-8">
-        {moodIcons.map((mood) => {
-          const IconComponent = mood.icon;
-          const isSelected = displayMood === mood.value;
-          const isHovered = hoveredMood === mood.value;
+      <div className="flex-grow flex flex-col justify-center">
+        <div className="flex flex-wrap justify-center gap-4 mb-6">
+          {moodIcons.map((mood) => {
+            const IconComponent = mood.icon;
+            const isSelected = displayMood === mood.value;
+            const isHovered = hoveredMood === mood.value;
 
-          return (
-            <div
-              key={mood.value}
-              onClick={() => handleMoodClick(mood.value)}
-              onMouseEnter={() => setHoveredMood(mood.value)}
-              onMouseLeave={() => setHoveredMood(null)}
-              className="flex flex-col items-center justify-center"
-            >
+            return (
               <div
-                className={`
+                key={mood.value}
+                onClick={() => handleMoodClick(mood.value)}
+                onMouseEnter={() => setHoveredMood(mood.value)}
+                onMouseLeave={() => setHoveredMood(null)}
+                className="flex flex-col items-center justify-center"
+              >
+                <div
+                  className={`
                   p-2 rounded-full transition-transform duration-200 cursor-pointer
                   ${
                     isSelected
@@ -410,27 +410,27 @@ const MoodPicker: React.FC = () => {
                   }
                   ${isSelected || isHovered ? "transform scale-110" : ""}
                 `}
-              >
-                <IconComponent
-                  size={24}
-                  className={`transition-colors duration-200 ${
-                    isSelected
-                      ? "text-white"
-                      : isHovered
-                      ? "text-gray-700 dark:text-gray-200"
-                      : "text-gray-500 dark:text-gray-400"
-                  }`}
-                />
+                >
+                  <IconComponent
+                    size={24}
+                    className={`transition-colors duration-200 ${
+                      isSelected
+                        ? "text-white"
+                        : isHovered
+                        ? "text-gray-700 dark:text-gray-200"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  />
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      <div className="flex justify-center items-center gap-4 mt-auto">
-        <button
-          className={`
-            px-6 py-2 rounded-full text-sm font-normal transition-all duration-200 ease-in-out
+        <div className="flex justify-center items-center">
+          <button
+            className={`
+            px-5 py-2 rounded-lg text-sm font-normal transition-all duration-200 ease-in-out
             ${
               selectedMood
                 ? `${
@@ -439,14 +439,14 @@ const MoodPicker: React.FC = () => {
                 : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-80"
             }
           `}
-          onClick={handleLogMood}
-          disabled={!selectedMood || loading}
-        >
-          Log mood
-        </button>
-        <span className="text-xs text-gray Selma-gray-500 dark:text-gray-400">
-          Mood editable until midnight
-        </span>
+            onClick={handleLogMood}
+            disabled={!selectedMood || loading}
+          >
+            {selectedMood
+              ? `Log ${moodIcons.find((m) => m.value === selectedMood)?.label}`
+              : "Log mood"}
+          </button>
+        </div>
       </div>
     </div>
   );

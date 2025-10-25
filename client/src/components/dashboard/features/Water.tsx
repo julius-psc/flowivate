@@ -7,35 +7,35 @@ import { toast } from "sonner";
 
 const WaterSkeleton = () => {
   return (
-    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full animate-pulse">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
+    <div className="p-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full animate-pulse">
+      <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 bg-gray-200 dark:bg-zinc-700 rounded"></div>
-          <div className="h-3 w-24 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+          <div className="w-4 h-4 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+          <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded"></div>
         </div>
-        <div className="h-4 w-20 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+        <div className="h-4 w-16 bg-gray-200 dark:bg-zinc-700 rounded"></div>
       </div>
 
-      <div className="flex flex-col items-center my-4">
-        <div className="flex items-baseline justify-center mb-1">
-          <div className="h-9 w-16 bg-gray-200 dark:bg-zinc-700 rounded mr-1"></div>
-          <div className="h-5 w-16 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+      <div className="flex flex-col items-center my-2">
+        <div className="flex items-baseline justify-center">
+          <div className="h-7 w-12 bg-gray-200 dark:bg-zinc-700 rounded mr-1"></div>
+          <div className="h-4 w-14 bg-gray-200 dark:bg-zinc-700 rounded"></div>
         </div>
-        <div className="h-4 w-28 bg-gray-200 dark:bg-zinc-700 rounded mt-2"></div>
+        <div className="h-3 w-24 bg-gray-200 dark:bg-zinc-700 rounded mt-1.5"></div>
       </div>
 
-      <div className="w-full mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gray-300 dark:bg-zinc-600 rounded-full flex-shrink-0"></div>
-          <div className="h-6 flex-grow bg-gray-200 dark:bg-zinc-700 rounded-full"></div>
-          <div className="w-9 h-9 bg-gray-300 dark:bg-zinc-600 rounded-full flex-shrink-0"></div>
+      <div className="w-full my-2">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gray-300 dark:bg-zinc-600 rounded-full flex-shrink-0"></div>
+          <div className="h-5 flex-grow bg-gray-200 dark:bg-zinc-700 rounded-full"></div>
+          <div className="w-8 h-8 bg-gray-300 dark:bg-zinc-600 rounded-full flex-shrink-0"></div>
         </div>
       </div>
 
-      <div className="h-6 mb-2"></div>
+      <div className="h-4 mb-1"></div>
 
-      <div className="flex justify-center mt-auto pt-2">
-        <div className="h-10 w-40 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
+      <div className="flex justify-center mt-auto pt-1.5">
+        <div className="h-8 w-32 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
       </div>
     </div>
   );
@@ -184,38 +184,38 @@ const Water = () => {
   }
 
   return (
-    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
+    <div className="p-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+      <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
+          <h1 className="text-xs text-secondary-black dark:text-secondary-white opacity-40">
             WATER INTAKE
           </h1>
         </div>
 
         {isEditingGoal ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <input
               type="number"
               value={editableGoal}
               onChange={(e) => setEditableGoal(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSetGoal()}
-              className="w-20 text-sm p-1 rounded-md bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-16 text-xs p-1 rounded-md bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             <button
               onClick={handleSetGoal}
-              className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors"
+              className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors"
             >
-              <Check size={16} />
+              <Check size={14} />
             </button>
             <button
               onClick={handleCancelEdit}
-              className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors"
+              className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors"
             >
-              <X size={16} />
+              <X size={14} />
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <span className="text-xs text-gray-500 dark:text-gray-400">
               Goal: {dailyGoal}ml
             </span>
@@ -224,25 +224,25 @@ const Water = () => {
                 setIsEditingGoal(true);
                 setEditableGoal(dailyGoal.toString());
               }}
-              className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors"
+              className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors"
             >
-              <Pencil size={14} />
+              <Pencil size={12} />
             </button>
           </div>
         )}
       </div>
 
-      <div className="flex flex-col items-center my-4">
+      <div className="flex flex-col items-center my-2">
         <div className="text-center">
-          <span className="text-4xl font-bold text-gray-800 dark:text-white">
+          <span className="text-3xl font-bold text-gray-800 dark:text-white">
             {waterAmount}
           </span>
-          <span className="text-lg text-gray-500 dark:text-gray-300 ml-1">
+          <span className="text-sm text-gray-500 dark:text-gray-300 ml-1">
             / {dailyGoal}ml
           </span>
         </div>
         <p
-          className={`mt-2 text-sm font-medium ${
+          className={`mt-1 text-xs font-medium ${
             remainingWater > 0
               ? "text-gray-500 dark:text-gray-400"
               : "text-green-500 dark:text-green-400"
@@ -254,16 +254,16 @@ const Water = () => {
         </p>
       </div>
 
-      <div className="w-full">
-        <div className="flex items-center gap-3">
+      <div className="w-full my-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={handleDecrement}
             disabled={waterAmount === 0 || isLoading || isEditingGoal}
-            className="p-2 rounded-full bg-white dark:bg-zinc-800/50 border border-slate-200/50 dark:border-zinc-700/50 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-full bg-white dark:bg-zinc-800/50 border border-slate-200/50 dark:border-zinc-700/50 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Minus size={16} strokeWidth={2.5} />
+            <Minus size={14} strokeWidth={2.5} />
           </button>
-          <div className="relative h-6 flex-grow bg-secondary-black/5 dark:bg-zinc-800 rounded-full overflow-hidden border border-slate-200/50 dark:border-zinc-700/50">
+          <div className="relative h-5 flex-grow bg-secondary-black/5 dark:bg-zinc-800 rounded-full overflow-hidden border border-slate-200/50 dark:border-zinc-700/50">
             <div
               className="absolute h-full top-0 left-0 rounded-full transition-all duration-700 ease-out"
               style={{
@@ -276,20 +276,20 @@ const Water = () => {
           <button
             onClick={handleIncrement}
             disabled={waterAmount >= dailyGoal || isLoading || isEditingGoal}
-            className="p-2 rounded-full bg-white dark:bg-zinc-800/50 border border-slate-200/50 dark:border-zinc-700/50 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-full bg-white dark:bg-zinc-800/50 border border-slate-200/50 dark:border-zinc-700/50 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Plus size={16} strokeWidth={2.5} />
+            <Plus size={14} strokeWidth={2.5} />
           </button>
         </div>
       </div>
 
-      <div className="h-6 mb-2"></div>
+      <div className="h-4 mb-1"></div>
 
-      <div className="flex justify-center mt-auto pt-2">
+      <div className="flex justify-center mt-auto pt-1.5">
         <button
           onClick={handleSave}
           disabled={isSaveDisabled}
-          className="bg-primary-blue text-white hover:bg-primary-blue dark:text-white dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed mx-2.5 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200"
+          className="bg-primary-blue text-white hover:bg-primary-blue dark:text-white dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed mx-2.5 px-5 py-1.5 rounded-full text-xs font-medium transition-colors duration-200"
         >
           {isLoading && !isFetching ? "Saving..." : "Log water"}
         </button>
