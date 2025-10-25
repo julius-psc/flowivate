@@ -120,8 +120,8 @@ export default function TimeDisplay({
   const greetingTextClass = !isMounted
     ? 'text-transparent'
     : theme === 'jungle' || theme === 'ocean'
-    ? 'text-white text-opacity-80'
-    : 'text-gray-500 dark:text-gray-400';
+    ? 'text-white/80'
+    : 'text-gray-600 dark:text-gray-400';
 
   const timeTextClass = !isMounted
     ? 'text-transparent'
@@ -132,14 +132,14 @@ export default function TimeDisplay({
   const quoteTextClass = !isMounted
     ? 'text-transparent'
     : theme === 'jungle' || theme === 'ocean'
-    ? 'text-white text-opacity-90'
-    : 'text-gray-600 dark:text-gray-400';
+    ? 'text-white/70'
+    : 'text-gray-500 dark:text-gray-500';
 
   const streakColorClass = !isMounted
     ? 'text-transparent'
     : theme === 'jungle' || theme === 'ocean'
     ? 'text-white'
-    : 'text-primary';
+    : 'text-orange-500 dark:text-orange-400';
 
   const containerClasses = isCenteredFullScreen
     ? "min-h-screen flex flex-col items-center justify-center text-center p-4"
@@ -150,34 +150,29 @@ export default function TimeDisplay({
       {!isMounted ? (
         <TimeDisplayPlaceholder isCenteredFullScreen={isCenteredFullScreen} />
       ) : (
-        <div className="flex flex-col items-center w-full max-w-xl">
-          <div className={`flex items-center justify-center gap-2 mb-1 text-sm sm:text-base font-medium ${greetingTextClass}`}>
-            <span>{greeting}, {username}</span>
-            <span className="hidden sm:inline">• {formattedDate}</span>
+        <div className="flex flex-col items-center w-full max-w-xl space-y-3">
+          <div className={`text-sm font-medium ${greetingTextClass}`}>
+            {greeting}, {username} • {formattedDate}
           </div>
 
-          <div className="flex items-center justify-center gap-3 my-1">
-            <h1 className={`text-6xl sm:text-7xl font-bold tracking-tight tabular-nums ${timeTextClass}`}>
+          <div className="flex items-center gap-3">
+            <h1 className={`text-6xl sm:text-7xl font-semibold tracking-tight tabular-nums ${timeTextClass}`}>
               {formattedTime}
             </h1>
 
-            <div className="h-10 w-12 flex items-center justify-start">
-              {isStreakLoading ? (
-                <div className="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse"></div>
-              ) : streakCount && streakCount > 0 ? (
-                <span className={`flex items-center gap-1 animate-fade-in`} title={`${streakCount}-day streak`}>
-                  <IconFlameFilled className={`w-5 h-auto ${streakColorClass}`} />
-                  <span className={`text-md font-semibold ${streakColorClass}`}>{streakCount}</span>
-                </span>
-              ) : null}
-            </div>
+            {isStreakLoading ? (
+              <div className="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse"></div>
+            ) : streakCount && streakCount > 0 ? (
+              <div className="flex items-center gap-1.5 animate-fade-in" title={`${streakCount}-day streak`}>
+                <IconFlameFilled className={`w-6 h-6 ${streakColorClass}`} />
+                <span className={`text-lg font-semibold ${streakColorClass}`}>{streakCount}</span>
+              </div>
+            ) : null}
           </div>
 
-          <div className="mt-3 max-w-md text-center">
-            <p className={`text-sm font-medium ${quoteTextClass}`}>
-              {currentQuote}
-            </p>
-          </div>
+          <p className={`text-sm font-medium max-w-md ${quoteTextClass}`}>
+            {currentQuote}
+          </p>
         </div>
       )}
     </div>

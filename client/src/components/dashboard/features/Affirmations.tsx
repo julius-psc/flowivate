@@ -2,40 +2,23 @@
 
 import { useState, useEffect, FormEvent, useRef } from "react";
 import { toast } from "sonner";
-import { X, Plus } from "lucide-react";
-
+import { X, Plus, List, RefreshCcw, Check } from "lucide-react";
 
 const AffirmationsSkeleton = () => {
   return (
     <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden h-full animate-pulse">
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded"></div>
-        <div className="h-5 w-10 bg-gray-200 dark:bg-zinc-700 rounded-md"></div>
+        <div className="h-5 w-12 bg-gray-200 dark:bg-zinc-700 rounded-md"></div>
       </div>
 
-      <div className="flex-grow overflow-y-auto mb-4 space-y-2">
-        {[...Array(3)].map((_, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-between px-3 py-1 rounded-lg min-h-[32px]"
-          >
-            <div className="flex items-center gap-3 flex-1">
-              <div className="h-2 w-2 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
-              <div className="h-3 flex-1 bg-gray-200 dark:bg-zinc-700 rounded mr-6"></div>{" "}
-            </div>
-          </div>
-        ))}
-        <div className="flex items-center justify-between px-3 py-1 rounded-lg min-h-[32px]">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="h-2 w-2 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
-            <div className="h-3 w-3/4 bg-gray-200 dark:bg-zinc-700 rounded mr-6"></div>
-          </div>
-        </div>
+      <div className="flex-grow flex flex-col items-center justify-center relative mb-4">
+        <div className="h-4 w-3/4 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+        <div className="h-4 w-1/2 bg-gray-200 dark:bg-zinc-700 rounded mt-2"></div>
       </div>
 
-      <div className="mt-auto flex gap-2 flex-shrink-0 pb-1 invisible">
-        <div className="h-[46px] flex-1 rounded-xl bg-transparent"></div>{" "}
-        <div className="h-[40px] w-[60px] rounded-lg bg-transparent"></div>{" "}
+      <div className="flex-shrink-0 flex items-center justify-center">
+        <div className="h-9 w-9 bg-gray-200 dark:bg-zinc-700 rounded-lg"></div>
       </div>
     </div>
   );
@@ -48,18 +31,17 @@ export default function Affirmations() {
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isInputVisible, setIsInputVisible] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<"display" | "manage">("display");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFading, setIsFading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // --- Fetch initial affirmations ---
   useEffect(() => {
     const fetchAffirmations = async () => {
-      setIsLoading(true); // Keep this true at the start
+      setIsLoading(true);
       setError(null);
       try {
-
         const response = await fetch("/api/features/affirmations");
-
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(
@@ -67,9 +49,14 @@ export default function Affirmations() {
               `Error: ${response.statusText} (${response.status})`
           );
         }
-
         const data = await response.json();
-        setAffirmations(data.affirmations || []);
+        const fetchedAffirmations = data.affirmations || [];
+        setAffirmations(fetchedAffirmations);
+        if (fetchedAffirmations.length > 0) {
+          setCurrentIndex(
+            Math.floor(Math.random() * fetchedAffirmations.length)
+          );
+        }
       } catch (err) {
         console.error("Failed to fetch affirmations:", err);
         setError(
@@ -79,19 +66,18 @@ export default function Affirmations() {
         );
         toast.error("Could not load affirmations.");
       } finally {
-        setIsLoading(false); 
+        setIsLoading(false);
       }
     };
 
     fetchAffirmations();
   }, []);
 
-
   useEffect(() => {
-    if (isInputVisible) {
-      setTimeout(() => inputRef.current?.focus(), 0);
+    if (viewMode === "manage") {
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isInputVisible]);
+  }, [viewMode]);
 
   const handleAddAffirmation = async (event: FormEvent) => {
     event.preventDefault();
@@ -99,7 +85,7 @@ export default function Affirmations() {
 
     if (!trimmedAffirmation) {
       toast.warning("Please enter an affirmation.");
-      inputRef.current?.focus(); 
+      inputRef.current?.focus();
       return;
     }
 
@@ -108,9 +94,7 @@ export default function Affirmations() {
     toast.promise(
       fetch("/api/features/affirmations", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ affirmation: trimmedAffirmation }),
       }).then(async (response) => {
         if (!response.ok) {
@@ -126,14 +110,17 @@ export default function Affirmations() {
       }),
       {
         success: (data) => {
-          setAffirmations((prev) => [...prev, data.affirmation]);
+          const newAffirmations = [...affirmations, data.affirmation];
+          setAffirmations(newAffirmations);
+          if (newAffirmations.length === 1) {
+            setCurrentIndex(0);
+          }
           setNewAffirmation("");
-          setIsInputVisible(false); // Hide input on success
           return "Affirmation added successfully!";
         },
         error: (err) => {
           console.error("Failed to add affirmation:", err);
-          inputRef.current?.focus(); // Keep focus on error
+          inputRef.current?.focus();
           return err instanceof Error
             ? err.message
             : "Could not add affirmation.";
@@ -145,8 +132,6 @@ export default function Affirmations() {
     );
   };
 
-  // --- Delete affirmation ---
-  // (Keep handleDeleteAffirmation function exactly as it was)
   const handleDeleteAffirmation = async (
     index: number,
     affirmation: string
@@ -156,9 +141,7 @@ export default function Affirmations() {
     toast.promise(
       fetch("/api/features/affirmations", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ affirmation }),
       }).then(async (response) => {
         if (!response.ok) {
@@ -174,7 +157,20 @@ export default function Affirmations() {
       }),
       {
         success: () => {
-          setAffirmations((prev) => prev.filter((_, i) => i !== index));
+          setAffirmations((prev) =>
+            prev.filter((_, i) => {
+              if (i === index && index === currentIndex) {
+                if (prev.length > 1) {
+                  showNextAffirmation(true);
+                } else {
+                  setCurrentIndex(0);
+                }
+              } else if (i < currentIndex) {
+                setCurrentIndex((prevIndex) => Math.max(0, prevIndex - 1));
+              }
+              return i !== index;
+            })
+          );
           return "Affirmation deleted successfully!";
         },
         error: (err) => {
@@ -190,14 +186,42 @@ export default function Affirmations() {
     );
   };
 
-  // --- RENDER LOGIC ---
+  const showNextAffirmation = (forceNew = false) => {
+    if (affirmations.length < 2) return;
 
-  // *** Use the Skeleton component when isLoading is true ***
+    setIsFading(true);
+
+    setTimeout(() => {
+      let nextIndex = currentIndex;
+      while (forceNew && nextIndex === currentIndex) {
+        nextIndex = Math.floor(Math.random() * affirmations.length);
+      }
+      if (!forceNew) {
+        nextIndex = (currentIndex + 1) % affirmations.length;
+      }
+      setCurrentIndex(nextIndex);
+      setIsFading(false);
+    }, 150);
+  };
+
+  const shuffleAffirmation = () => {
+    if (affirmations.length < 2) return;
+
+    setIsFading(true);
+    setTimeout(() => {
+      let nextIndex = currentIndex;
+      while (nextIndex === currentIndex) {
+        nextIndex = Math.floor(Math.random() * affirmations.length);
+      }
+      setCurrentIndex(nextIndex);
+      setIsFading(false);
+    }, 150);
+  };
+
   if (isLoading) {
     return <AffirmationsSkeleton />;
   }
 
-  // Handle Error State (after loading check)
   if (error) {
     return (
       <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden h-full items-center justify-center">
@@ -209,86 +233,120 @@ export default function Affirmations() {
           <br />
           Please try refreshing.
         </p>
-        {/* Optionally add a retry button here */}
       </div>
     );
   }
 
-  // --- Render Actual Component Content (if not loading and no error) ---
   return (
     <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden h-full">
-      {/* Header Area: Title + New Affirmation Button */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider">
           Affirmations
         </h1>
-        {!isInputVisible && ( // Show button only if input is hidden
-          <button
-            onClick={() => setIsInputVisible(true)}
-            className="flex items-center gap-1 text-xs text-primary/70 dark:text-primary-foreground/70 hover:text-primary dark:hover:text-primary-foreground transition-colors px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800/50"
-            aria-label="Add new affirmation"
-          >
-            <Plus size={14} />
-            New
-          </button>
-        )}
+        <button
+          onClick={() =>
+            setViewMode(viewMode === "display" ? "manage" : "display")
+          }
+          className="flex items-center gap-1 text-xs text-primary/70 dark:text-primary-foreground/70 hover:text-primary dark:hover:text-primary-foreground transition-colors px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800/50"
+          aria-label={
+            viewMode === "display" ? "Manage affirmations" : "Done managing"
+          }
+        >
+          {viewMode === "display" ? <List size={14} /> : <Check size={14} />}
+          {viewMode === "display" ? "Manage" : "Done"}
+        </button>
       </div>
 
-      <div className="flex-grow overflow-y-auto mb-4 space-y-2">
-        {affirmations.length === 0 && !isInputVisible ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-slate-500 dark:text-zinc-400 text-center italic">
-              No affirmations yet. Add one!
-            </p>
+      {viewMode === "display" && (
+        <div className="flex-grow flex flex-col items-center justify-center relative">
+          <div className="flex-grow flex items-center justify-center w-full px-4">
+            {affirmations.length > 0 ? (
+              <p
+                className={`text-lg md:text-xl font-medium text-black/80 dark:text-white/80 text-center transition-opacity duration-150 ${
+                  isFading ? "opacity-0" : "opacity-100"
+                }`}
+              >
+                {affirmations[currentIndex]}
+              </p>
+            ) : (
+              <p className="text-sm text-slate-500 dark:text-zinc-400 text-center italic">
+                Click &#34;Manage&#34; to add your first affirmation.
+              </p>
+            )}
           </div>
-        ) : (
-          affirmations.map((affirmation, index) => (
-            <div
-              key={index}
-              className="group/item flex items-center justify-between px-3 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/50 transition-colors min-h-[32px]"
+          <div className="flex-shrink-0 pt-4">
+            <button
+              onClick={shuffleAffirmation}
+              disabled={affirmations.length < 2 || isFading}
+              className="flex items-center justify-center h-9 w-9 rounded-lg bg-slate-100 dark:bg-zinc-800/70 text-primary/80 dark:text-primary-foreground/80 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Show new affirmation"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-primary font-medium">•</span>
-                <p className="text-sm text-black/80 dark:text-white/80">
-                  {affirmation}
+              <RefreshCcw size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {viewMode === "manage" && (
+        <div className="flex-grow flex flex-col overflow-hidden">
+          <div className="flex-grow overflow-y-auto space-y-2">
+            {affirmations.length === 0 ? (
+              <div className="flex items-center justify-center h-full min-h-[50px]">
+                <p className="text-sm text-slate-500 dark:text-zinc-400 text-center italic">
+                  No affirmations yet. Add one below!
                 </p>
               </div>
-              <button
-                onClick={() => handleDeleteAffirmation(index, affirmation)}
-                disabled={isDeleting === affirmation}
-                className="opacity-0 group-hover/item:opacity-100 focus:opacity-100 transition-opacity p-1 rounded-full hover:bg-slate-200 dark:hover:bg-zinc-700"
-                aria-label="Delete affirmation"
-              >
-                <X size={16} className="text-slate-500 dark:text-zinc-400" />
-              </button>
-            </div>
-          ))
-        )}
-      </div>
-
-      {isInputVisible && (
-        <form
-          onSubmit={handleAddAffirmation}
-          className="mt-auto flex gap-2 flex-shrink-0 pb-1"
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="I am..."
-            value={newAffirmation}
-            onChange={(e) => setNewAffirmation(e.target.value)}
-            className="flex-1 rounded-xl border-2 text-secondary-black dark:text-secondary-white border-slate-300 dark:border-zinc-700  dark:bg-zinc-800/90 px-2 py-2 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 dark:focus:ring-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
-            disabled={isAdding} // Only disable based on isAdding here
-            autoComplete="off"
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-primary text-sm px-4 py-2 text-secondary-white hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isAdding || !newAffirmation.trim()}
+            ) : (
+              affirmations.map((affirmation, index) => (
+                <div
+                  key={index}
+                  className="group/item flex items-center justify-between px-3 py-1 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors min-h-[32px]"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-primary font-medium">•</span>
+                    <p className="text-sm text-black/80 dark:text-white/80">
+                      {affirmation}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteAffirmation(index, affirmation)}
+                    disabled={isDeleting === affirmation}
+                    className="opacity-0 group-hover/item:opacity-100 focus:opacity-100 transition-opacity p-1 rounded-full hover:bg-slate-200 dark:hover:bg-zinc-700"
+                    aria-label="Delete affirmation"
+                  >
+                    <X
+                      size={16}
+                      className="text-slate-500 dark:text-zinc-400"
+                    />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+          <form
+            onSubmit={handleAddAffirmation}
+            className="mt-auto flex flex-col gap-2 flex-shrink-0 pt-4"
           >
-            Add
-          </button>
-        </form>
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="I am..."
+              value={newAffirmation}
+              onChange={(e) => setNewAffirmation(e.target.value)}
+              className="mx-1 rounded-xl border-2 text-secondary-black dark:text-secondary-white border-slate-300 dark:border-zinc-700  dark:bg-zinc-800/90 px-2 py-2 text-sm transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 dark:focus:ring-primary/10 disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={isAdding}
+              autoComplete="off"
+            />
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center gap-1 rounded-lg bg-primary text-sm px-4 py-2 text-secondary-white hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isAdding || !newAffirmation.trim()}
+            >
+              <Plus size={16} />
+              Add
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );
