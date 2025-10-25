@@ -1,15 +1,19 @@
 "use client";
 
-import React, { ChangeEvent } from "react";
-import { KeyRound, Pencil, Loader2, AlertCircle, ArrowRight } from "lucide-react";
+import React, { ChangeEvent, useEffect } from "react";
+import {
+  KeyRound,
+  Loader2,
+  Shield,
+  Check,
+  Smartphone,
+  Clock,
+} from "lucide-react";
 import { fetchApi } from "../api";
 import { useSettings } from "../useSettings";
-import Link from "next/link";
 
-const SecurityTab = (): React.JSX.Element => {
+export default function SecurityTab(): React.JSX.Element {
   const {
-    isEditingPassword,
-    setIsEditingPassword,
     currentPassword,
     setCurrentPassword,
     newPassword,
@@ -20,52 +24,71 @@ const SecurityTab = (): React.JSX.Element => {
     styling,
     sessionStatus,
     session,
+    markDirtyForTab,
+    clearDirtyForTab,
   } = useSettings();
+
   const [passwordError, setPasswordError] = React.useState<string | null>(null);
-  const [isUpdatingPassword, setIsUpdatingPassword] = React.useState<boolean>(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] =
+    React.useState<boolean>(false);
+  const [showPasswordForm, setShowPasswordForm] =
+    React.useState<boolean>(false);
 
   const canUpdatePassword =
-    isEditingPassword &&
     currentPassword.length > 0 &&
     newPassword.length >= 8 &&
     newPassword === confirmPassword &&
     !isUpdatingPassword;
+
+  const dirty =
+    currentPassword.length > 0 ||
+    newPassword.length > 0 ||
+    confirmPassword.length > 0;
+
+  useEffect(() => {
+    if (dirty) markDirtyForTab("security");
+    else clearDirtyForTab("security");
+  }, [dirty, markDirtyForTab, clearDirtyForTab]);
+
+  const onCancel = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordError(null);
+    setStatusMessage({ type: null, message: null });
+    setShowPasswordForm(false);
+  };
 
   const handleUpdatePassword = async () => {
     if (!canUpdatePassword) return;
     setPasswordError(null);
     setStatusMessage({ type: null, message: null });
 
-    if (newPassword !== confirmPassword) {
-      setPasswordError("New passwords do not match.");
-      return;
-    }
     if (newPassword.length < 8) {
       setPasswordError("Password must be at least 8 characters long.");
       return;
     }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
 
     setIsUpdatingPassword(true);
-
     try {
       await fetchApi("/api/user", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
-
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setIsEditingPassword(false);
+      onCancel();
       setStatusMessage({
         type: "success",
         message: "Password updated successfully",
       });
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "An unknown error occurred";
-      setPasswordError(message);
+    } catch (error: Error | unknown) {
+      setPasswordError(
+        error instanceof Error ? error.message : "An unknown error occurred"
+      );
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -73,198 +96,245 @@ const SecurityTab = (): React.JSX.Element => {
 
   const handleInputChange =
     (setter: React.Dispatch<React.SetStateAction<string>>) =>
-    (e: ChangeEvent<HTMLInputElement>) => {
+    (e: ChangeEvent<HTMLInputElement>) =>
       setter(e.target.value);
-    };
 
   const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     setConfirmPassword(e.target.value);
     if (
       passwordError === "New passwords do not match." &&
       e.target.value === newPassword
-    ) {
+    )
       setPasswordError(null);
-    }
   };
 
-  const renderContent = () => (
-    <div className="space-y-6">
-      <div className={styling.sectionHeaderClasses}>
-        <h2 className={styling.sectionTitleClasses}>Security</h2>
-        <p className={styling.sectionDescriptionClasses}>
-          Manage your password and account security.
+  if (sessionStatus !== "authenticated" || !session?.user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+        <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+          <Shield className="text-gray-400 dark:text-gray-500" size={20} />
+        </div>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          Sign in required
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm">
+          You need to be signed in to manage your security settings.
         </p>
       </div>
-      <div className="space-y-5">
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className={styling.labelClasses + " mb-0 flex items-center"}>
-              <KeyRound
-                size={16}
-                className="mr-2 text-gray-400 dark:text-gray-500 flex-shrink-0"
-              />
-              Password
-            </label>
-            {!isEditingPassword && (
-              <button
-                onClick={() => setIsEditingPassword(true)}
-                className="text-sm text-primary hover:text-primary/80 dark:text-primary/70 dark:hover:text-primary/50 flex items-center focus:outline-none focus:underline"
-              >
-                Change <Pencil size={12} className="ml-1" />
-              </button>
-            )}
+    );
+  }
+
+  return (
+    <div className="max-w-3xl">
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          Security
+        </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Manage your password and keep your account secure.
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 overflow-hidden">
+          <div className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                  <KeyRound
+                    size={18}
+                    className="text-gray-600 dark:text-gray-400"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                    Password
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {showPasswordForm
+                      ? "Update your account password"
+                      : "Set a unique password to protect your account"}
+                  </p>
+                  {!showPasswordForm && (
+                    <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      <Clock size={12} />
+                      Last changed 3 months ago
+                    </div>
+                  )}
+                </div>
+              </div>
+              {!showPasswordForm && (
+                <button
+                  onClick={() => setShowPasswordForm(true)}
+                  className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses} text-sm`}
+                >
+                  Change password
+                </button>
+              )}
+            </div>
           </div>
-          {!isEditingPassword && (
-            <div className="flex items-center text-gray-800 dark:text-gray-200 text-sm pl-8">
-              <span className="tracking-wider">••••••••</span>
+
+          {showPasswordForm && (
+            <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-4">
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="current-password-input"
+                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                  >
+                    Current password
+                  </label>
+                  <input
+                    id="current-password-input"
+                    name="current-password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={handleInputChange(setCurrentPassword)}
+                    className={styling.inputClasses}
+                    autoComplete="current-password"
+                    placeholder="Enter current password"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="new-password-input"
+                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                  >
+                    New password
+                  </label>
+                  <input
+                    id="new-password-input"
+                    name="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={handleInputChange(setNewPassword)}
+                    className={styling.inputClasses}
+                    autoComplete="new-password"
+                    minLength={8}
+                    placeholder="Enter new password"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Must be at least 8 characters long
+                  </p>
+                </div>
+                <div>
+                  <label
+                    htmlFor="confirm-password-input"
+                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                  >
+                    Confirm new password
+                  </label>
+                  <input
+                    id="confirm-password-input"
+                    name="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={handleConfirmPasswordChange}
+                    className={[
+                      styling.inputClasses,
+                      passwordError ||
+                      (newPassword &&
+                        confirmPassword &&
+                        newPassword !== confirmPassword)
+                        ? "border-red-400 dark:border-red-600 focus:ring-red-500"
+                        : "",
+                    ].join(" ")}
+                    autoComplete="new-password"
+                    placeholder="Confirm new password"
+                  />
+                  {passwordError && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                      {passwordError}
+                    </p>
+                  )}
+                  {!passwordError &&
+                    newPassword &&
+                    confirmPassword &&
+                    newPassword !== confirmPassword && (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                        Passwords do not match
+                      </p>
+                    )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  disabled={isUpdatingPassword}
+                  className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdatePassword}
+                  disabled={!canUpdatePassword}
+                  className={`${styling.buttonBaseClasses} ${styling.buttonPrimaryClasses} inline-flex items-center gap-2`}
+                >
+                  {isUpdatingPassword ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      Update password
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           )}
         </div>
-        {isEditingPassword && (
-          <div className="space-y-4 bg-gray-50 dark:bg-gray-900/30 p-4 rounded-md border border-gray-200 dark:border-gray-700">
-            <div>
-              <label htmlFor="current-password-input" className={styling.labelClasses}>
-                Current Password
-              </label>
-              <input
-                id="current-password-input"
-                name="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={handleInputChange(setCurrentPassword)}
-                className={styling.inputClasses}
-                placeholder="Enter your current password"
-                autoComplete="current-password"
-                required
-                disabled={isUpdatingPassword}
+
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+              <Smartphone
+                size={18}
+                className="text-gray-600 dark:text-gray-400"
               />
             </div>
-            <div>
-              <label htmlFor="new-password-input" className={styling.labelClasses}>
-                New Password
-              </label>
-              <input
-                id="new-password-input"
-                name="new-password"
-                type="password"
-                value={newPassword}
-                onChange={handleInputChange(setNewPassword)}
-                className={styling.inputClasses}
-                placeholder="Min. 8 characters"
-                autoComplete="new-password"
-                minLength={8}
-                required
-                disabled={isUpdatingPassword}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirm-password-input" className={styling.labelClasses}>
-                Confirm New Password
-              </label>
-              <input
-                id="confirm-password-input"
-                name="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={handleConfirmPasswordChange}
-                className={`${styling.inputClasses} ${
-                  passwordError ||
-                  (newPassword &&
-                    confirmPassword &&
-                    newPassword !== confirmPassword)
-                    ? "border-red-400 dark:border-red-600 focus:ring-red-500"
-                    : ""
-                }`}
-                placeholder="Confirm new password"
-                autoComplete="new-password"
-                required
-                disabled={isUpdatingPassword}
-              />
-              {passwordError && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center">
-                  <AlertCircle size={12} className="mr-1" /> {passwordError}
-                </p>
-              )}
-              {!passwordError &&
-                newPassword &&
-                confirmPassword &&
-                newPassword !== confirmPassword && (
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                    Passwords do not match.
-                  </p>
-                )}
-            </div>
-            <div className="flex items-center justify-end space-x-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setCurrentPassword("");
-                  setNewPassword("");
-                  setConfirmPassword("");
-                  setIsEditingPassword(false);
-                  setStatusMessage({ type: null, message: null });
-                }}
-                disabled={isUpdatingPassword}
-                className={styling.buttonSecondaryClasses}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleUpdatePassword}
-                disabled={!canUpdatePassword}
-                className={styling.buttonPrimaryClasses}
-              >
-                {isUpdatingPassword ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Update"
-                )}
-              </button>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                Two-factor authentication
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                Add an extra layer of security to your account by requiring a
+                verification code in addition to your password.
+              </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                Coming soon
+              </div>
             </div>
           </div>
-        )}
+        </div>
+
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+              <Shield size={18} className="text-gray-600 dark:text-gray-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                Passkeys
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                Use biometrics or security keys for faster, more secure sign-ins
+                without passwords.
+              </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                Coming soon
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
-
-  if (sessionStatus === "loading") {
-    return (
-      <div className="flex justify-center items-center h-40">
-        <Loader2
-          className="animate-spin text-gray-400 dark:text-gray-500"
-          size={24}
-        />
-      </div>
-    );
-  }
-  if (sessionStatus === "unauthenticated") {
-    return (
-      <div className="flex flex-col items-center justify-center h-48 text-center p-4">
-        <AlertCircle
-          className="mb-3 text-gray-400 dark:text-gray-500"
-          size={24}
-        />
-        <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">
-          Please log in to manage this section.
-        </p>
-        <Link
-          href="/api/auth/signin"
-          className="text-sm text-primary hover:text-primary/80 dark:text-primary/70 dark:hover:text-primary/50 inline-flex items-center py-1 px-3 rounded-md border border-primary/30 dark:border-primary/50 bg-primary/10 dark:bg-primary/20 hover:bg-primary/20 dark:hover:bg-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1 dark:focus:ring-offset-gray-950"
-        >
-          Go to login <ArrowRight size={14} className="ml-1" />
-        </Link>
-      </div>
-    );
-  }
-  if (sessionStatus === "authenticated" && session?.user) {
-    return renderContent();
-  }
-  return (
-    <p className="text-center text-gray-500 dark:text-gray-400">
-      Session data not available.
-    </p>
-  );
-};
-
-export default SecurityTab;
+}

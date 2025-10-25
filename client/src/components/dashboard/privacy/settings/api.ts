@@ -1,4 +1,7 @@
-export async function fetchApi<T>(url: string, options: RequestInit): Promise<T> {
+export async function fetchApi<T>(
+  url: string,
+  options: RequestInit,
+): Promise<T> {
   try {
     const response = await fetch(url, options);
     const contentType = response.headers.get("content-type");

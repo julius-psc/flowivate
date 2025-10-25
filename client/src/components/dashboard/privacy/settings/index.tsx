@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, MouseEvent, useEffect } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -10,151 +10,192 @@ import {
   CreditCard,
   AlertTriangle,
 } from "lucide-react";
-import AccountTab from "./tabs/AccountTab";
-import AppearanceTab from "./tabs/AppearanceTab";
-import DangerTab from "./tabs/DangerTab";
-import SecurityTab from "./tabs/SecurityTab";
-import SubscriptionTab from "./tabs/SubscriptionTab";
-
 import StatusIndicator from "./StatusIndicator";
 import { useSettings } from "./useSettings";
-import { SettingsModalProps, Tab } from "./types";
+import { SettingsModalProps, Tab, TabId } from "./types";
 
-// Tab definitions
+const AccountTab = React.lazy(() => import("./tabs/AccountTab"));
+const AppearanceTab = React.lazy(() => import("./tabs/AppearanceTab"));
+const SecurityTab = React.lazy(() => import("./tabs/SecurityTab"));
+const SubscriptionTab = React.lazy(() => import("./tabs/SubscriptionTab"));
+const DangerTab = React.lazy(() => import("./tabs/DangerTab"));
+
 const tabs: Tab[] = [
   { id: "account", label: "Account", icon: <User size={16} /> },
   { id: "security", label: "Security", icon: <Lock size={16} /> },
   { id: "appearance", label: "Appearance", icon: <Settings size={16} /> },
-  { id: "subscription", label: "Subscription", icon: <CreditCard size={16} /> },
-  { id: "danger", label: "Danger Zone", icon: <AlertTriangle size={16} /> },
+  { id: "subscription", label: "Billing", icon: <CreditCard size={16} /> },
+  { id: "danger", label: "Danger", icon: <AlertTriangle size={16} /> },
 ];
 
-const SettingsModal = ({
-  isOpen,
-  onClose,
-}: SettingsModalProps): React.JSX.Element | null => {
-  const [activeTab, setActiveTab] = useState<string>("account");
+function useQueryState(key: string, initial: string) {
+  const [value, setValue] = useState<string>(() => {
+    if (typeof window === "undefined") return initial;
+    const params = new URLSearchParams(window.location.search);
+    return params.get(key) ?? initial;
+  });
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set(key, value);
+    window.history.replaceState({}, "", url.toString());
+  }, [key, value]);
+  return [value, setValue] as const;
+}
+
+function isTabId(v: string): v is TabId {
+  return tabs.some((t) => t.id === v);
+}
+
+export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+  const [mounted, setMounted] = useState(false);
+  const [activeTab, setActiveTab] = useQueryState("tab", "account");
   const {
     statusMessage,
     clearStatusMessage,
+    styling,
+    dirtyTabs,
+    clearDirtyForTab,
     cancelEditPassword,
     cancelDeleteAccount,
-    styling,
   } = useSettings();
 
-  // --- Portal Fix: Start ---
-  // 1. Add state to track if component is mounted
-  const [isMounted, setIsMounted] = useState(false);
+  const validActive: TabId = useMemo(() => {
+    return isTabId(activeTab) ? activeTab : "account";
+  }, [activeTab]);
 
-  // 2. Set mounted state to true only on the client side
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
-  // --- Portal Fix: End ---
+    if (!isOpen) return;
+    const root = document.documentElement;
+    const prevOverflow = root.style.overflow;
+    root.style.overflow = "hidden";
+    return () => {
+      root.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      if (e.key === "Escape") onClose();
+      if ((e.metaKey || e.ctrlKey) && /^[1-5]$/.test(e.key)) {
+        const idx = Number(e.key) - 1;
+        const t = tabs[idx];
+        if (t) setActiveTab(t.id);
+      }
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        const idx = tabs.findIndex((t) => t.id === validActive);
+        const next =
+          e.key === "ArrowRight"
+            ? tabs[(idx + 1) % tabs.length]
+            : tabs[(idx - 1 + tabs.length) % tabs.length];
+        setActiveTab(next.id);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isOpen, setActiveTab, validActive, onClose]);
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "account":
-        return <AccountTab />;
-      case "security":
-        return <SecurityTab />;
-      case "appearance":
-        return <AppearanceTab />;
-      case "subscription":
-        return <SubscriptionTab />;
-      case "danger":
-        return <DangerTab />;
-      default:
-        return <p>Invalid tab selected.</p>;
-    }
+  if (!isOpen || !mounted) return null;
+
+  const onChangeTab = (id: TabId) => {
+    if (validActive === "security") cancelEditPassword();
+    if (validActive === "danger") cancelDeleteAccount();
+    clearDirtyForTab(validActive);
+    setActiveTab(id);
   };
 
-  // This is all your original modal JSX
-  const modalContent = (
+  const content = (
     <>
       <div
-        // Use a high z-index to ensure it's above other elements
-        className="fixed inset-0 z-[51] flex items-center justify-center bg-gray-900/20 dark:bg-black/60 p-4"
-        aria-labelledby="settings-modal-title"
         role="dialog"
         aria-modal="true"
-        onClick={onClose}
+        aria-labelledby="settings-modal-title"
+        className="fixed inset-0 z-[1000] bg-white dark:bg-[#0B0B0D]"
       >
-        <div
-          onClick={(e: MouseEvent) => e.stopPropagation()}
-          className="bg-secondary-white dark:bg-secondary-black w-full max-w-4xl h-[calc(100vh-4rem)] max-h-[750px] rounded-md border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col sm:flex-row"
-        >
-          <div
-            className="w-full sm:w-56 shrink-0 border-b sm:border-b-0 sm:border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-secondary-black p-3 sm:p-4 overflow-y-auto relative"
-            role="tablist"
-            aria-orientation="vertical"
-          >
-            <h1
-              id="settings-modal-title"
-              className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 px-2 hidden sm:block"
-            >
-              Settings
-            </h1>
-            <button
-              onClick={onClose}
-              className="absolute top-3 right-3 sm:hidden p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50"
-              aria-label="Close settings"
-            >
-              <X size={18} />
-            </button>
-            <nav className="space-y-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  id={`settings-tab-${tab.id}`}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    if (activeTab === "security") cancelEditPassword();
-                    if (activeTab === "danger") cancelDeleteAccount();
-                  }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-900 ${
-                    activeTab === tab.id
-                      ? "bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary/70"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
-                  } ${
-                    tab.id === "danger" && activeTab !== "danger"
-                      ? "!text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20 hover:!text-red-700 dark:hover:!text-red-300"
-                      : ""
-                  } ${
-                    tab.id === "danger" && activeTab === "danger"
-                      ? "!bg-red-50 dark:!bg-red-900/30 !text-red-700 dark:!text-red-300"
-                      : ""
-                  }`}
-                  role="tab"
-                  aria-selected={activeTab === tab.id}
-                  aria-controls={`settings-panel-${activeTab}`}
-                >
-                  {React.cloneElement(tab.icon as React.ReactElement)}
-                  {tab.label}
-                </button>
-              ))}
+        <div className="grid w-full h-full grid-cols-1 sm:grid-cols-[240px_1fr]">
+          <aside className="hidden sm:flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#111113]">
+            <div className="px-4 py-5 border-b border-gray-200/80 dark:border-gray-800/80">
+              <h1
+                id="settings-modal-title"
+                className="text-sm font-semibold text-gray-900 dark:text-gray-100"
+              >
+                Settings
+              </h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Manage your Flowivate workspace
+              </p>
+            </div>
+            <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+              {tabs.map((t) => {
+                const active = validActive === t.id;
+                const isDirty = dirtyTabs.has(t.id);
+                const danger = t.id === "danger";
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => onChangeTab(t.id)}
+                    className={[
+                      "w-full flex items-center justify-between rounded-md px-3 py-2 text-sm transition-all",
+                      active
+                        ? "bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium"
+                        : danger
+                        ? "text-red-600 dark:text-red-400 hover:bg-red-50/60 dark:hover:bg-red-950/30"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60",
+                    ].join(" ")}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <span className={danger ? "text-red-500" : undefined}>
+                        {t.icon}
+                      </span>
+                      {t.label}
+                    </span>
+                    {isDirty && (
+                      <span
+                        className="ml-2 h-2 w-2 rounded-full bg-amber-500"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </nav>
-          </div>
-          <div
-            className="flex-1 p-5 sm:p-6 overflow-y-auto relative"
-            id={`settings-panel-${activeTab}`}
-            role="tabpanel"
-            tabIndex={0}
-            aria-labelledby={`settings-tab-${activeTab}`}
-          >
+          </aside>
+
+          <section className="relative flex flex-col h-full overflow-y-auto">
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 hidden sm:inline-flex p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-950"
+              className="absolute top-5 right-5 z-20 rounded-md p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               aria-label="Close settings"
             >
               <X size={20} />
             </button>
-            {renderTabContent()}
-          </div>
+
+            <div className="w-full px-6 sm:px-10 py-8">
+              <div className="max-w-3xl mx-auto">
+                <Suspense
+                  fallback={
+                    <div className="animate-pulse space-y-3">
+                      <div className="h-6 w-40 rounded-md bg-gray-200 dark:bg-gray-800" />
+                      <div className="h-4 w-72 rounded-md bg-gray-200 dark:bg-gray-800" />
+                      <div className="h-24 rounded-md bg-gray-200 dark:bg-gray-800" />
+                    </div>
+                  }
+                >
+                  {validActive === "account" && <AccountTab />}
+                  {validActive === "security" && <SecurityTab />}
+                  {validActive === "appearance" && <AppearanceTab />}
+                  {validActive === "subscription" && <SubscriptionTab />}
+                  {validActive === "danger" && <DangerTab />}
+                </Suspense>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
+
       <StatusIndicator
         statusMessage={statusMessage}
         clearStatusMessage={clearStatusMessage}
@@ -163,11 +204,5 @@ const SettingsModal = ({
     </>
   );
 
-  if (!isMounted) {
-    return null;
-  }
-
-  return createPortal(modalContent, document.body);
-};
-
-export default SettingsModal;
+  return createPortal(content, document.body);
+}
