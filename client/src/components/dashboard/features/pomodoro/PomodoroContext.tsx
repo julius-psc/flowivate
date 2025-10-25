@@ -9,7 +9,6 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
 export type PomodoroMode = "focus" | "shortBreak" | "longBreak";
@@ -31,6 +30,7 @@ interface PomodoroContextType {
   start: () => void;
   pause: () => void;
   reset: () => void;
+  resetRound: () => void; // Added for the new reset logic
   switchMode: (m: PomodoroMode) => void;
   formatTime: (sec?: number) => string;
   progress: number;
@@ -54,7 +54,14 @@ export function PomodoroProvider({
   children: ReactNode;
   enabled: boolean;
 }) {
-  const { data: session } = useSession();
+  // Mock session for preview
+  const [session, setSession] = useState<{ user: { id: string } } | null>(null);
+  useEffect(() => {
+    if (enabled) {
+      setSession({ user: { id: "mock-user-id" } });
+    }
+  }, [enabled]);
+  // const { data: session } = useSession(); // Real implementation
 
   const FOCUS_DEFAULT = 25 * 60;
   const SHORT_BREAK_DEFAULT = 5 * 60;
@@ -118,7 +125,6 @@ export function PomodoroProvider({
             setSettings(s);
             setSessions(Number(data.focusSessions) || 0);
 
-            // then try resume from localStorage
             const saved = localStorage.getItem("pomodoroEndTime");
             if (saved) {
               const end = Number(saved);
@@ -167,25 +173,42 @@ export function PomodoroProvider({
   // 3) Reset on mode/settings change
   useEffect(() => {
     if (!enabled) return;
-    // only reset when we switch modes or apply new settings
     endTimeRef.current = null;
     setTimeLeft(getTotal());
     setIsActive(false);
   }, [enabled, mode, settings, getTotal]);
 
-  // 4) Tick every second when active
+  // 4) *** REPLACED TIMER LOGIC ***
+  // Tick every 250ms when active, using timestamp diff to stay accurate
   useEffect(() => {
-    if (!enabled || !isActive || endTimeRef.current == null) return;
-    let frame: number;
-    const tick = () => {
+    if (!enabled || !isActive) {
+      return;
+    }
+
+    if (!endTimeRef.current) {
+      console.warn("Timer started without endTimeRef.");
+      setIsActive(false);
+      return;
+    }
+
+    // Initial tick to update immediately
+    const rem = Math.floor((endTimeRef.current! - Date.now()) / 1000);
+    setTimeLeft(Math.max(0, rem));
+
+    const interval = setInterval(() => {
       const rem = Math.floor((endTimeRef.current! - Date.now()) / 1000);
-      setTimeLeft(Math.max(0, rem));
-      if (rem > 0) {
-        frame = requestAnimationFrame(tick);
+
+      if (rem < 0) {
+        // Time's up. Let hook 5 handle it.
+        // We just set to 0 and clear.
+        setTimeLeft(0);
+        clearInterval(interval);
+      } else {
+        setTimeLeft(rem);
       }
-    };
-    tick();
-    return () => cancelAnimationFrame(frame);
+    }, 250); // Check 4 times a second for responsiveness
+
+    return () => clearInterval(interval);
   }, [enabled, isActive]);
 
   // 5) When timeLeft hits zero → swap mode, increment sessions
@@ -239,6 +262,16 @@ export function PomodoroProvider({
     setTimeLeft(getTotal());
     endTimeRef.current = null;
   };
+
+  const resetRound = () => {
+    setSessions(0);
+    if (mode !== "focus") {
+      switchMode("focus");
+    } else {
+      reset();
+    }
+  };
+
   const switchMode = (m: PomodoroMode) => {
     if (m !== mode) {
       setIsActive(false);
@@ -286,6 +319,7 @@ export function PomodoroProvider({
         start,
         pause,
         reset,
+        resetRound, // Added
         switchMode,
         formatTime,
         progress,
@@ -296,4 +330,3 @@ export function PomodoroProvider({
     </PomodoroContext.Provider>
   );
 }
-

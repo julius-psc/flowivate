@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef, FormEvent } from 'react';
-import { usePomodoroContext } from './PomodoroContext';
+import React, { useState, useEffect, useRef, FormEvent } from "react";
+import { usePomodoroContext, PomodoroSettings } from "./PomodoroContext";
+import { PomodoroSkeleton } from "./PomodoroSkeleton";
 import {
-  IconCup,
   IconBrain,
+  IconCup,
+  IconPlant,
   IconSettings,
   IconRefresh,
-  IconPlant,
   IconX,
   IconPlus,
   IconMinus,
-} from '@tabler/icons-react';
-import { PomodoroSkeleton } from './PomodoroSkeleton';
+} from "@tabler/icons-react";
 
 const Pomodoro: React.FC = () => {
   const {
@@ -25,6 +25,7 @@ const Pomodoro: React.FC = () => {
     start,
     pause,
     reset,
+    resetRound,
     switchMode,
     formatTime,
     progress,
@@ -32,62 +33,80 @@ const Pomodoro: React.FC = () => {
   } = usePomodoroContext();
 
   const [showSettings, setShowSettings] = useState(false);
+  const [showResetMenu, setShowResetMenu] = useState(false);
   const settingsFormRef = useRef<HTMLFormElement>(null);
+  const resetMenuRef = useRef<HTMLDivElement>(null);
+  const resetBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Close settings when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+
       if (
         showSettings &&
         settingsFormRef.current &&
-        !settingsFormRef.current.contains(e.target as Node)
+        !settingsFormRef.current.contains(target)
       ) {
-        const btn = document.getElementById('pomodoro-settings-toggle');
-        if (!btn || !btn.contains(e.target as Node)) {
+        const btn = document.getElementById("pomodoro-settings-toggle");
+        if (!btn || !btn.contains(target)) {
           setShowSettings(false);
         }
       }
+
+      if (
+        showResetMenu &&
+        resetMenuRef.current &&
+        !resetMenuRef.current.contains(target) &&
+        resetBtnRef.current &&
+        !resetBtnRef.current.contains(target)
+      ) {
+        setShowResetMenu(false);
+      }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showSettings]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSettings, showResetMenu]);
 
   const handleSettingsSave = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!settingsFormRef.current) return;
     const fd = new FormData(settingsFormRef.current);
-    const newSettings = {
-      focusTime: Math.max(1, Math.min(120, Number(fd.get('focusTime')))) * 60,
-      shortBreakTime: Math.max(1, Math.min(30, Number(fd.get('shortBreakTime')))) * 60,
-      longBreakTime: Math.max(5, Math.min(60, Number(fd.get('longBreakTime')))) * 60,
-      longBreakAfter: Math.max(1, Math.min(10, Number(fd.get('longBreakAfter')))),
+    const newSettings: PomodoroSettings = {
+      focusTime: Math.max(1, Math.min(120, Number(fd.get("focusTime")))) * 60,
+      shortBreakTime:
+        Math.max(1, Math.min(30, Number(fd.get("shortBreakTime")))) * 60,
+      longBreakTime:
+        Math.max(5, Math.min(60, Number(fd.get("longBreakTime")))) * 60,
+      longBreakAfter: Math.max(
+        1,
+        Math.min(10, Number(fd.get("longBreakAfter")))
+      ),
     };
     saveSettings(newSettings);
     setShowSettings(false);
   };
 
-  // Tailwind classes mapped per mode
   const colors = {
     focus: {
-      main: 'bg-primary',
-      hover: 'hover:bg-primary/90',
-      text: 'text-primary',
-      ring: 'focus:ring-primary/30',
-      lightBg: 'bg-primary/10',
+      main: "bg-primary",
+      hover: "hover:bg-primary/90",
+      text: "text-primary",
+      ring: "focus:ring-primary/30",
+      lightBg: "bg-primary/10",
     },
     shortBreak: {
-      main: 'bg-third-red',
-      hover: 'hover:bg-third-red/90',
-      text: 'text-third-red',
-      ring: 'focus:ring-third-red/30',
-      lightBg: 'bg-third-red/10',
+      main: "bg-third-red",
+      hover: "hover:bg-third-red/90",
+      text: "text-third-red",
+      ring: "focus:ring-third-red/30",
+      lightBg: "bg-third-red/10",
     },
     longBreak: {
-      main: 'bg-third-green',
-      hover: 'hover:bg-third-green/90',
-      text: 'text-third-green',
-      ring: 'focus:ring-third-green/30',
-      lightBg: 'bg-third-green/10',
+      main: "bg-third-green",
+      hover: "hover:bg-third-green/90",
+      text: "text-third-green",
+      ring: "focus:ring-third-green/30",
+      lightBg: "bg-third-green/10",
     },
   } as const;
   const modeColors = colors[mode];
@@ -101,8 +120,7 @@ const Pomodoro: React.FC = () => {
   if (isLoading) return <PomodoroSkeleton />;
 
   return (
-    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
-      {/* Header */}
+    <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
           FOCUS TIMER
@@ -112,27 +130,29 @@ const Pomodoro: React.FC = () => {
       <div className="flex flex-col space-y-6 flex-1">
         {!showSettings ? (
           <>
-            {/* Mode Buttons */}
             <div className="grid grid-cols-3 gap-2">
               {(Object.keys(icons) as Array<keyof typeof icons>).map((m) => (
                 <button
                   key={m}
                   onClick={() => switchMode(m)}
-                  className={`py-2 text-xs font-medium transition-colors rounded-lg ${
+                  className={`py-1.5 text-xs font-medium transition-colors rounded-lg ${
                     mode === m
                       ? `${modeColors.lightBg} ${modeColors.text}`
-                      : 'text-accent-grey-hover dark:text-secondary-white/70 hover:bg-accent-lightgrey/10 dark:hover:bg-accent-grey/10'
+                      : "text-accent-grey-hover dark:text-secondary-white/70 hover:bg-accent-lightgrey/10 dark:hover:bg-accent-grey/10"
                   }`}
                 >
                   <div className="flex items-center justify-center">
                     <span className="mr-1.5">{icons[m]}</span>
-                    {m === 'focus' ? 'Focus' : m === 'shortBreak' ? 'Short Break' : 'Long Break'}
+                    {m === "focus"
+                      ? "Focus"
+                      : m === "shortBreak"
+                      ? "Short"
+                      : "Long"}
                   </div>
                 </button>
               ))}
             </div>
 
-            {/* Timer Display */}
             <div className="flex flex-col items-center space-y-6 flex-1 justify-center">
               <div className="text-4xl font-bold text-secondary-black dark:text-secondary-white tabular-nums mb-2">
                 {formatTime(timeLeft)}
@@ -145,29 +165,33 @@ const Pomodoro: React.FC = () => {
               </div>
               <div className="mt-3 flex items-center">
                 <span className="text-xs text-secondary-black/60 dark:text-secondary-white/60 mr-2">
-                  Session{' '}
-                  {sessions % settings.longBreakAfter || settings.longBreakAfter}/
-                  {settings.longBreakAfter}
+                  Session{" "}
+                  {sessions % settings.longBreakAfter ||
+                    settings.longBreakAfter}
+                  /{settings.longBreakAfter}
                 </span>
                 <div className="flex space-x-1.5">
-                  {Array.from({ length: Math.min(settings.longBreakAfter, 8) }).map((_, i) => (
+                  {Array.from({
+                    length: Math.min(settings.longBreakAfter, 8),
+                  }).map((_, i) => (
                     <div
                       key={i}
                       className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${
                         i < sessions % settings.longBreakAfter ||
-                        (sessions > 0 && sessions % settings.longBreakAfter === 0)
+                        (sessions > 0 &&
+                          sessions % settings.longBreakAfter === 0)
                           ? modeColors.main
-                          : 'bg-accent-lightgrey/30 dark:bg-accent-grey/30'
+                          : "bg-accent-lightgrey/30 dark:bg-accent-grey/30"
                       }`}
                     />
                   ))}
                 </div>
               </div>
 
-              {/* Controls */}
               <div className="flex items-center justify-center space-x-4">
                 <button
-                  onClick={reset}
+                  ref={resetBtnRef}
+                  onClick={() => setShowResetMenu((prev) => !prev)}
                   aria-label="Reset Timer"
                   className="p-2 text-accent-grey-hover dark:text-accent-grey hover:text-secondary-black dark:hover:text-secondary-white bg-accent-lightgrey/10 dark:bg-accent-grey/10 hover:bg-accent-lightgrey/20 dark:hover:bg-accent-grey/20 transition-colors rounded-full focus:outline-none"
                 >
@@ -175,10 +199,10 @@ const Pomodoro: React.FC = () => {
                 </button>
                 <button
                   onClick={isActive ? pause : start}
-                  aria-label={isActive ? 'Pause Timer' : 'Start Timer'}
-                  className={`px-6 py-2 text-secondary-white ${modeColors.main} ${modeColors.hover} rounded-full transition-colors focus:outline-none focus:ring-1 ${modeColors.ring}`}
+                  aria-label={isActive ? "Pause Timer" : "Start Timer"}
+                  className={`px-6 py-1.5 text-sm font-medium text-secondary-white ${modeColors.main} ${modeColors.hover} rounded-full transition-colors focus:outline-none focus:ring-1 ${modeColors.ring}`}
                 >
-                  {isActive ? 'Pause' : 'Start'}
+                  {isActive ? "Pause" : "Start"}
                 </button>
                 <button
                   id="pomodoro-settings-toggle"
@@ -192,7 +216,6 @@ const Pomodoro: React.FC = () => {
             </div>
           </>
         ) : (
-          /* Settings Form */
           <form
             ref={settingsFormRef}
             onSubmit={handleSettingsSave}
@@ -213,29 +236,29 @@ const Pomodoro: React.FC = () => {
             <div className="space-y-5 flex-1 overflow-y-auto pr-1">
               {[
                 {
-                  name: 'focusTime',
-                  label: 'Focus Duration (minutes)',
+                  name: "focusTime",
+                  label: "Focus Duration (minutes)",
                   value: settings.focusTime / 60,
                   min: 1,
                   max: 120,
                 },
                 {
-                  name: 'shortBreakTime',
-                  label: 'Short Break (minutes)',
+                  name: "shortBreakTime",
+                  label: "Short Break (minutes)",
                   value: settings.shortBreakTime / 60,
                   min: 1,
                   max: 30,
                 },
                 {
-                  name: 'longBreakTime',
-                  label: 'Long Break (minutes)',
+                  name: "longBreakTime",
+                  label: "Long Break (minutes)",
                   value: settings.longBreakTime / 60,
                   min: 5,
                   max: 60,
                 },
                 {
-                  name: 'longBreakAfter',
-                  label: 'Sessions Before Long Break',
+                  name: "longBreakAfter",
+                  label: "Sessions Before Long Break",
                   value: settings.longBreakAfter,
                   min: 1,
                   max: 10,
@@ -309,6 +332,42 @@ const Pomodoro: React.FC = () => {
           </form>
         )}
       </div>
+
+      {showResetMenu && (
+        <div
+          ref={resetMenuRef}
+          className="absolute z-10 w-36 bg-white dark:bg-zinc-800 border border-slate-200/50 dark:border-zinc-700/50 rounded-lg shadow-xl"
+          style={{
+            top:
+              (resetBtnRef.current?.offsetTop ?? 0) +
+              (resetBtnRef.current?.offsetHeight ?? 0) +
+              8,
+            left:
+              (resetBtnRef.current?.offsetLeft ?? 0) +
+              (resetBtnRef.current?.offsetWidth ?? 0) / 2,
+            transform: "translateX(-50%)",
+          }}
+        >
+          <button
+            onClick={() => {
+              reset();
+              setShowResetMenu(false);
+            }}
+            className="w-full text-left text-sm px-3 py-2 text-secondary-black dark:text-secondary-white hover:bg-slate-50 dark:hover:bg-zinc-700/50 rounded-t-lg"
+          >
+            Reset Session
+          </button>
+          <button
+            onClick={() => {
+              resetRound();
+              setShowResetMenu(false);
+            }}
+            className="w-full text-left text-sm px-3 py-2 text-secondary-black dark:text-secondary-white hover:bg-slate-50 dark:hover:bg-zinc-700/50 rounded-b-lg"
+          >
+            Reset Round
+          </button>
+        </div>
+      )}
     </div>
   );
 };
