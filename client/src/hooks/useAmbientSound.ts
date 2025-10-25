@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner"; // Assuming you use 'sonner' for toasts
 
-// Define the structure for sound data
 interface SoundInfo {
   src: string;
   emoji: string;

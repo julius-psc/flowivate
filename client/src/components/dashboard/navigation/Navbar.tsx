@@ -173,7 +173,7 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <nav className="flex items-center justify-between z-40 py-2 px-2 mx-2 mt-2 backdrop-blur-md dark:bg-zinc-900/80 bg-transparent rounded-2xl border border-slate-200/30 dark:border-zinc-800/30">
+      <nav className="flex items-center justify-between py-2 px-2 mx-2 mt-2 backdrop-blur-md dark:bg-zinc-900/80 bg-transparent rounded-2xl border border-slate-200/30 dark:border-zinc-800/30">
         <div className="flex items-center">
           <div className="relative">
             <button
@@ -276,7 +276,7 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {showProfileComponent && (
-                  <div className="profile-popup absolute right-0 mt-2 w-80 backdrop-blur-xl bg-transparent dark:bg-zinc-900/80 rounded-2xl border border-slate-200/30 dark:border-zinc-800/30 overflow-hidden z-50">
+                  <div className="profile-popup absolute right-0 mt-2 w-80 backdrop-blur-xl bg-transparent dark:bg-zinc-900/80 rounded-2xl border border-slate-200/30 dark:border-zinc-800/30 overflow-hidden z-20">
                     <div className="relative">
                       <div className="absolute inset-0 opacity-60">
                         <Image

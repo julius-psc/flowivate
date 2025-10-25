@@ -62,7 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isFullscreen, toggleFullscreen }) => 
                     <div
                       className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-200 ${
                         pathname === item.path
-                          ? "bg-primary/10 dark:bg-primary/10 border border-primary/80 dark:border-primary/40"
+                          ? "bg-primary/10 dark:bg-primary/10 border border-[#3A6EC8]/20"
                           : "hover:bg-gray-100/60 dark:hover:bg-gray-800/30"
                       }`}
                     >

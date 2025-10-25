@@ -1,7 +1,15 @@
 "use client";
 
-import React, { useState, MouseEvent } from "react";
-import { X, User, Lock, Settings, CreditCard, AlertTriangle, } from "lucide-react";
+import React, { useState, MouseEvent, useEffect } from "react";
+import { createPortal } from "react-dom";
+import {
+  X,
+  User,
+  Lock,
+  Settings,
+  CreditCard,
+  AlertTriangle,
+} from "lucide-react";
 import AccountTab from "./tabs/AccountTab";
 import AppearanceTab from "./tabs/AppearanceTab";
 import DangerTab from "./tabs/DangerTab";
@@ -21,7 +29,10 @@ const tabs: Tab[] = [
   { id: "danger", label: "Danger Zone", icon: <AlertTriangle size={16} /> },
 ];
 
-const SettingsModal = ({ isOpen, onClose }: SettingsModalProps): React.JSX.Element | null => {
+const SettingsModal = ({
+  isOpen,
+  onClose,
+}: SettingsModalProps): React.JSX.Element | null => {
   const [activeTab, setActiveTab] = useState<string>("account");
   const {
     statusMessage,
@@ -30,6 +41,16 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps): React.JSX.Eleme
     cancelDeleteAccount,
     styling,
   } = useSettings();
+
+  // --- Portal Fix: Start ---
+  // 1. Add state to track if component is mounted
+  const [isMounted, setIsMounted] = useState(false);
+
+  // 2. Set mounted state to true only on the client side
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  // --- Portal Fix: End ---
 
   if (!isOpen) return null;
 
@@ -50,10 +71,12 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps): React.JSX.Eleme
     }
   };
 
-  return (
+  // This is all your original modal JSX
+  const modalContent = (
     <>
       <div
-        className="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/20 dark:bg-black/60 p-4"
+        // Use a high z-index to ensure it's above other elements
+        className="fixed inset-0 z-[51] flex items-center justify-center bg-gray-900/20 dark:bg-black/60 p-4"
         aria-labelledby="settings-modal-title"
         role="dialog"
         aria-modal="true"
@@ -139,6 +162,12 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps): React.JSX.Eleme
       />
     </>
   );
+
+  if (!isMounted) {
+    return null;
+  }
+
+  return createPortal(modalContent, document.body);
 };
 
 export default SettingsModal;
