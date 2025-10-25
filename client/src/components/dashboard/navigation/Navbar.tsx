@@ -2,12 +2,19 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import Image from "next/image"; // Import next/image
-import { IconCommand, IconBrain, IconChevronDown } from "@tabler/icons-react";
+import Image from "next/image";
+import {
+  IconChevronDown,
+  IconPencil,
+  IconGift,
+  IconShare,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 
+import lumoLogo from "../../../assets/brand/lumo-logo.svg";
+import gradientBg from "../../../../public/assets/illustrations/landing-gradient.png";
+
 import ChatPanel from "../features/ai/ChatPanel";
-import Profile from "../privacy/Profile";
 
 interface StatusOption {
   name: string;
@@ -28,7 +35,6 @@ const Navbar: React.FC = () => {
 
   const statusOptions: StatusOption[] = useMemo(
     () => [
-      // ... (status options remain the same)
       { name: "Active", color: "bg-third-green", bgColor: "bg-third-green/10" },
       { name: "Focusing", color: "bg-third-blue", bgColor: "bg-third-blue/10" },
       { name: "Idle", color: "bg-third-yellow", bgColor: "bg-third-yellow/10" },
@@ -42,19 +48,14 @@ const Navbar: React.FC = () => {
   );
   const [isStatusLoading, setIsStatusLoading] = useState(true);
 
-  // --- Effects and Callbacks (remain largely the same) ---
-
-  // Fetch Initial User Status Effect
   useEffect(() => {
     if (sessionStatus === "authenticated" && userId) {
       setIsStatusLoading(true);
       fetch("/api/features/status")
         .then((res) => {
           if (!res.ok) {
-            // Handle specific error codes
             if (res.status === 404) {
               console.warn("User status not found, using default");
-              // Create a synthetic response since we can't return an object directly
               return {
                 json: () => Promise.resolve({ status: statusOptions[0].name }),
               };
@@ -93,24 +94,24 @@ const Navbar: React.FC = () => {
     }
   }, [sessionStatus, userId, statusOptions]);
 
-  // Handle Clicks Outside Dropdowns Effect
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (showStatusMenu && !target.closest(".status-container")) {
         setShowStatusMenu(false);
       }
+      if (showProfileComponent && !target.closest(".profile-popup")) {
+        setShowProfileComponent(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showStatusMenu]);
+  }, [showStatusMenu, showProfileComponent]);
 
-  // Open Chat Panel Callback
   const handleOpenChat = useCallback(() => {
     setIsChatPanelOpen(true);
   }, []);
 
-  // Keyboard Shortcut Effect
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === "f") {
@@ -122,7 +123,6 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleOpenChat]);
 
-  // Change User Status Callback
   const changeStatus = useCallback(
     async (status: StatusOption) => {
       setCurrentStatus(status);
@@ -139,11 +139,9 @@ const Navbar: React.FC = () => {
           body: JSON.stringify({ status: status.name }),
         });
         if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => ({
-              message: `Request failed: ${response.statusText}`,
-            }));
+          const errorData = await response.json().catch(() => ({
+            message: `Request failed: ${response.statusText}`,
+          }));
           throw new Error(
             errorData.message || `Failed to update status (${response.status})`
           );
@@ -156,10 +154,9 @@ const Navbar: React.FC = () => {
         toast.error(`Failed to update status: ${message}`);
       }
     },
-    [sessionStatus] // Removed statusOptions from dependencies as it's stable due to useMemo
+    [sessionStatus]
   );
 
-  // Status Indicator Component
   const StatusIndicator = React.memo(() => {
     if (isStatusLoading) {
       return (
@@ -174,35 +171,31 @@ const Navbar: React.FC = () => {
 
   const handleSetConversationId = useCallback((): void => {}, []);
 
-  // --- Render Logic ---
   return (
     <>
-      <nav className="flex items-center justify-between z-40 px-2 py-2 mx-2 mt-2 bg-transparent dark:bg-zinc-900/60 backdrop-blur-xl rounded-xl border border-slate-200/30 dark:border-zinc-800/30">
-        {/* Left Section */}
+      <nav className="flex items-center justify-between z-40 py-2 px-2 mx-2 mt-2 backdrop-blur-md dark:bg-zinc-900/80 bg-transparent rounded-2xl border border-slate-200/30 dark:border-zinc-800/30">
         <div className="flex items-center">
           <div className="relative">
             <button
               onClick={handleOpenChat}
-              aria-label="Ask your AI assistant"
-              className="flex items-center px-2 py-2 rounded-lg bg-primary/10 dark:bg-primary/10 border border-primary/80 dark:border-primary/80 text-sm text-left text-gray-700 dark:text-gray-200 transition-all duration-200 hover:border-primary/80 dark:hover:border-primary/80 focus:outline-none focus:ring-1 focus:ring-primary"
+              aria-label="Ask your AI assistant Lumo"
+              className="flex items-center py-1 px-2 rounded-lg bg-primary-blue/10 dark:bg-[#3A6EC8]/10 border border-[#3A6EC8]/20 text-sm text-left text-gray-700 dark:text-gray-200 transition-all duration-200 hover:border-primary/80 dark:hover:border-primary/80 focus:outline-none focus:ring-1 focus:ring-primary"
             >
-              <IconBrain height={20} className="text-primary" />
-              <span className="flex-grow mr-3 text-primary font-semibold">
-                My AI
+              <Image
+                src={lumoLogo}
+                alt="Logo de Lumo"
+                width={26}
+                height={26}
+                priority
+              />
+              <span className="flex-grow mx-1 font-semibold bg-gradient-to-b from-[#3A6EC8] to-[#6DA1C4] bg-clip-text text-transparent">
+                Ask Lumo
               </span>
-              <div className="flex items-center px-1.5 py-0.5 ml-2 rounded bg-primary/20 dark:bg-primary/20">
-                <IconCommand className="w-3 h-3 text-primary" />
-                <span className="text-xs font-medium ml-0.5 text-primary">
-                  F
-                </span>
-              </div>
             </button>
           </div>
         </div>
 
-        {/* Right Section */}
         <div className="flex items-center space-x-1">
-          {/* Status Dropdown Area */}
           <div className="relative status-container">
             {sessionStatus === "authenticated" && (
               <>
@@ -253,39 +246,122 @@ const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* Profile Area */}
           <div className="relative profile-container">
-            {sessionStatus === "authenticated" &&
-              session.user && ( // Ensure session.user exists
-                <>
-                  <button
-                    onClick={() => {
-                      setShowProfileComponent(true);
-                      setShowStatusMenu(false);
-                    }}
-                    className="flex items-center space-x-2 p-1 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors" // Reduced padding slightly for image fit
-                    aria-label="Open User Profile"
-                  >
-                    {/* Use next/image */}
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden">
-                      {session.user.image ? (
+            {sessionStatus === "authenticated" && session.user && (
+              <>
+                <button
+                  onClick={() => {
+                    setShowProfileComponent(!showProfileComponent);
+                    setShowStatusMenu(false);
+                  }}
+                  className="flex items-center space-x-2 p-1 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors"
+                  aria-label="Open User Profile"
+                >
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden">
+                    {session.user.image ? (
+                      <Image
+                        src={session.user.image}
+                        alt={session.user.username || "User Avatar"}
+                        width={28}
+                        height={28}
+                        className="object-cover"
+                        priority
+                      />
+                    ) : (
+                      <span className="flex items-center justify-center w-full h-full bg-green-500">
+                        {userInitial}
+                      </span>
+                    )}
+                  </div>
+                </button>
+
+                {showProfileComponent && (
+                  <div className="profile-popup absolute right-0 mt-2 w-80 backdrop-blur-xl bg-transparent dark:bg-zinc-900/80 rounded-2xl border border-slate-200/30 dark:border-zinc-800/30 overflow-hidden z-50">
+                    <div className="relative">
+                      <div className="absolute inset-0 opacity-60">
                         <Image
-                          src={session.user.image}
-                          alt={session.user.username || "User Avatar"} // Add alt text
-                          width={28} // w-7 = 28px
-                          height={28} // h-7 = 28px
-                          className="object-cover" // Removed w-full h-full as width/height handle size
-                          priority // Prioritize loading avatar in navbar
+                          src={gradientBg}
+                          alt=""
+                          fill
+                          className="object-cover"
                         />
-                      ) : (
-                        <span className="flex items-center justify-center w-full h-full bg-green-500">
-                          {userInitial}
-                        </span>
-                      )}
+                      </div>
+
+                      <div className="relative p-6">
+                        <button
+                          onClick={() => {}}
+                          className="absolute top-4 right-4 p-2 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors"
+                          aria-label="Edit profile"
+                        >
+                          <IconPencil className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        </button>
+
+                        <div className="flex items-start space-x-4">
+                          <div className="relative">
+                            <div className="w-20 h-20 rounded-full flex items-center justify-center text-white font-semibold text-2xl overflow-hidden">
+                              {session.user.image ? (
+                                <Image
+                                  src={session.user.image}
+                                  alt={session.user.username || "User Avatar"}
+                                  width={80}
+                                  height={80}
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <span className="flex items-center justify-center w-full h-full bg-green-500">
+                                  {userInitial}
+                                </span>
+                              )}
+                            </div>
+                            <div
+                              className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ${currentStatus.bgColor} flex items-center justify-center border-2 border-transparent dark:border-zinc-900/80`}
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${currentStatus.color}`}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex-1 pt-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                {username}
+                              </h3>
+                              <span className="px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100/60 dark:bg-blue-900/30 rounded-md border border-blue-200/50 dark:border-blue-800/50">
+                                ELITE
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {session.user.email}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                              Member since 03/06/2007
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 mt-6">
+                          <button
+                            onClick={() => {}}
+                            className="flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100/60 dark:bg-gray-800/30 hover:bg-gray-200/60 dark:hover:bg-gray-700/30 rounded-lg transition-colors border border-slate-200/30 dark:border-zinc-800/30"
+                          >
+                            <IconGift className="w-4 h-4" />
+                            <span>Referrals</span>
+                          </button>
+                          <button
+                            onClick={() => {}}
+                            className="flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100/60 dark:bg-gray-800/30 hover:bg-gray-200/60 dark:hover:bg-gray-700/30 rounded-lg transition-colors border border-slate-200/30 dark:border-zinc-800/30"
+                          >
+                            <IconShare className="w-4 h-4" />
+                            <span>Share</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </button>
-                </>
-              )}
+                  </div>
+                )}
+              </>
+            )}
             {sessionStatus === "loading" && (
               <div className="p-2">
                 <div className="w-7 h-7 rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse" />
@@ -300,7 +376,6 @@ const Navbar: React.FC = () => {
         </div>
       </nav>
 
-      {/* Render Chat Panel */}
       {isChatPanelOpen && (
         <ChatPanel
           isOpen={isChatPanelOpen}
@@ -310,11 +385,6 @@ const Navbar: React.FC = () => {
           conversationId={null}
           setConversationId={handleSetConversationId}
         />
-      )}
-
-      {/* Render Profile Component */}
-      {showProfileComponent && (
-        <Profile onClose={() => setShowProfileComponent(false)} />
       )}
     </>
   );

@@ -27,7 +27,9 @@ html {
 
   --color-accent-pink: #e479b4;
 
-  --color-secondary-black: #141618;
+  --color-primary-black: #0B0B0D;
+
+  --color-secondary-black: #0B0B0D;
   --color-secondary-black-hover: #020202;
 
   --color-secondary-white: #FCFDFF;
@@ -300,12 +302,6 @@ html {
   margin: 0.25rem 0;
   position: relative;
   /* Base color (inherited or set explicitly) */
-}
-
-/* Ensure list items inherit the correct color */
-.ProseMirror li::marker {
-  /* You might need to explicitly set marker color if it doesn't inherit */
-  /* color: inherit; */
 }
 
 

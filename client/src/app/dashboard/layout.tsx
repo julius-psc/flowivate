@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <ClientProvider>
-      <div id="dashboard-container" className="relative h-screen w-screen bg-secondary-white dark:bg-[#151E2F]">
+      <div id="dashboard-container" className="relative h-screen w-screen bg-[#F9FAFB] dark:bg-[#121214]">
         {/* Background */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <ThemeBackground />
