@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
@@ -396,46 +395,63 @@ html {
   border-radius: 0.25em;
 }
 
-/* Light Mode Scrollbar with margin */
+/* === Scrollbar Styles (Light & Dark) === */
+
+/* --- Base & Light Mode --- */
+html {
+  font-family: var(--font-display);
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  /* Firefox Light: Thumb: #D3D5D7, Track: transparent */
+  scrollbar-color: #D3D5D7 transparent;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
-  /* Slightly wider for better visibility */
   height: 10px;
-  /* Consistent height for horizontal scrollbars */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #CDCFD1;
-  /* Semi-transparent gray for a modern look */
+  background-color: #D3D5D7;
   border-radius: 10px;
-  /* More rounded corners */
-  border: 2px solid white;
-  /* Creates margin effect in light mode */
+  /* Creates margin effect against light background */
+  border: 2px solid #FCFDFF;
   transition: background-color 0.3s ease;
-  /* Smooth transition for hover effect */
 }
 
+::-webkit-scrollbar-thumb:hover {
+  background-color: #b0b2b4; /* Darker grey for hover */
+}
 
-/* Dark Mode Scrollbar */
+/* --- Dark Mode (Firefox - controlled by .dark class) --- */
+.dark html {
+  /* This will apply when your <html class="dark"> is active */
+  scrollbar-color: #394046 #0B0B0D;
+}
+
+/* --- Dark Mode (WebKit - controlled by OS setting) --- */
 @media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-track {
+    /* This is the "margin" color */
+    background: #0B0B0D;
+  }
+
   ::-webkit-scrollbar-thumb {
-    background-color: #4C4E50;
-    border: 2px solid #121212;
-    /* Creates margin effect in dark mode using a dark background */
+    background-color: #394046;
+    border-radius: 10px;
+    /* Creates margin effect against dark background */
+    border: 2px solid #0B0B0D;
+    transition: background-color 0.3s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: #949597;
-    /* Lighter on hover */
+    background-color: #515458;
   }
 }
-
-@media (prefers-color-scheme: dark) {
-  html {
-    scrollbar-color: #4C4E50;
-  }
-}
-
 
 /* Restore List Styles */
 .tiptap ul,
