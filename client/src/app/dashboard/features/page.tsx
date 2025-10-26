@@ -5,11 +5,10 @@ import { useDashboard } from "../../../context/DashboardContext";
 import { FeatureKey } from "../../../components/dashboard/features/featureMap";
 import { useTheme } from "next-themes";
 import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
+import { motion, AnimatePresence } from "framer-motion";
 
+// Icons
 import {
-  IconPlus,
-  IconCheck,
-  IconApps,
   IconList,
   IconClock,
   IconBrain,
@@ -20,301 +19,237 @@ import {
   IconRobot,
   IconBook,
   IconDirections,
-  IconTarget,
   IconBulb,
-  IconChartLine,
+  IconLock,
 } from "@tabler/icons-react";
 
 // Feature icon mapping
 const featureIcons = {
-  Tasks: <IconList size={20} />,
-  Pomodoro: <IconClock size={20} />,
-  Meditation: <IconBrain size={20} />,
-  Water: <IconGlass size={20} />,
-  Sleep: <IconZzz size={20} />,
-  Mood: <IconMoodSmile size={20} />,
-  DeepWork: <IconBulb size={20} />,
-  Ambient: <IconWaveSine size={20} />,
-  Assistant: <IconRobot size={20} />,
-  Books: <IconBook size={20} />,
-  Affirmations: <IconDirections size={20} />,
+  Tasks: <IconList className="text-gray-500 dark:text-gray-400" size={20} />,
+  Pomodoro: <IconClock className="text-gray-500 dark:text-gray-400" size={20} />,
+  Meditation: <IconBrain className="text-gray-500 dark:text-gray-400" size={20} />,
+  Water: <IconGlass className="text-gray-500 dark:text-gray-400" size={20} />,
+  Sleep: <IconZzz className="text-gray-500 dark:text-gray-400" size={20} />,
+  Mood: <IconMoodSmile className="text-gray-500 dark:text-gray-400" size={20} />,
+  DeepWork: <IconBulb className="text-gray-500 dark:text-gray-400" size={20} />,
+  Ambient: <IconWaveSine className="text-gray-500 dark:text-gray-400" size={20} />,
+  Assistant: <IconRobot className="text-gray-500 dark:text-gray-400" size={20} />,
+  Books: <IconBook className="text-gray-500 dark:text-gray-400" size={20} />,
+  Affirmations: <IconDirections className="text-gray-500 dark:text-gray-400" size={20} />,
 };
 
-const featureCategories = [
+// Flat list of all features (no categories)
+const allFeatures = [
   {
-    name: "AI Companion",
-    icon: <IconBulb size={20} />,
-    features: [
-      {
-        key: "Assistant",
-        description: "AI-powered support for smarter work.",
-        benefit: "Elevate efficiency",
-      },
-    ],
+    key: "Assistant",
+    description: "AI-powered support for smarter work.",
+    benefit: "Elevate efficiency",
+    proOnly: true,
   },
   {
-    name: "Task Mastery",
-    icon: <IconTarget size={20} />,
-    features: [
-      {
-        key: "Tasks",
-        description: "Seamlessly plan and track your tasks.",
-        benefit: "Simplify your day",
-      },
-    ],
+    key: "Tasks",
+    description: "Seamlessly plan and track your tasks.",
+    benefit: "Simplify your day",
+    proOnly: false,
   },
   {
-    name: "Focus",
-    icon: <IconBulb size={20} />,
-    features: [
-      {
-        key: "Pomodoro",
-        description: "Sharpen focus with timed work sessions.",
-        benefit: "Maximize output",
-      },
-      {
-        key: "DeepWork",
-        description: "Immerse in distraction-free work.",
-        benefit: "Achieve flow",
-      },
-      {
-        key: "Ambient",
-        description: "Create a calming audio backdrop.",
-        benefit: "Stay engaged",
-      },
-    ],
+    key: "Pomodoro",
+    description: "Sharpen focus with timed work sessions.",
+    benefit: "Maximize output",
+    proOnly: false,
   },
   {
-    name: "Balance",
-    icon: <IconBrain size={20} />,
-    features: [
-      {
-        key: "Meditation",
-        description: "Practice guided sessions for clarity.",
-        benefit: "Find peace",
-      },
-      {
-        key: "Affirmations",
-        description: "Boost confidence with daily positivity.",
-        benefit: "Feel empowered",
-      },
-      {
-        key: "Mood",
-        description: "Reflect on emotions for self-insight.",
-        benefit: "Grow awareness",
-      },
-    ],
+    key: "DeepWork",
+    description: "Immerse in distraction-free work.",
+    benefit: "Achieve flow",
+    proOnly: false,
   },
   {
-    name: "Wellness",
-    icon: <IconChartLine size={20} />,
-    features: [
-      {
-        key: "Water",
-        description: "Track hydration for better health.",
-        benefit: "Stay energized",
-      },
-      {
-        key: "Sleep",
-        description: "Enhance rest with sleep monitoring.",
-        benefit: "Recharge fully",
-      },
-      {
-        key: "Books",
-        description: "Organize reads for personal growth.",
-        benefit: "Learn daily",
-      },
-    ],
+    key: "Ambient",
+    description: "Create a calming audio backdrop.",
+    benefit: "Stay engaged",
+    proOnly: false,
+  },
+  {
+    key: "Meditation",
+    description: "Practice guided sessions for clarity.",
+    benefit: "Find peace",
+    proOnly: false,
+  },
+  {
+    key: "Affirmations",
+    description: "Boost confidence with daily positivity.",
+    benefit: "Feel empowered",
+    proOnly: false,
+  },
+  {
+    key: "Mood",
+    description: "Reflect on emotions for self-insight.",
+    benefit: "Grow awareness",
+    proOnly: false,
+  },
+  {
+    key: "Water",
+    description: "Track hydration for better health.",
+    benefit: "Stay energized",
+    proOnly: false,
+  },
+  {
+    key: "Sleep",
+    description: "Enhance rest with sleep monitoring.",
+    benefit: "Recharge fully",
+    proOnly: false,
+  },
+  {
+    key: "Books",
+    description: "Organize reads for personal growth.",
+    benefit: "Learn daily",
+    proOnly: false,
   },
 ];
 
+// Tooltip for locked features
+const LockTooltip = ({ message }: { message: string }) => (
+  <div className="absolute left-0 top-full mt-1 z-10 bg-gray-900 text-white text-xs px-2 py-1 rounded-md shadow-lg whitespace-nowrap">
+    {message}
+    <div className="absolute top-0 left-3 w-2 h-2 bg-gray-900 transform rotate-45 -translate-y-1"></div>
+  </div>
+);
+
 export default function Features() {
-  const { addFeature, isFeatureSelected, selectedFeatures } = useDashboard();
+  const { addFeature, removeFeature, isFeatureSelected, selectedFeatures } = useDashboard();
   const { status: subscriptionStatus, loading } = useSubscriptionStatus();
-  const [activeCategory, setActiveCategory] = useState("all");
   const { theme } = useTheme();
-
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [hoveredLock, setHoveredLock] = useState<string | null>(null);
 
-  // While subscription status is loading, disable all add buttons
+  useEffect(() => setMounted(true), []);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-screen">
         <span className="text-gray-500">Loading features…</span>
       </div>
     );
   }
 
-  const headingColor = !mounted
-    ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white"
-    : "text-gray-900 dark:text-gray-100";
+  const textColor = mounted
+    ? theme === "jungle" || theme === "ocean"
+      ? "text-white"
+      : "text-gray-900 dark:text-gray-100"
+    : "text-transparent";
 
-  const categoryColor = !mounted
-    ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white"
-    : "text-gray-900 dark:text-gray-100";
-
-  // Filter categories by activeCategory tab
-  const filteredCategories =
-    activeCategory === "all"
-      ? featureCategories
-      : featureCategories.filter(
-          (category) => category.name === activeCategory
-        );
+  const handleToggle = (key: FeatureKey, enabled: boolean) => {
+    if (enabled) {
+      addFeature(key);
+    } else {
+      removeFeature(key);
+    }
+  };
 
   return (
-    <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="max-w-4xl mb-12">
-        <h2 className={`text-3xl font-bold z-20 ${headingColor}`}>
-          Your Productivity Hub
-        </h2>
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-lg">
-          Pick features to tailor your dashboard to your workflow.
+    <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+      {/* Header — left aligned */}
+      <div className="mb-8">
+        <h1 className={`text-2xl font-bold ${textColor}`}>Your Productivity Hub</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Toggle features to customize your dashboard.
         </p>
       </div>
 
-      {/* Category Tabs */}
-      <div className="max-w-4xl mb-10">
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setActiveCategory("all")}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5 ${
-              activeCategory === "all"
-                ? "bg-primary text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white"
-            }`}
-          >
-            <IconApps size={14} />
-            All
-          </button>
-          {featureCategories.map((category) => {
-            const isActive = activeCategory === category.name;
-            const baseClasses =
-              "px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5";
-            const activeClass = "bg-primary text-white";
-            const inactiveClass = !mounted
-              ? "text-transparent"
-              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white";
+      {/* Flat feature list — all left-aligned */}
+      <div className="space-y-3">
+        {allFeatures.map((feature) => {
+          const isSelected = isFeatureSelected(feature.key as FeatureKey);
+          const isProFeature = feature.proOnly;
+          const isFreeUser = subscriptionStatus === "free";
+          const hasReachedLimit = isFreeUser && selectedFeatures.length >= 4 && !isSelected;
 
-            return (
-              <button
-                key={category.name}
-                onClick={() => setActiveCategory(category.name)}
-                className={`${baseClasses} ${
-                  isActive ? activeClass : inactiveClass
-                }`}
-              >
-                {React.cloneElement(category.icon, { size: 14 })}
-                {category.name}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+          let isLocked = false;
+          let lockReason = "";
 
-      {/* Feature Grid */}
-      <div className="max-w-4xl">
-        {filteredCategories.map((category) => (
-          <div key={category.name} className="mb-12">
-            <div className="flex items-center mb-6">
-              <h3
-                className={`text-lg font-semibold flex items-center gap-2 ${categoryColor}`}
-              >
-                {React.cloneElement(category.icon, {
-                  className: "text-primary",
-                })}
-                {category.name}
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {category.features.map(({ key, description, benefit }) => {
-                const isSelected = isFeatureSelected(key as FeatureKey);
+          if (isProFeature && isFreeUser) {
+            isLocked = true;
+            lockReason = "Available on Pro plan";
+          } else if (hasReachedLimit) {
+            isLocked = true;
+            lockReason = "Free plan limit reached (4 features)";
+          }
 
-                // “Assistant” is the AI feature that should always be locked for free users
-                const isProFeature = key === "Assistant";
-
-                // If free user has 4 already, they cannot add any more (unless this one is already selected)
-                const cannotAddBecauseOfLimit =
-                  subscriptionStatus === "free" &&
-                  selectedFeatures.length >= 4 &&
-                  !isSelected;
-
-                // If free user, always lock AI feature
-                const lockedForFree = isProFeature && subscriptionStatus === "free";
-
-                const isLocked = lockedForFree || cannotAddBecauseOfLimit;
-
-                // Decide button label
-                let buttonLabel = "Add to Dashboard";
-                if (lockedForFree) {
-                  buttonLabel = "Pro Only";
-                } else if (cannotAddBecauseOfLimit) {
-                  buttonLabel = "Limit reached";
-                }
-
-                return (
-                  <div
-                    key={key}
-                    className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full"
-                  >
-                    {/* Icon and Title */}
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/20 dark:bg-primary/20 rounded-md text-primary">
-                          {featureIcons[key as keyof typeof featureIcons]}
-                        </div>
-                        <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                          {key}
-                        </h4>
-                      </div>
-                      {isSelected && (
-                        <span className="text-xs font-medium text-third-green dark:text-third-green/80 bg-third-green/10 dark:bg-third-green/20 px-2 py-1 rounded-md flex items-center shrink-0">
-                          <IconCheck size={12} className="mr-1" />
-                          Active
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Benefit Tag */}
-                    <div className="mb-3">
-                      <span className="inline-block px-2 py-1 text-xs font-medium text-primary dark:text-primary/80 bg-primary/20 dark:bg-primary/20 rounded-md">
-                        {benefit}
+          return (
+            <div
+              key={feature.key}
+              className="flex items-start justify-between py-4 border-b border-gray-100 dark:border-gray-800 last:border-0"
+            >
+              {/* Left: Icon + Name + Benefit + Description (all left-aligned) */}
+              <div className="flex items-start gap-4">
+                <div className="pt-0.5 flex-shrink-0">
+                  {featureIcons[feature.key as keyof typeof featureIcons]}
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`font-medium ${textColor}`}>{feature.key}</span>
+                    {isProFeature && (
+                      <span className="text-gray-400 dark:text-gray-500">
+                        <IconLock size={14} />
                       </span>
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 grow">
-                      {description}
-                    </p>
-
-                    {/* Action Button */}
-                    {!isSelected && (
-                      <button
-                        onClick={() => addFeature(key as FeatureKey)}
-                        disabled={isLocked}
-                        className={`mt-auto py-2 text-sm font-medium rounded-md transition-colors duration-200 flex items-center justify-center gap-2 ${
-                          isLocked
-                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                            : "bg-primary text-white hover:bg-primary-hover focus:ring-2 focus:ring-primary-ring dark:focus:ring-primary-ring focus:outline-none"
-                        }`}
-                      >
-                        {!isLocked && <IconPlus size={14} />}
-                        {buttonLabel}
-                      </button>
                     )}
                   </div>
-                );
-              })}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {feature.benefit}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-prose">
+                    {feature.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: Toggle (stays on the right, as per macOS pattern) */}
+              <div className="relative flex-shrink-0 ml-4">
+                {isLocked ? (
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setHoveredLock(feature.key)}
+                    onMouseLeave={() => setHoveredLock(null)}
+                  >
+                    <div className="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center px-1 cursor-not-allowed">
+                      <div className="w-4 h-4 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
+                    </div>
+                    <AnimatePresence>
+                      {hoveredLock === feature.key && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute right-0 top-full mt-2"
+                        >
+                          <LockTooltip message={lockReason} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleToggle(feature.key as FeatureKey, !isSelected)}
+                    aria-label={`${isSelected ? "Disable" : "Enable"} ${feature.key}`}
+                    className={`relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      isSelected
+                        ? "bg-primary"
+                        : "bg-gray-200 dark:bg-gray-700"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`${
+                        isSelected ? "translate-x-6" : "translate-x-0"
+                      } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                    />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
