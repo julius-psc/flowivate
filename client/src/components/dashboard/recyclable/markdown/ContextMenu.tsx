@@ -22,8 +22,8 @@ interface ContextMenuProps {
 }
 
 const getButtonClasses = (isActive: boolean) =>
-  `flex items-center justify-center w-8 h-8 text-sm hover:bg-gray-100 transition-colors duration-150 rounded-md text-neutral-800 cursor-pointer ${
-    isActive ? "bg-gray-100" : ""
+  `flex items-center justify-center w-7 h-7 text-sm hover:bg-gray-50 dark:hover:bg-[#1a1a1c] transition-colors duration-100 rounded text-gray-700 dark:text-gray-300 cursor-pointer ${
+    isActive ? "bg-gray-50 dark:bg-[#1a1a1c] text-gray-900 dark:text-white" : ""
   }`;
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
@@ -47,27 +47,23 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
         return;
       }
 
-      // Get selection coordinates
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return;
       const range = selection.getRangeAt(0);
       const selectionRect = range.getBoundingClientRect();
       const containerRect = editorElement.getBoundingClientRect();
 
-      // Compute position relative to container
       const menuWidth = 208;
-      const menuHeight = 48; // Approximate height of the menu
+      const menuHeight = 48;
       const xPos =
         selectionRect.left -
         containerRect.left +
         selectionRect.width / 2 -
         menuWidth / 2;
-      let yPos = selectionRect.top - containerRect.top - menuHeight - 8; // 8px gap above selection
+      let yPos = selectionRect.top - containerRect.top - menuHeight - 8;
 
-      // Check if menu would be clipped at the top
       if (yPos < 0) {
-        // Position below selection instead
-        yPos = selectionRect.bottom - containerRect.top + 8; // 8px gap below selection
+        yPos = selectionRect.bottom - containerRect.top + 8;
       }
 
       setPosition({
@@ -125,12 +121,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
   return (
     <div
       ref={menuRef}
-      className="absolute z-50 rounded-lg border border-white/30 bg-white/75 backdrop-blur-lg shadow-lg p-2 w-52"
+      className="absolute z-50 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#121214] p-1.5 w-52"
       style={{ top: `${position.y}px`, left: `${position.x}px` }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Inline Styles (First Row) */}
-      <div className="flex flex-wrap gap-1 mb-2">
+      <div className="flex flex-wrap gap-0.5 mb-1">
         <button
           onClick={() =>
             handleAction(() => editor.chain().focus().toggleBold().run())
@@ -138,7 +133,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("bold"))}
           title="Bold (Ctrl+B)"
         >
-          <IconBold size={18} />
+          <IconBold size={16} />
         </button>
         <button
           onClick={() =>
@@ -147,7 +142,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("italic"))}
           title="Italic (Ctrl+I)"
         >
-          <IconItalic size={18} />
+          <IconItalic size={16} />
         </button>
         <button
           onClick={() =>
@@ -156,7 +151,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("strike"))}
           title="Strikethrough (Ctrl+Shift+X)"
         >
-          <IconStrikethrough size={18} />
+          <IconStrikethrough size={16} />
         </button>
         <button
           onClick={() =>
@@ -165,7 +160,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("code"))}
           title="Code (Ctrl+E)"
         >
-          <IconCode size={18} />
+          <IconCode size={16} />
         </button>
         <button
           onClick={() =>
@@ -174,19 +169,18 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("highlight"))}
           title="Highlight"
         >
-          <IconHighlight size={18} />
+          <IconHighlight size={16} />
         </button>
         <button
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           className={getButtonClasses(showEmojiPicker)}
           title="Emoji"
         >
-          <IconMoodSmile size={18} />
+          <IconMoodSmile size={16} />
         </button>
       </div>
 
-      {/* Block Styles (Second Row) */}
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-0.5">
         <button
           onClick={() =>
             handleAction(() =>
@@ -196,7 +190,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("heading", { level: 1 }))}
           title="Heading 1 (Ctrl+Alt+1)"
         >
-          <IconH1 size={18} />
+          <IconH1 size={16} />
         </button>
         <button
           onClick={() =>
@@ -207,7 +201,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("heading", { level: 2 }))}
           title="Heading 2 (Ctrl+Alt+2)"
         >
-          <IconH2 size={18} />
+          <IconH2 size={16} />
         </button>
         <button
           onClick={() =>
@@ -218,7 +212,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("heading", { level: 3 }))}
           title="Heading 3 (Ctrl+Alt+3)"
         >
-          <IconH3 size={18} />
+          <IconH3 size={16} />
         </button>
         <button
           onClick={() =>
@@ -227,7 +221,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("paragraph"))}
           title="Paragraph (Ctrl+Alt+0)"
         >
-          <span className="text-sm font-semibold">p</span>
+          <span className="text-xs font-medium">p</span>
         </button>
         <button
           onClick={() =>
@@ -236,7 +230,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("bulletList"))}
           title="Bullet List (Ctrl+Shift+8)"
         >
-          <IconList size={18} />
+          <IconList size={16} />
         </button>
         <button
           onClick={() =>
@@ -245,19 +239,18 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ editor }) => {
           className={getButtonClasses(editor.isActive("orderedList"))}
           title="Numbered List (Ctrl+Shift+7)"
         >
-          <IconListNumbers size={18} />
+          <IconListNumbers size={16} />
         </button>
       </div>
 
-      {/* Emoji Picker */}
       {showEmojiPicker && (
         <div
           ref={emojiRef}
-          className="absolute z-[51] rounded-lg border border-white/30 bg-white/75 backdrop-blur-lg shadow-lg"
+          className="absolute z-[51] rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#121214]"
           style={{
             top: `${
               position.y < 0 ? position.y + 48 + 8 : position.y + 48 + 8
-            }px`, // Adjust based on menu position
+            }px`,
             left: `${position.x}px`,
             width: "350px",
             maxHeight: "400px",

@@ -109,17 +109,16 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                 "z-50",
                 "rounded-lg",
                 "border",
-                "border-white/30",
+                "border-gray-200",
+                "dark:border-gray-800",
                 "bg-white",
-                "dark:bg-[#1f1f1f]",
-                "dark:border-white/20",
-                "backdrop-blur-lg",
-                "shadow-lg",
-                "py-2",
+                "dark:bg-[#121214]",
+                "p-1.5",
                 "overflow-y-auto",
                 "w-56"
               );
               popup.style.minWidth = "200px";
+              popup.style.maxHeight = "320px";
               return popup;
             };
 
@@ -128,7 +127,6 @@ export const SlashCommands = (commands: SlashCommandProps) => {
 
               const rect = props.clientRect();
               if (!rect) {
-                // Fallback positioning if rect is not available
                 popup.style.position = "fixed";
                 popup.style.top = "50%";
                 popup.style.left = "50%";
@@ -139,13 +137,11 @@ export const SlashCommands = (commands: SlashCommandProps) => {
               popup.style.position = "absolute";
               popup.style.transform = "translateY(0)";
 
-              // Measure dimensions
               const popupHeight = popup.offsetHeight || 150;
               const popupWidth = popup.offsetWidth || 224;
               const bodyWidth = document.body.clientWidth;
               const viewportHeight = window.innerHeight;
 
-              // Horizontal positioning
               let finalLeft = rect.left + window.scrollX;
               if (finalLeft + popupWidth > bodyWidth) {
                 finalLeft = bodyWidth - popupWidth - 10;
@@ -155,7 +151,6 @@ export const SlashCommands = (commands: SlashCommandProps) => {
               }
               popup.style.left = `${finalLeft}px`;
 
-              // Vertical positioning
               const spaceBelow = viewportHeight - rect.bottom;
               const spaceAbove = rect.top;
               let finalTop = rect.bottom + window.scrollY + 5;
@@ -176,18 +171,16 @@ export const SlashCommands = (commands: SlashCommandProps) => {
 
               emojiPickerContainer = document.createElement("div");
               emojiPickerContainer.classList.add(
-                "absolute", // Changed to absolute to align with popup
+                "absolute",
                 "z-[51]",
                 "rounded-lg",
                 "border",
-                "border-white/30",
+                "border-gray-200",
+                "dark:border-gray-800",
                 "bg-white",
-                "dark:bg-[#1f1f1f]",
-                "dark:border-white/20",
-                "backdrop-blur-lg",
-                "shadow-lg"
+                "dark:bg-[#121214]"
               );
-              popup?.appendChild(emojiPickerContainer); // Append to popup for better stacking
+              popup?.appendChild(emojiPickerContainer);
               emojiRoot = createRoot(emojiPickerContainer);
 
               const handleEmojiClick = (emojiData: EmojiClickData) => {
@@ -204,11 +197,9 @@ export const SlashCommands = (commands: SlashCommandProps) => {
 
               const rect = clientRect?.();
               if (rect) {
-                // Position below the popup
                 emojiPickerContainer.style.top = `100%`;
                 emojiPickerContainer.style.left = `0px`;
               } else {
-                // Fallback to center
                 emojiPickerContainer.style.top = `100%`;
                 emojiPickerContainer.style.left = `0px`;
                 emojiPickerContainer.style.transform = `translateY(5px)`;
@@ -230,7 +221,8 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                   "px-3",
                   "py-2",
                   "text-sm",
-                  "text-neutral-600"
+                  "text-gray-500",
+                  "dark:text-gray-400"
                 );
                 emptyMessage.textContent = "No commands found";
                 popup.appendChild(emptyMessage);
@@ -242,22 +234,22 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                   "flex",
                   "items-center",
                   "w-full",
-                  "px-3",
+                  "px-2.5",
                   "py-1.5",
                   "text-sm",
                   "text-left",
-                  "hover:bg-gray-100",
-                  "dark:hover:bg-gray-700",
+                  "hover:bg-gray-50",
+                  "dark:hover:bg-[#1a1a1c]",
                   "gap-2.5",
                   "transition-colors",
-                  "duration-150",
-                  "rounded-md",
-                  "text-neutral-800",
-                  "dark:text-neutral-200",
+                  "duration-100",
+                  "rounded",
+                  "text-gray-700",
+                  "dark:text-gray-300",
                   "cursor-pointer"
                 );
                 if (index === selectedIndex) {
-                  button.classList.add("bg-gray-100", "dark:bg-gray-700");
+                  button.classList.add("bg-gray-50", "dark:bg-[#1a1a1c]");
                 }
 
                 const iconContainer = document.createElement("div");
@@ -265,8 +257,9 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                   "flex",
                   "items-center",
                   "justify-center",
-                  "w-5",
-                  "h-5"
+                  "w-4",
+                  "h-4",
+                  "flex-shrink-0"
                 );
 
                 if (item.icon && isValidElement(item.icon)) {
@@ -274,7 +267,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                   root.render(
                     cloneElement(
                       item.icon as ReactElement<{ className?: string }>,
-                      { className: "w-5 h-5" }
+                      { className: "w-4 h-4" }
                     )
                   );
                   iconRoots.set(iconContainer, root);
@@ -317,7 +310,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                 );
                 if (popup) {
                   document.body.appendChild(popup);
-                  setPopupPosition(props); // Set initial position
+                  setPopupPosition(props);
                   setTimeout(
                     () =>
                       document.addEventListener(
@@ -336,7 +329,7 @@ export const SlashCommands = (commands: SlashCommandProps) => {
                   props.range,
                   props.clientRect
                 );
-                setPopupPosition(props); // Update position
+                setPopupPosition(props);
               },
               onKeyDown: (props: SuggestionKeyDownProps) => {
                 const { event, range } = props;
