@@ -29,6 +29,7 @@ import { ContextMenu } from "../../recyclable/markdown/ContextMenu";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { format } from "date-fns";
+import { useGlobalStore } from "@/hooks/useGlobalStore";
 
 export interface Book {
   _id: string;
@@ -56,6 +57,7 @@ const BookLogger: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const { theme } = useTheme();
+  const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -331,6 +333,7 @@ const BookLogger: React.FC = () => {
       }
 
       toast.success(`Book ${selectedBook ? "updated" : "added"} successfully!`);
+      triggerLumoEvent("BOOK_LOGGED");
 
       if (selectedBook) {
         setBooks(
@@ -773,7 +776,9 @@ const BookLogger: React.FC = () => {
                   <div className="bg-transparent rounded-lg p-5 prose dark:prose-invert max-w-none">
                     <div
                       className={`rendered-notes prose dark:prose-invert max-w-none ${
-                        theme === "jungle"  || theme === "ocean" ? "text-white" : ""
+                        theme === "jungle" || theme === "ocean"
+                          ? "text-white"
+                          : ""
                       }`}
                       dangerouslySetInnerHTML={renderNotesContent(
                         selectedBook.notes

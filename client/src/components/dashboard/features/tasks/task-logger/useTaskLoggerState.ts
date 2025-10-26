@@ -19,11 +19,13 @@ import {
   getCompletionRatio,
 } from "./helpers";
 import { placeholderTaskLists } from "./placeholderTaskLists";
+import { useGlobalStore } from "@/hooks/useGlobalStore";
 
 export const useTaskLoggerState = () => {
   const queryClient = useQueryClient();
   const { data: session, status } = useSession();
   const { status: subscriptionStatus } = useSubscriptionStatus();
+  const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
   const queryKey: QueryKey = ["tasks"];
 
   // States
@@ -147,6 +149,22 @@ export const useTaskLoggerState = () => {
       queryClient.invalidateQueries({ queryKey });
     },
   });
+
+  // Helper function
+  const findTaskById = (tasks: Task[], taskId: string): Task | null => {
+    for (const task of tasks) {
+      if (task.id === taskId) {
+        return task;
+      }
+      if (task.subtasks && task.subtasks.length > 0) {
+        const found = findTaskById(task.subtasks, taskId);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return null;
+  };
 
   // Handlers
   const handleAddTask = (listId: string, parentTaskId?: string) => {
@@ -384,6 +402,10 @@ export const useTaskLoggerState = () => {
     const list = taskLists.find((l) => l._id === listId);
     if (!list) return;
 
+    // Find the task's current state
+    const taskToToggle = findTaskById([...list.tasks], taskId);
+    const isCompleting = taskToToggle ? !taskToToggle.completed : false;
+
     const { updatedTasks, taskFound } = findAndUpdateTask(
       [...list.tasks],
       taskId,
@@ -395,6 +417,11 @@ export const useTaskLoggerState = () => {
 
     if (taskFound) {
       triggerListUpdate(listId, updatedTasks);
+
+      // Trigger event only if task is being marked as complete
+      if (isCompleting) {
+        triggerLumoEvent("TASK_COMPLETED");
+      }
     }
   };
 
@@ -455,39 +482,38 @@ export const useTaskLoggerState = () => {
     setEditingTaskValue("");
   };
 
-const handleSaveEditing = (listId: string) => {
-  if (!editingTaskId) return;
+  const handleSaveEditing = (listId: string) => {
+    if (!editingTaskId) return;
 
-  const trimmedValue = editingTaskValue.trim();
-  const list = taskLists.find((l) => l._id === listId);
-  if (!list) {
-    handleCancelEditing();
-    return;
-  }
+    const trimmedValue = editingTaskValue.trim();
+    const list = taskLists.find((l) => l._id === listId);
+    if (!list) {
+      handleCancelEditing();
+      return;
+    }
 
-  if (!trimmedValue) {
-    handleDeleteTask(listId, editingTaskId);
-    handleCancelEditing(); 
-    return;
-  }
+    if (!trimmedValue) {
+      handleDeleteTask(listId, editingTaskId);
+      handleCancelEditing();
+      return;
+    }
 
-  const { updatedTasks, taskFound } = findAndUpdateTask(
-    [...list.tasks],
-    editingTaskId,
-    (task) => ({
-      ...task,
-      name: trimmedValue,
-    })
-  );
+    const { updatedTasks, taskFound } = findAndUpdateTask(
+      [...list.tasks],
+      editingTaskId,
+      (task) => ({
+        ...task,
+        name: trimmedValue,
+      })
+    );
 
-  if (taskFound) {
-    triggerListUpdate(listId, updatedTasks);
-    handleCancelEditing(); 
-  } else {
-    handleCancelEditing(); // fallback
-  }
-};
-
+    if (taskFound) {
+      triggerListUpdate(listId, updatedTasks);
+      handleCancelEditing();
+    } else {
+      handleCancelEditing(); // fallback
+    }
+  };
 
   const handleEditInputKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
@@ -534,7 +560,7 @@ const handleSaveEditing = (listId: string) => {
     setAiBreakdownState,
     aiPrimedListId,
     setAiPrimedListId,
-    taskInputRefs, 
+    taskInputRefs,
     editInputRef,
     subtaskInputRef,
     taskLists,

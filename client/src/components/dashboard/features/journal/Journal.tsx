@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { useGlobalStore } from "@/hooks/useGlobalStore";
 
 interface JournalEntryData {
   _id: string;
@@ -120,6 +121,7 @@ export const Journal: React.FC<JournalProps> = ({
   const calendarButtonRef = useRef<HTMLButtonElement>(null);
 
   const { theme } = useTheme();
+  const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -296,6 +298,7 @@ export const Journal: React.FC<JournalProps> = ({
         toast.success(
           response.status === 201 ? "Entry created" : "Entry saved"
         );
+        triggerLumoEvent("JOURNAL_SAVED");
       } else {
         const errorData = await response.json();
         const errorMessage = `Save failed: ${
@@ -636,4 +639,3 @@ export const Journal: React.FC<JournalProps> = ({
 };
 
 export default Journal;
-

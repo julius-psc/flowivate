@@ -4,11 +4,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { IconFlag, IconFlagFilled, IconCheck } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Checkbox from "../../recyclable/Checkbox"; // Assuming path is correct
+import Checkbox from "../../recyclable/Checkbox"; 
 import Link from "next/link";
 import * as tasksApi from "../../../../lib/tasksApi";
 import type { Task, TaskList } from "@/types/taskTypes";
 import { toast } from "sonner";
+import { useGlobalStore } from "@/hooks/useGlobalStore";
 
 // --- Skeleton Component (Unchanged) ---
 const TasksSkeleton = () => {
@@ -195,6 +196,7 @@ const Tasks: React.FC = () => {
   const [openPriorityDropdown, setOpenPriorityDropdown] = useState<
     string | null
   >(null);
+  const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
   const MAX_PREVIEW_TASKS = 5;
 
   const {
@@ -246,6 +248,22 @@ const Tasks: React.FC = () => {
     return { updatedTasks, taskFound };
   };
 
+  // Helper function to find a task
+  const findTaskById = (tasks: Task[], taskId: string): Task | null => {
+    for (const task of tasks) {
+      if (task.id === taskId) {
+        return task;
+      }
+      if (task.subtasks && task.subtasks.length > 0) {
+        const found = findTaskById(task.subtasks, taskId);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return null;
+  };
+
   // updateListMutation remains the same, handles optimistic update
   const updateListMutation = useMutation({
     mutationFn: tasksApi.updateTaskList,
@@ -288,13 +306,24 @@ const Tasks: React.FC = () => {
   const handleToggleTaskCompletion = (listId: string, taskId: string) => {
     const list = taskLists.find((l) => l._id === listId);
     if (!list || !list.tasks || list._id?.startsWith("placeholder-")) return;
+
+    // Find the task's current state
+    const taskToToggle = findTaskById([...list.tasks], taskId);
+    const isCompleting = taskToToggle ? !taskToToggle.completed : false;
+
     const { updatedTasks, taskFound } = findAndUpdateTask(
       [...list.tasks],
       taskId,
       (task) => ({ ...task, completed: !task.completed })
     );
+
     if (taskFound) {
       updateListMutation.mutate({ id: listId, tasks: updatedTasks });
+
+      // Trigger event only if task is being marked as complete
+      if (isCompleting) {
+        triggerLumoEvent("TASK_COMPLETED");
+      }
     } else {
       console.warn("Task not found for toggling:", taskId, "in list:", listId);
     }

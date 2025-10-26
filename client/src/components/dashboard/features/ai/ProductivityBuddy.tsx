@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
 import { toast } from "sonner";
-import { Lock, Loader2 } from "lucide-react";
+import { Lock, Loader2, X } from "lucide-react";
+import { useGlobalStore } from "@/hooks/useGlobalStore";
+
+interface BuddyResponse {
+  speech: string;
+  effect: "CONFETTI" | "SPARKLE" | null;
+}
 
 const FloatingParticles: React.FC = () => {
   const [particles, setParticles] = useState<
@@ -71,36 +77,138 @@ const FloatingParticles: React.FC = () => {
   );
 };
 
+const playSound = (type: "success" | "info") => {
+  if (typeof window !== "undefined" && "AudioContext" in window) {
+    try {
+      const audioContext = new AudioContext();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = type === "success" ? 800 : 600;
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContext.currentTime + 0.2
+      );
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (err) {
+      // Silent fail - sound is optional
+      console.debug("Sound playback not available");
+      console.log(err);
+    }
+  }
+};
+
 export default function ProductivityBuddy() {
   const { status: subscriptionStatus, loading: subLoading } =
     useSubscriptionStatus();
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState<string | null>(null);
+  const [response, setResponse] = useState<BuddyResponse | null>(null);
   const [isActive, setIsActive] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
+  const [effectKey, setEffectKey] = useState(0);
+  const [expression, setExpression] = useState("default");
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  const [retryCount, setRetryCount] = useState(0);
   const popupRef = useRef<HTMLDivElement>(null);
 
+  const lumoEvent = useGlobalStore((state) => state.lumoEvent);
+  const clearLumoEvent = useGlobalStore((state) => state.clearLumoEvent);
+
+  const CACHE_DURATION = 60000; // 1 minute
+
+  const fetchBuddyContext = useCallback(
+    async (event: string | null, isRetry = false) => {
+      // For non-celebration events, check cache
+      if (!event) {
+        const now = Date.now();
+        if (now - lastFetchTime < CACHE_DURATION) {
+          toast.info("Already up to date!");
+          return;
+        }
+        setLastFetchTime(now);
+      }
+
+      setLoading(true);
+      setIsActive(true);
+      setResponse(null);
+
+      try {
+        const res = await fetch("/api/claude/buddy", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ event }),
+        });
+
+        if (!res.ok) throw new Error("API request failed");
+
+        const data: BuddyResponse = await res.json();
+        setResponse(data);
+        setRetryCount(0);
+
+        if (data.effect === "CONFETTI" || data.effect === "SPARKLE") {
+          setEffectKey((prev) => prev + 1);
+          if (data.effect === "CONFETTI") {
+            playSound("success");
+          } else {
+            playSound("info");
+          }
+        }
+      } catch (err) {
+        console.error(err);
+
+        if (!isRetry && retryCount < 2) {
+          setRetryCount((prev) => prev + 1);
+          toast.info("Connection issue, retrying...");
+          setTimeout(() => fetchBuddyContext(event, true), 1000);
+          return;
+        }
+
+        setResponse({
+          speech: "I'm having trouble connecting. Try again in a moment! 💫",
+          effect: null,
+        });
+      }
+
+      setTimeout(() => {
+        setLoading(false);
+        setIsActive(false);
+        if (event) {
+          setTimeout(() => setExpression("default"), 2000);
+        }
+      }, 1000);
+    },
+    [lastFetchTime, retryCount]
+  );
+
+  // Proactive listener for events
+  useEffect(() => {
+    if (lumoEvent) {
+      setExpression("celebrate");
+      fetchBuddyContext(lumoEvent);
+      clearLumoEvent();
+    }
+  }, [lumoEvent, clearLumoEvent, fetchBuddyContext]);
 
   const handleFreeUserClick = () => {
     toast.info("Pro feature - join to get productivity insights!");
   };
 
-  const fetchBuddyContext = async () => {
-    setLoading(true);
-    setIsActive(true);
+  const handleClick = () => {
+    setExpression("default");
+    fetchBuddyContext(null);
+  };
+
+  const handleClose = () => {
     setResponse(null);
-    try {
-      const res = await fetch("/api/claude/buddy", { method: "POST" });
-      const data = await res.json();
-      setResponse(data.reply);
-    } catch (err) {
-      console.error(err);
-      setResponse("Something went wrong.");
-    }
-    setTimeout(() => {
-      setLoading(false);
-      setIsActive(false);
-    }, 1000);
+    setLoading(false);
+    setIsActive(false);
   };
 
   useEffect(() => {
@@ -109,16 +217,13 @@ export default function ProductivityBuddy() {
         popupRef.current &&
         !popupRef.current.contains(event.target as Node)
       ) {
-        setResponse(null);
-        setLoading(false);
-        setIsActive(false);
+        handleClose();
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Loading state
   if (subLoading) {
     return (
       <div className="flex items-center justify-center h-full w-full">
@@ -130,279 +235,269 @@ export default function ProductivityBuddy() {
     );
   }
 
-  // Hide/Show Toggle Button
-  const toggleButton = (
-    <motion.button
-      onClick={() => setIsVisible(!isVisible)}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      className="fixed bottom-6 right-16 z-80 w-10 h-10 rounded-full flex items-center justify-center"
-      title={isVisible ? "Hide Productivity Buddy" : "Show Productivity Buddy"}
-    >
-    </motion.button>
-  );
-
-  // Always show the toggle button
-  if (!isVisible) {
-    return toggleButton;
-  }
-
-  // Free user - show grayed out smiley with lock
   if (subscriptionStatus === "free") {
     return (
-      <>
-        {toggleButton}
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-          <div className="relative">
-            {/* Grayed out orb button for free users */}
-            <motion.button
-              onClick={handleFreeUserClick}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700 opacity-60"
-              style={
-                {
-                  boxShadow: "0 0 15px rgba(156,163,175,0.4)",
-                } as React.CSSProperties
-              }
-            >
-              {/* Lock icon overlay */}
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gray-500 dark:bg-gray-400 rounded-full flex items-center justify-center">
-                <Lock size={12} className="text-white dark:text-gray-800" />
-              </div>
-
-              {/* Grayed out smiley face */}
-              <div className="relative z-10 w-full h-full flex items-center justify-center">
-                <svg
-                  width="40"
-                  height="40"
-                  viewBox="0 0 24 24"
-                  className="text-gray-600 dark:text-gray-300"
-                >
-                  {/* Eyes */}
-                  <path
-                    d="M8 9 Q9 7 10 9"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M14 9 Q15 7 16 9"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                  {/* Mouth */}
-                  <path
-                    d="M8 15 Q12 18 16 15"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-            </motion.button>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  // Pro user - full functionality
-  return (
-    <>
-      {toggleButton}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
         <div className="relative">
-          {/* Orb ripple ring */}
-          <motion.div
-            className="absolute inset-0 rounded-full"
-            animate={{
-              scale: [1, 1.1, 1],
-              rotate: [0, 180, 360],
-            }}
-            transition={{
-              scale: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-              rotate: { duration: 10, repeat: Infinity, ease: "linear" },
-            }}
-            style={
-              {
-                width: "4rem",
-                height: "4rem",
-                backgroundImage: isActive
-                  ? "conic-gradient(from 0deg, rgba(244,114,182,0.2), rgba(244,114,182,0.4), rgba(244,114,182,0.2))"
-                  : "conic-gradient(from 0deg, rgba(59,130,246,0.2), rgba(59,130,246,0.4), rgba(59,130,246,0.2))",
-              } as React.CSSProperties
-            }
-          />
-
-          {/* Blue Floating Particles */}
-          <FloatingParticles />
-
-          {/* Soft background glow */}
-          <motion.div
-            className={`absolute inset-0 w-20 h-20 -m-2 rounded-full blur-xl transition-all duration-1000 ${
-              isActive ? "bg-pink-400/20" : "bg-blue-400/20"
-            }`}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-
-          {/* Orb button */}
           <motion.button
-            onClick={fetchBuddyContext}
+            onClick={handleFreeUserClick}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-1000 ${
-              isActive
-                ? "bg-gradient-to-br from-pink-400 to-rose-500"
-                : "bg-gradient-to-br from-blue-500 to-white dark:from-blue-400 dark:to-zinc-800"
-            }`}
-            style={
-              {
-                boxShadow: isActive
-                  ? "0 0 25px rgba(244,114,182,0.6)"
-                  : "0 0 20px rgba(59,130,246,0.6)",
-              } as React.CSSProperties
-            }
+            className="relative w-16 h-16 rounded-full flex items-center justify-center bg-gray-300 dark:bg-gray-700 opacity-60"
+            aria-label="Productivity Buddy (Pro feature)"
           >
+            <div className="absolute -top-1 -right-1 w-6 h-6 bg-gray-500 dark:bg-gray-400 rounded-full flex items-center justify-center">
+              <Lock size={12} className="text-white dark:text-gray-800" />
+            </div>
             <div className="relative z-10 w-full h-full flex items-center justify-center">
-              <motion.svg
+              <svg
                 width="40"
                 height="40"
                 viewBox="0 0 24 24"
-                className="text-white dark:text-zinc-100"
-                animate={loading ? { rotate: [0, 5, -5, 0] } : {}}
-                transition={loading ? { duration: 0.5, repeat: Infinity } : {}}
+                className="text-gray-600 dark:text-gray-300"
               >
-                <motion.path
+                <path
                   d="M8 9 Q9 7 10 9"
                   stroke="currentColor"
                   strokeWidth="1.5"
                   fill="none"
                   strokeLinecap="round"
-                  animate={
-                    loading
-                      ? {
-                          d: [
-                            "M8 9 Q9 7 10 9",
-                            "M8 9 Q9 9 10 9",
-                            "M8 9 Q9 7 10 9",
-                          ],
-                        }
-                      : {}
-                  }
-                  transition={loading ? { duration: 1, repeat: Infinity } : {}}
                 />
-                <motion.path
+                <path
                   d="M14 9 Q15 7 16 9"
                   stroke="currentColor"
                   strokeWidth="1.5"
                   fill="none"
                   strokeLinecap="round"
-                  animate={
-                    loading
-                      ? {
-                          d: [
-                            "M14 9 Q15 7 16 9",
-                            "M14 9 Q15 9 16 9",
-                            "M14 9 Q15 7 16 9",
-                          ],
-                        }
-                      : {}
-                  }
-                  transition={loading ? { duration: 1, repeat: Infinity } : {}}
                 />
-                <motion.path
+                <path
                   d="M8 15 Q12 18 16 15"
                   stroke="currentColor"
                   strokeWidth="1.5"
                   fill="none"
                   strokeLinecap="round"
-                  animate={
-                    loading
-                      ? {
-                          d: [
-                            "M8 15 Q12 18 16 15",
-                            "M8 16 Q12 19 16 16",
-                            "M8 15 Q12 18 16 15",
-                          ],
-                        }
-                      : {}
-                  }
-                  transition={loading ? { duration: 1, repeat: Infinity } : {}}
                 />
-              </motion.svg>
+              </svg>
             </div>
           </motion.button>
         </div>
+      </div>
+    );
+  }
 
-        {/* Response Popup */}
-        <AnimatePresence>
-          {(response || loading) && (
-            <motion.div
-              ref={popupRef}
-              initial={{ opacity: 0, y: 16, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.95 }}
-              className="mt-4 w-80 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-lg backdrop-blur-sm"
+  return (
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+      <div className="relative">
+        <motion.div
+          className="absolute inset-0 rounded-full"
+          animate={{
+            scale: [1, 1.1, 1],
+            rotate: [0, 180, 360],
+          }}
+          transition={{
+            scale: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+            rotate: { duration: 10, repeat: Infinity, ease: "linear" },
+          }}
+          style={
+            {
+              width: "4rem",
+              height: "4rem",
+              backgroundImage: isActive
+                ? "conic-gradient(from 0deg, rgba(244,114,182,0.2), rgba(244,114,182,0.4), rgba(244,114,182,0.2))"
+                : "conic-gradient(from 0deg, rgba(59,130,246,0.2), rgba(59,130,246,0.4), rgba(59,130,246,0.2))",
+            } as React.CSSProperties
+          }
+        />
+
+        <FloatingParticles key={effectKey} />
+
+        <motion.div
+          className={`absolute inset-0 w-20 h-20 -m-2 rounded-full blur-xl transition-all duration-1000 ${
+            isActive ? "bg-pink-400/20" : "bg-blue-400/20"
+          }`}
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        <motion.button
+          onClick={handleClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleClick();
+            }
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          aria-label="Open productivity buddy"
+          aria-expanded={!!(response || loading)}
+          role="button"
+          tabIndex={0}
+          className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-1000 ${
+            isActive
+              ? "bg-pink-400"
+              : "bg-blue-500 dark:bg-blue-400"
+          }`}
+        >
+          <div className="relative z-10 w-full h-full flex items-center justify-center">
+            <motion.svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              className="text-white dark:text-zinc-100"
+              animate={loading ? { rotate: [0, 5, -5, 0] } : {}}
+              transition={loading ? { duration: 0.5, repeat: Infinity } : {}}
             >
-              <div className="max-h-96 overflow-y-auto p-4 mx-1 my-2 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-600 scrollbar-track-transparent scrollbar-thumb-opacity-50">
-                {loading ? (
-                  <motion.div className="flex items-center justify-center py-8">
-                    <div className="flex space-x-2">
-                      {[...Array(3)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          className="w-3 h-3 rounded-full bg-pink-400"
-                          animate={{
-                            y: [0, -12, 0],
-                            opacity: [0.4, 1, 0.4],
-                          }}
-                          transition={{
-                            duration: 1,
-                            repeat: Infinity,
-                            delay: i * 0.2,
-                            ease: "easeInOut",
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </motion.div>
-                ) : (
-                  <div className="text-zinc-800 dark:text-zinc-100">
-                    {response &&
-                      response
-                        .split("\n")
-                        .filter((line) => line.trim())
-                        .map((line, i) => (
+              {/* Left Eye */}
+              <motion.path
+                d="M8 9 Q9 7 10 9"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+                strokeLinecap="round"
+                animate={
+                  loading
+                    ? {
+                        d: [
+                          "M8 9 Q9 7 10 9",
+                          "M8 9 Q9 9 10 9",
+                          "M8 9 Q9 7 10 9",
+                        ],
+                      }
+                    : expression === "celebrate"
+                    ? { d: "M8 8.5 Q9 7 10 8.5" }
+                    : { d: "M8 9 Q9 7 10 9" }
+                }
+                transition={
+                  loading ? { duration: 1, repeat: Infinity } : { duration: 0.3 }
+                }
+              />
+              {/* Right Eye */}
+              <motion.path
+                d="M14 9 Q15 7 16 9"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+                strokeLinecap="round"
+                animate={
+                  loading
+                    ? {
+                        d: [
+                          "M14 9 Q15 7 16 9",
+                          "M14 9 Q15 9 16 9",
+                          "M14 9 Q15 7 16 9",
+                        ],
+                      }
+                    : expression === "celebrate"
+                    ? { d: "M14 8.5 Q15 7 16 8.5" }
+                    : { d: "M14 9 Q15 7 16 9" }
+                }
+                transition={
+                  loading ? { duration: 1, repeat: Infinity } : { duration: 0.3 }
+                }
+              />
+              {/* Mouth */}
+              <motion.path
+                d="M8 15 Q12 18 16 15"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+                strokeLinecap="round"
+                animate={
+                  loading
+                    ? {
+                        d: [
+                          "M8 15 Q12 18 16 15",
+                          "M8 16 Q12 19 16 16",
+                          "M8 15 Q12 18 16 15",
+                        ],
+                      }
+                    : expression === "celebrate"
+                    ? { d: "M8 14 Q12 20 16 14" }
+                    : { d: "M8 15 Q12 18 16 15" }
+                }
+                transition={
+                  loading ? { duration: 1, repeat: Infinity } : { duration: 0.3 }
+                }
+              />
+            </motion.svg>
+          </div>
+        </motion.button>
+      </div>
+
+      <AnimatePresence>
+        {(response || loading) && (
+          <motion.div
+            ref={popupRef}
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            className="mt-4 w-80 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl backdrop-blur-sm relative"
+            role="dialog"
+            aria-live="polite"
+          >
+            <button
+              onClick={handleClose}
+              className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors z-10"
+              aria-label="Close"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="max-h-96 overflow-y-auto p-4 pr-10 mx-1 my-2 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-600 scrollbar-track-transparent">
+              {loading ? (
+                <div className="space-y-3 py-4">
+                  <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse w-3/4" />
+                  <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse w-full" />
+                  <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse w-5/6" />
+                </div>
+              ) : (
+                <div className="text-zinc-800 dark:text-zinc-100">
+                  {response && expression === "celebrate" && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="flex items-center gap-2 mb-3 text-lg font-semibold"
+                    >
+                      🎉 <span>Great job!</span>
+                    </motion.div>
+                  )}
+
+                  {response &&
+                    response.speech
+                      .split("\n")
+                      .filter((line) => line.trim())
+                      .map((line, i) => {
+                        const isHeader = /^[^\w\s]/.test(line.trim());
+                        return (
                           <motion.p
                             key={i}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.05 }}
-                            className="mb-3 leading-relaxed"
+                            className={`mb-3 ${
+                              isHeader
+                                ? "font-semibold text-base"
+                                : "text-sm leading-relaxed"
+                            }`}
                           >
                             {line}
                           </motion.p>
-                        ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </>
+                        );
+                      })}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

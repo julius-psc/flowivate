@@ -8,26 +8,48 @@ const DB_NAME = process.env.MONGODB_DB || "Flowivate";
 const CLAUDE_API_KEY = process.env.ANTHROPIC_API_KEY;
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
 
-export async function POST() {
+// Removed QuickAction interface
+
+export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { event } = (await req.json()) as { event?: string };
   const userId = new ObjectId(session.user.id);
   const client = await clientPromise;
   const db = client.db(DB_NAME);
 
   const [affirmations, tasks, mood, journal, sleep] = await Promise.all([
-    db.collection("users").findOne({ _id: userId }, { projection: { affirmations: 1 } }),
+    db
+      .collection("users")
+      .findOne({ _id: userId }, { projection: { affirmations: 1 } }),
     db.collection("task_lists").find({ userId }).toArray(),
-    db.collection("moods").find({ userId }).sort({ timestamp: -1 }).limit(1).toArray(),
-    db.collection("journalEntries").find({ userId }).sort({ date: -1 }).limit(1).toArray(),
-    db.collection("sleep").find({ userId }).sort({ timestamp: -1 }).limit(1).toArray(),
+    db
+      .collection("moods")
+      .find({ userId })
+      .sort({ timestamp: -1 })
+      .limit(1)
+      .toArray(),
+    db
+      .collection("journalEntries")
+      .find({ userId })
+      .sort({ date: -1 })
+      .limit(1)
+      .toArray(),
+    db
+      .collection("sleep")
+      .find({ userId })
+      .sort({ timestamp: -1 })
+      .limit(1)
+      .toArray(),
   ]);
 
   const formattedTasks = tasks.map((taskList) => {
-    const completed = taskList.tasks.filter((t: { completed: boolean }) => t.completed).length;
+    const completed = taskList.tasks.filter(
+      (t: { completed: boolean }) => t.completed,
+    ).length;
     const total = taskList.tasks.length;
     return {
       name: taskList.name,
@@ -45,23 +67,61 @@ export async function POST() {
     sleepHours: sleep[0]?.hours || null,
   };
 
-  const messages = [
-    {
-      role: "user",
-      content: `You're Flowivate's concise and friendly productivity buddy.
+  let prompt = "";
+  let effect: "CONFETTI" | "SPARKLE" | null = null;
 
-Based on the following user context, generate a short, modern summary (no more than 4 lines), starting with a friendly greeting (e.g. \"Hey Julius!\"). Use emoji section headers (e.g. 📋, 🧠, 😴, 💧) if helpful.
+  switch (event) {
+    case "TASK_COMPLETED":
+      prompt = `User (named ${
+        session.user.name || "friend"
+      }) just completed a task. Give them a short, motivating congratulations. (1-2 lines, e.g., 'Nice one!', 'Task complete! ✅')`;
+      effect = "CONFETTI";
+      // Removed quickActions.push
+      break;
+
+    case "POMO_FINISHED":
+      prompt = `User (named ${
+        session.user.name || "friend"
+      }) just finished a Pomodoro timer. Congratulate them on their focus. (1-2 lines, e.g., 'Great focus session! 🔥')`;
+      effect = "CONFETTI";
+      // Removed quickActions.push
+      break;
+
+    case "JOURNAL_SAVED":
+      prompt = `User (named ${
+        session.user.name || "friend"
+      }) just saved a journal entry. Acknowledge this act of mindfulness. (1-2 lines, e.g., 'Good on you for taking a moment to reflect.')`;
+      effect = "SPARKLE";
+      break;
+
+    case "BOOK_LOGGED":
+      prompt = `User (named ${
+        session.user.name || "friend"
+      }) just logged a book. Acknowledge this. (1-2 lines, e.g., 'Nice! Another book for the shelf.')`;
+      effect = "SPARKLE";
+      break;
+
+    default:
+      prompt = `You're Flowivate's concise and friendly productivity buddy.
+
+Based on the following user context, generate a short, modern summary (no more than 4 lines), starting with a friendly greeting (e.g. "Hey ${
+        session.user.name || "there"
+      }!"). Use emoji section headers (e.g. 📋, 🧠, 😴, 💧) if helpful.
 
 - Be positive but realistic.
-- If mood is \"sad\", include a suggestion like \"Want to talk about it?\".
-- If sleepHours < 6, suggest rest. If >8, praise it.
-- If no journal/tasks, say \"Ready to start your day?\".
+- If mood is "sad", include a suggestion like "Want to talk about it?".
+- If sleepHours < 6, suggest rest. If > 8, praise it.
+- If no journal/tasks, say "Ready to start your day?".
 - If productive, celebrate it.
 
 User data:
-${JSON.stringify(context, null, 2)}`,
-    },
-  ];
+${JSON.stringify(context, null, 2)}`;
+
+      // Removed quickActions.push logic
+      break;
+  }
+
+  const messages = [{ role: "user", content: prompt }];
 
   try {
     const response = await fetch(CLAUDE_API_URL, {
@@ -80,13 +140,22 @@ ${JSON.stringify(context, null, 2)}`,
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: "Claude API error", details: errorText }, { status: 500 });
+      return NextResponse.json(
+        { error: "Claude API error", details: errorText },
+        { status: 500 },
+      );
     }
 
     const result = await response.json();
-    return NextResponse.json({ reply: result.content?.[0]?.text || "No response." });
+    const speech = result.content?.[0]?.text || "No response.";
+
+    // Return without quickActions
+    return NextResponse.json({ speech, effect });
   } catch (err) {
     console.error("Claude API call failed:", err);
-    return NextResponse.json({ error: "Claude API call failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Claude API call failed" },
+      { status: 500 },
+    );
   }
 }
