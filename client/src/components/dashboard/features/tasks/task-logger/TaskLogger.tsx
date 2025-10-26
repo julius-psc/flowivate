@@ -99,7 +99,6 @@ const TaskLogger: React.FC = () => {
 
       {/* Header */}
       <div className="flex justify-between items-center mb-4 flex-shrink-0 max-w-3xl mx-auto w-full">
-        <h1 className={`text-lg font-semibold ${headingColor}`}>My Tasks</h1>
         {updateListMutation.isPending && (
           <span className="text-xs text-blue-500 dark:text-blue-400 animate-pulse flex items-center gap-1">
             <IconLoader2 size={12} className="animate-spin" /> Saving...

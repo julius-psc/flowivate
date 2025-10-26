@@ -149,15 +149,8 @@ export default function Features() {
 
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-      {/* Header — left aligned */}
-      <div className="mb-8">
-        <h1 className={`text-2xl font-bold ${textColor}`}>Your Productivity Hub</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Toggle features to customize your dashboard.
-        </p>
-      </div>
 
-      {/* Flat feature list — all left-aligned */}
+      {/* Flat feature list */}
       <div className="space-y-3">
         {allFeatures.map((feature) => {
           const isSelected = isFeatureSelected(feature.key as FeatureKey);

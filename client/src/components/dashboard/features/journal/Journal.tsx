@@ -31,11 +31,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
-  Calendar,
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useTheme } from "next-themes";
 import { useGlobalStore } from "@/hooks/useGlobalStore";
 
 interface JournalEntryData {
@@ -101,7 +99,6 @@ const slashCommandItems = [
   {
     title: "Emoji",
     command: ({}: { editor: Editor }) => {
-      /* Handled in SlashCommands render */
     },
     icon: <span>😊</span>,
   },
@@ -118,21 +115,9 @@ export const Journal: React.FC<JournalProps> = ({
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const editorRef = useRef<Editor | null>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
-  const calendarButtonRef = useRef<HTMLButtonElement>(null);
+  const dateButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { theme } = useTheme();
   const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
-
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const journalEditorText = !mounted
-    ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white"
-    : "text-secondary-black dark:text-secondary-white";
 
   const editor = useEditor({
     extensions: [
@@ -181,7 +166,7 @@ export const Journal: React.FC<JournalProps> = ({
     content: "",
     editorProps: {
       attributes: {
-        class: `prose dark:prose-invert focus:outline-none w-full h-full px-6 py-4 ${journalEditorText}`,
+        class: "prose dark:prose-invert focus:outline-none w-full h-full px-6 py-4 text-secondary-black dark:text-secondary-white",
       },
     },
     injectCSS: false,
@@ -194,14 +179,13 @@ export const Journal: React.FC<JournalProps> = ({
     }
   }, [editor]);
 
-  // Handle clicks outside calendar
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
         calendarRef.current &&
         !calendarRef.current.contains(event.target as Node) &&
-        calendarButtonRef.current &&
-        !calendarButtonRef.current.contains(event.target as Node)
+        dateButtonRef.current &&
+        !dateButtonRef.current.contains(event.target as Node)
       ) {
         setIsCalendarOpen(false);
       }
@@ -377,7 +361,7 @@ export const Journal: React.FC<JournalProps> = ({
   const handleDateSelect = (date: Date) => {
     if (isLoading || isSaving || isDeleting) return;
     setSelectedDate(date);
-    setCurrentMonth(date); // Update currentMonth to match selected date
+    setCurrentMonth(date);
     setIsCalendarOpen(false);
   };
 
@@ -385,15 +369,12 @@ export const Journal: React.FC<JournalProps> = ({
     setIsCalendarOpen(!isCalendarOpen);
   };
 
-  // Date helpers for calendar
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // Get days of the week starting with Sunday
   const dayOfWeekNames = ["S", "M", "T", "W", "T", "F", "S"];
 
-  // Create day grid with leading and trailing days
   const startDay = getDay(monthStart);
   const daysGrid = [...Array(startDay).fill(null), ...daysInMonth];
 
@@ -405,89 +386,73 @@ export const Journal: React.FC<JournalProps> = ({
     );
   }
 
-  const journalHeadingColor = !mounted
-    ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white"
-    : "text-xl font-bold text-gray-900 dark:text-gray-100";
-
-  const journalDateColor = !mounted
-    ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white opacity-70"
-    : "text-sm opacity-70 text-gray-700 dark:text-gray-300";
-
-  const jungleText = !mounted
-    ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white"
-    : "";
-
-  const jungleMutedText = !mounted
-    ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white opacity-70"
-    : "text-gray-700 dark:text-gray-300 opacity-70";
-
-  const jungleButton = !mounted
-    ? ""
-    : theme === "jungle" || theme === "ocean"
-    ? "hover:bg-white/10 text-white"
-    : "hover:bg-gray-100 dark:hover:bg-gray-800";
-
-  const jungleIcon = !mounted
-    ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white"
-    : "text-gray-700 dark:text-gray-300";
-
   return (
     <div className="flex flex-col h-full w-full text-secondary-black dark:text-secondary-white">
-      {/* Header */}
       <div className="px-4 py-4">
-        <div className="max-w-screen-lg mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <h1 className={`text-xl font-bold ${journalHeadingColor}`}>
-              Daily Journal
-            </h1>
-            <div className="h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
-            <div className={`${journalDateColor}`}>
-              {format(selectedDate, "EEEE, MMM d")}{" "}
-              {/* Fixed to show selectedDate */}
-            </div>
-          </div>
-
+        <div className="max-w-screen-lg mx-auto flex justify-end items-center">
           <div className="flex items-center space-x-1">
             <button
-              ref={calendarButtonRef}
-              onClick={toggleCalendar}
-              className={`p-2 rounded-full relative ${jungleButton}`}
-              aria-label="Select date"
+              onClick={handleDelete}
+              disabled={isLoading || isSaving || isDeleting}
+              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Delete entry"
             >
-              <Calendar size={18} className={jungleIcon} />
+              {isDeleting ? (
+                <div className="h-4 w-4 border-2 border-gray-500 dark:border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <Trash2 size={18} className="text-gray-700 dark:text-gray-300" />
+              )}
             </button>
 
-            {/* Calendar popup - Positioned relative to calendar button */}
+            <button
+              onClick={handleSave}
+              disabled={isLoading || isSaving || isDeleting}
+              className="flex items-center space-x-1 px-3 py-1.5 bg-secondary-black dark:bg-white text-white dark:text-secondary-black rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="text-sm font-medium">Save</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col flex-1 overflow-hidden max-w-screen-lg mx-auto w-full">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => handleDateSelect(subDays(selectedDate, 1))}
+              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              disabled={isLoading}
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <button
+              ref={dateButtonRef}
+              onClick={toggleCalendar}
+              className="text-3xl font-bold hover:opacity-70 transition-opacity relative"
+              disabled={isLoading}
+            >
+              {format(selectedDate, "d")}
+            </button>
+
             {isCalendarOpen && (
               <div
                 ref={calendarRef}
                 className="absolute z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg p-3"
                 style={{
                   minWidth: "250px",
-                  top: calendarButtonRef.current
-                    ? calendarButtonRef.current.getBoundingClientRect().bottom +
-                      window.scrollY
+                  top: dateButtonRef.current
+                    ? dateButtonRef.current.getBoundingClientRect().bottom + window.scrollY + 4
                     : "auto",
-                  right: calendarButtonRef.current
-                    ? window.innerWidth -
-                      calendarButtonRef.current.getBoundingClientRect().right
+                  left: dateButtonRef.current
+                    ? dateButtonRef.current.getBoundingClientRect().left
                     : "auto",
                 }}
               >
                 <div className="flex justify-between items-center mb-3">
                   <button
                     onClick={handlePrevMonth}
-                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     <ChevronLeft size={16} />
                   </button>
@@ -496,7 +461,7 @@ export const Journal: React.FC<JournalProps> = ({
                   </span>
                   <button
                     onClick={handleNextMonth}
-                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -525,7 +490,7 @@ export const Journal: React.FC<JournalProps> = ({
                         key={format(day, "yyyy-MM-dd")}
                         onClick={() => handleDateSelect(day)}
                         className={`
-                          h-8 w-8 rounded-full flex items-center justify-center text-sm
+                          h-8 w-8 rounded-md flex items-center justify-center text-sm
                           ${
                             isSelectedDay
                               ? "bg-secondary-black dark:bg-white text-white dark:text-secondary-black font-medium"
@@ -551,81 +516,37 @@ export const Journal: React.FC<JournalProps> = ({
               </div>
             )}
 
-            <button
-              onClick={handleDelete}
-              disabled={isLoading || isSaving || isDeleting}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Delete entry"
-            >
-              {isDeleting ? (
-                <div className="h-4 w-4 border-2 border-gray-500 dark:border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <Trash2 size={18} className={jungleIcon} />
-              )}
-            </button>
-
-            <button
-              onClick={handleSave}
-              disabled={isLoading || isSaving || isDeleting}
-              className="flex items-center space-x-1 px-3 py-1.5 bg-secondary-black dark:bg-white text-white dark:text-secondary-black rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span className="text-sm font-medium">Save</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 overflow-hidden max-w-screen-lg mx-auto w-full">
-        {/* Date indicator - Fixed to show selected date */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => handleDateSelect(subDays(selectedDate, 1))} // Fixed to cycle days
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-              disabled={isLoading}
-            >
-              <ChevronLeft size={16} />
-            </button>
-
-            <span className={`text-3xl font-bold ${jungleText}`}>
-              {format(selectedDate, "d")}
-            </span>
-
             <div className="flex flex-col">
-              <span className={`text-sm font-medium ${jungleText}`}>
+              <span className="text-sm font-medium">
                 {format(selectedDate, "EEEE")}
               </span>
-              <span className={`text-xs ${jungleMutedText}`}>
+              <span className="text-xs text-gray-700 dark:text-gray-300 opacity-70">
                 {format(selectedDate, "MMMM yyyy")}
               </span>
             </div>
 
             <button
-              onClick={() => handleDateSelect(addDays(selectedDate, 1))} // Fixed to cycle days
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => handleDateSelect(addDays(selectedDate, 1))}
+              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               disabled={isLoading}
             >
               <ChevronRight size={16} />
             </button>
           </div>
 
-          <div
-            className={`flex items-center space-x-1 text-xs ${jungleMutedText}`}
-          >
-            <Clock size={14} className={jungleIcon} />
+          <div className="flex items-center space-x-1 text-xs text-gray-700 dark:text-gray-300 opacity-70">
+            <Clock size={14} className="text-gray-700 dark:text-gray-300" />
             <span>{format(new Date(), "HH:mm")}</span>
           </div>
         </div>
 
-        {/* Editor */}
         <div className="relative flex-1 overflow-auto">
           <div
             className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-10 ${
               isLoading
                 ? "opacity-100 pointer-events-auto"
                 : "opacity-0 pointer-events-none"
-            } bg-white/80 dark:bg-secondary-black/80`}
+            }`}
           >
             <div className="h-8 w-8 border-2 border-secondary-black dark:border-white border-t-transparent rounded-full animate-spin" />
           </div>
