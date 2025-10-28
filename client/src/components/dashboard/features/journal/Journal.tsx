@@ -25,8 +25,8 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { createLowlight } from "lowlight";
 import typescript from "highlight.js/lib/languages/typescript";
 import javascript from "highlight.js/lib/languages/javascript";
-import { SlashCommands } from "../../recyclable/markdown/SlashCommands";
-import { ContextMenu } from "../../recyclable/markdown/ContextMenu";
+import { SlashCommands } from "../../recyclable/markdown/SlashCommands"; // Adjust path if needed
+import { ContextMenu } from "../../recyclable/markdown/ContextMenu"; // Adjust path if needed
 import {
   ChevronLeft,
   ChevronRight,
@@ -34,7 +34,9 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useGlobalStore } from "@/hooks/useGlobalStore";
+import { useGlobalStore } from "@/hooks/useGlobalStore"; // Adjust path if needed
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig"; // Adjust path if needed
 
 interface JournalEntryData {
   _id: string;
@@ -49,11 +51,17 @@ interface JournalProps {
   initialDate?: Date;
 }
 
+interface SlashCommandItem {
+    title: string;
+    command: ({ editor }: { editor: Editor }) => void;
+    icon: React.ReactNode; // Use React.ReactNode for JSX Elements
+}
+
 const lowlight = createLowlight();
 lowlight.register("typescript", typescript);
 lowlight.register("javascript", javascript);
 
-const slashCommandItems = [
+const slashCommandItems: SlashCommandItem[] = [
   {
     title: "Heading 1",
     command: ({ editor }: { editor: Editor }) => {
@@ -99,6 +107,7 @@ const slashCommandItems = [
   {
     title: "Emoji",
     command: ({}: { editor: Editor }) => {
+      // Placeholder or implement emoji picker logic
     },
     icon: <span>😊</span>,
   },
@@ -110,14 +119,27 @@ export const Journal: React.FC<JournalProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
   const [currentMonth, setCurrentMonth] = useState<Date>(initialDate);
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [isMounted, setIsMounted] = useState(false);
   const editorRef = useRef<Editor | null>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
   const dateButtonRef = useRef<HTMLButtonElement>(null);
 
   const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const isSpecialTheme =
+    isMounted &&
+    !!theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
 
   const editor = useEditor({
     extensions: [
@@ -146,6 +168,7 @@ export const Journal: React.FC<JournalProps> = ({
         addKeyboardShortcuts() {
           return {
             Enter: () => {
+              if (!this.editor) return false;
               const { state } = this.editor;
               const { selection } = state;
               const { $from, empty } = selection;
@@ -166,7 +189,9 @@ export const Journal: React.FC<JournalProps> = ({
     content: "",
     editorProps: {
       attributes: {
-        class: "prose dark:prose-invert focus:outline-none w-full h-full px-6 py-4 text-secondary-black dark:text-secondary-white",
+        class: `prose dark:prose-invert focus:outline-none w-full h-full px-6 py-4 ${
+          isSpecialTheme ? "prose-invert text-white/90" : "text-secondary-black dark:text-secondary-white"
+        }`,
       },
     },
     injectCSS: false,
@@ -201,50 +226,40 @@ export const Journal: React.FC<JournalProps> = ({
       if (!editorRef.current || !isValid(date)) return;
       setIsLoading(true);
       const formattedDate = format(date, "yyyy-MM-dd");
-      console.log(`Fetching journal entry for: ${formattedDate}`);
       editorRef.current.commands.setContent("<p></p>");
       try {
         const response = await fetch(`/api/features/journal/${formattedDate}`);
         if (response.ok) {
           const data: { entry: JournalEntryData } = await response.json();
-          console.log("Fetched entry:", data.entry._id);
           const storedDate = parse(data.entry.date, "yyyy-MM-dd", new Date());
-          if (
-            format(selectedDate, "yyyy-MM-dd") ===
-            format(storedDate, "yyyy-MM-dd")
-          ) {
+          if (isSameDay(selectedDate, storedDate)) {
             editorRef.current.commands.setContent(
               data.entry.content || "<p></p>"
             );
-          } else {
-            console.log("Stale data fetched, ignoring.");
           }
         } else if (response.status === 404) {
-          console.log(`No entry found for ${formattedDate}. Editor cleared.`);
-          if (format(selectedDate, "yyyy-MM-dd") === formattedDate) {
-            editorRef.current.commands.setContent("<p></p>");
+          if (isSameDay(selectedDate, date)) {
+             editorRef.current.commands.setContent("<p></p>");
           }
         } else {
           const errorData = await response.json();
           const errorMessage = `Failed to load entry: ${
             errorData.message || response.statusText
           }`;
-          console.error(
-            `Failed to fetch entry (${response.status}):`,
-            errorData.message
-          );
-          if (format(selectedDate, "yyyy-MM-dd") === formattedDate) {
+          if (isSameDay(selectedDate, date)) {
             toast.error(errorMessage);
             editorRef.current.commands.setContent(
               "<p>Error loading content.</p>"
             );
           }
         }
-      } catch (err) {
-        const errorMessage =
-          "A network error occurred while loading the entry.";
+      } catch (err: unknown) { // Type err as unknown
+        let errorMessage = "A network error occurred while loading the entry.";
+        if (err instanceof Error) {
+            errorMessage = `Error loading entry: ${err.message}`;
+        }
         console.error("Network or other error fetching entry:", err);
-        if (format(selectedDate, "yyyy-MM-dd") === formattedDate) {
+        if (isSameDay(selectedDate, date)) {
           toast.error(errorMessage);
           if (editorRef.current)
             editorRef.current.commands.setContent(
@@ -252,24 +267,30 @@ export const Journal: React.FC<JournalProps> = ({
             );
         }
       } finally {
-        setIsLoading(false);
+        if (isSameDay(selectedDate, date)) {
+            setIsLoading(false);
+        }
       }
     },
     [selectedDate]
   );
 
+
   useEffect(() => {
     if (editor && editorRef.current && isValid(selectedDate)) {
       fetchJournalEntry(selectedDate);
     }
-  }, [editor, fetchJournalEntry, selectedDate]);
+     return () => {
+       setIsLoading(false);
+     };
+  }, [editor, selectedDate, fetchJournalEntry]);
+
 
   const handleSave = async () => {
     if (!editorRef.current || isSaving || isLoading) return;
     setIsSaving(true);
     const content = editorRef.current.getHTML();
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
-    console.log(`Saving journal entry for: ${formattedDate}`);
     try {
       const response = await fetch(`/api/features/journal/${formattedDate}`, {
         method: "PUT",
@@ -277,8 +298,8 @@ export const Journal: React.FC<JournalProps> = ({
         body: JSON.stringify({ content }),
       });
       if (response.ok) {
-        const data: { entry: JournalEntryData } = await response.json();
-        console.log("Saved entry:", data.entry._id);
+        // const data: { entry: JournalEntryData } = await response.json(); // Don't strictly need data here
+        await response.json(); // Consume response body
         toast.success(
           response.status === 201 ? "Entry created" : "Entry saved"
         );
@@ -288,14 +309,13 @@ export const Journal: React.FC<JournalProps> = ({
         const errorMessage = `Save failed: ${
           errorData.message || response.statusText
         }`;
-        console.error(
-          `Failed to save entry (${response.status}):`,
-          errorData.message
-        );
         toast.error(errorMessage);
       }
-    } catch (err) {
-      const errorMessage = "A network error occurred while saving.";
+    } catch (err: unknown) { // Type err as unknown
+        let errorMessage = "A network error occurred while saving.";
+         if (err instanceof Error) {
+            errorMessage = `Error saving entry: ${err.message}`;
+        }
       console.error("Network or other error saving entry:", err);
       toast.error(errorMessage);
     } finally {
@@ -313,19 +333,14 @@ export const Journal: React.FC<JournalProps> = ({
       return;
     setIsDeleting(true);
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
-    console.log(`Deleting journal entry for: ${formattedDate}`);
     try {
       const response = await fetch(`/api/features/journal/${formattedDate}`, {
         method: "DELETE",
       });
       if (response.ok) {
-        console.log(`Successfully deleted entry for ${formattedDate}`);
         toast.success("Entry deleted");
         editorRef.current.commands.setContent("<p></p>");
       } else if (response.status === 404) {
-        console.warn(
-          `Attempted to delete non-existent entry for ${formattedDate}`
-        );
         toast.error("Entry not found.");
         editorRef.current.commands.setContent("<p></p>");
       } else {
@@ -333,14 +348,13 @@ export const Journal: React.FC<JournalProps> = ({
         const errorMessage = `Delete failed: ${
           errorData.message || response.statusText
         }`;
-        console.error(
-          `Failed to delete entry (${response.status}):`,
-          errorData.message
-        );
         toast.error(errorMessage);
       }
-    } catch (err) {
-      const errorMessage = "A network error occurred while deleting.";
+    } catch (err: unknown) { // Type err as unknown
+        let errorMessage = "A network error occurred while deleting.";
+        if (err instanceof Error) {
+            errorMessage = `Error deleting entry: ${err.message}`;
+        }
       console.error("Network or other error deleting entry:", err);
       toast.error(errorMessage);
     } finally {
@@ -378,59 +392,72 @@ export const Journal: React.FC<JournalProps> = ({
   const startDay = getDay(monthStart);
   const daysGrid = [...Array(startDay).fill(null), ...daysInMonth];
 
-  if (!editor) {
+  const containerBaseClasses = "flex flex-col flex-1 overflow-hidden max-w-screen-lg mx-auto w-full backdrop-blur-md rounded-xl transition-opacity duration-300 mb-4";
+  const containerPreMountClasses = "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
+  const containerPostMountClasses = isSpecialTheme
+    ? "dark bg-zinc-900/50 border border-zinc-800/50 opacity-100"
+    : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50 opacity-100";
+
+  const buttonHoverBg = isSpecialTheme ? "hover:bg-white/10" : "hover:bg-gray-100 dark:hover:bg-gray-800";
+  const iconColor = isSpecialTheme ? "text-white/70" : "text-gray-700 dark:text-gray-300";
+  const dateTextColor = isSpecialTheme ? "text-white" : "text-secondary-black dark:text-secondary-white";
+  const saveButtonBg = isSpecialTheme ? "bg-white/90 hover:bg-white" : "bg-secondary-black dark:bg-white hover:opacity-90";
+  const saveButtonText = isSpecialTheme ? "text-zinc-900" : "text-white dark:text-secondary-black";
+
+  if (!editor && !isLoading && isMounted) { // Check isMounted here as well
     return (
-      <div className="flex items-center justify-center h-full w-full text-secondary-black dark:text-secondary-white">
-        Loading editor...
+      <div className={`flex items-center justify-center h-full w-full ${dateTextColor}`}>
+        Editor failed to load. Please refresh.
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full w-full text-secondary-black dark:text-secondary-white">
+    <div className="flex flex-col h-full w-full">
       <div className="px-4 py-4">
         <div className="max-w-screen-lg mx-auto flex justify-end items-center">
           <div className="flex items-center space-x-1">
             <button
               onClick={handleDelete}
               disabled={isLoading || isSaving || isDeleting}
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`p-2 rounded-md ${buttonHoverBg} disabled:opacity-50 disabled:cursor-not-allowed`}
               aria-label="Delete entry"
             >
               {isDeleting ? (
-                <div className="h-4 w-4 border-2 border-gray-500 dark:border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                <div className={`h-4 w-4 border-2 ${isSpecialTheme ? 'border-white/50' : 'border-gray-500 dark:border-gray-400'} border-t-transparent rounded-full animate-spin`}></div>
               ) : (
-                <Trash2 size={18} className="text-gray-700 dark:text-gray-300" />
+                <Trash2 size={18} className={iconColor} />
               )}
             </button>
 
             <button
               onClick={handleSave}
               disabled={isLoading || isSaving || isDeleting}
-              className="flex items-center space-x-1 px-3 py-1.5 bg-secondary-black dark:bg-white text-white dark:text-secondary-black rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`flex items-center space-x-1 px-3 py-1.5 ${saveButtonBg} ${saveButtonText} rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-opacity`}
             >
-              <span className="text-sm font-medium">Save</span>
+              {isSaving && <div className={`h-4 w-4 border-2 ${isSpecialTheme ? 'border-zinc-600' : 'border-white dark:border-black'} border-t-transparent rounded-full animate-spin mr-1`}></div>}
+              <span className="text-sm font-medium">{isSaving ? 'Saving...' : 'Save'}</span>
             </button>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col flex-1 overflow-hidden max-w-screen-lg mx-auto w-full">
-        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex items-center space-x-4">
+      <div className={`${containerBaseClasses} ${isMounted ? containerPostMountClasses : containerPreMountClasses}`}>
+        <div className={`flex items-center justify-between px-6 py-3 border-b ${isSpecialTheme ? 'border-white/10' : 'border-gray-200 dark:border-gray-800'}`}>
+           <div className="flex items-center space-x-4">
             <button
               onClick={() => handleDateSelect(subDays(selectedDate, 1))}
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-              disabled={isLoading}
+              className={`p-2 rounded-md ${buttonHoverBg}`}
+              disabled={isLoading || isSaving || isDeleting}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={16} className={dateTextColor} />
             </button>
 
             <button
               ref={dateButtonRef}
               onClick={toggleCalendar}
-              className="text-3xl font-bold hover:opacity-70 transition-opacity relative"
-              disabled={isLoading}
+              className={`text-3xl font-bold hover:opacity-70 transition-opacity relative ${dateTextColor}`}
+              disabled={isLoading || isSaving || isDeleting}
             >
               {format(selectedDate, "d")}
             </button>
@@ -438,7 +465,11 @@ export const Journal: React.FC<JournalProps> = ({
             {isCalendarOpen && (
               <div
                 ref={calendarRef}
-                className="absolute z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg p-3"
+                className={`absolute z-50 border rounded-lg shadow-lg p-3 ${
+                  isSpecialTheme
+                  ? 'bg-zinc-900/70 border-zinc-700/50 backdrop-blur-sm' // Apply backdrop-blur here too
+                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
+                }`}
                 style={{
                   minWidth: "250px",
                   top: dateButtonRef.current
@@ -452,18 +483,18 @@ export const Journal: React.FC<JournalProps> = ({
                 <div className="flex justify-between items-center mb-3">
                   <button
                     onClick={handlePrevMonth}
-                    className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className={`p-1 rounded-md ${buttonHoverBg}`}
                   >
-                    <ChevronLeft size={16} />
+                    <ChevronLeft size={16} className={dateTextColor}/>
                   </button>
-                  <span className="font-medium">
+                  <span className={`font-medium ${dateTextColor}`}>
                     {format(currentMonth, "MMMM yyyy")}
                   </span>
                   <button
                     onClick={handleNextMonth}
-                    className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className={`p-1 rounded-md ${buttonHoverBg}`}
                   >
-                    <ChevronRight size={16} />
+                    <ChevronRight size={16} className={dateTextColor}/>
                   </button>
                 </div>
 
@@ -471,7 +502,7 @@ export const Journal: React.FC<JournalProps> = ({
                   {dayOfWeekNames.map((day, index) => (
                     <div
                       key={index}
-                      className="text-xs font-medium text-gray-500 dark:text-gray-400 p-1"
+                      className={`text-xs font-medium p-1 ${isSpecialTheme ? 'text-white/50' : 'text-gray-500 dark:text-gray-400'}`}
                     >
                       {day}
                     </div>
@@ -479,9 +510,8 @@ export const Journal: React.FC<JournalProps> = ({
 
                   {daysGrid.map((day, index) => {
                     if (!day) {
-                      return <div key={`empty-${index}`} className="p-1" />;
+                      return <div key={`empty-${index}`} className="p-1 h-8 w-8" />;
                     }
-
                     const isSelectedDay = isSameDay(day, selectedDate);
                     const isTodayDate = isToday(day);
 
@@ -490,21 +520,19 @@ export const Journal: React.FC<JournalProps> = ({
                         key={format(day, "yyyy-MM-dd")}
                         onClick={() => handleDateSelect(day)}
                         className={`
-                          h-8 w-8 rounded-md flex items-center justify-center text-sm
+                          h-8 w-8 rounded-md flex items-center justify-center text-sm transition-colors
                           ${
                             isSelectedDay
-                              ? "bg-secondary-black dark:bg-white text-white dark:text-secondary-black font-medium"
-                              : ""
-                          }
-                          ${
-                            isTodayDate && !isSelectedDay
-                              ? "border border-gray-400 dark:border-gray-600"
-                              : ""
-                          }
-                          ${
-                            !isSelectedDay
-                              ? "hover:bg-gray-100 dark:hover:bg-gray-800"
-                              : ""
+                              ? isSpecialTheme
+                                ? "bg-white text-zinc-900 font-medium"
+                                : "bg-secondary-black dark:bg-white text-white dark:text-secondary-black font-medium"
+                              : isTodayDate
+                              ? isSpecialTheme
+                                ? "border border-white/40 text-white/80 hover:bg-white/10"
+                                : "border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+                              : isSpecialTheme
+                                ? "text-white/80 hover:bg-white/10"
+                                : `hover:bg-gray-100 dark:hover:bg-gray-800 ${dateTextColor}` // Apply default text color if not today/selected
                           }
                         `}
                       >
@@ -517,25 +545,25 @@ export const Journal: React.FC<JournalProps> = ({
             )}
 
             <div className="flex flex-col">
-              <span className="text-sm font-medium">
+              <span className={`text-sm font-medium ${dateTextColor}`}>
                 {format(selectedDate, "EEEE")}
               </span>
-              <span className="text-xs text-gray-700 dark:text-gray-300 opacity-70">
+              <span className={`text-xs opacity-70 ${isSpecialTheme ? 'text-white/60' : 'text-gray-700 dark:text-gray-300'}`}>
                 {format(selectedDate, "MMMM yyyy")}
               </span>
             </div>
 
             <button
               onClick={() => handleDateSelect(addDays(selectedDate, 1))}
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-              disabled={isLoading}
+              className={`p-2 rounded-md ${buttonHoverBg}`}
+              disabled={isLoading || isSaving || isDeleting}
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={16} className={dateTextColor} />
             </button>
           </div>
 
-          <div className="flex items-center space-x-1 text-xs text-gray-700 dark:text-gray-300 opacity-70">
-            <Clock size={14} className="text-gray-700 dark:text-gray-300" />
+          <div className={`flex items-center space-x-1 text-xs opacity-70 ${isSpecialTheme ? 'text-white/60' : 'text-gray-700 dark:text-gray-300'}`}>
+            <Clock size={14} className={isSpecialTheme ? 'text-white/60' : 'text-gray-700 dark:text-gray-300'} />
             <span>{format(new Date(), "HH:mm")}</span>
           </div>
         </div>
@@ -544,14 +572,14 @@ export const Journal: React.FC<JournalProps> = ({
           <div
             className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-10 ${
               isLoading
-                ? "opacity-100 pointer-events-auto"
+                ? "opacity-100 pointer-events-auto bg-black/10 dark:bg-black/20 backdrop-blur-sm"
                 : "opacity-0 pointer-events-none"
             }`}
           >
-            <div className="h-8 w-8 border-2 border-secondary-black dark:border-white border-t-transparent rounded-full animate-spin" />
+             <div className={`h-8 w-8 border-2 ${isSpecialTheme ? 'border-white' : 'border-secondary-black dark:border-white'} border-t-transparent rounded-full animate-spin`} />
           </div>
 
-          <EditorContent editor={editor} className="h-full" />
+          {editor && <EditorContent editor={editor} className="h-full" />}
           {editor && <ContextMenu editor={editor} />}
         </div>
       </div>
