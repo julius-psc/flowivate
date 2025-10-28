@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { IconLoader2, IconSquareRoundedPlus2 } from "@tabler/icons-react";
-import { useTheme } from "next-themes";
 import SubPopup from "@/components/dashboard/recyclable/SubPopup";
 import ListHeader from "./ListHeader";
 import TaskItem from "./TaskItem";
@@ -53,19 +52,15 @@ const TaskLogger: React.FC = () => {
     handleAiBreakdown,
   } = useTaskLoggerState();
 
-  const { theme } = useTheme();
+
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const headingColor = !mounted
     ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white"
     : "text-gray-900 dark:text-gray-100";
 
   const inputStyle = !mounted
     ? "text-transparent border-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white border-white focus:border-white"
     : "text-slate-700 dark:text-slate-300 border-slate-300/50 dark:border-zinc-600/50 focus:border-secondary-black dark:focus:border-secondary-black";
 
   const isFreeUser = subscriptionStatus === "free";
@@ -282,45 +277,43 @@ const TaskLogger: React.FC = () => {
           )}
 
           {!isAddingList && (
-                      <button
-                        onClick={() => {
-                          if (!canAddList) {
-                            setShowUpgradeModal(true);
-                            return;
-                          }
-                          if (!updateListMutation.isPending) {
-                            setIsAddingList(true);
-                          }
-                        }}
-                        className="flex items-center justify-center p-2 w-full rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={updateListMutation.isPending}
-                        title="Add a new task list"
-                      >
-                        {updateListMutation.isPending ? (
-                          <>
-                            <IconLoader2 size={18} className="mr-2 animate-spin" />
-                            <span>Adding...</span>
-                          </>
-                        ) : (
-                          <div
-                            className={`flex items-center justify-center px-4 py-2 border-2 border-dotted rounded-2xl hover:bg-primary/5 transition-colors duration-200 ${
-                              !mounted
-                                ? "text-transparent border-transparent"
-                                : theme === "jungle" || theme === "ocean"
-                                ? "border-white text-white hover:border-white hover:text-white"
-                                : "text-secondary-black/80 border-secondary-black/80 hover:text-secondary-black hover:border-secondary-black dark:text-slate-400 dark:border-slate-400 dark:hover:text-secondary-white dark:hover:border-secondary-white"
-                            }`}
-                          >
-                            <IconSquareRoundedPlus2 size={18} className="mr-2" />
-                            <span className="font-medium">Add new list</span>
-                          </div>
-                        )}
-                      </button>
-                    )}
+            <button
+              onClick={() => {
+                if (!canAddList) {
+                  setShowUpgradeModal(true);
+                  return;
+                }
+                if (!updateListMutation.isPending) {
+                  setIsAddingList(true);
+                }
+              }}
+              className="flex items-center justify-center p-2 w-full rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={updateListMutation.isPending}
+              title="Add a new task list"
+            >
+              {updateListMutation.isPending ? (
+                <>
+                  <IconLoader2 size={18} className="mr-2 animate-spin" />
+                  <span>Adding...</span>
+                </>
+              ) : (
+                <div
+                  className={`flex items-center justify-center px-4 py-2 border-2 border-dotted rounded-2xl hover:bg-primary/5 transition-colors duration-200 ${
+                    !mounted
+                      ? "text-transparent border-transparent"
+                      : "text-secondary-black/80 border-secondary-black/80 hover:text-secondary-black hover:border-secondary-black dark:text-slate-400 dark:border-slate-400 dark:hover:text-secondary-white dark:hover:border-secondary-white"
+                  }`}
+                >
+                  <IconSquareRoundedPlus2 size={18} className="mr-2" />
+                  <span className="font-medium">Add new list</span>
+                </div>
+              )}
+            </button>
+          )}
         </div>
       )}
     </div>
   );
 };
 
-export default TaskLogger
+export default TaskLogger;

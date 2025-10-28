@@ -5,6 +5,7 @@ export type LumoEvent =
   | "POMO_FINISHED"
   | "JOURNAL_SAVED"
   | "BOOK_LOGGED"
+  | "TASK_LIST_COMPLETED"
   | null;
 
 export type AppCommand = "START_BREAK" | "START_TIMER" | null;
@@ -20,11 +21,11 @@ interface GlobalStoreState {
 }
 
 export const useGlobalStore = create<GlobalStoreState>((set) => ({
-    lumoEvent: null,
-    triggerLumoEvent: (event: LumoEvent): void => set({ lumoEvent: event }),
-    clearLumoEvent: (): void => set({ lumoEvent: null }),
+  lumoEvent: null,
+  triggerLumoEvent: (event: LumoEvent): void => set({ lumoEvent: event }),
+  clearLumoEvent: (): void => set({ lumoEvent: null }),
 
-    appCommand: null,
-    triggerAppCommand: (command: AppCommand): void => set({ appCommand: command }),
-    clearAppCommand: (): void => set({ appCommand: null }),
+  appCommand: null,
+  triggerAppCommand: (command: AppCommand): void => set({ appCommand: command }),
+  clearAppCommand: (): void => set({ appCommand: null }),
 }));
