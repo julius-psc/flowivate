@@ -97,7 +97,6 @@ const playSound = (type: "success" | "info") => {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.2);
     } catch (err) {
-      // Silent fail - sound is optional
       console.debug("Sound playback not available");
       console.log(err);
     }
@@ -119,11 +118,10 @@ export default function ProductivityBuddy() {
   const lumoEvent = useGlobalStore((state) => state.lumoEvent);
   const clearLumoEvent = useGlobalStore((state) => state.clearLumoEvent);
 
-  const CACHE_DURATION = 60000; // 1 minute
+  const CACHE_DURATION = 60000;
 
   const fetchBuddyContext = useCallback(
     async (event: string | null, isRetry = false) => {
-      // For non-celebration events, check cache
       if (!event) {
         const now = Date.now();
         if (now - lastFetchTime < CACHE_DURATION) {
@@ -149,6 +147,19 @@ export default function ProductivityBuddy() {
         if (!res.ok) throw new Error("API request failed");
 
         const data: BuddyResponse = await res.json();
+
+        if (data.speech === "SILENT_NO_OP") {
+          setLoading(false);
+          setIsActive(false);
+          setExpression("default");
+          setLastFetchTime(0);
+          return;
+        }
+
+        if (event) {
+          setExpression("celebrate");
+        }
+
         setResponse(data);
         setRetryCount(0);
 
@@ -187,10 +198,8 @@ export default function ProductivityBuddy() {
     [lastFetchTime, retryCount]
   );
 
-  // Proactive listener for events
   useEffect(() => {
     if (lumoEvent) {
-      setExpression("celebrate");
       fetchBuddyContext(lumoEvent);
       clearLumoEvent();
     }
@@ -355,7 +364,6 @@ export default function ProductivityBuddy() {
               animate={loading ? { rotate: [0, 5, -5, 0] } : {}}
               transition={loading ? { duration: 0.5, repeat: Infinity } : {}}
             >
-              {/* Left Eye */}
               <motion.path
                 d="M8 9 Q9 7 10 9"
                 stroke="currentColor"
@@ -379,7 +387,6 @@ export default function ProductivityBuddy() {
                   loading ? { duration: 1, repeat: Infinity } : { duration: 0.3 }
                 }
               />
-              {/* Right Eye */}
               <motion.path
                 d="M14 9 Q15 7 16 9"
                 stroke="currentColor"
@@ -403,7 +410,6 @@ export default function ProductivityBuddy() {
                   loading ? { duration: 1, repeat: Infinity } : { duration: 0.3 }
                 }
               />
-              {/* Mouth */}
               <motion.path
                 d="M8 15 Q12 18 16 15"
                 stroke="currentColor"

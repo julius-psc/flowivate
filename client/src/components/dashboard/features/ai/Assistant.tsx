@@ -8,7 +8,7 @@ import {
   IconLock,
   IconLoader2,
 } from "@tabler/icons-react";
-import logo from "../../../../assets/brand/logo-v1.5.svg";
+import logo from "../../../../assets/brand/lumo-logo.svg";
 import Image from "next/image";
 import ChatPanel from "./ChatPanel";
 import { toast } from "sonner"; 
@@ -220,7 +220,7 @@ const Assistant: React.FC = () => {
                   <button
                     key={index}
                     onClick={() => handleNewChat(option.starter)}
-                    className="flex items-center justify-center bg-primary-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30 group text-sm text-gray-700 dark:text-gray-300 font-medium"
+                    className="flex items-center justify-center bg-primary-white dark:bg-secondary-black dark:border-none border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30 group text-sm text-gray-700 dark:text-gray-300 font-medium"
                     title={option.text}
                   >
                     {option.text}
@@ -303,7 +303,7 @@ const Assistant: React.FC = () => {
                 fetchRecentChats();
               }
             }}
-            className="flex bg-primary-white dark:bg-gray-700/70 px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30"
+            className="flex bg-primary-white dark:bg-secondary-black px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-secondary-black/80 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30"
           >
             <IconMessage className="w-5 h-5 mr-1 text-primary-black/60 dark:text-gray-300/60" />
             <span className="text-sm text-primary-black/60 dark:text-gray-300/60">

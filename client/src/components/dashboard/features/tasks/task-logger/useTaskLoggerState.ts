@@ -166,6 +166,23 @@ export const useTaskLoggerState = () => {
     return null;
   };
 
+  const areAllTasksComplete = (tasks: Task[]): boolean => {
+    if (!tasks || tasks.length === 0) {
+      return true;
+    }
+    for (const task of tasks) {
+      if (!task.completed) {
+        return false;
+      }
+      if (task.subtasks && task.subtasks.length > 0) {
+        if (!areAllTasksComplete(task.subtasks)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
   // Handlers
   const handleAddTask = (listId: string, parentTaskId?: string) => {
     let taskName = "";
@@ -418,9 +435,12 @@ export const useTaskLoggerState = () => {
     if (taskFound) {
       triggerListUpdate(listId, updatedTasks);
 
-      // Trigger event only if task is being marked as complete
       if (isCompleting) {
         triggerLumoEvent("TASK_COMPLETED");
+
+        if (areAllTasksComplete(updatedTasks)) {
+          triggerLumoEvent("TASK_LIST_COMPLETED");
+        }
       }
     }
   };
@@ -533,8 +553,6 @@ export const useTaskLoggerState = () => {
   const togglePriorityDropdown = (taskId: string) => {
     setOpenPriorityDropdown((prev) => (prev === taskId ? null : taskId));
   };
-
-  // You already have handleAddTask, handleAiBreakdown, handleKeyDownTaskInput → KEEP YOUR CURRENT VERSIONS → no need to rewrite them
 
   return {
     mounted,
