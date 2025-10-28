@@ -9,6 +9,8 @@ import {
 } from "@/components/dashboard/features/books/bookUtils";
 import { BookListPanel } from "@/components/dashboard/features/books/BookListPanel";
 import { BookDisplayPanel } from "@/components/dashboard/features/books/BookDisplayPanel";
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 
 const BookLogger: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -17,12 +19,22 @@ const BookLogger: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isMounted, setIsMounted] = useState(false);
 
+  const { theme } = useTheme();
   const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
 
   useEffect(() => {
+    setIsMounted(true);
     fetchBooks();
   }, []);
+
+  const isSpecialTheme =
+    isMounted &&
+    !!theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
 
   const fetchBooks = async () => {
     try {
@@ -33,9 +45,11 @@ const BookLogger: React.FC = () => {
       }
       const data = await response.json();
       setBooks(data.books);
-    } catch (err) {
-      toast.error("Error loading books. Please try again.");
-      console.error("Fetch books error:", err);
+    } catch (err: unknown) {
+        let message = "Error loading books. Please try again.";
+        if (err instanceof Error) message = err.message;
+        toast.error(message);
+        console.error("Fetch books error:", err);
     } finally {
       setLoading(false);
     }
@@ -58,7 +72,7 @@ const BookLogger: React.FC = () => {
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    if (!selectedBook) {
+    if (!selectedBook?._id) { // Clear selection if cancelling a new book
       setSelectedBook(null);
     }
   };
@@ -72,10 +86,10 @@ const BookLogger: React.FC = () => {
       return;
     }
     try {
-      const url = selectedBook
+      const url = selectedBook?._id
         ? `/api/features/books/${selectedBook._id}`
         : "/api/features/books";
-      const method = selectedBook ? "PUT" : "POST";
+      const method = selectedBook?._id ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
@@ -98,14 +112,14 @@ const BookLogger: React.FC = () => {
 
       if (!response.ok) {
         throw new Error(
-          data.message || `Failed to ${selectedBook ? "update" : "add"} book`
+          data.message || `Failed to ${selectedBook?._id ? "update" : "add"} book`
         );
       }
 
-      toast.success(`Book ${selectedBook ? "updated" : "added"} successfully!`);
+      toast.success(`Book ${selectedBook?._id ? "updated" : "added"} successfully!`);
       triggerLumoEvent("BOOK_LOGGED");
 
-      if (selectedBook) {
+      if (selectedBook?._id) {
         setBooks(
           books.map((book) =>
             book._id === selectedBook._id ? data.book : book
@@ -117,13 +131,10 @@ const BookLogger: React.FC = () => {
       setSelectedBook(data.book);
       setIsEditing(false);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error(err.message || "Error saving book. Please try again.");
+        let message = "Error saving book. Please try again.";
+        if (err instanceof Error) message = err.message;
+        toast.error(message);
         console.error("Save book error:", err);
-      } else {
-        toast.error("Error saving book. Please try again.");
-        console.error("Save book error:", err);
-      }
     }
   };
 
@@ -151,13 +162,10 @@ const BookLogger: React.FC = () => {
       setSelectedBook(null);
       setIsEditing(false);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error(err.message || "Error deleting book. Please try again.");
+        let message = "Error deleting book. Please try again.";
+        if (err instanceof Error) message = err.message;
+        toast.error(message);
         console.error("Delete book error:", err);
-      } else {
-        toast.error("Error deleting book. Please try again.");
-        console.error("Delete book error:", err);
-      }
     }
   };
 
@@ -175,13 +183,23 @@ const BookLogger: React.FC = () => {
     return books.filter((book) => book.status === status).length;
   };
 
+  // Theme-aware styles
+  const addButtonBg = isSpecialTheme ? "bg-white/90 hover:bg-white" : "bg-secondary-black dark:bg-white hover:opacity-90";
+  const addButtonText = isSpecialTheme ? "text-zinc-900" : "text-white dark:text-secondary-black";
+  const mainContainerBorder = isSpecialTheme ? 'border-zinc-800/50' : 'border-gray-200 dark:border-gray-800';
+
+  // Prevent rendering until mounted to avoid hydration errors
+  if (!isMounted) {
+     return <div className="flex flex-col h-full w-full items-center justify-center">Loading...</div>; // Or a proper skeleton
+  }
+
   return (
-    <div className="flex flex-col h-full w-full text-secondary-black dark:text-secondary-white">
+    <div className={`flex flex-col h-full w-full ${isSpecialTheme ? 'text-white' : 'text-secondary-black dark:text-secondary-white'}`}>
       <div className="px-4 py-4">
         <div className="max-w-screen-lg mx-auto flex justify-end items-center">
           <button
             onClick={handleAddNewBook}
-            className="flex items-center space-x-1 px-3 py-1.5 bg-secondary-black dark:bg-white text-white dark:text-secondary-black rounded-md hover:opacity-90 disabled:opacity-50"
+            className={`flex items-center space-x-1 px-3 py-1.5 ${addButtonBg} ${addButtonText} rounded-md disabled:opacity-50 transition-colors`}
             disabled={loading}
           >
             <IconPlus size={18} />
@@ -190,7 +208,7 @@ const BookLogger: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden max-w-screen-lg mx-auto w-full border-t border-gray-200 dark:border-gray-800">
+      <div className={`flex flex-1 overflow-hidden max-w-screen-lg mx-auto w-full ${mainContainerBorder}`}>
         <BookListPanel
           books={filteredBooks}
           loading={loading}
@@ -201,6 +219,7 @@ const BookLogger: React.FC = () => {
           onSearchChange={(e) => setSearchTerm(e.target.value)}
           onFilterChange={setStatusFilter}
           getBookCountByStatus={getBookCountByStatus}
+          isSpecialTheme={isSpecialTheme} // Pass prop
         />
         <BookDisplayPanel
           selectedBook={selectedBook}
@@ -210,6 +229,7 @@ const BookLogger: React.FC = () => {
           onEdit={handleEditBook}
           onCancel={handleCancelEdit}
           onAddNew={handleAddNewBook}
+          isSpecialTheme={isSpecialTheme} // Pass prop
         />
       </div>
     </div>

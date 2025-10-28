@@ -117,8 +117,8 @@ const MoodInsights: React.FC<{
         day,
         isLogged: false,
         baseClass: isPast
-          ? "border border-gray-300 bg-transparent"
-          : "border border-gray-200 bg-transparent opacity-50",
+          ? "border border-gray-300 dark:border-zinc-700 bg-transparent"
+          : "border border-gray-200 dark:border-zinc-800 bg-transparent opacity-50",
       };
     });
 
@@ -157,6 +157,11 @@ const MoodInsights: React.FC<{
 
   const currentMonthName = now.toLocaleString("default", { month: "long" });
 
+
+  const insightsSubtleTextColor = isSpecialTheme ? "text-white/60" : "text-primary-black dark:text-gray-300 opacity-60";
+  const insightsPercentageColor = isSpecialTheme ? "text-white" : "text-secondary-black dark:text-secondary-white";
+
+
   return (
     <div
       className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
@@ -168,16 +173,16 @@ const MoodInsights: React.FC<{
       <div className="flex items-center mb-4">
         <button
           onClick={onBack}
-          className="mr-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+          className={`mr-2 p-1 rounded-full transition-colors ${ isSpecialTheme ? 'hover:bg-white/10' : 'hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
         >
           <IconChevronLeft
             size={20}
-            className="text-gray-800 dark:text-gray-200"
+            className={ isSpecialTheme ? 'text-white/80' : 'text-gray-800 dark:text-gray-200'}
           />
         </button>
       </div>
       <div className="mt-1">
-        <span className="font-medium text-primary-black dark:text-gray-300 text-sm opacity-60">
+        <span className={`font-medium text-sm ${insightsSubtleTextColor}`}>
           {`${currentMonthName} ${currentYear}`}
         </span>
       </div>
@@ -186,24 +191,27 @@ const MoodInsights: React.FC<{
           {grid.map((item, index) => (
             <div
               key={index}
-              className={`w-5 h-5 rounded-full flex items-center justify-center ${
+              className={`w-5 h-5 rounded flex items-center justify-center text-[10px] ${
                 item.isLogged ? item.color : item.baseClass
               }`}
+              title={item.isLogged ? `Day ${item.day}: Logged` : `Day ${item.day}: Not logged`}
             >
-              <span className="text-xs font-medium text-black dark:text-white opacity-75">
-                {item.day}
-              </span>
+              {(!item.isLogged || isSpecialTheme) && (
+                 <span className={`font-medium ${isSpecialTheme ? 'text-white opacity-90' : 'text-black dark:text-white opacity-75'}`}>
+                   {item.day}
+                 </span>
+              )}
             </div>
           ))}
         </div>
-        <div className="text-secondary-black dark:text-secondary-white">
+        <div className={insightsPercentageColor}>
           <div className="mb-4">
             <div className="text-3xl font-extrabold">{monthlyPercentage}%</div>
-            <div className="text-sm opacity-40">Monthly positivity</div>
+            <div className="text-sm opacity-60">Monthly positivity</div>
           </div>
           <div>
             <div className="text-xl font-extrabold">{weeklyPercentage}%</div>
-            <div className="text-xs opacity-40">Weekly positivity</div>
+            <div className="text-xs opacity-60">Weekly positivity</div>
           </div>
         </div>
       </div>
@@ -250,11 +258,18 @@ const MoodPicker: React.FC = () => {
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
   const [hoveredMood, setHoveredMood] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false); // Add isMounted state
   const { data: session, status } = useSession();
   const { theme } = useTheme();
 
+  useEffect(() => {
+    setIsMounted(true); // Set mounted on client
+  }, []);
+
+  // Calculate theme *after* mount and ensure boolean type
   const isSpecialTheme =
-    theme &&
+    isMounted && // Check if mounted
+    !!theme && // Ensure theme is defined
     specialSceneThemeNames.includes(
       theme as (typeof specialSceneThemeNames)[number]
     );
@@ -267,44 +282,49 @@ const MoodPicker: React.FC = () => {
 
   useEffect(() => {
     const fetchMoodHistory = async () => {
-      if (status === "loading") {
-        setLoading(true);
-        return;
+      if (status === "loading" || !isMounted) {
+         setLoading(true);
+         return;
       }
-      if (!session?.user?.email) {
+      if (status === "unauthenticated") {
         setLoading(false);
         setMoodHistory([]);
         return;
       }
-
-      setLoading(true);
-      try {
-        const res = await fetch("/api/features/mood", {
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error("Failed to fetch mood history");
-        const payload = await res.json();
-        const arr = Array.isArray(payload) ? payload : [];
-        setMoodHistory(
-          arr.map((e: { mood: string; timestamp: string }) => ({
-            mood: e.mood,
-            timestamp: new Date(e.timestamp),
-          }))
-        );
-      } catch (error) {
-        console.error("Failed to fetch mood history:", error);
-        toast.error(
-          `Failed to load mood history: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
-        setMoodHistory([]);
-      } finally {
-        setLoading(false);
+      if (session?.user?.email) {
+          setLoading(true);
+          try {
+            const res = await fetch("/api/features/mood", {
+              credentials: "include",
+            });
+            if (!res.ok) throw new Error("Failed to fetch mood history");
+            const payload = await res.json();
+            const arr = Array.isArray(payload) ? payload : [];
+            setMoodHistory(
+              arr.map((e: { mood: string; timestamp: string }) => ({
+                mood: e.mood,
+                timestamp: new Date(e.timestamp),
+              }))
+            );
+          } catch (error: unknown) {
+            console.error("Failed to fetch mood history:", error);
+            toast.error(
+              `Failed to load mood history: ${
+                error instanceof Error ? error.message : "Unknown error"
+              }`
+            );
+            setMoodHistory([]);
+          } finally {
+            setLoading(false);
+          }
+      } else {
+         setLoading(false);
+         setMoodHistory([]);
       }
     };
     fetchMoodHistory();
-  }, [session, status]);
+  }, [session, status, isMounted]);
+
 
   const handleMoodClick = (value: string) => {
     setSelectedMood(value);
@@ -359,8 +379,7 @@ const MoodPicker: React.FC = () => {
       }
       toast.success("Mood logged successfully!");
       setSelectedMood(null);
-      setShowInsights(true);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error logging mood:", error);
       toast.error(
         `Error logging mood: ${
@@ -375,20 +394,26 @@ const MoodPicker: React.FC = () => {
     setShowInsights(!showInsights);
   };
 
-  if (loading || status === "loading") {
-    return <MoodPickerSkeleton isSpecialTheme={isSpecialTheme} />;
+  const containerBaseClasses = "p-4 backdrop-blur-md rounded-xl flex flex-col h-full transition-opacity duration-300";
+  const containerPreMountClasses = "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
+  const containerPostMountClasses = isSpecialTheme
+    ? "dark bg-zinc-900/50 border border-zinc-800/50 opacity-100"
+    : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50 opacity-100";
+
+
+  if (loading || !isMounted) {
+     // Pass the boolean value correctly
+    return <MoodPickerSkeleton isSpecialTheme={!!isSpecialTheme} />;
   }
 
-  if (!session) {
+  if (!session && isMounted) {
     return (
       <div
-        className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full justify-center items-center ${
-          isSpecialTheme
-            ? "dark bg-zinc-900/50 border border-zinc-800/50"
-            : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-        }`}
+        className={`${containerBaseClasses} ${
+            isMounted ? containerPostMountClasses : containerPreMountClasses
+        } justify-center items-center`}
       >
-        <p className="text-center text-gray-600 dark:text-gray-400">
+        <p className={`text-center ${isSpecialTheme ? 'text-white/70': 'text-gray-600 dark:text-gray-400'}`}>
           Please sign in to track your mood.
         </p>
       </div>
@@ -400,26 +425,31 @@ const MoodPicker: React.FC = () => {
       <MoodInsights
         moodHistory={moodHistory}
         onBack={handleToggleInsights}
-        isSpecialTheme={isSpecialTheme}
+        isSpecialTheme={isSpecialTheme} // Pass the calculated boolean
       />
     );
   }
 
+  const moodIconBg = isSpecialTheme ? 'dark:bg-white/5' : 'bg-gray-200 dark:bg-secondary-black';
+  const moodIconText = isSpecialTheme ? 'text-white/50' : 'text-gray-500 dark:text-gray-400';
+  const moodIconHoverText = isSpecialTheme ? 'text-white/90' : 'text-gray-700 dark:text-gray-200';
+  const viewInsightsButtonColor = isSpecialTheme ? 'text-white/60 hover:text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200';
+  const logButtonInactiveBg = isSpecialTheme ? 'bg-white/10 text-white/40' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500';
+
+
   return (
     <div
-      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
-        isSpecialTheme
-          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      className={`${containerBaseClasses} ${
+          isMounted ? containerPostMountClasses : containerPreMountClasses
       }`}
     >
       <div className="flex justify-between items-center mb-6 flex-shrink-0">
-        <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
+        <h1 className={`text-sm opacity-40 ${isSpecialTheme ? 'text-white/70' : 'text-secondary-black dark:text-secondary-white'}`}>
           MOOD
         </h1>
         <button
           onClick={handleToggleInsights}
-          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+          className={`text-sm transition-colors ${viewInsightsButtonColor}`}
         >
           View Insights
         </button>
@@ -438,17 +468,13 @@ const MoodPicker: React.FC = () => {
                 onClick={() => handleMoodClick(mood.value)}
                 onMouseEnter={() => setHoveredMood(mood.value)}
                 onMouseLeave={() => setHoveredMood(null)}
-                className="flex flex-col items-center justify-center"
+                className="flex flex-col items-center justify-center cursor-pointer"
               >
                 <div
                   className={`
-                    p-2 rounded-full transition-transform duration-200 cursor-pointer
-                    ${
-                      isSelected
-                        ? mood.color
-                        : "bg-gray-200 dark:bg-secondary-black"
-                    }
-                    ${isSelected || isHovered ? "transform scale-110" : ""}
+                    p-2 rounded-full transition-transform duration-200
+                    ${isSelected ? mood.color : moodIconBg}
+                    ${isSelected || isHovered ? "transform scale-110 shadow-md" : "shadow-sm"}
                   `}
                 >
                   <IconComponent
@@ -457,8 +483,8 @@ const MoodPicker: React.FC = () => {
                       isSelected
                         ? "text-white"
                         : isHovered
-                        ? "text-gray-700 dark:text-gray-200"
-                        : "text-gray-500 dark:text-gray-400"
+                        ? moodIconHoverText
+                        : moodIconText
                     }`}
                   />
                 </div>
@@ -475,12 +501,12 @@ const MoodPicker: React.FC = () => {
                 selectedMood
                   ? `${
                       moodIcons.find((m) => m.value === selectedMood)?.color
-                    } text-white cursor-pointer hover:opacity-90 transform active:scale-95`
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-80"
+                    } text-white cursor-pointer hover:opacity-90 transform active:scale-95 shadow-md`
+                  : `${logButtonInactiveBg} cursor-not-allowed opacity-80`
               }
             `}
             onClick={handleLogMood}
-            disabled={!selectedMood || loading}
+            disabled={!selectedMood || loading } 
           >
             {selectedMood
               ? `Log ${moodIcons.find((m) => m.value === selectedMood)?.label}`
