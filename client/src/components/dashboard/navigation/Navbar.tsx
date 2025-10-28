@@ -10,10 +10,10 @@ import {
   IconShare,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 
 import lumoLogo from "../../../assets/brand/lumo-logo.svg";
-import gradientBg from "../../../../public/assets/illustrations/landing-gradient.png";
-
 import ChatPanel from "../features/ai/ChatPanel";
 
 interface StatusOption {
@@ -26,8 +26,23 @@ const Navbar: React.FC = () => {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
   const [showProfileComponent, setShowProfileComponent] = useState(false);
+  const [isMounted, setIsMounted] = useState(false); // <--- Add isMounted state
 
   const { data: session, status: sessionStatus } = useSession();
+  const { theme } = useTheme();
+
+  // Effect runs only on the client after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Calculate isSpecialTheme *after* mount
+  const isSpecialTheme =
+    isMounted &&
+    !!theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
 
   const username = session?.user?.username || "User";
   const userId = session?.user?.id;
@@ -100,7 +115,10 @@ const Navbar: React.FC = () => {
       if (showStatusMenu && !target.closest(".status-container")) {
         setShowStatusMenu(false);
       }
-      if (showProfileComponent && !target.closest(".profile-popup")) {
+      if (
+        showProfileComponent &&
+        !target.closest(".profile-popup-container")
+      ) {
         setShowProfileComponent(false);
       }
     };
@@ -124,8 +142,8 @@ const Navbar: React.FC = () => {
   }, [handleOpenChat]);
 
   const changeStatus = useCallback(
-    async (status: StatusOption) => {
-      setCurrentStatus(status);
+    async (statusOption: StatusOption) => {
+      setCurrentStatus(statusOption);
       setShowStatusMenu(false);
 
       if (sessionStatus !== "authenticated") {
@@ -136,7 +154,7 @@ const Navbar: React.FC = () => {
         const response = await fetch("/api/features/status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: status.name }),
+          body: JSON.stringify({ status: statusOption.name }),
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({
@@ -171,9 +189,32 @@ const Navbar: React.FC = () => {
 
   const handleSetConversationId = useCallback((): void => {}, []);
 
+  // Define base classes that are always present
+  const navBaseClasses =
+    "flex items-center justify-between py-2 px-2 mx-2 mt-2 backdrop-blur-md rounded-2xl transition-opacity duration-300";
+  // Define pre-mount classes (solid, maybe invisible to prevent flicker)
+  const navPreMountClasses =
+    "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
+  // Define post-mount classes based on theme
+  const navPostMountClasses = isSpecialTheme
+    ? "dark bg-zinc-900/50 border border-zinc-800/50 opacity-100" // Frosted glass for special themes
+    : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50 opacity-100"; // Standard light/dark with transparency
+
+  // Define classes for profile popup
+  const profileBaseClasses = "relative backdrop-blur-md rounded-2xl overflow-hidden transition-opacity duration-300";
+  const profilePreMountClasses = "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 opacity-0";
+  const profilePostMountClasses = isSpecialTheme
+    ? "dark bg-zinc-900/50 border border-zinc-800/50 opacity-100"
+    : "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 opacity-100";
+
   return (
     <>
-      <nav className="flex items-center justify-between py-2 px-2 mx-2 mt-2 backdrop-blur-md dark:bg-zinc-900/80 bg-transparent rounded-2xl border border-slate-200/30 dark:border-zinc-800/30">
+      <nav
+        className={`${navBaseClasses} ${
+          isMounted ? navPostMountClasses : navPreMountClasses // <--- Apply conditional classes
+        }`}
+      >
+        {/* ... rest of Navbar content (Ask Lumo button, Status, Profile Icon) ... */}
         <div className="flex items-center">
           <div className="relative">
             <button
@@ -216,7 +257,15 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {showStatusMenu && (
-                  <div className="absolute right-0 mt-1 w-36 bg-transparent dark:bg-zinc-900/80 backdrop-blur-xl rounded-xl border border-slate-200/30 dark:border-zinc-800/30 p-1.5 z-20">
+                  <div
+                    className={`absolute right-0 mt-1 w-36 backdrop-blur-md rounded-xl p-1.5 z-20 ${
+                      isMounted // Apply conditional classes to dropdown too
+                        ? isSpecialTheme
+                          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+                          : "bg-white/95 dark:bg-zinc-900/95 border border-slate-200/50 dark:border-zinc-800/50"
+                        : "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0 pointer-events-none" // Hide before mount
+                    }`}
+                  >
                     {statusOptions.map((option) => (
                       <button
                         key={option.name}
@@ -276,17 +325,14 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {showProfileComponent && (
-                  <div className="profile-popup absolute right-0 mt-2 w-80 backdrop-blur-xl bg-transparent dark:bg-zinc-900/80 rounded-2xl border border-slate-200/30 dark:border-zinc-800/30 overflow-hidden z-20">
-                    <div className="relative">
-                      <div className="absolute inset-0 opacity-60">
-                        <Image
-                          src={gradientBg}
-                          alt=""
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-
+                  <div className="profile-popup-container absolute right-0 mt-2 w-80 z-20">
+                    <div
+                      className={`${profileBaseClasses} ${
+                        isMounted
+                          ? profilePostMountClasses
+                          : profilePreMountClasses // <--- Conditional classes for profile popup
+                      }`}
+                    >
                       <div className="relative p-6">
                         <button
                           onClick={() => {}}
@@ -295,14 +341,15 @@ const Navbar: React.FC = () => {
                         >
                           <IconPencil className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         </button>
-
                         <div className="flex items-start space-x-4">
                           <div className="relative">
                             <div className="w-20 h-20 rounded-full flex items-center justify-center text-white font-semibold text-2xl overflow-hidden">
                               {session.user.image ? (
                                 <Image
                                   src={session.user.image}
-                                  alt={session.user.username || "User Avatar"}
+                                  alt={
+                                    session.user.username || "User Avatar"
+                                  }
                                   width={80}
                                   height={80}
                                   className="object-cover"
@@ -314,7 +361,16 @@ const Navbar: React.FC = () => {
                               )}
                             </div>
                             <div
-                              className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ${currentStatus.bgColor} flex items-center justify-center border-2 border-transparent dark:border-zinc-900/80`}
+                              className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ${
+                                currentStatus.bgColor
+                              } flex items-center justify-center border-2 ${
+                                // Use isMounted here too for border color consistency
+                                isMounted
+                                  ? isSpecialTheme
+                                    ? "border-zinc-900/50"
+                                    : "border-white dark:border-zinc-900"
+                                  : "border-white dark:border-zinc-900" // Default pre-mount border
+                              } `}
                             >
                               <div
                                 className={`w-2 h-2 rounded-full ${currentStatus.color}`}
@@ -339,7 +395,6 @@ const Navbar: React.FC = () => {
                             </p>
                           </div>
                         </div>
-
                         <div className="grid grid-cols-2 gap-2 mt-6">
                           <button
                             onClick={() => {}}

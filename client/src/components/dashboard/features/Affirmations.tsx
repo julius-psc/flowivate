@@ -3,10 +3,20 @@
 import { useState, useEffect, FormEvent, useRef } from "react";
 import { toast } from "sonner";
 import { X, Plus, List, RefreshCcw, Check } from "lucide-react";
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 
-const AffirmationsSkeleton = () => {
+const AffirmationsSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
+  isSpecialTheme,
+}) => {
   return (
-    <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden h-full animate-pulse">
+    <div
+      className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col overflow-hidden h-full animate-pulse ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      }`}
+    >
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded"></div>
         <div className="h-5 w-12 bg-gray-200 dark:bg-zinc-700 rounded-md"></div>
@@ -35,6 +45,13 @@ export default function Affirmations() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { theme } = useTheme();
+  const isSpecialTheme =
+    theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
 
   useEffect(() => {
     const fetchAffirmations = async () => {
@@ -219,12 +236,18 @@ export default function Affirmations() {
   };
 
   if (isLoading) {
-    return <AffirmationsSkeleton />;
+    return <AffirmationsSkeleton isSpecialTheme={isSpecialTheme} />;
   }
 
   if (error) {
     return (
-      <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden h-full items-center justify-center">
+      <div
+        className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col overflow-hidden h-full items-center justify-center ${
+          isSpecialTheme
+            ? "dark bg-zinc-900/50 border border-zinc-800/50"
+            : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+        }`}
+      >
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider absolute top-4 left-4">
           Affirmations
         </h1>
@@ -238,7 +261,13 @@ export default function Affirmations() {
   }
 
   return (
-    <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col overflow-hidden h-full">
+    <div
+      className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col overflow-hidden h-full ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      }`}
+    >
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider">
           Affirmations

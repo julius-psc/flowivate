@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-// import { useSession } from "next-auth/react"; // Removed for compatibility
 import React from "react";
 import { toast } from "sonner";
 import { Plus, Minus } from "lucide-react";
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 
-const SleepSkeleton = () => {
+const SleepSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
+  isSpecialTheme,
+}) => {
   const placeholderBarHeights = [
     "h-2.5",
     "h-10",
@@ -17,7 +20,13 @@ const SleepSkeleton = () => {
     "h-5",
   ];
   return (
-    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full animate-pulse">
+    <div
+      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full animate-pulse ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      }`}
+    >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <div className="h-3 w-12 bg-gray-200 dark:bg-zinc-700 rounded"></div>
       </div>
@@ -72,18 +81,24 @@ export default function Sleep() {
   const [weeklySleep, setWeeklySleep] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  // const { data: session, status } = useSession(); // Replaced with mock
   const [session, setSession] = useState<{ user: { email: string } } | null>(
     null
   );
   const [status, setStatus] = useState("loading");
+
+  const { theme } = useTheme();
+  const isSpecialTheme =
+    !!theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
 
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
   const currentDayIndex = (new Date().getDay() + 6) % 7;
   const [selectedDayIndex, setSelectedDayIndex] = useState(currentDayIndex);
 
   useEffect(() => {
-    // Simulate session loading for preview
+    // Simulate session loading
     const timer = setTimeout(() => {
       setSession({ user: { email: "user@example.com" } });
       setStatus("authenticated");
@@ -238,7 +253,7 @@ export default function Sleep() {
 
   const getBarHeight = (hours: number) => {
     const maxHeight = 12;
-    const chartHeight = 96; // h-24 = 6rem = 96px
+    const chartHeight = 96; // h-24
 
     if (hours <= 0) {
       return "0px";
@@ -248,12 +263,18 @@ export default function Sleep() {
   };
 
   if (loading || status === "loading") {
-    return <SleepSkeleton />;
+    return <SleepSkeleton isSpecialTheme={isSpecialTheme} />;
   }
 
   if (!session)
     return (
-      <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full justify-center items-center">
+      <div
+        className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full justify-center items-center ${
+          isSpecialTheme
+            ? "dark bg-zinc-900/50 border border-zinc-800/50"
+            : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+        }`}
+      >
         <p className="text-center text-gray-600 dark:text-gray-400">
           Please sign in to track your sleep.
         </p>
@@ -263,7 +284,13 @@ export default function Sleep() {
   const isValueUnchanged = weeklySleep[selectedDayIndex] === sleepHours;
 
   return (
-    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+    <div
+      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      }`}
+    >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
           SLEEP
@@ -346,4 +373,3 @@ export default function Sleep() {
     </div>
   );
 }
-

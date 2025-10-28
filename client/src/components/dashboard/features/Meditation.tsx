@@ -9,7 +9,9 @@ import React, {
 } from "react";
 import { IconWind, IconChevronLeft } from "@tabler/icons-react";
 import { motion } from "framer-motion";
-import { toast } from "sonner"; // Import Sonner toast
+import { toast } from "sonner";
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 
 const BreathMessage = React.memo(({ phase }: { phase: string }) => {
   const phaseMessages: { [key: string]: string } = {
@@ -33,6 +35,13 @@ const Meditation = () => {
   const [breathPhase, setBreathPhase] = useState<string>("inhale");
   const [breathProgress, setBreathProgress] = useState(0);
   const [shouldScale, setShouldScale] = useState(true);
+
+  const { theme } = useTheme();
+  const isSpecialTheme =
+    !!theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
 
   const currentCycleTimeRef = useRef(0);
   const currentPhaseRef = useRef<string>("inhale");
@@ -87,17 +96,17 @@ const Meditation = () => {
       setShouldScale(true);
       currentCycleTimeRef.current = 0;
       currentPhaseRef.current = "inhale";
-      toast.success(`Starting ${time.label} meditation.`); // Use toast on start
+      toast.success(`Starting ${time.label} meditation.`);
     },
     []
-  ); // Removed meditationTimes from dependency array as it's stable due to useMemo
+  );
 
   const exitSession = useCallback(() => {
     setIsMeditating(false);
     setSelectedTime(null);
     setTimeLeft(0);
     setBreathProgress(0);
-    toast.info("Meditation session ended."); // Use toast on exit
+    toast.info("Meditation session ended.");
   }, []);
 
   useEffect(() => {
@@ -109,7 +118,6 @@ const Meditation = () => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            // exitSession() will be called by the timeLeft === 0 check below
             return 0;
           }
           return prev - 1;
@@ -141,7 +149,7 @@ const Meditation = () => {
           setShouldScale(true);
         } else if (currentPhaseRef.current === "hold-exhale") {
           setBreathProgress(0);
-          setShouldScale(false);
+          setShouldScale(false); // Changed to false for consistency? Or was it intended? Let's keep it false as original.
         }
 
         if (currentCycleTimeRef.current >= currentPhaseCfg.duration) {
@@ -153,9 +161,8 @@ const Meditation = () => {
           currentCycleTimeRef.current = 0;
           setBreathPhase(currentPhaseRef.current);
         }
-      }, 1000); // Using 1000ms for breath timer for simplicity, adjust if needed for smoother animation
+      }, 1000);
     } else if (timeLeft === 0 && isMeditating) {
-      // Ensure exitSession is called only once when timeLeft hits 0
       exitSession();
     }
 
@@ -172,7 +179,13 @@ const Meditation = () => {
   };
 
   return (
-    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+    <div
+      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      }`}
+    >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
           BREATHING
@@ -196,7 +209,7 @@ const Meditation = () => {
             {meditationTimes.map((time) => (
               <button
                 key={time.label}
-                onClick={() => startMeditation(time)} // Pass the whole time object
+                onClick={() => startMeditation(time)}
                 className="w-full max-w-[220px] px-4 py-3 flex items-center justify-between bg-secondary-black text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-600"
               >
                 <span>{time.label}</span>
@@ -222,7 +235,7 @@ const Meditation = () => {
           <div className="flex-1 flex items-center justify-center my-8">
             <div className="relative flex items-center justify-center w-44 h-44">
               <motion.div
-                className="absolute rounded-full bg-blue-100 dark:bg-blue-900/50"
+                className="absolute w-full h-full rounded-full bg-blue-100 dark:bg-blue-900/50" // Added w-full h-full
                 initial={{ scale: 0.5 }}
                 animate={{
                   scale: shouldScale
@@ -231,10 +244,10 @@ const Meditation = () => {
                       : 0.5 + breathProgress * 0.9
                     : breathPhase === "hold-exhale"
                     ? 0.5
-                    : 1.4,
+                    : 1.4, // Fallback scale when not scaling, might need adjustment
                 }}
                 transition={{ duration: 1, ease: "easeInOut" }}
-                style={{ width: "100%", height: "100%" }}
+                // Removed style prop with width/height
               />
 
               <motion.div
@@ -245,7 +258,7 @@ const Meditation = () => {
                     ? 0.85 + breathProgress * 0.2
                     : breathPhase === "hold-exhale"
                     ? 0.85
-                    : 1.05,
+                    : 1.05, // Fallback scale
                 }}
                 transition={{ duration: 1, ease: "easeInOut" }}
               >

@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { IconArrowUpRight, IconBook2 } from "@tabler/icons-react";
 import Link from "next/link";
-import { toast } from "sonner"; // Import Sonner toast
+import { toast } from "sonner";
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 
 interface Book {
   _id: string;
@@ -14,11 +16,19 @@ interface Book {
   dateAdded: string;
 }
 
-const BooksSkeleton = () => {
+const BooksSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
+  isSpecialTheme,
+}) => {
   const numberOfPlaceholderBooks = 4;
 
   return (
-    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full animate-pulse">
+    <div
+      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full animate-pulse ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      }`}
+    >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <div className="h-3 w-12 bg-gray-200 dark:bg-zinc-700 rounded"></div>
         <div className="h-7 w-24 bg-gray-300 dark:bg-zinc-600 rounded-md"></div>
@@ -49,12 +59,16 @@ const BooksSkeleton = () => {
 const Books: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  // const [error, setError] = useState<string | null>(null); // REMOVE error state
+  const { theme } = useTheme();
+  const isSpecialTheme =
+    !!theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
 
   useEffect(() => {
     const fetchBooks = async () => {
       setLoading(true);
-      // setError(null); // REMOVE
       try {
         const response = await fetch("/api/features/books");
 
@@ -70,10 +84,8 @@ const Books: React.FC = () => {
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "An unknown error occurred";
-        // setError(`Error loading books: ${errorMessage}`); // REMOVE
-        toast.error(`Error loading books: ${errorMessage}`); // Use toast
+        toast.error(`Error loading books: ${errorMessage}`);
         console.error("Fetch Books Error:", err);
-        // Keep books potentially empty on error
         setBooks([]);
       } finally {
         setLoading(false);
@@ -112,22 +124,17 @@ const Books: React.FC = () => {
   };
 
   if (loading) {
-    return <BooksSkeleton />;
+    return <BooksSkeleton isSpecialTheme={isSpecialTheme} />;
   }
 
-  // REMOVE error state rendering block
-  // if (error) {
-  //   return (
-  //     <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full items-center justify-center">
-  //       <p className="text-center text-red-500 dark:text-red-400 text-sm">
-  //         {error}
-  //       </p>
-  //     </div>
-  //   );
-  // }
-
   return (
-    <div className="p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+    <div
+      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      }`}
+    >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
           BOOKS
@@ -144,7 +151,7 @@ const Books: React.FC = () => {
         {recentBooks.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
-              {loading ? "" : "No books added yet"} {/* Avoid flicker during load/error */}
+              {loading ? "" : "No books added yet"}
             </p>
           </div>
         ) : (

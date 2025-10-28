@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { useTheme } from "next-themes";
 import {
   Clock,
   X,
@@ -23,12 +24,12 @@ import {
   AmbientSoundName,
   ambientSoundNames,
 } from "@/hooks/useAmbientSound";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
+import { toast } from "sonner";
 
-// Extend the type to include setVolume if missing
 type AmbientSoundHookWithVolume = ReturnType<typeof useAmbientSound> & {
   setVolume?: (volume: number) => void;
 };
-import { toast } from "sonner";
 
 type SetupStep = "idle" | "task" | "duration" | "music" | "active";
 
@@ -45,10 +46,10 @@ const inputClassName =
 
 const DeepWork: React.FC = () => {
   const { data: session, status } = useSession();
+  const { theme } = useTheme();
   const queryKey = ["tasks", session?.user?.id];
   const componentRef = useRef<HTMLDivElement>(null);
 
-  // State
   const [setupStep, setSetupStep] = useState<SetupStep>("idle");
   const [, setIsFullscreen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
@@ -65,15 +66,18 @@ const DeepWork: React.FC = () => {
   const [timerIntervalId, setTimerIntervalId] = useState<NodeJS.Timeout | null>(
     null
   );
-  // --- NEW: Volume state ---
-  const [volume, setVolume] = useState<number>(0.5); // Default volume (0 to 1)
+  const [volume, setVolume] = useState<number>(0.5);
 
-  // Hooks
   const ambientSoundHook = useAmbientSound() as AmbientSoundHookWithVolume;
   const customTaskInputRef = useRef<HTMLInputElement>(null);
   const customDurationInputRef = useRef<HTMLInputElement>(null);
 
-  // Task Fetching
+  const isSpecialTheme =
+    theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
+
   const {
     data: taskLists = [],
     isLoading: isLoadingTasks,
@@ -102,7 +106,6 @@ const DeepWork: React.FC = () => {
     }
   }, [isErrorTasks, errorTasks]);
 
-  // Timer Logic
   const formatTime = (date: Date): string => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
@@ -116,7 +119,6 @@ const DeepWork: React.FC = () => {
       .padStart(2, "0")}`;
   };
 
-  // Fullscreen Logic
   const enterFullscreen = useCallback(() => {
     if (componentRef.current && !document.fullscreenElement) {
       componentRef.current.requestFullscreen().catch((err) => {
@@ -148,7 +150,6 @@ const DeepWork: React.FC = () => {
     };
   }, []);
 
-  // Callbacks
   const stopTimer = useCallback(() => {
     if (timerIntervalId) {
       clearInterval(timerIntervalId);
@@ -169,7 +170,7 @@ const DeepWork: React.FC = () => {
     setCustomDurationInput("");
     setIsCustomDurationSelected(false);
     setSetupStep("idle");
-    setVolume(0.5); // --- NEW: Reset volume to default ---
+    setVolume(0.5);
   }, [stopTimer, ambientSoundHook, exitFullscreen]);
 
   const handleSessionEnd = useCallback(() => {
@@ -216,7 +217,6 @@ const DeepWork: React.FC = () => {
     toast.info("Focus session ended.");
   }, [resetState]);
 
-  // State Transitions and Actions
   const handleStartSetup = () => setSetupStep("task");
 
   const handleSelectTaskListTask = (task: Task) => {
@@ -313,7 +313,7 @@ const DeepWork: React.FC = () => {
       ambientSoundHook.currentSound !== "None"
     ) {
       ambientSoundHook.playSound();
-      ambientSoundHook.setVolume?.(volume); // --- NEW: Set initial volume ---
+      ambientSoundHook.setVolume?.(volume);
     }
     setSetupStep("active");
     toast.success(`Focus session started for ${selectedTask.name}`);
@@ -324,15 +324,14 @@ const DeepWork: React.FC = () => {
     startTimer,
     ambientSoundHook,
     resetState,
-    volume, // --- NEW: Added volume dependency ---
+    volume,
   ]);
 
-  // --- NEW: Handle volume change ---
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
     if (ambientSoundHook.setVolume) {
-      ambientSoundHook.setVolume(newVolume); // Update volume in the hook
+      ambientSoundHook.setVolume(newVolume);
     }
   };
 
@@ -345,7 +344,6 @@ const DeepWork: React.FC = () => {
     };
   }, [timerIntervalId, exitFullscreen]);
 
-  // Render Logic
   const renderIdle = () => (
     <div className="flex flex-col items-center justify-center gap-6 py-4 w-full h-full">
       <div className="flex flex-col items-center gap-2">
@@ -463,9 +461,7 @@ const DeepWork: React.FC = () => {
               }}
               onBlur={() => {
                 if (customTaskName.trim()) {
-                  // No action needed on blur if valid
                 } else {
-                  // No action needed if empty
                 }
               }}
               placeholder="Enter custom task name"
@@ -675,7 +671,6 @@ const DeepWork: React.FC = () => {
                   <VolumeX size={18} />
                 )}
               </button>
-              {/* --- NEW: Volume Slider --- */}
               <input
                 type="range"
                 min="0"
@@ -747,9 +742,13 @@ const DeepWork: React.FC = () => {
   return (
     <div
       ref={componentRef}
-      className={`relative rounded-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/50 dark:border-zinc-800/50 ${
+      className={`relative rounded-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out backdrop-blur-md ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border-slate-200/50 dark:border-zinc-800/50"
+      } ${
         setupStep === "active"
-          ? "h-full !bg-secondary-white dark:!bg-secondary-black !border-transparent"
+          ? "h-full !bg-secondary-white dark:!bg-secondary-black !border-transparent !backdrop-blur-none"
           : setupStep === "idle"
           ? "h-80"
           : "h-[500px]"

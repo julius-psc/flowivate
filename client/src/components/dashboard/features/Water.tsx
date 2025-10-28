@@ -4,10 +4,20 @@ import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Plus, Minus, Pencil, X, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 
-const WaterSkeleton = () => {
+const WaterSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
+  isSpecialTheme,
+}) => {
   return (
-    <div className="p-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full animate-pulse">
+    <div
+      className={`p-3 backdrop-blur-md rounded-xl flex flex-col h-full animate-pulse ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      }`}
+    >
       <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-gray-200 dark:bg-zinc-700 rounded"></div>
@@ -49,6 +59,13 @@ const Water = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(true);
   const { status } = useSession();
+  const { theme } = useTheme();
+
+  const isSpecialTheme =
+    !!theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
 
   const increment = 250;
 
@@ -67,7 +84,7 @@ const Water = () => {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(
               errorData.message ||
-                `Failed to fetch water data (${response.status})`,
+                `Failed to fetch water data (${response.status})`
             );
           }
 
@@ -157,7 +174,7 @@ const Water = () => {
 
       if (!response.ok) {
         throw new Error(
-          result.message || `Failed to save data (${response.status})`,
+          result.message || `Failed to save data (${response.status})`
         );
       }
 
@@ -180,11 +197,17 @@ const Water = () => {
     isFetching || isLoading || status !== "authenticated" || isEditingGoal;
 
   if (status === "loading" || isFetching) {
-    return <WaterSkeleton />;
+    return <WaterSkeleton isSpecialTheme={isSpecialTheme} />;
   }
 
   return (
-    <div className="p-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+    <div
+      className={`p-3 backdrop-blur-md rounded-xl flex flex-col h-full ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      }`}
+    >
       <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div className="flex items-center gap-2">
           <h1 className="text-xs text-secondary-black dark:text-secondary-white opacity-40">
