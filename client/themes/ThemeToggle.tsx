@@ -1,62 +1,13 @@
-'use client';
+"use client";
 
-import React, { useCallback, useEffect, useState } from 'react';
-import { useTheme } from 'next-themes';
-import { Loader2 } from 'lucide-react';
-
-const themeConfigs = [
-  {
-    name: 'default',
-    color: '#0075C4',
-    label: 'Default',
-    bgUrl: "/assets/illustrations/gradient-bg-blue.svg",
-  },
-  {
-    name: 'forest',
-    color: '#48AC5C',
-    label: 'Forest',
-    bgUrl: "/assets/illustrations/gradient-bg-forest.svg",
-  },
-  {
-    name: 'candy',
-    color: '#f9a8d4',
-    label: 'Candy',
-    bgUrl: "/assets/illustrations/gradient-bg-candy.svg",
-  },
-  {
-    name: 'sunset',
-    color: '#FF7043',
-    label: 'Sunset',
-    bgUrl: "/assets/illustrations/gradient-bg-sunset.svg",
-  },
-  {
-    name: 'teal',
-    color: '#26A69A',
-    label: 'Teal',
-    bgUrl: "/assets/illustrations/gradient-bg-teal.svg",
-  },
-  {
-    name: 'desert',
-    color: '#FFB74D',
-    label: 'Desert',
-    bgUrl: "/assets/illustrations/gradient-bg-desert.svg",
-  },
-] as const;
-
-const specialSceneThemes = [
-  {
-    name: 'jungle',
-    color: '#81C784',
-    label: 'Jungle',
-  },
-  {
-    name: 'ocean',
-    color: '#26A69A',
-    label: 'Ocean',
-  },
-] as const;
-
-type ThemeName = (typeof themeConfigs | typeof specialSceneThemes)[number]['name'];
+import React, { useCallback, useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import { Loader2 } from "lucide-react";
+import {
+  themeConfigs,
+  specialSceneThemes,
+  type ThemeName,
+} from "@/lib/themeConfig";
 
 const ThemeToggle: React.FC = () => {
   const { theme, setTheme } = useTheme();
@@ -66,9 +17,12 @@ const ThemeToggle: React.FC = () => {
     setIsMounted(true);
   }, []);
 
-  const handleThemeSelection = useCallback((newTheme: ThemeName) => {
-    setTheme(newTheme);
-  }, [setTheme]);
+  const handleThemeSelection = useCallback(
+    (newTheme: ThemeName) => {
+      setTheme(newTheme);
+    },
+    [setTheme]
+  );
 
   if (!isMounted) {
     return (
@@ -84,9 +38,12 @@ const ThemeToggle: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* First row: Color themes */}
       <div>
-        <div className="flex items-center space-x-3 p-1" role="radiogroup" aria-label="Color Theme selection">
+        <div
+          className="flex items-center space-x-3 p-1"
+          role="radiogroup"
+          aria-label="Color Theme selection"
+        >
           {themeConfigs.map((themeConfig) => (
             <button
               key={themeConfig.name}
@@ -99,9 +56,10 @@ const ThemeToggle: React.FC = () => {
                 transition-all duration-200 ease-in-out
                 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950
                 focus:ring-secondary-black dark:focus:ring-secondary-white
-                ${theme === themeConfig.name
-                  ? 'ring-2 ring-secondary-black dark:ring-secondary-white ring-offset-1 dark:ring-offset-gray-800 scale-110 shadow-md'
-                  : 'hover:scale-110 hover:shadow-sm'
+                ${
+                  theme === themeConfig.name
+                    ? "ring-2 ring-secondary-black dark:ring-secondary-white ring-offset-1 dark:ring-offset-gray-800 scale-110 shadow-md"
+                    : "hover:scale-110 hover:shadow-sm"
                 }
               `}
               style={{ backgroundColor: themeConfig.color }}
@@ -112,9 +70,10 @@ const ThemeToggle: React.FC = () => {
         </div>
       </div>
 
-      {/* Second row: Scene themes */}
       <div className="flex flex-col items-start">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1">Scene Themes:</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1">
+          Scene Themes:
+        </span>
         <div className="flex items-center space-x-3 p-1">
           {specialSceneThemes.map((sceneTheme) => (
             <button
@@ -129,7 +88,11 @@ const ThemeToggle: React.FC = () => {
                 style={{ backgroundColor: sceneTheme.color }}
                 className={`
                   w-12 h-8 rounded border border-gray-300 dark:border-gray-600 group-hover:shadow-md transition-shadow duration-150
-                  ${theme === sceneTheme.name ? 'ring-2 ring-secondary-black dark:ring-secondary-white' : ''}
+                  ${
+                    theme === sceneTheme.name
+                      ? "ring-2 ring-secondary-black dark:ring-secondary-white"
+                      : ""
+                  }
                 `}
                 aria-hidden="true"
               />

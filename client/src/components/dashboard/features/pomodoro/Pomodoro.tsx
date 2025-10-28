@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, FormEvent } from "react";
+import { useTheme } from "next-themes";
 import { usePomodoroContext, PomodoroSettings } from "./PomodoroContext";
 import { PomodoroSkeleton } from "./PomodoroSkeleton";
 import {
@@ -13,6 +14,7 @@ import {
   IconPlus,
   IconMinus,
 } from "@tabler/icons-react";
+import { specialSceneThemeNames } from "@/lib/themeConfig"; // Adjust path as needed
 
 const Pomodoro: React.FC = () => {
   const {
@@ -32,11 +34,18 @@ const Pomodoro: React.FC = () => {
     saveSettings,
   } = usePomodoroContext();
 
+  const { theme } = useTheme();
   const [showSettings, setShowSettings] = useState(false);
   const [showResetMenu, setShowResetMenu] = useState(false);
   const settingsFormRef = useRef<HTMLFormElement>(null);
   const resetMenuRef = useRef<HTMLDivElement>(null);
   const resetBtnRef = useRef<HTMLButtonElement>(null);
+
+  const isSpecialTheme =
+    theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -120,7 +129,13 @@ const Pomodoro: React.FC = () => {
   if (isLoading) return <PomodoroSkeleton />;
 
   return (
-    <div className="relative p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-zinc-800/50 flex flex-col h-full">
+    <div
+      className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
+        isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+      }`}
+    >
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
           FOCUS TIMER
@@ -302,7 +317,7 @@ const Pomodoro: React.FC = () => {
                         ) as HTMLInputElement | null;
                         inp?.stepUp();
                       }}
-                      className="p-1 rounded-full bg-accent-lightgrey/20 dark:bg-accent-grey/20 text-secondary-black dark:text-secondary-white hover:bg-accent-lightgrey/30 dark:hover:bg-accent-grey/30"
+className="p-1 rounded-full bg-accent-lightgrey/20 dark:bg-accent-grey/20 text-secondary-black dark:text-secondary-white hover:bg-accent-lightgrey/30 dark:hover:bg-accent-grey/30"
                     >
                       <IconPlus size={16} />
                     </button>
