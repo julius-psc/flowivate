@@ -1,8 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { auth } from "@/lib/auth";
 import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
-import { authOptions } from "@/lib/authOptions";
 import { parse, isValid as isValidDateFn, format } from "date-fns";
 import { checkRateLimit } from "@/lib/checkRateLimit";
 
@@ -24,7 +23,7 @@ interface JournalEntryResponse {
   updatedAt: string;
 }
 
-const MAX_CONTENT_LENGTH = 10000; // Max length for journal content
+const MAX_CONTENT_LENGTH = 10000;
 const DEFAULT_DB_NAME = process.env.MONGODB_DB || "Flowivate";
 
 function isValidDateString(dateStr: string): boolean {
@@ -37,7 +36,7 @@ function isValidDateString(dateStr: string): boolean {
 
 function isValidObjectId(id: string): boolean {
   if (typeof id !== "string") return false;
-  return ObjectId.isValid(id) && new ObjectId(id).toString() === id; // More robust check
+  return ObjectId.isValid(id) && new ObjectId(id).toString() === id;
 }
 
 function logApiError(
@@ -58,7 +57,7 @@ function logApiError(
     errorMessage = error.message;
     errorDetails.errorName = error.name;
     errorDetails.errorMessage = error.message;
-    errorDetails.errorStack = error.stack; // Logged server-side only
+    errorDetails.errorStack = error.stack;
     if ((error as { cause?: unknown }).cause) {
       errorDetails.errorCause = (error as { cause?: unknown }).cause;
     }
@@ -106,7 +105,7 @@ export async function GET(
       );
     }
 
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     sessionUserId = session?.user?.id;
     if (!sessionUserId) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -176,7 +175,7 @@ export async function PUT(
       );
     }
 
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     sessionUserId = session?.user?.id;
     if (!sessionUserId) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -312,7 +311,7 @@ export async function DELETE(
       );
     }
 
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     sessionUserId = session?.user?.id;
     if (!sessionUserId) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });

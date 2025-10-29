@@ -6,6 +6,7 @@ import { featureComponents } from "@/components/dashboard/features/featureMap";
 import TimeDisplay from "@/components/dashboard/TimeDisplay";
 import Link from "next/link";
 import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 import {
   IconEyeOff,
   IconGripVertical,
@@ -47,16 +48,23 @@ export default function DashboardClient({
     setMounted(true);
   }, []);
 
+  const isSpecialTheme =
+    mounted &&
+    !!theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
+
   const emptyTextColor = !mounted
     ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white"
+    : isSpecialTheme
+    ? "text-white/70"
     : "text-gray-500 dark:text-gray-400";
 
   const addFeaturesTextColor = !mounted
     ? "text-transparent"
-    : theme === "jungle" || theme === "ocean"
-    ? "text-white hover:text-white/80"
+    : isSpecialTheme
+    ? "text-white hover:text-white/80" 
     : "text-secondary-black dark:text-secondary-white hover:text-secondary-black/80 dark:hover:text-secondary-white/80";
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -79,6 +87,10 @@ export default function DashboardClient({
     640: 1,
   };
 
+   if (!mounted) {
+     return <div className="w-full h-full flex-1 flex flex-col items-center justify-center">Loading Dashboard...</div>;
+   }
+
   return (
     <div className="w-full h-full flex-1 flex flex-col">
       {selectedFeatures.length === 0 ? (
@@ -90,7 +102,7 @@ export default function DashboardClient({
             </p>
             <Link
               href="/dashboard/features"
-              className="flex items-center gap-2 px-6 transition-colors text-primary-white hover:text-primary-black focus:outline-none"
+              className="flex items-center gap-2 px-6 transition-colors focus:outline-none"
             >
               <div
                 className={`flex justify-center items-center font-medium ${addFeaturesTextColor}`}
@@ -120,7 +132,7 @@ export default function DashboardClient({
               <Masonry
                 breakpointCols={breakpointColumnsObj}
                 className="flex p-4"
-                columnClassName="flex flex-col"
+                columnClassName="flex flex-col px-2"
               >
                 {selectedFeatures.map((featureKey) => {
                   const { component: FeatureComponent, isPro } =
@@ -130,6 +142,7 @@ export default function DashboardClient({
                       key={featureKey}
                       id={featureKey}
                       onRemove={() => removeFeature(featureKey)}
+                      isSpecialTheme={isSpecialTheme}
                       FeatureComponent={() => (
                         <WithProGuard
                           subscriptionStatus={subscriptionStatus}
@@ -146,7 +159,11 @@ export default function DashboardClient({
 
             <DragOverlay>
               {activeId && (
-                <div className="rounded-xl border border-dashed border-gray-400 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 p-3 shadow-lg">
+                <div className={`rounded-xl p-3 shadow-lg ${
+                    isSpecialTheme
+                    ? "dark bg-zinc-800/70 border border-zinc-700/50 backdrop-blur-lg" // Slightly darker frost for overlay
+                    : "bg-white/90 dark:bg-gray-800/90 border border-gray-400 dark:border-gray-700 backdrop-blur-sm"
+                }`}>
                   {React.createElement(featureComponents[activeId].component)}
                 </div>
               )}
@@ -162,12 +179,14 @@ interface SortableFeatureProps {
   id: string;
   FeatureComponent: React.FC;
   onRemove: () => void;
+  isSpecialTheme: boolean;
 }
 
 function SortableFeature({
   id,
   FeatureComponent,
   onRemove,
+  isSpecialTheme, 
 }: SortableFeatureProps) {
   const {
     attributes,
@@ -183,36 +202,50 @@ function SortableFeature({
     transition: transition || undefined,
     zIndex: isDragging ? 50 : "auto",
     opacity: isDragging ? 0.5 : 1,
+    marginBottom: '1rem', 
   };
+
+  const buttonsContainerBg = isSpecialTheme
+      ? "bg-zinc-900/60 dark:bg-zinc-900/60 border-zinc-800/50"
+      : "bg-white/50 dark:bg-gray-900/50 border-white/30 dark:border-gray-700/30";
+  const buttonIconColor = isSpecialTheme
+      ? "text-white/70 dark:text-white/70"
+      : "text-gray-600 dark:text-gray-300";
+   const buttonHoverIconColor = isSpecialTheme
+      ? "hover:text-white dark:hover:text-white"
+      : "hover:text-gray-800 dark:hover:text-gray-100";
+   const deleteHoverColor = isSpecialTheme
+      ? "hover:text-red-400 dark:hover:text-red-400"
+      : "hover:text-red-500 dark:hover:text-red-400";
+   const separatorColor = isSpecialTheme ? "bg-white/30" : "bg-gray-400 dark:bg-gray-500";
+
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className="relative group rounded-xl transition-all duration-200 ease-in-out bg-background break-inside-avoid"
+      className="relative group transition-all duration-200 ease-in-out break-inside-avoid"
     >
-      {/* Top buttons */}
-      <div className="absolute -top-4 -right-2 opacity-0 group-hover:opacity-100 flex items-center gap-2 backdrop-blur-lg bg-white/20 dark:bg-gray-900/20 border border-white/30 dark:border-gray-700/30 rounded-full px-3 py-1.5 shadow-lg transition-all duration-200 z-40">
+      <div className={`absolute -top-3 right-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 flex items-center gap-1.5 backdrop-blur-lg border rounded-full px-2 py-1 shadow-md transition-all duration-200 z-40 ${buttonsContainerBg}`}>
         <button
           onClick={onRemove}
-          className="text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 rounded-full p-1 transition-colors"
+          className={`rounded-full p-1 transition-colors ${buttonIconColor} ${deleteHoverColor}`}
           aria-label={`Hide ${id} feature`}
         >
           <IconEyeOff size={16} />
         </button>
-        <div className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
+        <div className={`w-px h-3 ${separatorColor}`}></div> 
         <div
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 p-1 rounded-full transition-colors"
+          className={`cursor-grab active:cursor-grabbing p-1 rounded-full transition-colors ${buttonIconColor} ${buttonHoverIconColor}`}
           aria-label={`Drag ${id} feature`}
         >
           <IconGripVertical size={16} />
         </div>
       </div>
 
-      {/* Actual Feature */}
-      <div className="p-2">
+      <div>
         <FeatureComponent />
       </div>
     </div>

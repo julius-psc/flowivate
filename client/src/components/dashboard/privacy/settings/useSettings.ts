@@ -8,7 +8,7 @@ import {
   useMemo,
 } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { StatusMessage, Theme, StylingClasses, TabId } from "./types";
+import type { StatusMessage, Theme, StylingClasses, TabId } from "./types";
 
 export const useSettings = () => {
   const {
@@ -29,14 +29,6 @@ export const useSettings = () => {
     message: null,
   });
 
-  const [isEditingPassword, setIsEditingPassword] = useState<boolean>(false);
-  const [currentPassword, setCurrentPassword] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState<string>("");
-
   const [dirtyTabs, setDirtyTabs] = useState<Set<TabId>>(new Set());
 
   const markDirtyForTab = useCallback((tab: TabId) => {
@@ -46,6 +38,7 @@ export const useSettings = () => {
       return next;
     });
   }, []);
+
   const clearDirtyForTab = useCallback((tab: TabId) => {
     setDirtyTabs((prev) => {
       if (!prev.has(tab)) return prev;
@@ -54,14 +47,13 @@ export const useSettings = () => {
       return next;
     });
   }, []);
+
   const clearAllDirty = useCallback(() => setDirtyTabs(new Set()), []);
 
   useLayoutEffect(() => {
     const root = document.documentElement;
     if (theme === "system") {
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       root.classList.toggle("dark", prefersDark);
     } else {
       root.classList.toggle("dark", theme === "dark");
@@ -83,30 +75,18 @@ export const useSettings = () => {
 
   const clearStatusMessage = useCallback(
     () => setStatusMessage({ type: null, message: null }),
-    [],
+    []
   );
+
   useEffect(() => {
-    let timerId: NodeJS.Timeout | null = null;
-    if (statusMessage.type && statusMessage.message)
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+    if (statusMessage.type && statusMessage.message) {
       timerId = setTimeout(clearStatusMessage, 3500);
+    }
     return () => {
       if (timerId) clearTimeout(timerId);
     };
   }, [statusMessage, clearStatusMessage]);
-
-  const cancelEditPassword = () => {
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setIsEditingPassword(false);
-    setStatusMessage({ type: null, message: null });
-  };
-
-  const cancelDeleteAccount = () => {
-    setShowDeleteConfirm(false);
-    setDeleteConfirmText("");
-    setStatusMessage({ type: null, message: null });
-  };
 
   const styling: StylingClasses = useMemo(
     () => ({
@@ -132,8 +112,13 @@ export const useSettings = () => {
         "text-xl font-semibold text-gray-900 dark:text-gray-100",
       sectionDescriptionClasses: "text-sm text-gray-500 dark:text-gray-400 mt-1",
     }),
-    [],
+    []
   );
+
+  // Expose a no-op cancel hook useful for external callers (e.g., closing Danger tab)
+  const cancelDeleteAccount = useCallback(() => {
+    clearStatusMessage();
+  }, [clearStatusMessage]);
 
   return {
     theme,
@@ -144,25 +129,12 @@ export const useSettings = () => {
     session,
     sessionStatus: status,
     updateSession,
-    isEditingPassword,
-    setIsEditingPassword,
-    currentPassword,
-    setCurrentPassword,
-    newPassword,
-    setNewPassword,
-    confirmPassword,
-    setConfirmPassword,
-    cancelEditPassword,
-    showDeleteConfirm,
-    setShowDeleteConfirm,
-    deleteConfirmText,
-    setDeleteConfirmText,
-    cancelDeleteAccount,
     styling,
     signOut,
     dirtyTabs,
     markDirtyForTab,
     clearDirtyForTab,
     clearAllDirty,
+    cancelDeleteAccount,
   };
 };

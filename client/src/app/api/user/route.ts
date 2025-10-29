@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import connectDB from "@/lib/mongoose";
-import { authOptions } from "@/lib/authOptions";
+import { auth } from "@/lib/auth";
 import User from "../../models/User";
 
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_USERNAME_LENGTH = 30;
 const MAX_EMAIL_LENGTH = 100;
 const BCRYPT_SALT_ROUNDS = 10;
+const EMAIL_VERIFICATION_TOKEN_EXPIRES = 60 * 60 * 1000;
 
 interface ProfileUpdateBody {
   username?: string;
@@ -21,6 +22,10 @@ interface PasswordUpdateBody {
   newPassword: string;
 }
 
+interface DeleteBody {
+  currentPassword?: string;
+}
+
 const isValidEmail = (email: string): boolean =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -28,14 +33,15 @@ const isValidObjectId = (id: string): boolean =>
   mongoose.Types.ObjectId.isValid(id);
 
 async function getUserObjectId(): Promise<mongoose.Types.ObjectId | null> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id || !isValidObjectId(session.user.id)) {
-    console.error(`Invalid or missing user ID in session: ${session?.user?.id ?? "none"}`);
+    console.error(
+      `Invalid or missing user ID in session: ${session?.user?.id ?? "none"}`
+    );
     return null;
   }
   return new mongoose.Types.ObjectId(session.user.id);
 }
-
 
 export async function GET() {
   const userObjectId = await getUserObjectId();
@@ -48,21 +54,14 @@ export async function GET() {
 
   await connectDB();
 
-  // findById returns a Document with createdAt on it
-  const user = await User.findById(userObjectId)
-    .select("createdAt")
-    .exec();
+  const user = await User.findById(userObjectId).select("createdAt").exec();
 
   if (!user) {
     return NextResponse.json({ message: "User not found" }, { status: 404 });
   }
 
-  return NextResponse.json(
-    { joinedDate: user.createdAt },
-    { status: 200 }
-  );
+  return NextResponse.json({ joinedDate: user.createdAt }, { status: 200 });
 }
-
 
 export async function PUT(request: NextRequest) {
   const userObjectId = await getUserObjectId();
@@ -91,7 +90,8 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const updateData: ProfileUpdateBody = {};
+  await connectDB();
+
   if (username) {
     const trimmed = username.trim();
     if (trimmed.length < 3 || trimmed.length > MAX_USERNAME_LENGTH) {
@@ -100,8 +100,39 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    updateData.username = trimmed;
+
+    const conflict = await User.findOne({
+      username: trimmed,
+      _id: { $ne: userObjectId },
+    }).lean();
+
+    if (conflict) {
+      return NextResponse.json(
+        { message: "Username already taken" },
+        { status: 409 }
+      );
+    }
+
+    const updated = await User.findByIdAndUpdate(
+      userObjectId,
+      { $set: { username: trimmed } },
+      { new: true, runValidators: true, select: "username" }
+    ).exec();
+
+    if (!updated) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Profile updated successfully",
+        user: { username: updated.username },
+      },
+      { status: 200 }
+    );
   }
+
   if (email) {
     const lower = email.trim().toLowerCase();
     if (!isValidEmail(lower) || lower.length > MAX_EMAIL_LENGTH) {
@@ -110,53 +141,59 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    updateData.email = lower;
-  }
 
-  await connectDB();
+    const user = await User.findById(userObjectId);
+    if (!user) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
 
-  // check for uniqueness
-  if (updateData.username || updateData.email) {
+    if (lower === user.email) {
+      return NextResponse.json(
+        { message: "This is already your current email" },
+        { status: 400 }
+      );
+    }
+
     const conflict = await User.findOne({
-      $or: [
-        ...(updateData.username ? [{ username: updateData.username }] : []),
-        ...(updateData.email ? [{ email: updateData.email }] : []),
-      ],
+      email: lower,
       _id: { $ne: userObjectId },
     }).lean();
+
     if (conflict) {
       return NextResponse.json(
-        {
-          message:
-            conflict.email === updateData.email
-              ? "Email already in use"
-              : "Username already taken",
-        },
+        { message: "Email already in use" },
         { status: 409 }
       );
     }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    user.pendingEmail = lower;
+    user.emailVerificationToken = hashedToken;
+    user.emailVerificationTokenExpires = new Date(
+      Date.now() + EMAIL_VERIFICATION_TOKEN_EXPIRES
+    );
+    await user.save();
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const verificationLink = `${baseUrl}/api/user/verify-email?token=${token}`;
+    console.log(
+      "[DEV] Email change verification link:",
+      verificationLink
+    );
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: `Verification email sent to ${lower}. Please check your inbox.`,
+      },
+      { status: 200 }
+    );
   }
 
-  const updated = await User.findByIdAndUpdate(
-    userObjectId,
-    { $set: updateData },
-    { new: true, runValidators: true, select: "email username" }
-  ).exec();
-
-  if (!updated) {
-    return NextResponse.json({ message: "User not found" }, { status: 404 });
-  }
-
-  return NextResponse.json(
-    {
-      success: true,
-      message: "Profile updated successfully",
-      user: { email: updated.email, username: updated.username },
-    },
-    { status: 200 }
-  );
+  return NextResponse.json({ message: "Invalid request" }, { status: 400 });
 }
-
 
 export async function PATCH(request: NextRequest) {
   const userObjectId = await getUserObjectId();
@@ -227,8 +264,7 @@ export async function PATCH(request: NextRequest) {
   );
 }
 
-
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   const userObjectId = await getUserObjectId();
   if (!userObjectId) {
     return NextResponse.json(
@@ -237,20 +273,59 @@ export async function DELETE() {
     );
   }
 
+  let body: DeleteBody = {};
+  try {
+    body = await request.json();
+  } catch {}
+  const { currentPassword } = body;
+
   await connectDB();
+
+  const user = await User.findById(userObjectId).select("password").exec();
+  if (!user) {
+    return NextResponse.json({ message: "User not found" }, { status: 404 });
+  }
+
+  if (user.password) {
+    if (!currentPassword) {
+      return NextResponse.json(
+        { message: "Password confirmation required to delete account" },
+        { status: 400 }
+      );
+    }
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return NextResponse.json(
+        { message: "Incorrect password" },
+        { status: 401 }
+      );
+    }
+  }
+
   const session = await mongoose.startSession();
   try {
     await session.withTransaction(async () => {
       const deleted = await User.findByIdAndDelete(userObjectId, { session });
       if (!deleted) throw new Error("User not found");
 
-      // Cascade-delete related docs
-      await mongoose.model("layouts").deleteOne({ userId: userObjectId }, { session });
-      await mongoose.model("task_lists").deleteMany({ userId: userObjectId }, { session });
-      await mongoose.model("journalEntries").deleteMany({ userId: userObjectId }, { session });
-      await mongoose.model("sleep").deleteMany({ userId: userObjectId }, { session });
-      await mongoose.model("moods").deleteMany({ userId: userObjectId }, { session });
-      await mongoose.model("pomodoro").deleteOne({ userId: userObjectId }, { session });
+      await mongoose
+        .model("layouts")
+        .deleteOne({ userId: userObjectId }, { session });
+      await mongoose
+        .model("task_lists")
+        .deleteMany({ userId: userObjectId }, { session });
+      await mongoose
+        .model("journalEntries")
+        .deleteMany({ userId: userObjectId }, { session });
+      await mongoose
+        .model("sleep")
+        .deleteMany({ userId: userObjectId }, { session });
+      await mongoose
+        .model("moods")
+        .deleteMany({ userId: userObjectId }, { session });
+      await mongoose
+        .model("pomodoro")
+        .deleteOne({ userId: userObjectId }, { session });
     });
   } finally {
     session.endSession();

@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { auth } from "@/lib/auth";
 import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
-import { authOptions } from "@/lib/authOptions";
 import { checkRateLimit } from "@/lib/checkRateLimit";
 
 interface JournalEntry {
   _id: ObjectId;
   userId: ObjectId;
-  date: string; // Stored as 'YYYY-MM-DD' string
+  date: string;
   content: string;
   createdAt: Date;
   updatedAt: Date;
@@ -45,7 +44,7 @@ const transformEntryForResponse = (
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }

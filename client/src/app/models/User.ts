@@ -11,36 +11,50 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
 
-  // Stripe fields:
-  stripeCustomerId?: string;
+  // Stripe-related fields
+  stripeCustomerId?: string | null;
   subscriptionStatus?: "active" | "canceled" | "past_due" | "unpaid" | "free";
-  subscriptionPriceId?: string;
+  subscriptionPriceId?: string | null;
+
+  // Pending email verification fields
+  pendingEmail?: string | null;
+  emailVerificationToken?: string | null;
+  emailVerificationTokenExpires?: Date | null;
 }
 
 const UserSchema = new Schema<IUser>(
   {
     name: { type: String },
+
     email: {
       type: String,
       required: [true, "Email is required"],
       unique: true,
       trim: true,
       lowercase: true,
-      match: [/.+\@.+\..+/, "Please fill a valid email address"],
+      maxlength: [100, "Email cannot exceed 100 characters"],
+      match: [/.+\@.+\..+/, "Please provide a valid email address"],
     },
+
     emailVerified: { type: Date },
-    image: { type: String },
+
+    image: { type: String, default: null },
+
     username: {
       type: String,
       required: [true, "Username is required"],
       unique: true,
       trim: true,
       minlength: [3, "Username must be at least 3 characters long"],
+      maxlength: [30, "Username cannot exceed 30 characters"],
     },
+
     password: {
       type: String,
+      default: null,
     },
-    // Stripe fields
+
+    // Stripe billing
     stripeCustomerId: { type: String, default: null },
     subscriptionStatus: {
       type: String,
@@ -48,10 +62,18 @@ const UserSchema = new Schema<IUser>(
       default: "free",
     },
     subscriptionPriceId: { type: String, default: null },
+
+    // Email change verification
+    pendingEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: null,
+    },
+    emailVerificationToken: { type: String, default: null },
+    emailVerificationTokenExpires: { type: Date, default: null },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 const User: Model<IUser> =

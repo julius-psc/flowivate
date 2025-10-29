@@ -1,8 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
-import { authOptions } from "@/lib/authOptions";
 
 interface MoodDocument {
   _id: ObjectId;
@@ -43,7 +42,7 @@ const transformMoodForResponse = (
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json(
         { message: "Unauthorized" },
@@ -86,7 +85,6 @@ export async function GET() {
       .sort({ timestamp: -1 })
       .toArray();
 
-    // Return a bare array rather than wrapping in { moods: [...] }
     const responseMoods = moodDocs
       .map(transformMoodForResponse)
       .filter((m): m is MoodResponse => m !== null);
@@ -103,7 +101,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json(
         { message: "Unauthorized" },
@@ -184,7 +182,6 @@ export async function POST(request: NextRequest) {
     const db = client.db(DEFAULT_DB_NAME);
     const moodsCollection = db.collection<MoodDocument>("moods");
 
-    // Start/end of the day
     const startOfDay = new Date(
       moodDate.getFullYear(),
       moodDate.getMonth(),
@@ -204,7 +201,6 @@ export async function POST(request: NextRequest) {
       999
     );
 
-    // Check existing
     const existing = await moodsCollection.findOne({
       userId: userObjectId,
       timestamp: { $gte: startOfDay, $lte: endOfDay },

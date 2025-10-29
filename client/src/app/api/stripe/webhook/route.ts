@@ -4,7 +4,7 @@ import connectToDB from "@/lib/mongoose";
 import User from "@/app/models/User";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-05-28.basil",
+  apiVersion: "2025-08-27.basil",
 });
 
 export const config = {
@@ -31,10 +31,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Webhook Error" }, { status: 400 });
   }
 
-  // Connect to DB once
   await connectToDB();
 
-  // Handle event types
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
@@ -59,7 +57,9 @@ export async function POST(req: Request) {
         { subscriptionStatus: "active" }
       );
 
-      console.log(`✅ [invoice.payment_succeeded] Customer ${customerId} is active`);
+      console.log(
+        `✅ [invoice.payment_succeeded] Customer ${customerId} is active`
+      );
       break;
     }
 
@@ -72,7 +72,9 @@ export async function POST(req: Request) {
         { subscriptionStatus: "canceled" }
       );
 
-      console.log(`✅ [customer.subscription.deleted] Customer ${customerId} canceled`);
+      console.log(
+        `✅ [customer.subscription.deleted] Customer ${customerId} canceled`
+      );
       break;
     }
 
@@ -85,7 +87,9 @@ export async function POST(req: Request) {
         { subscriptionStatus: "past_due" }
       );
 
-      console.log(`⚠️ [invoice.payment_failed] Customer ${customerId} payment failed`);
+      console.log(
+        `⚠️ [invoice.payment_failed] Customer ${customerId} payment failed`
+      );
       break;
     }
 

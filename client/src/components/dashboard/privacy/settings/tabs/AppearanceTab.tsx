@@ -1,34 +1,40 @@
 "use client";
 
 import React from "react";
-import { SunMedium, Moon, Monitor } from "lucide-react";
+import { SunMedium, Moon, Monitor, type LucideIcon } from "lucide-react";
 import ThemeToggle from "../../../../../../themes/ThemeToggle";
 import { useSettings } from "../useSettings";
+
+type ThemeMode = "light" | "dark" | "system";
 
 export default function AppearanceTab(): React.JSX.Element {
   const { theme, setTheme } = useSettings();
 
-  const themeOptions = [
-    { value: "light" as const, label: "Light", icon: SunMedium },
-    { value: "dark" as const, label: "Dark", icon: Moon },
-    { value: "system" as const, label: "System", icon: Monitor },
+  const themeOptions: Array<{
+    value: ThemeMode;
+    label: string;
+    icon: LucideIcon;
+  }> = [
+    { value: "light", label: "Light", icon: SunMedium },
+    { value: "dark", label: "Dark", icon: Moon },
+    { value: "system", label: "System", icon: Monitor },
   ];
 
-  const ThemePreview = ({ mode }: { mode: "light" | "dark" | "system" }) => {
+  const ThemePreview = ({ mode }: { mode: ThemeMode }) => {
     if (mode === "light") {
       return (
         <div className="h-full w-full bg-white rounded-md overflow-hidden border border-gray-200">
           <div className="h-6 bg-gray-50 border-b border-gray-200 flex items-center px-2 gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
-            <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+            <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
           </div>
           <div className="p-3 space-y-2">
-            <div className="h-2 w-16 rounded bg-gray-300"></div>
-            <div className="h-8 w-full rounded bg-gray-100 border border-gray-200"></div>
+            <div className="h-2 w-16 rounded bg-gray-300" />
+            <div className="h-8 w-full rounded bg-gray-100 border border-gray-200" />
             <div className="grid grid-cols-2 gap-2">
-              <div className="h-12 rounded bg-gray-50 border border-gray-200"></div>
-              <div className="h-12 rounded bg-gray-50 border border-gray-200"></div>
+              <div className="h-12 rounded bg-gray-50 border border-gray-200" />
+              <div className="h-12 rounded bg-gray-50 border border-gray-200" />
             </div>
           </div>
         </div>
@@ -38,21 +44,22 @@ export default function AppearanceTab(): React.JSX.Element {
       return (
         <div className="h-full w-full bg-gray-950 rounded-md overflow-hidden border border-gray-800">
           <div className="h-6 bg-gray-900 border-b border-gray-800 flex items-center px-2 gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
           </div>
           <div className="p-3 space-y-2">
-            <div className="h-2 w-16 rounded bg-gray-700"></div>
-            <div className="h-8 w-full rounded bg-gray-900 border border-gray-800"></div>
+            <div className="h-2 w-16 rounded bg-gray-700" />
+            <div className="h-8 w-full rounded bg-gray-900 border border-gray-800" />
             <div className="grid grid-cols-2 gap-2">
-              <div className="h-12 rounded bg-gray-900 border border-gray-800"></div>
-              <div className="h-12 rounded bg-gray-900 border border-gray-800"></div>
+              <div className="h-12 rounded bg-gray-900 border border-gray-800" />
+              <div className="h-12 rounded bg-gray-900 border border-gray-800" />
             </div>
           </div>
         </div>
       );
     }
+    // "system" — split view
     return (
       <div className="h-full w-full relative rounded-md overflow-hidden">
         <div className="h-full w-1/2 absolute top-0 left-0">
@@ -62,7 +69,7 @@ export default function AppearanceTab(): React.JSX.Element {
           <ThemePreview mode="dark" />
         </div>
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-px h-full bg-gradient-to-b from-transparent via-gray-400 to-transparent"></div>
+          <div className="w-px h-full bg-gradient-to-b from-transparent via-gray-400 to-transparent" />
         </div>
       </div>
     );
@@ -103,6 +110,7 @@ export default function AppearanceTab(): React.JSX.Element {
                       ? "border-primary shadow-sm"
                       : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700",
                   ].join(" ")}
+                  aria-pressed={active}
                 >
                   <div className="aspect-video w-full p-3">
                     <ThemePreview mode={option.value} />
@@ -136,16 +144,11 @@ export default function AppearanceTab(): React.JSX.Element {
                   </div>
                   {active && (
                     <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                      <svg
-                        width="12"
-                        height="10"
-                        viewBox="0 0 12 10"
-                        fill="none"
-                      >
+                      <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
                         <path
                           d="M1 5L4.5 8.5L11 1.5"
                           stroke="white"
-                          strokeWidth="2"
+                          strokeWidth={2}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
@@ -158,7 +161,7 @@ export default function AppearanceTab(): React.JSX.Element {
           </div>
         </div>
 
-        <div className="h-px bg-gray-200 dark:bg-gray-800"></div>
+        <div className="h-px bg-gray-200 dark:bg-gray-800" />
 
         <div>
           <div className="mb-4">
@@ -170,38 +173,6 @@ export default function AppearanceTab(): React.JSX.Element {
             </p>
           </div>
           <ThemeToggle />
-        </div>
-
-        <div className="h-px bg-gray-200 dark:bg-gray-800"></div>
-
-        <div>
-          <div className="mb-4">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-              Interface density
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Adjust the spacing and size of interface elements.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {["Compact", "Default", "Comfortable"].map((density, idx) => (
-              <button
-                key={density}
-                disabled
-                className={[
-                  "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                  idx === 1
-                    ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300",
-                ].join(" ")}
-              >
-                {density}
-              </button>
-            ))}
-          </div>
-          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-            Coming soon
-          </p>
         </div>
       </div>
     </div>

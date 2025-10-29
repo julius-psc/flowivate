@@ -1,9 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { auth } from "@/lib/auth";
 import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
-import { authOptions } from "@/lib/authOptions";
-import { checkRateLimit } from "@/lib/checkRateLimit"; 
+import { checkRateLimit } from "@/lib/checkRateLimit";
 
 interface Book {
   _id: ObjectId;
@@ -44,7 +43,7 @@ export async function GET(
       );
     }
 
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -56,9 +55,12 @@ export async function GET(
         { status: 400 }
       );
     }
-   const rateLimitResponse = await checkRateLimit(userId, `/api/features/books/GET`, 20);
-if (rateLimitResponse) return rateLimitResponse;
-
+    const rateLimitResponse = await checkRateLimit(
+      userId,
+      `/api/features/books/GET`,
+      20
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const userObjectId = new ObjectId(userId);
     const bookObjectId = new ObjectId(bookId);
@@ -79,7 +81,6 @@ if (rateLimitResponse) return rateLimitResponse;
       );
     }
 
-    // Ensure ObjectIds are stringified for the response
     const responseBook = {
       ...book,
       _id: book._id.toString(),
@@ -110,7 +111,7 @@ export async function PUT(
       );
     }
 
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -123,10 +124,12 @@ export async function PUT(
       );
     }
 
-   const rateLimitResponse = await checkRateLimit(userId, `/api/features/books/PUT`, 4);
-if (rateLimitResponse) return rateLimitResponse;
-
-
+    const rateLimitResponse = await checkRateLimit(
+      userId,
+      `/api/features/books/PUT`,
+      4
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const userObjectId = new ObjectId(userId);
     const bookObjectId = new ObjectId(bookId);
@@ -278,7 +281,7 @@ if (rateLimitResponse) return rateLimitResponse;
             updatePayload[field] = existingBook.notes;
           }
         } else if (field === "status") {
-          updatePayload[field] = data[field]; // Already validated
+          updatePayload[field] = data[field];
         }
       }
     }
@@ -321,7 +324,7 @@ if (rateLimitResponse) return rateLimitResponse;
       return NextResponse.json(
         { message: "Book not found or access denied for update" },
         { status: 404 }
-      ); // Should be caught by existingBook check
+      );
     }
 
     const updatedBook = await booksCollection.findOne({
@@ -368,7 +371,7 @@ export async function DELETE(
       );
     }
 
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -381,10 +384,12 @@ export async function DELETE(
       );
     }
 
-  const rateLimitResponse = await checkRateLimit(userId, `/api/features/books/DELETE`, 5);
-if (rateLimitResponse) return rateLimitResponse;
-
-
+    const rateLimitResponse = await checkRateLimit(
+      userId,
+      `/api/features/books/DELETE`,
+      5
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const userObjectId = new ObjectId(userId);
     const bookObjectId = new ObjectId(bookId);

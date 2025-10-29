@@ -2,27 +2,18 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { createPortal } from "react-dom";
-import {
-  X,
-  User,
-  Lock,
-  Settings,
-  CreditCard,
-  AlertTriangle,
-} from "lucide-react";
+import { X, User, Settings, CreditCard, AlertTriangle } from "lucide-react";
 import StatusIndicator from "./StatusIndicator";
 import { useSettings } from "./useSettings";
 import { SettingsModalProps, Tab, TabId } from "./types";
 
 const AccountTab = React.lazy(() => import("./tabs/AccountTab"));
 const AppearanceTab = React.lazy(() => import("./tabs/AppearanceTab"));
-const SecurityTab = React.lazy(() => import("./tabs/SecurityTab"));
 const SubscriptionTab = React.lazy(() => import("./tabs/SubscriptionTab"));
 const DangerTab = React.lazy(() => import("./tabs/DangerTab"));
 
 const tabs: Tab[] = [
   { id: "account", label: "Account", icon: <User size={16} /> },
-  { id: "security", label: "Security", icon: <Lock size={16} /> },
   { id: "appearance", label: "Appearance", icon: <Settings size={16} /> },
   { id: "subscription", label: "Billing", icon: <CreditCard size={16} /> },
   { id: "danger", label: "Danger", icon: <AlertTriangle size={16} /> },
@@ -34,11 +25,14 @@ function useQueryState(key: string, initial: string) {
     const params = new URLSearchParams(window.location.search);
     return params.get(key) ?? initial;
   });
+
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     url.searchParams.set(key, value);
     window.history.replaceState({}, "", url.toString());
   }, [key, value]);
+
   return [value, setValue] as const;
 }
 
@@ -46,27 +40,58 @@ function isTabId(v: string): v is TabId {
   return tabs.some((t) => t.id === v);
 }
 
-export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const [mounted, setMounted] = useState(false);
+export default function SettingsModal({
+  isOpen,
+  onClose,
+}: SettingsModalProps): React.JSX.Element | null {
+  const isClient = typeof window !== "undefined";
   const [activeTab, setActiveTab] = useQueryState("tab", "account");
   const {
     statusMessage,
+    setStatusMessage,
     clearStatusMessage,
     styling,
     dirtyTabs,
     clearDirtyForTab,
-    cancelEditPassword,
-    cancelDeleteAccount,
   } = useSettings();
 
-  const validActive: TabId = useMemo(() => {
-    return isTabId(activeTab) ? activeTab : "account";
-  }, [activeTab]);
+  const validActive: TabId = useMemo(
+    () => (isTabId(activeTab) ? activeTab : "account"),
+    [activeTab]
+  );
 
-  useEffect(() => setMounted(true), []);
-
+  // Handle URL query params for messages (async schedule to avoid sync setState in effect body)
   useEffect(() => {
-    if (!isOpen) return;
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const message = params.get("message");
+    const error = params.get("error");
+
+    if (message || error) {
+      queueMicrotask(() => {
+        if (message) {
+          setStatusMessage({
+            type: "success",
+            message: decodeURIComponent(message),
+          });
+        } else if (error) {
+          setStatusMessage({
+            type: "error",
+            message: decodeURIComponent(error),
+          });
+        }
+        const url = new URL(window.location.href);
+        url.searchParams.delete("message");
+        url.searchParams.delete("error");
+        window.history.replaceState({}, "", url.toString());
+      });
+    }
+  }, [setStatusMessage]);
+
+  // Lock body scroll while open
+  useEffect(() => {
+    if (!isOpen || typeof document === "undefined") return;
     const root = document.documentElement;
     const prevOverflow = root.style.overflow;
     root.style.overflow = "hidden";
@@ -75,11 +100,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     };
   }, [isOpen]);
 
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!isOpen) return;
       if (e.key === "Escape") onClose();
-      if ((e.metaKey || e.ctrlKey) && /^[1-5]$/.test(e.key)) {
+      if ((e.metaKey || e.ctrlKey) && /^[1-4]$/.test(e.key)) {
         const idx = Number(e.key) - 1;
         const t = tabs[idx];
         if (t) setActiveTab(t.id);
@@ -97,11 +123,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     return () => document.removeEventListener("keydown", handler);
   }, [isOpen, setActiveTab, validActive, onClose]);
 
-  if (!isOpen || !mounted) return null;
+  if (!isOpen || !isClient) return null;
 
   const onChangeTab = (id: TabId) => {
-    if (validActive === "security") cancelEditPassword();
-    if (validActive === "danger") cancelDeleteAccount();
     clearDirtyForTab(validActive);
     setActiveTab(id);
   };
@@ -185,7 +209,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   }
                 >
                   {validActive === "account" && <AccountTab />}
-                  {validActive === "security" && <SecurityTab />}
                   {validActive === "appearance" && <AppearanceTab />}
                   {validActive === "subscription" && <SubscriptionTab />}
                   {validActive === "danger" && <DangerTab />}

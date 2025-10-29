@@ -1,31 +1,31 @@
 "use client";
 
-import React, { ChangeEvent } from "react";
+import React, { ChangeEvent, useState } from "react";
 import { AlertTriangle, Trash2, Loader2, ShieldAlert } from "lucide-react";
 import { fetchApi } from "../api";
 import { useSettings } from "../useSettings";
 
 export default function DangerTab(): React.JSX.Element {
-  const {
-    session,
-    sessionStatus,
-    showDeleteConfirm,
-    setShowDeleteConfirm,
-    deleteConfirmText,
-    setDeleteConfirmText,
-    setStatusMessage,
-    styling,
-    signOut,
-    cancelDeleteAccount,
-  } = useSettings();
+  const { session, sessionStatus, setStatusMessage, styling, signOut } = useSettings();
 
-  const [isDeletingAccount, setIsDeletingAccount] =
-    React.useState<boolean>(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState<string>("");
+  const [currentPassword, setCurrentPassword] = useState<string>("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState<boolean>(false);
+
   const username = session?.user?.username ?? "";
   const email = session?.user?.email ?? "";
 
+  const cancelDeleteAccount = () => {
+    setShowDeleteConfirm(false);
+    setDeleteConfirmText("");
+    setCurrentPassword("");
+    setStatusMessage({ type: null, message: null });
+  };
+
   const canDeleteAccount =
     showDeleteConfirm &&
+    currentPassword.length > 0 &&
     (deleteConfirmText.trim().toLowerCase() === "delete my account" ||
       deleteConfirmText === username ||
       deleteConfirmText === email) &&
@@ -36,22 +36,24 @@ export default function DangerTab(): React.JSX.Element {
     if (!canDeleteAccount) {
       setStatusMessage({
         type: "error",
-        message:
-          "Please type the confirmation phrase or your identifier correctly.",
+        message: "Please enter your password and confirmation text correctly.",
       });
       return;
     }
     setIsDeletingAccount(true);
     setStatusMessage({ type: null, message: null });
     try {
-      await fetchApi("/api/user", { method: "DELETE" });
+      await fetchApi("/api/user", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword }),
+      });
       await signOut({ redirect: false });
       window.location.href = "/";
     } catch (error: unknown) {
       setStatusMessage({
         type: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to delete account",
+        message: error instanceof Error ? error.message : "Failed to delete account",
       });
     } finally {
       setIsDeletingAccount(false);
@@ -109,7 +111,10 @@ export default function DangerTab(): React.JSX.Element {
                 </p>
                 <div className="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 p-3 mb-4">
                   <div className="flex gap-2">
-                    <AlertTriangle size={16} className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                    <AlertTriangle
+                      size={16}
+                      className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+                    />
                     <div className="text-xs text-red-700 dark:text-red-400">
                       <p className="font-medium mb-1">This will immediately:</p>
                       <ul className="list-disc list-inside space-y-0.5 ml-1">
@@ -139,7 +144,30 @@ export default function DangerTab(): React.JSX.Element {
             <div className="border-t-2 border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10 p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  <label
+                    htmlFor="current-password-input"
+                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                  >
+                    Confirm your password
+                  </label>
+                  <input
+                    id="current-password-input"
+                    name="current-password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={handleInputChange(setCurrentPassword)}
+                    className={`${styling.inputClasses} border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500`}
+                    placeholder="Enter your current password"
+                    disabled={isDeletingAccount}
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="delete-confirm-input"
+                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                  >
                     Confirm deletion
                   </label>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -162,7 +190,6 @@ export default function DangerTab(): React.JSX.Element {
                     className={`${styling.inputClasses} border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500`}
                     placeholder={username || "delete my account"}
                     disabled={isDeletingAccount}
-                    autoFocus
                   />
                 </div>
 
@@ -176,7 +203,7 @@ export default function DangerTab(): React.JSX.Element {
                   </button>
                   <button
                     onClick={handleDeleteAccount}
-                    className={`${styling.buttonBaseClasses} bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2`}
+                    className={`${styling.buttonBaseClasses} bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center py-2 px-1 gap-2`}
                     disabled={!canDeleteAccount}
                   >
                     {isDeletingAccount ? (

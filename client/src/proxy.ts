@@ -14,7 +14,7 @@ const ALWAYS_PUBLIC_PATHS = [
   '/favicon.ico',
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAppLocked = process.env.NEXT_PUBLIC_APP_LOCKED === 'true';
 

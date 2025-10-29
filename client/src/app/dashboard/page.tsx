@@ -1,19 +1,15 @@
 import { redirect } from "next/navigation";
 import connectToDB from "@/lib/mongoose";
 import User from "@/app/models/User";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/authOptions";
+import { auth } from "@/lib/auth";
 import DashboardClient from "./DashboardClient";
 
 export default async function DashboardPage() {
-  // 1. require auth
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.email) {
-    // not signed in → force login
     redirect("/api/auth/signin");
   }
 
-  // 2. load subscriptionStatus once on the server
   await connectToDB();
   const user = await User.findOne({ email: session.user.email })
     .select("subscriptionStatus")
@@ -25,6 +21,5 @@ export default async function DashboardPage() {
       ? user.subscriptionStatus
       : "free";
 
-  // 3. pass it down to a client component
   return <DashboardClient subscriptionStatus={subscriptionStatus} />;
 }

@@ -1,12 +1,8 @@
-import { Icon } from "lucide-react";
+import type { ReactElement } from "react";
 
 export type Theme = "light" | "dark" | "system";
-export type TabId =
-  | "account"
-  | "security"
-  | "appearance"
-  | "subscription"
-  | "danger";
+
+export type TabId = "account" | "appearance" | "subscription" | "danger";
 
 export interface SettingsModalProps {
   isOpen: boolean;
@@ -21,7 +17,7 @@ export interface StatusMessage {
 export interface Tab {
   id: TabId;
   label: string;
-  icon: React.ReactElement<typeof Icon>;
+  icon: ReactElement;
 }
 
 export interface StylingClasses {

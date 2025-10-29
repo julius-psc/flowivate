@@ -64,7 +64,6 @@ export default function LoginClient() {
 
   return (
     <div className="min-h-screen bg-secondary-black flex relative">
-      {/* Back Arrow */}
       <Link
         href="/"
         className="absolute top-6 left-6 text-gray-500 hover:text-white transition"
@@ -79,7 +78,6 @@ export default function LoginClient() {
             <h1 className="text-2xl font-bold text-white mb-2">Jump back in</h1>
           </div>
 
-          {/* Social Login Buttons */}
           <div className="flex space-x-4 mb-4 justify-center">
             <button
               onClick={() => handleSocialSignIn("github")}

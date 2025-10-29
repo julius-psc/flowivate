@@ -1,9 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { auth } from "@/lib/auth";
 import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
-import { authOptions } from "@/lib/authOptions";
-import { checkRateLimit } from "@/lib/checkRateLimit"; 
+import { checkRateLimit } from "@/lib/checkRateLimit";
 
 interface Book {
   _id: ObjectId;
@@ -18,7 +17,6 @@ interface Book {
   dateCompleted?: Date | null;
 }
 
-// Helper to transform book document for API response
 const transformBookForResponse = (book: Book | null | undefined) => {
   if (!book) return null;
   return {
@@ -29,7 +27,7 @@ const transformBookForResponse = (book: Book | null | undefined) => {
 };
 
 function isValidObjectId(id: string): boolean {
-  if (!id || typeof id !== 'string' || !/^[0-9a-fA-F]{24}$/.test(id)) {
+  if (!id || typeof id !== "string" || !/^[0-9a-fA-F]{24}$/.test(id)) {
     return false;
   }
   try {
@@ -40,24 +38,29 @@ function isValidObjectId(id: string): boolean {
   }
 }
 
-const MAX_STRING_LENGTH = 255; // General max length for simple string fields
-const MAX_NOTES_LENGTH = 5000; // Larger allowance for notes
+const MAX_STRING_LENGTH = 255;
+const MAX_NOTES_LENGTH = 5000;
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
     if (!isValidObjectId(userId)) {
-      return NextResponse.json({ message: "Invalid user identifier" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Invalid user identifier" },
+        { status: 400 }
+      );
     }
-   const rateLimitResponse = await checkRateLimit(userId, `/api/features/books/GET`, 20);
-if (rateLimitResponse) return rateLimitResponse;
-
-
+    const rateLimitResponse = await checkRateLimit(
+      userId,
+      `/api/features/books/GET`,
+      20
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const userObjectId = new ObjectId(userId);
 
@@ -75,25 +78,34 @@ if (rateLimitResponse) return rateLimitResponse;
     return NextResponse.json({ books: responseBooks }, { status: 200 });
   } catch (error) {
     console.error("Error in GET /api/features/books:", error);
-    return NextResponse.json({ message: "Failed to retrieve books" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to retrieve books" },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
     if (!isValidObjectId(userId)) {
-      return NextResponse.json({ message: "Invalid user identifier" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Invalid user identifier" },
+        { status: 400 }
+      );
     }
 
-const rateLimitResponse = await checkRateLimit(userId, `/api/features/books/POST`, 4);
-if (rateLimitResponse) return rateLimitResponse;
-
+    const rateLimitResponse = await checkRateLimit(
+      userId,
+      `/api/features/books/POST`,
+      4
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const userObjectId = new ObjectId(userId);
 
@@ -101,12 +113,23 @@ if (rateLimitResponse) return rateLimitResponse;
     try {
       data = await request.json();
     } catch (jsonError) {
-      console.error("Error parsing JSON in POST /api/features/books:", jsonError);
-      return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 });
+      console.error(
+        "Error parsing JSON in POST /api/features/books:",
+        jsonError
+      );
+      return NextResponse.json(
+        { message: "Invalid JSON payload" },
+        { status: 400 }
+      );
     }
 
-
-    if (!data || typeof data.title !== 'string' || data.title.trim() === '' || typeof data.author !== 'string' || data.author.trim() === '') {
+    if (
+      !data ||
+      typeof data.title !== "string" ||
+      data.title.trim() === "" ||
+      typeof data.author !== "string" ||
+      data.author.trim() === ""
+    ) {
       return NextResponse.json(
         { message: "Title and author are required string fields" },
         { status: 400 }
@@ -118,47 +141,61 @@ if (rateLimitResponse) return rateLimitResponse;
 
     if (title.length > MAX_STRING_LENGTH || author.length > MAX_STRING_LENGTH) {
       return NextResponse.json(
-        { message: `Title and author must not exceed ${MAX_STRING_LENGTH} characters` },
+        {
+          message: `Title and author must not exceed ${MAX_STRING_LENGTH} characters`,
+        },
         { status: 400 }
       );
     }
 
     const allowedStatus = ["not-started", "in-progress", "completed"];
-    const status = (typeof data.status === 'string' && allowedStatus.includes(data.status))
-      ? data.status
-      : "not-started";
+    const status =
+      typeof data.status === "string" && allowedStatus.includes(data.status)
+        ? data.status
+        : "not-started";
 
-    const rating = (typeof data.rating === 'number' && data.rating >= 0 && data.rating <= 5)
-      ? data.rating
-      : null;
+    const rating =
+      typeof data.rating === "number" && data.rating >= 0 && data.rating <= 5
+        ? data.rating
+        : null;
 
     let genre = null;
     if (data.genre !== undefined && data.genre !== null) {
-        if (typeof data.genre !== 'string') {
-            return NextResponse.json({ message: "Genre must be a string or null" }, { status: 400 });
-        }
-        genre = data.genre.trim();
-        if (genre.length > MAX_STRING_LENGTH) {
-            return NextResponse.json({ message: `Genre must not exceed ${MAX_STRING_LENGTH} characters` }, { status: 400 });
-        }
-        if (genre === '') genre = null;
+      if (typeof data.genre !== "string") {
+        return NextResponse.json(
+          { message: "Genre must be a string or null" },
+          { status: 400 }
+        );
+      }
+      genre = data.genre.trim();
+      if (genre.length > MAX_STRING_LENGTH) {
+        return NextResponse.json(
+          { message: `Genre must not exceed ${MAX_STRING_LENGTH} characters` },
+          { status: 400 }
+        );
+      }
+      if (genre === "") genre = null;
     }
-
 
     let notes = null;
     if (data.notes !== undefined && data.notes !== null) {
-        if (typeof data.notes !== 'string') {
-            return NextResponse.json({ message: "Notes must be a string or null" }, { status: 400 });
-        }
-        notes = data.notes.trim();
-        if (notes.length > MAX_NOTES_LENGTH) {
-            return NextResponse.json({ message: `Notes must not exceed ${MAX_NOTES_LENGTH} characters` }, { status: 400 });
-        }
-        if (notes === '') notes = null;
+      if (typeof data.notes !== "string") {
+        return NextResponse.json(
+          { message: "Notes must be a string or null" },
+          { status: 400 }
+        );
+      }
+      notes = data.notes.trim();
+      if (notes.length > MAX_NOTES_LENGTH) {
+        return NextResponse.json(
+          { message: `Notes must not exceed ${MAX_NOTES_LENGTH} characters` },
+          { status: 400 }
+        );
+      }
+      if (notes === "") notes = null;
     }
 
-
-    const newBookData: Omit<Book, '_id'> = {
+    const newBookData: Omit<Book, "_id"> = {
       userId: userObjectId,
       title,
       author,
@@ -167,24 +204,38 @@ if (rateLimitResponse) return rateLimitResponse;
       genre,
       notes,
       dateAdded: new Date(),
-      dateCompleted: status === 'completed' ? new Date() : null,
+      dateCompleted: status === "completed" ? new Date() : null,
     };
 
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const booksCollection = db.collection<Book>("books");
-    const result = await booksCollection.insertOne(newBookData as Book); // MongoDB driver expects _id to be potentially there
+    const result = await booksCollection.insertOne(newBookData as Book);
 
-    const insertedBook = await booksCollection.findOne({ _id: result.insertedId });
+    const insertedBook = await booksCollection.findOne({
+      _id: result.insertedId,
+    });
 
     if (!insertedBook) {
-        console.error("Error in POST /api/features/books: Failed to retrieve inserted book.", { insertedId: result.insertedId });
-        return NextResponse.json({ message: "Failed to create book, unable to confirm." }, { status: 500 });
+      console.error(
+        "Error in POST /api/features/books: Failed to retrieve inserted book.",
+        { insertedId: result.insertedId }
+      );
+      return NextResponse.json(
+        { message: "Failed to create book, unable to confirm." },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ book: transformBookForResponse(insertedBook) }, { status: 201 });
+    return NextResponse.json(
+      { book: transformBookForResponse(insertedBook) },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error in POST /api/features/books:", error);
-    return NextResponse.json({ message: "Failed to create book" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to create book" },
+      { status: 500 }
+    );
   }
 }

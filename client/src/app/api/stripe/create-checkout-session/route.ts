@@ -2,15 +2,14 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import connectToDB from "@/lib/mongoose";
 import User from "@/app/models/User";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/authOptions";
+import { auth } from "@/lib/auth";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-05-28.basil",
+  apiVersion: "2025-08-27.basil",
 });
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -45,7 +44,7 @@ export async function POST(req: Request) {
       priceId: priceId,
     },
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}`, // dynamic fallback 🚀
+    cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}`,
   });
 
   return NextResponse.json({ url: checkoutSession.url });

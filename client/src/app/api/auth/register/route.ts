@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 
 type ErrorResponse = {
   error: string;
-  code?: string; // optional machine-readable error code
+  code?: string;
   details?: Record<string, string>;
 };
 
@@ -14,7 +14,6 @@ export async function POST(request: Request) {
   try {
     const { email, username, password } = await request.json();
 
-    // --- Basic Input Validation ---
     if (!email || !username || !password) {
       return NextResponse.json<ErrorResponse>(
         {
@@ -37,7 +36,6 @@ export async function POST(request: Request) {
 
     await connectDB();
 
-    // --- Check if user exists by email or username ---
     const existingUser = await User.findOne({
       $or: [{ email: email.toLowerCase() }, { username }],
     }).exec();
@@ -45,11 +43,7 @@ export async function POST(request: Request) {
     const lowerEmail = email.toLowerCase();
 
     if (existingUser) {
-      // User found
-
-      // If user exists but password is empty (e.g. social login user without password)
       if (!existingUser.password) {
-        // If trying to update username to another taken username (by someone else)
         if (username !== existingUser.username) {
           const usernameTaken = await User.findOne({
             _id: { $ne: existingUser._id },
@@ -77,7 +71,6 @@ export async function POST(request: Request) {
         );
       }
 
-      // User has password - determine conflict reason
       const conflicts: string[] = [];
       if (existingUser.email.toLowerCase() === lowerEmail)
         conflicts.push("email");
@@ -103,7 +96,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- Create New User ---
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await User.create({
@@ -119,7 +111,6 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     console.error("Registration error:", error);
 
-    // Handle Mongoose validation errors
     if (error instanceof mongoose.Error.ValidationError) {
       const details: Record<string, string> = {};
       for (const key in error.errors) {
@@ -131,12 +122,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Handle Mongoose duplicate key errors
     type MongoError = Error & { code?: number; message: string };
     const mongoError = error as MongoError;
 
     if (mongoError.code === 11000) {
-      // Extract duplicate key field from error message
       const message = mongoError.message.toLowerCase();
       let field = "field";
       if (message.includes("email")) field = "email";
@@ -151,7 +140,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fallback for unknown error shapes
     return NextResponse.json<ErrorResponse>(
       {
         error: "Registration failed due to an internal error.",
