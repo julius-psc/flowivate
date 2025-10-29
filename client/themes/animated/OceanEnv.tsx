@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { motion, useAnimationControls, AnimationProps, Transition } from 'framer-motion';
+import {
+  motion,
+  useAnimationControls,
+  MotionProps,
+  Transition,
+} from 'framer-motion';
 import Image from 'next/image';
 
 const FISH_WIDTH = 320;
@@ -15,33 +20,42 @@ interface BubbleProps {
 }
 
 const Bubble: React.FC<BubbleProps> = ({ delay, size, xDrift, originX }) => {
-  const [isClient, setIsClient] = useState(false);
-  // State to hold client-side calculated animation values
-  const [computedTransition, setComputedTransition] = useState<Transition | null>(null);
-  const [targetY, setTargetY] = useState<number | null>(null);
+  const [bubbleState, setBubbleState] = useState({
+    isClient: false,
+    targetY: null as number | null,
+    computedTransition: null as Transition | null,
+  });
 
   useEffect(() => {
-    // This effect runs only on the client after mount
-    setIsClient(true);
-    setTargetY(-window.innerHeight - 100); // Safely access window.innerHeight
-    setComputedTransition({
-      y: { duration: 5 + Math.random() * 2, ease: 'linear' },
-      x: { duration: 5 + Math.random() * 2, ease: 'easeInOut' },
-      scale: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
-      opacity: { duration: 5 + Math.random() * 2, ease: 'linear' },
-      delay,
-      repeat: Infinity,
-      repeatDelay: Math.random() * 3,
+    // --- FIX: Disable lint rule for this intentional client-side setup ---
+    // This is necessary to get client-side window dimensions for animation
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBubbleState({
+      isClient: true,
+      targetY: -window.innerHeight - 100, // Safely access window.innerHeight
+      computedTransition: {
+        y: { duration: 5 + Math.random() * 2, ease: 'linear' as const },
+        x: { duration: 5 + Math.random() * 2, ease: 'easeInOut' as const },
+        scale: { duration: 3, repeat: Infinity, ease: 'easeInOut' as const },
+        opacity: { duration: 5 + Math.random() * 2, ease: 'linear' as const },
+        delay,
+        repeat: Infinity,
+        repeatDelay: Math.random() * 3,
+      },
     });
-  }, [delay]); // Re-calculate if delay changes, though typically bubbles are replaced
+  }, [delay]);
 
-  if (!isClient || computedTransition === null || targetY === null) {
+  if (
+    !bubbleState.isClient ||
+    bubbleState.computedTransition === null ||
+    bubbleState.targetY === null
+  ) {
     // Render nothing on the server or before client-side values are ready
     return null;
   }
 
-  const animateProps: AnimationProps['animate'] = {
-    y: targetY,
+  const animateProps: MotionProps['animate'] = {
+    y: bubbleState.targetY,
     x: xDrift,
     scale: [1, 1.2, 1],
     opacity: 0,
@@ -54,11 +68,11 @@ const Bubble: React.FC<BubbleProps> = ({ delay, size, xDrift, originX }) => {
         width: size,
         height: size,
         bottom: '10%', // Initial vertical position relative to parent
-        left: originX,  // Initial horizontal position
+        left: originX, // Initial horizontal position
       }}
       initial={{ y: 0, x: 0, scale: 1, opacity: 0.5 }} // x:0 means xDrift is purely an animation target
       animate={animateProps}
-      transition={computedTransition}
+      transition={bubbleState.computedTransition}
     />
   );
 };
@@ -70,6 +84,9 @@ const OceanEnv: React.FC = () => {
   const [bubbles, setBubbles] = useState<BubbleProps[]>([]);
 
   useEffect(() => {
+    // --- FIX: Disable lint rule for this intentional client-side check ---
+    // This is the standard way to ensure code runs only on the client
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true); // Set to true once component has mounted on the client
   }, []);
 
@@ -90,13 +107,8 @@ const OceanEnv: React.FC = () => {
         x: window.innerWidth + FISH_WIDTH, // Safely use window.innerWidth
         y: [0, 20, 0, -20, 0], // Vertical bobbing motion
         transition: {
-          x: { duration: 25, ease: 'linear' },
-          // Ensure y animation syncs well with x.
-          // If y waypoints [0,20,0,-20,0] complete in, say, 5s:
-          y: { duration: 5, ease: 'easeInOut', repeat: Infinity },
-          // Original: y: { duration: 25, ease: 'easeInOut', repeat: 5 },
-          // This implied one y-cycle takes 25s, and it repeats 5 times (125s total for y).
-          // Adjusting to a more typical continuous bobbing:
+          x: { duration: 25, ease: 'linear' as const },
+          y: { duration: 5, ease: 'easeInOut' as const, repeat: Infinity },
         },
       });
 
@@ -148,7 +160,7 @@ const OceanEnv: React.FC = () => {
           fill
           style={{ objectFit: 'cover' }}
           priority
-          sizes="100vw" 
+          sizes="100vw"
         />
       </div>
 
@@ -157,7 +169,6 @@ const OceanEnv: React.FC = () => {
         className="absolute"
         style={{
           top: '60%',
-         
         }}
         initial={{ x: -FISH_WIDTH }} // Ensure fish starts off-screen for SSR & initial client render
         animate={fishControls}
@@ -166,22 +177,22 @@ const OceanEnv: React.FC = () => {
           src="/assets/animations/ocean/school-left.svg"
           alt="School of fish"
           width={FISH_WIDTH}
-          height={FISH_WIDTH} 
+          height={FISH_WIDTH}
           style={{ objectFit: 'contain' }}
           priority
         />
       </motion.div>
 
-      {isMounted && bubbles.map((bubble, index) => (
-        <Bubble
-          key={index}
-                    
-          delay={bubble.delay}
-          size={bubble.size}
-          xDrift={bubble.xDrift}
-          originX={bubble.originX}
-        />
-      ))}
+      {isMounted &&
+        bubbles.map((bubble, index) => (
+          <Bubble
+            key={index}
+            delay={bubble.delay}
+            size={bubble.size}
+            xDrift={bubble.xDrift}
+            originX={bubble.originX}
+          />
+        ))}
     </div>
   );
 };

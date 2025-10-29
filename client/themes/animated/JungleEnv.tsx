@@ -14,7 +14,7 @@ const JungleEnv: React.FC = () => {
     transition: {
       duration: 4,
       repeat: Infinity,
-      ease: 'easeInOut',
+      ease: 'easeInOut' as const, // <-- FIXED HERE
     },
   };
 
