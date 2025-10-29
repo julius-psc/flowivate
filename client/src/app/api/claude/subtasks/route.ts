@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateClaudeResponse } from "../../../../../services/claude";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/authOptions";
+import { auth } from "@/lib/auth";
 
 interface RequestBody {
   taskDescription: string;
 }
 
-const MAX_TASK_DESCRIPTION_LENGTH = 2000; // Define a reasonable max length
+const MAX_TASK_DESCRIPTION_LENGTH = 2000;
 
 const breakdownPromptTemplate = (task: string): string => `
 Analyze the complex task below and break it down into a concise list of approximately 5-8 actionable, high-level subtasks.
@@ -29,8 +28,8 @@ JSON Array:
 `;
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) { // Also check for user.id for completeness
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
@@ -62,17 +61,16 @@ export async function POST(req: NextRequest) {
     const aiResponseText = await generateClaudeResponse(finalPrompt);
 
     try {
-      // Attempt to parse the AI's response to ensure it's valid JSON
       const parsedJsonResponse = JSON.parse(aiResponseText);
       return NextResponse.json({ response: JSON.stringify(parsedJsonResponse) });
     } catch (parseError) {
       console.error("API route /api/claude/subtasks - AI response JSON parsing error:", {
-        aiResponse: aiResponseText, // Log the problematic response
+        aiResponse: aiResponseText,
         parseErrorDetails: parseError instanceof Error ? { name: parseError.name, message: parseError.message } : parseError,
       });
       return NextResponse.json(
         { message: "AI service returned an invalid response format." },
-        { status: 502 } // Bad Gateway, as our upstream service (Claude) misbehaved
+        { status: 502 }
       );
     }
 
@@ -86,7 +84,7 @@ export async function POST(req: NextRequest) {
         errorContext = { errorInfo: String(error) };
     }
     console.error("API route /api/claude/subtasks - General error:", errorContext);
-    
+
     return NextResponse.json(
       { message: "An internal server error occurred while processing your request." },
       { status: 500 }

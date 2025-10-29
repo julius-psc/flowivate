@@ -1,11 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from "@/lib/authOptions"; 
+import { auth } from "@/lib/auth";
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
 interface ChatMessage {
-  sender: 'user' | 'ai' | string; // string for more flexibility if needed
+  sender: 'user' | 'ai' | string;
   content: string;
   timestamp: Date;
 }
@@ -19,14 +18,12 @@ interface ChatConversation {
   updatedAt: Date;
 }
 
-// Helper function to validate MongoDB ObjectId
 function isValidObjectId(id: string): boolean {
   return ObjectId.isValid(id) && (new ObjectId(id).toString() === id);
 }
 
-// Centralized error logger
 function logApiError(
-  operation: 'GET' | 'PUT' | 'DELETE', // Added 'PUT'
+  operation: 'GET' | 'PUT' | 'DELETE',
   chatId: string | undefined,
   userId: string | undefined,
   error: unknown
@@ -34,7 +31,7 @@ function logApiError(
   const endpointScope = chatId || "[chatId_resolution_failed]";
   const userScope = userId || "[userId_resolution_failed]";
   let errorMessage = "An unknown error occurred";
-  let errorDetails: Record<string, unknown> = { // Initialize with common details
+  let errorDetails: Record<string, unknown> = {
     name: "UnknownError",
     cause: "UnknownCause"
   };
@@ -44,15 +41,15 @@ function logApiError(
     errorDetails = {
       name: error.name,
       message: error.message,
-      stack: error.stack, 
+      stack: error.stack,
       cause: error.cause,
     };
   } else if (typeof error === 'string') {
     errorMessage = error;
     errorDetails = { errorString: error };
   } else if (typeof error === 'object' && error !== null) {
-    errorMessage = "Object error, see details."; 
-    errorDetails = { errorObject: error }; 
+    errorMessage = "Object error, see details.";
+    errorDetails = { errorObject: error };
   }
 
   console.error(
@@ -66,11 +63,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
 ) {
-  const { chatId } = await params; 
+  const { chatId } = await params;
   let sessionUserId: string | undefined;
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
@@ -101,7 +98,6 @@ export async function GET(
       return NextResponse.json({ message: 'Chat not found or not authorized' }, { status: 404 });
     }
 
-    // Prepare response: convert ObjectId and Date to strings
     const chatResponse = {
       ...chat,
       _id: chat._id.toString(),
@@ -130,7 +126,7 @@ export async function PUT(
   let sessionUserId: string | undefined;
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
@@ -160,22 +156,21 @@ export async function PUT(
 
     const updateResult = await chatsCollection.findOneAndUpdate(
       { _id: chatObjectId, userId: userObjectId },
-      { 
-        $set: { 
+      {
+        $set: {
           title: title.trim(),
-          updatedAt: new Date() 
+          updatedAt: new Date()
         }
       },
-      { returnDocument: 'after' } // Return the updated document
+      { returnDocument: 'after' }
     );
 
-    if (!updateResult) { // findOneAndUpdate returns null if no document matched
+    if (!updateResult) {
       return NextResponse.json({ message: 'Chat not found or not authorized for update' }, { status: 404 });
     }
-    
-    const updatedChat = updateResult; // Already the updated document
 
-    // Prepare response
+    const updatedChat = updateResult;
+
     const chatResponse = {
       ...updatedChat,
       _id: updatedChat._id.toString(),
@@ -191,7 +186,6 @@ export async function PUT(
     return NextResponse.json(chatResponse, { status: 200 });
 
   } catch (error: unknown) {
-    // Catch JSON parsing errors specifically
     if (error instanceof SyntaxError && error.message.includes("JSON")) {
       logApiError('PUT', chatId, sessionUserId, new Error(`Invalid JSON payload: ${error.message}`));
       return NextResponse.json({ message: 'Invalid JSON payload' }, { status: 400 });
@@ -203,14 +197,14 @@ export async function PUT(
 
 
 export async function DELETE(
-  request: NextRequest, 
+  request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
 ) {
   const { chatId } = await params;
   let sessionUserId: string | undefined;
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
