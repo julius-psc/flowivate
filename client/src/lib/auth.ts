@@ -94,7 +94,7 @@ export const authConfig: NextAuthConfig = {
     async jwt({ token, user, account }): Promise<JWTType> {
       if (user) {
         token.id = user.id;
-        token.username = user.username;
+        token.username = user.username ?? undefined;
       }
 
       if (account && ["github", "google"].includes(account.provider)) {
