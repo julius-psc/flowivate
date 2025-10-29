@@ -11,12 +11,12 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
 
-  // Stripe-related fields
+  passwordLastUpdatedAt?: Date | null;
+
   stripeCustomerId?: string | null;
   subscriptionStatus?: "active" | "canceled" | "past_due" | "unpaid" | "free";
   subscriptionPriceId?: string | null;
 
-  // Pending email verification fields
   pendingEmail?: string | null;
   emailVerificationToken?: string | null;
   emailVerificationTokenExpires?: Date | null;
@@ -54,7 +54,8 @@ const UserSchema = new Schema<IUser>(
       default: null,
     },
 
-    // Stripe billing
+    passwordLastUpdatedAt: { type: Date, default: null },
+
     stripeCustomerId: { type: String, default: null },
     subscriptionStatus: {
       type: String,
@@ -63,7 +64,6 @@ const UserSchema = new Schema<IUser>(
     },
     subscriptionPriceId: { type: String, default: null },
 
-    // Email change verification
     pendingEmail: {
       type: String,
       trim: true,

@@ -1,23 +1,29 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'lh3.googleusercontent.com', // Example for Google profile pictures
+        hostname: 'lh3.googleusercontent.com',
         port: '',
         pathname: '/a/**',
       },
       {
         protocol: 'https',
-        hostname: 'avatars.githubusercontent.com', // Example for GitHub avatars
+        hostname: 'avatars.githubusercontent.com',
         port: '',
         pathname: '/u/**',
       },
-      // Add other hostnames your app might use for user images
+      {
+        protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

@@ -91,14 +91,25 @@ export const authConfig: NextAuthConfig = {
   session: { strategy: "jwt" },
 
   callbacks: {
-    async jwt({ token, user, account }): Promise<JWTType> {
+    async jwt({ token, user, account, trigger }): Promise<JWTType> {
+      await connectDB();
+
+      if (trigger === "update") {
+        const dbUser = await User.findById(token.id).select("username image").lean().exec();
+        if (dbUser) {
+          token.username = dbUser.username;
+          token.image = dbUser.image;
+        }
+        return token;
+      }
+
       if (user) {
         token.id = user.id;
         token.username = user.username ?? undefined;
+        token.image = user.image ?? undefined;
       }
 
       if (account && ["github", "google"].includes(account.provider)) {
-        await connectDB();
         const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
 
         if (dbUser) {
@@ -131,6 +142,7 @@ export const authConfig: NextAuthConfig = {
 
           if (changed) await dbUser.save();
           token.username = dbUser.username;
+          token.image = dbUser.image;
         } else {
           token.username = user.email?.split("@")[0];
         }
@@ -151,6 +163,11 @@ export const authConfig: NextAuthConfig = {
       }
       if (token.username) {
         session.user.username = token.username as string;
+      }
+      if (token.image) {
+        session.user.image = token.image as string;
+      } else {
+        session.user.image = null;
       }
       return session;
     },

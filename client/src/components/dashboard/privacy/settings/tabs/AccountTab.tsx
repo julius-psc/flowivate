@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, ChangeEvent } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  ChangeEvent,
+  useRef,
+} from "react";
+import Image from "next/image";
 import {
   User,
   Loader2,
@@ -15,13 +22,14 @@ import {
 import Link from "next/link";
 import { fetchApi } from "../api";
 import { useSettings } from "../useSettings";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
 
 export default function AccountTab(): React.JSX.Element {
   const {
     session,
     sessionStatus,
     updateSession,
-    setStatusMessage,
     styling,
     markDirtyForTab,
     clearDirtyForTab,
@@ -43,6 +51,13 @@ export default function AccountTab(): React.JSX.Element {
   const [showPasswordForm, setShowPasswordForm] =
     React.useState<boolean>(false);
 
+  const [accountDetails, setAccountDetails] = useState<{
+    joinedDate: Date | null;
+    passwordLastUpdatedAt: Date | null;
+  }>({ joinedDate: null, passwordLastUpdatedAt: null });
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const initial = useMemo(() => {
     const u =
       session?.user?.username ?? session?.user?.email?.split("@")[0] ?? "";
@@ -54,6 +69,20 @@ export default function AccountTab(): React.JSX.Element {
     if (sessionStatus === "authenticated") {
       setUsername(initial.u);
       setEmail(initial.e);
+
+      const fetchAccountDetails = async () => {
+        try {
+          const details = await fetchApi<{
+            joinedDate: Date;
+            passwordLastUpdatedAt: Date | null;
+          }>("/api/user", { method: "GET" });
+          setAccountDetails(details);
+        } catch (error) {
+          console.error("Failed to load account details:", error);
+          toast.error("Failed to load account details.");
+        }
+      };
+      fetchAccountDetails();
     }
   }, [sessionStatus, initial]);
 
@@ -78,23 +107,27 @@ export default function AccountTab(): React.JSX.Element {
   const onSaveUsername = async () => {
     if (!usernameDirty || savingUsername) return;
     setSavingUsername(true);
-    setStatusMessage({ type: null, message: null });
     try {
-      const updated = await fetchApi<{ username: string }>("/api/user", {
+      const updated = await fetchApi<{
+        success: boolean;
+        message: string;
+        user: { username: string };
+      }>("/api/user", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username }),
       });
+
       await updateSession({
-        user: { ...session?.user, username: updated.username },
+        user: { ...session?.user, username: updated.user.username },
       });
-      setStatusMessage({ type: "success", message: "Username updated" });
+      setUsername(updated.user.username);
+      toast.success("Username updated");
       setEditingUsername(false);
     } catch (e: unknown) {
-      setStatusMessage({
-        type: "error",
-        message: e instanceof Error ? e.message : "Failed to update username",
-      });
+      toast.error(
+        e instanceof Error ? e.message : "Failed to update username"
+      );
       setUsername(initial.u);
     } finally {
       setSavingUsername(false);
@@ -104,23 +137,16 @@ export default function AccountTab(): React.JSX.Element {
   const onSaveEmail = async () => {
     if (!emailDirty || savingEmail) return;
     setSavingEmail(true);
-    setStatusMessage({ type: null, message: null });
     try {
       await fetchApi<{ message: string }>("/api/user", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      setStatusMessage({
-        type: "success",
-        message: "Email update initiated. Please check your inbox to verify.",
-      });
+      toast.success("Email update initiated. Please check your inbox to verify.");
       setEditingEmail(false);
     } catch (e: unknown) {
-      setStatusMessage({
-        type: "error",
-        message: e instanceof Error ? e.message : "Failed to update email",
-      });
+      toast.error(e instanceof Error ? e.message : "Failed to update email");
       setEmail(initial.e);
     } finally {
       setSavingEmail(false);
@@ -142,7 +168,6 @@ export default function AccountTab(): React.JSX.Element {
     setNewPassword("");
     setConfirmPassword("");
     setPasswordError(null);
-    setStatusMessage({ type: null, message: null });
     setShowPasswordForm(false);
   };
 
@@ -155,7 +180,6 @@ export default function AccountTab(): React.JSX.Element {
   const handleUpdatePassword = async () => {
     if (!canUpdatePassword) return;
     setPasswordError(null);
-    setStatusMessage({ type: null, message: null });
 
     if (newPassword.length < 8) {
       setPasswordError("Password must be at least 8 characters long.");
@@ -174,10 +198,11 @@ export default function AccountTab(): React.JSX.Element {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       onCancelPassword();
-      setStatusMessage({
-        type: "success",
-        message: "Password updated successfully",
-      });
+      setAccountDetails((prev) => ({
+        ...prev,
+        passwordLastUpdatedAt: new Date(),
+      }));
+      toast.success("Password updated successfully");
     } catch (error: Error | unknown) {
       setPasswordError(
         error instanceof Error ? error.message : "An unknown error occurred"
@@ -199,6 +224,57 @@ export default function AccountTab(): React.JSX.Element {
       e.target.value === newPassword
     )
       setPasswordError(null);
+  };
+
+  const handleAvatarClick = () => {
+    if (uploadingAvatar) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be smaller than 5MB.");
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const { newImageUrl } = await fetchApi<{ newImageUrl: string }>(
+        "/api/user/avatar-upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const cacheBustedUrl = `${newImageUrl}?v=${new Date().getTime()}`;
+
+      await updateSession({
+        user: { ...session?.user, image: cacheBustedUrl },
+      });
+      toast.success("Avatar updated!");
+    } catch (error) {
+      console.error("Failed to upload avatar:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to upload avatar."
+      );
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   if (sessionStatus === "loading") {
@@ -247,22 +323,56 @@ export default function AccountTab(): React.JSX.Element {
 
       <div className="space-y-6">
         <div className="flex items-center gap-6 pb-6 border-b border-gray-200 dark:border-gray-800">
-          <div className="relative flex-shrink-0">
-            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 dark:from-primary/30 dark:to-primary/10 flex items-center justify-center border border-gray-200 dark:border-gray-800">
-              <User size={32} className="text-primary" />
-            </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            hidden
+            accept="image/png, image/jpeg"
+            onChange={handleAvatarChange}
+          />
+          <div className="relative shrink-0">
+            {session?.user?.image ? (
+              <Image
+                src={session.user.image}
+                alt="Avatar"
+                width={80}
+                height={80}
+                className="h-20 w-20 rounded-full object-cover border border-gray-200 dark:border-gray-800 cursor-pointer"
+                onClick={handleAvatarClick}
+              />
+            ) : (
+              <div
+                className="h-20 w-20 rounded-full bg-linear-to-br from-primary/20 to-primary/5 dark:from-primary/30 dark:to-primary/10 flex items-center justify-center border border-gray-200 dark:border-gray-800 cursor-pointer"
+                onClick={handleAvatarClick}
+              >
+                <User size={32} className="text-primary" />
+              </div>
+            )}
+
             <button
-              className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={handleAvatarClick}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Change avatar"
             >
-              <ImagePlus size={14} className="text-gray-600 dark:text-gray-400" />
+              {uploadingAvatar ? (
+                <Loader2
+                  size={14}
+                  className="animate-spin text-gray-600 dark:text-gray-400"
+                />
+              ) : (
+                <ImagePlus
+                  size={14}
+                  className="text-gray-600 dark:text-gray-400"
+                />
+              )}
             </button>
           </div>
         </div>
 
         <div className="space-y-6">
           <div className="flex items-center gap-6">
-            <div className="w-32 flex-shrink-0">
+            <div className="w-32 shrink-0">
               <label
                 htmlFor="username"
                 className="block text-sm font-medium text-gray-900 dark:text-gray-100"
@@ -324,7 +434,7 @@ export default function AccountTab(): React.JSX.Element {
           <div className="h-px bg-gray-200 dark:bg-gray-800"></div>
 
           <div className="flex items-start gap-6">
-            <div className="w-32 flex-shrink-0 pt-2">
+            <div className="w-32 shrink-0 pt-2">
               <label
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-900 dark:text-gray-100"
@@ -398,7 +508,7 @@ export default function AccountTab(): React.JSX.Element {
             <div className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
                     <KeyRound
                       size={18}
                       className="text-gray-600 dark:text-gray-400"
@@ -416,7 +526,19 @@ export default function AccountTab(): React.JSX.Element {
                     {!showPasswordForm && (
                       <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
                         <Clock size={12} />
-                        Last changed 3 months ago
+                        {accountDetails.passwordLastUpdatedAt ? (
+                          <span>
+                            Last changed{" "}
+                            {formatDistanceToNow(
+                              new Date(accountDetails.passwordLastUpdatedAt),
+                              { addSuffix: true }
+                            )}
+                          </span>
+                        ) : session?.user?.email ? (
+                          <span>Password has not been set</span>
+                        ) : (
+                          <span>Loading...</span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -550,7 +672,6 @@ export default function AccountTab(): React.JSX.Element {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

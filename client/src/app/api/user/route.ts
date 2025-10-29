@@ -5,11 +5,12 @@ import crypto from "crypto";
 import connectDB from "@/lib/mongoose";
 import { auth } from "@/lib/auth";
 import User from "../../models/User";
+import { checkRateLimit } from "@/lib/checkRateLimit";
 
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_USERNAME_LENGTH = 30;
 const MAX_EMAIL_LENGTH = 100;
-const BCRYPT_SALT_ROUNDS = 10;
+const BCRYPT_SALT_ROUNDS = 12;
 const EMAIL_VERIFICATION_TOKEN_EXPIRES = 60 * 60 * 1000;
 
 interface ProfileUpdateBody {
@@ -54,13 +55,21 @@ export async function GET() {
 
   await connectDB();
 
-  const user = await User.findById(userObjectId).select("createdAt").exec();
+  const user = await User.findById(userObjectId)
+    .select("createdAt passwordLastUpdatedAt")
+    .exec();
 
   if (!user) {
     return NextResponse.json({ message: "User not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ joinedDate: user.createdAt }, { status: 200 });
+  return NextResponse.json(
+    {
+      joinedDate: user.createdAt,
+      passwordLastUpdatedAt: user.passwordLastUpdatedAt,
+    },
+    { status: 200 }
+  );
 }
 
 export async function PUT(request: NextRequest) {
@@ -71,6 +80,13 @@ export async function PUT(request: NextRequest) {
       { status: 401 }
     );
   }
+
+  const rateLimit = await checkRateLimit(
+    userObjectId.toString(),
+    "update-profile",
+    5
+  );
+  if (rateLimit) return rateLimit;
 
   let body: ProfileUpdateBody;
   try {
@@ -204,6 +220,13 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
+  const rateLimit = await checkRateLimit(
+    userObjectId.toString(),
+    "update-password",
+    3
+  );
+  if (rateLimit) return rateLimit;
+
   let body: PasswordUpdateBody;
   try {
     body = await request.json();
@@ -256,6 +279,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   user.password = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+  user.passwordLastUpdatedAt = new Date();
   await user.save();
 
   return NextResponse.json(
@@ -272,6 +296,13 @@ export async function DELETE(request: NextRequest) {
       { status: 401 }
     );
   }
+
+  const rateLimit = await checkRateLimit(
+    userObjectId.toString(),
+    "delete-account",
+    2
+  );
+  if (rateLimit) return rateLimit;
 
   let body: DeleteBody = {};
   try {

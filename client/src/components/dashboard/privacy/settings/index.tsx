@@ -136,7 +136,7 @@ export default function SettingsModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-modal-title"
-        className="fixed inset-0 z-[1000] bg-white dark:bg-[#0B0B0D]"
+        className="fixed inset-0 z-1000 bg-white dark:bg-[#0B0B0D]"
       >
         <div className="grid w-full h-full grid-cols-1 sm:grid-cols-[240px_1fr]">
           <aside className="hidden sm:flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#111113]">
