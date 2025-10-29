@@ -4,17 +4,11 @@ import connectToDB from "@/lib/mongoose";
 import User from "@/app/models/User";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-08-27.basil",
+  apiVersion: "2025-08-27.basil", 
 });
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export async function POST(req: Request) {
-  const rawBody = await req.text();
+  const rawBody = await req.text(); // Correctly reading raw body
   const sig = req.headers.get("stripe-signature")!;
 
   let event;
