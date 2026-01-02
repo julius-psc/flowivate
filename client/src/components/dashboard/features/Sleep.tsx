@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus, Minus } from "lucide-react";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const SleepSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
   isSpecialTheme,
@@ -21,47 +22,39 @@ const SleepSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
   ];
   return (
     <div
-      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full animate-pulse ${
-        isSpecialTheme
-          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
+        ? "dark bg-zinc-900/50 border border-zinc-800/50"
+        : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+        }`}
     >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <div className="h-3 w-12 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+        <Skeleton className="h-3 w-12" />
       </div>
       <div className="flex items-center justify-center mb-4">
-        <div className="w-8 h-8 bg-gray-300 dark:bg-zinc-600 rounded-lg"></div>
-        <div className="h-8 w-12 bg-gray-200 dark:bg-zinc-700 rounded mx-3"></div>
-        <div className="w-8 h-8 bg-gray-300 dark:bg-zinc-600 rounded-lg"></div>
+        <Skeleton className="w-8 h-8 rounded-lg" />
+        <Skeleton className="h-8 w-12 mx-3" />
+        <Skeleton className="w-8 h-8 rounded-lg" />
       </div>
       <div className="flex flex-col mx-auto w-full max-w-xs mb-5 px-4">
         <div className="h-24 flex justify-around items-end mb-1">
           {placeholderBarHeights.map((heightClass, index) => (
             <div key={index} className="flex flex-col items-center">
               {heightClass === "h-2.5" ? (
-                <div
-                  className={`h-2.5 w-2.5 bg-gray-300 dark:bg-zinc-600 rounded-full opacity-50`}
-                ></div>
+                <Skeleton className="h-2.5 w-2.5 rounded-full opacity-50" />
               ) : (
-                <div
-                  className={`w-2 ${heightClass} bg-gray-300 dark:bg-zinc-600 rounded-lg`}
-                ></div>
+                <Skeleton className={`w-2 ${heightClass} rounded-lg`} />
               )}
             </div>
           ))}
         </div>
         <div className="flex justify-around items-center">
           {[...Array(7)].map((_, index) => (
-            <div
-              key={index}
-              className="h-3 w-5 bg-gray-200 dark:bg-zinc-700 rounded"
-            ></div>
+            <Skeleton key={index} className="h-3 w-5" />
           ))}
         </div>
       </div>
       <div className="flex justify-center mt-auto pt-2">
-        <div className="h-10 w-28 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
+        <Skeleton className="h-10 w-28 rounded-full" />
       </div>
     </div>
   );
@@ -175,8 +168,7 @@ export default function Sleep() {
       } catch (error) {
         console.error("Failed to fetch sleep data:", error);
         toast.error(
-          `Failed to load sleep data: ${
-            error instanceof Error ? error.message : "Unknown error"
+          `Failed to load sleep data: ${error instanceof Error ? error.message : "Unknown error"
           }`
         );
       } finally {
@@ -238,8 +230,7 @@ export default function Sleep() {
         !(error instanceof Error && error.message.startsWith("Server responded"))
       ) {
         toast.error(
-          `Error saving sleep: ${
-            error instanceof Error ? error.message : "Unknown error"
+          `Error saving sleep: ${error instanceof Error ? error.message : "Unknown error"
           }`
         );
       }
@@ -269,11 +260,10 @@ export default function Sleep() {
   if (!session)
     return (
       <div
-        className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full justify-center items-center ${
-          isSpecialTheme
-            ? "dark bg-zinc-900/50 border border-zinc-800/50"
-            : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-        }`}
+        className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full justify-center items-center ${isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+          }`}
       >
         <p className="text-center text-gray-600 dark:text-gray-400">
           Please sign in to track your sleep.
@@ -285,11 +275,10 @@ export default function Sleep() {
 
   return (
     <div
-      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
-        isSpecialTheme
-          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
+        ? "dark bg-zinc-900/50 border border-zinc-800/50"
+        : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+        }`}
     >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
@@ -330,15 +319,13 @@ export default function Sleep() {
                 onClick={() => handleDaySelect(index)}
               >
                 <div
-                  className={`transition-all duration-300 ease-in-out ${
-                    isSelected
-                      ? "bg-primary"
-                      : "bg-primary/30 dark:bg-primary/50 group-hover:bg-primary/50 dark:group-hover:bg-primary/70"
-                  } ${
-                    isDot
+                  className={`transition-all duration-300 ease-in-out ${isSelected
+                    ? "bg-primary"
+                    : "bg-primary/30 dark:bg-primary/50 group-hover:bg-primary/50 dark:group-hover:bg-primary/70"
+                    } ${isDot
                       ? "w-2.5 rounded-full"
                       : "w-2 rounded-lg"
-                  }`}
+                    }`}
                   style={{ height: isDot ? "0.625rem" : height }}
                 ></div>
               </div>
@@ -349,11 +336,10 @@ export default function Sleep() {
           {dayLabels.map((day, index) => (
             <span
               key={index}
-              className={`text-xs w-5 text-center transition-colors ${
-                index === selectedDayIndex
-                  ? "text-primary font-bold"
-                  : "text-gray-500 dark:text-zinc-400"
-              }`}
+              className={`text-xs w-5 text-center transition-colors ${index === selectedDayIndex
+                ? "text-primary font-bold"
+                : "text-gray-500 dark:text-zinc-400"
+                }`}
             >
               {day}
             </span>

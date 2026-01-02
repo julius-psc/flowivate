@@ -3,7 +3,7 @@
 import Image from "next/image";
 import logo from "../../assets/brand/logo-v1.5.svg";
 import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useState } from "react";
 
 export default function WaitlistPage() {
@@ -75,7 +75,7 @@ export default function WaitlistPage() {
         animate={
           {
             backgroundPosition: "100% 50%",
-          } as import("framer-motion").Target
+          } as import("motion/react").Target
         }
         transition={{
           duration: 20,
@@ -196,9 +196,8 @@ export default function WaitlistPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className={`mt-3 text-sm font-medium ${
-              submitStatus === "success" ? "text-green-400" : "text-red-400"
-            }`}
+            className={`mt-3 text-sm font-medium ${submitStatus === "success" ? "text-green-400" : "text-red-400"
+              }`}
           >
             {submitMessage}
           </motion.p>

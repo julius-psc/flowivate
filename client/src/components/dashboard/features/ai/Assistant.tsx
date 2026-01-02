@@ -7,8 +7,9 @@ import {
   IconMessage,
   IconTrash,
   IconLock,
-  IconLoader2,
+
 } from "@tabler/icons-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 import logo from "../../../../assets/brand/lumo-logo.svg";
 import Image from "next/image";
 import ChatPanel from "./ChatPanel";
@@ -191,11 +192,10 @@ const Assistant: React.FC = () => {
   return (
     <>
       <div
-        className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
-          isSpecialTheme
-            ? "dark bg-zinc-900/50 border border-zinc-800/50"
-            : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-        }`}
+        className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
+          ? "dark bg-zinc-900/50 border border-zinc-800/50"
+          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+          }`}
       >
         <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
@@ -251,8 +251,10 @@ const Assistant: React.FC = () => {
                 </button>
               </div>
               {isLoadingRecents ? (
-                <div className="flex justify-center items-center py-4">
-                  <IconLoader2 className="w-5 h-5 animate-spin text-gray-500 dark:text-gray-400" />
+                <div className="space-y-2">
+                  <Skeleton className="h-12 w-full rounded-lg" />
+                  <Skeleton className="h-12 w-full rounded-lg" />
+                  <Skeleton className="h-12 w-full rounded-lg" />
                 </div>
               ) : (
                 <div className="space-y-2">

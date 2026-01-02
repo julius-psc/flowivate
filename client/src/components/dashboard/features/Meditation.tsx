@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { IconWind, IconChevronLeft } from "@tabler/icons-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
@@ -133,9 +133,9 @@ const Meditation = () => {
         const progress =
           currentPhaseCfg.duration > 0
             ? Math.min(
-                currentCycleTimeRef.current / currentPhaseCfg.duration,
-                1
-              )
+              currentCycleTimeRef.current / currentPhaseCfg.duration,
+              1
+            )
             : 1;
 
         if (currentPhaseRef.current === "inhale") {
@@ -180,11 +180,10 @@ const Meditation = () => {
 
   return (
     <div
-      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
-        isSpecialTheme
+      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
           ? "dark bg-zinc-900/50 border border-zinc-800/50"
           : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+        }`}
     >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
@@ -243,11 +242,11 @@ const Meditation = () => {
                       ? 0.5 + breathProgress * 0.8
                       : 0.5 + breathProgress * 0.9
                     : breathPhase === "hold-exhale"
-                    ? 0.5
-                    : 1.4, // Fallback scale when not scaling, might need adjustment
+                      ? 0.5
+                      : 1.4, // Fallback scale when not scaling, might need adjustment
                 }}
                 transition={{ duration: 1, ease: "easeInOut" }}
-                // Removed style prop with width/height
+              // Removed style prop with width/height
               />
 
               <motion.div
@@ -257,8 +256,8 @@ const Meditation = () => {
                   scale: shouldScale
                     ? 0.85 + breathProgress * 0.2
                     : breathPhase === "hold-exhale"
-                    ? 0.85
-                    : 1.05, // Fallback scale
+                      ? 0.85
+                      : 1.05, // Fallback scale
                 }}
                 transition={{ duration: 1, ease: "easeInOut" }}
               >

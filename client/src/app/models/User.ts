@@ -20,6 +20,12 @@ export interface IUser extends Document {
   pendingEmail?: string | null;
   emailVerificationToken?: string | null;
   emailVerificationTokenExpires?: Date | null;
+
+  onboardingCompleted?: boolean;
+  persona?: string | null;
+  goals?: string[];
+  workStyle?: string | null;
+  challenge?: string | null;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -72,6 +78,12 @@ const UserSchema = new Schema<IUser>(
     },
     emailVerificationToken: { type: String, default: null },
     emailVerificationTokenExpires: { type: Date, default: null },
+
+    onboardingCompleted: { type: Boolean, default: false },
+    persona: { type: String, default: null },
+    goals: { type: [String], default: [] },
+    workStyle: { type: String, default: null },
+    challenge: { type: String, default: null },
   },
   { timestamps: true }
 );

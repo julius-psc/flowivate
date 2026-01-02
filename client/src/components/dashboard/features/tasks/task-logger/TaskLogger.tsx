@@ -9,7 +9,8 @@ import AddTaskInput from "./AddTaskInput";
 import { useTaskLoggerState } from "./useTaskLoggerState";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const TaskLogger: React.FC = () => {
   const {
@@ -73,21 +74,21 @@ const TaskLogger: React.FC = () => {
   const headingColor = !isMounted
     ? "text-transparent"
     : isSpecialTheme
-    ? "text-white"
-    : "text-gray-900 dark:text-gray-100";
+      ? "text-white"
+      : "text-gray-900 dark:text-gray-100";
 
   const inputBaseStyle =
     "bg-transparent focus:outline-none transition-all duration-200 disabled:opacity-50";
   const inputBorderStyle = !isMounted
     ? "border-transparent"
     : isSpecialTheme
-    ? "border-white/20 focus:border-white/50 placeholder:text-white/40"
-    : "border-slate-300/50 dark:border-zinc-600/50 focus:border-secondary-black dark:focus:border-secondary-white placeholder:text-zinc-500";
+      ? "border-white/20 focus:border-white/50 placeholder:text-white/40"
+      : "border-slate-300/50 dark:border-zinc-600/50 focus:border-secondary-black dark:focus:border-secondary-white placeholder:text-zinc-500";
   const inputTextStyle = !isMounted
     ? "text-transparent"
     : isSpecialTheme
-    ? "text-white/90"
-    : "text-slate-700 dark:text-slate-300";
+      ? "text-white/90"
+      : "text-slate-700 dark:text-slate-300";
   const fullInputStyle = `${inputBaseStyle} ${inputBorderStyle} ${inputTextStyle}`;
 
   const addListBaseStyle =
@@ -95,13 +96,13 @@ const TaskLogger: React.FC = () => {
   const addListBorderStyle = !isMounted
     ? "border-transparent"
     : isSpecialTheme
-    ? "border-white/40 hover:border-white/60"
-    : "border-secondary-black/80 hover:border-secondary-black dark:border-slate-400 dark:hover:border-secondary-white";
+      ? "border-white/40 hover:border-white/60"
+      : "border-secondary-black/80 hover:border-secondary-black dark:border-slate-400 dark:hover:border-secondary-white";
   const addListTextStyle = !isMounted
     ? "text-transparent"
     : isSpecialTheme
-    ? "text-white/60 hover:text-white/80"
-    : "text-secondary-black/80 hover:text-secondary-black dark:text-slate-400 dark:hover:text-secondary-white";
+      ? "text-white/60 hover:text-white/80"
+      : "text-secondary-black/80 hover:text-secondary-black dark:text-slate-400 dark:hover:text-secondary-white";
   const fullAddListStyle = `${addListBaseStyle} ${addListBorderStyle} ${addListTextStyle}`;
 
   const listContainerBaseClasses =
@@ -112,9 +113,8 @@ const TaskLogger: React.FC = () => {
     ? "dark bg-zinc-900/50 border border-zinc-800/50 opacity-100"
     : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50 opacity-100";
 
-  const stickyFooterClasses = `sticky bottom-4 z-10 w-fit mx-auto mt-4 flex-shrink-0 backdrop-blur-md rounded-4xl p-2 transition-opacity duration-300 ${
-    isMounted ? listContainerPostMountClasses.replace('mb-6', '').replace('p-4', '').replace('rounded-xl', '') : listContainerPreMountClasses
-  }`;
+  const stickyFooterClasses = `sticky bottom-4 z-10 w-fit mx-auto mt-4 flex-shrink-0 backdrop-blur-md rounded-4xl p-2 transition-opacity duration-300 ${isMounted ? listContainerPostMountClasses.replace('mb-6', '').replace('p-4', '').replace('rounded-xl', '') : listContainerPreMountClasses
+    }`;
 
   const isFreeUser = subscriptionStatus === "free";
   const canAddList = !isFreeUser || taskLists.length < 2;
@@ -141,9 +141,8 @@ const TaskLogger: React.FC = () => {
       <div className="flex justify-start items-center mb-4 flex-shrink-0 max-w-3xl mx-auto w-full h-4">
         {updateListMutation.isPending && (
           <span
-            className={`text-xs animate-pulse flex items-center gap-1 ${
-              isSpecialTheme ? "text-blue-300" : "text-blue-500 dark:text-blue-400"
-            }`}
+            className={`text-xs animate-pulse flex items-center gap-1 ${isSpecialTheme ? "text-blue-300" : "text-blue-500 dark:text-blue-400"
+              }`}
           >
             <IconLoader2 size={12} className="animate-spin" /> Saving...
           </span>
@@ -152,33 +151,35 @@ const TaskLogger: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto pb-20">
         <div className="max-w-3xl mx-auto w-full px-2">
+          {isLoadingLists && (
+            <div className="space-y-6 mb-6">
+              <Skeleton className="h-40 w-full rounded-xl" />
+              <Skeleton className="h-40 w-full rounded-xl" />
+            </div>
+          )}
           {showNoListsMessage && (
             // Wrap "No lists" message in a styled container
             <div
-              className={`${listContainerBaseClasses} ${
-                isMounted ? listContainerPostMountClasses : listContainerPreMountClasses
-              } flex items-center justify-center min-h-[100px]`} // Add flex centering and min-height
+              className={`${listContainerBaseClasses} ${isMounted ? listContainerPostMountClasses : listContainerPreMountClasses
+                } flex items-center justify-center min-h-[100px]`} // Add flex centering and min-height
             >
               <p
-                className={`text-center ${
-                  isSpecialTheme ? "text-white/50" : "text-slate-400 dark:text-slate-500"
-                }`}
+                className={`text-center ${isSpecialTheme ? "text-white/50" : "text-slate-400 dark:text-slate-500"
+                  }`}
               >
                 No task lists yet. Add one below!
               </p>
             </div>
           )}
           {showSignInMessage && (
-             // Wrap "Sign in" message similarly
+            // Wrap "Sign in" message similarly
             <div
-               className={`${listContainerBaseClasses} ${
-                 isMounted ? listContainerPostMountClasses : listContainerPreMountClasses
-               } flex items-center justify-center min-h-[100px]`}
+              className={`${listContainerBaseClasses} ${isMounted ? listContainerPostMountClasses : listContainerPreMountClasses
+                } flex items-center justify-center min-h-[100px]`}
             >
               <p
-                className={`p-4 text-center ${
-                  isSpecialTheme ? "text-white/60" : "text-slate-500 dark:text-slate-400"
-                }`}
+                className={`p-4 text-center ${isSpecialTheme ? "text-white/60" : "text-slate-500 dark:text-slate-400"
+                  }`}
               >
                 Please sign in to manage your tasks.
               </p>
@@ -205,9 +206,8 @@ const TaskLogger: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, transition: { duration: 0.1 } }}
                   transition={{ duration: 0.2 }}
-                  className={`${listContainerBaseClasses} ${
-                    isMounted ? listContainerPostMountClasses : listContainerPreMountClasses
-                  }`}
+                  className={`${listContainerBaseClasses} ${isMounted ? listContainerPostMountClasses : listContainerPreMountClasses
+                    }`}
                 >
                   <ListHeader
                     listName={list.name}
@@ -324,11 +324,10 @@ const TaskLogger: React.FC = () => {
                         }
                       }}
                       disabled={updateListMutation.isPending}
-                      className={`flex items-center gap-1 ${
-                        isSpecialTheme
+                      className={`flex items-center gap-1 ${isSpecialTheme
                           ? "text-white/70 hover:text-white/90"
                           : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                      } text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        } text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                       title="Add task"
                     >
                       <IconSquareRoundedPlus2 size={14} />{" "}
@@ -365,11 +364,10 @@ const TaskLogger: React.FC = () => {
                 disabled={updateListMutation.isPending}
               />
               <p
-                className={`text-xs mt-1 ${
-                  isSpecialTheme
+                className={`text-xs mt-1 ${isSpecialTheme
                     ? "text-white/50"
                     : "text-slate-500 dark:text-slate-400"
-                }`}
+                  }`}
               >
                 Press Enter to save or Escape to cancel
               </p>

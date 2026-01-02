@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, ArrowUpRight, Crown } from "lucide-react";
+import { Check, ArrowUpRight } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
@@ -19,8 +20,8 @@ export default function Pricing() {
     "Advanced analytics",
   ];
 
-  const monthlyPrice = 4.99;
-  const annualPrice = monthlyPrice * 12 * 0.7;
+  const monthlyPrice = 8;
+  const annualPrice = monthlyPrice * 12 * 0.8;
   const annualMonthlyPrice = annualPrice / 12;
 
   const monthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID!;
@@ -45,125 +46,138 @@ export default function Pricing() {
   };
 
   return (
-    <div id="pricing" className="bg-secondary-black px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
-            Choose your plan
-          </h1>
-          <p className="text-lg text-gray-400 max-w-lg mx-auto mb-8">
-            Start free and upgrade when you&#39;re ready to unlock more features
-          </p>
+    <div id="pricing" className="w-full px-4 py-20 relative overflow-hidden">
+      <div className="max-w-3xl mx-auto relative z-10">
 
-          {/* Billing Toggle */}
-          <div className="inline-flex items-center gap-3 p-1 rounded-full bg-secondary-black border border-gray-600/40">
+        {/* Header - Minimalist, just the toggle */}
+        <div className="flex justify-center mb-12">
+          <div className="inline-flex items-center gap-1 p-1 rounded-full bg-zinc-900 border border-zinc-800">
             <button
               onClick={() => setIsAnnual(false)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                !isAnnual
-                  ? "bg-white text-gray-900 shadow"
-                  : "text-gray-400 hover:text-white"
-              }`}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${!isAnnual
+                ? "bg-zinc-800 text-white shadow-sm"
+                : "text-gray-400 hover:text-white"
+                }`}
             >
               Monthly
             </button>
             <button
               onClick={() => setIsAnnual(true)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all relative ${
-                isAnnual
-                  ? "bg-white text-gray-900 shadow"
-                  : "text-gray-400 hover:text-white"
-              }`}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 relative ${isAnnual
+                ? "bg-zinc-800 text-white shadow-sm"
+                : "text-gray-400 hover:text-white"
+                }`}
             >
-              Annual
+              Yearly
               {isAnnual && (
-                <span className="absolute -top-2 -right-1 px-1.5 py-0.5 rounded-full bg-green-500 text-white text-xs font-bold">
-                  -30%
-                </span>
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="ml-2 text-primary-blue text-xs font-bold"
+                >
+                  -20%
+                </motion.span>
               )}
             </button>
           </div>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto items-stretch">
           {/* Free Plan */}
-          <div className="relative rounded-2xl border border-gray-600/40 bg-secondary-black p-6 hover:border-gray-500/40 transition-all">
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white mb-2">Starter</h3>
-              <p className="text-gray-400 text-sm mb-4">
-                Perfect for getting started
-              </p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-white">$0</span>
-                <span className="text-gray-400 text-sm">/month</span>
+          <div className="flex flex-col min-h-[550px] rounded-2xl border border-zinc-800 bg-zinc-900/40 p-8 transition-colors hover:border-zinc-700">
+            <div className="flex flex-col h-full">
+              <div className="mb-8">
+                <h3 className="text-lg font-medium text-white mb-2">Free</h3>
+                <div className="flex items-baseline gap-1 mb-2 h-10">
+                  <span className="text-4xl font-bold text-white tracking-tight">€0</span>
+                  <span className="text-white text-sm font-medium">/year</span>
+                </div>
+                <p className="text-gray-400 text-sm">
+                  The perfect starting point for new users.
+                </p>
+              </div>
+
+              <div className="mb-8">
+                <button
+                  className="w-full py-2.5 rounded-full bg-zinc-800 text-white font-medium text-sm hover:bg-zinc-700 transition-all shadow-sm"
+                >
+                  Start Free
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-white">Includes:</p>
+                {freeFeatures.map((feature, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-5 h-5 rounded-full border border-zinc-700 bg-zinc-800/50 flex-shrink-0">
+                      <Check size={12} className="text-gray-400" />
+                    </div>
+                    <span className="text-gray-300 text-sm">{feature}</span>
+                  </div>
+                ))}
               </div>
             </div>
-
-            <ul className="space-y-3 mb-6">
-              {freeFeatures.map((feature, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  <Check size={16} className="text-gray-400 flex-shrink-0" />
-                  <span className="text-gray-300 text-sm">{feature}</span>
-                </li>
-              ))}
-            </ul>
           </div>
 
           {/* Pro Plan */}
-          <div className="relative rounded-2xl bg-gradient-to-b from-blue-700/20 to-blue-900/30 border border-blue-500/30 p-6 hover:border-blue-400/40 transition-all">
-            {/* Popular Badge */}
-            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary-blue text-white text-xs font-semibold">
-                <Crown size={12} />
-                Most Popular
-              </div>
-            </div>
-
-            {/* Subtle glow */}
-            <div className="absolute inset-0 rounded-2xl bg-blue-600/10 blur-2xl -z-10"></div>
-
-            <div>
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-white mb-2">Pro</h3>
-                <p className="text-gray-300 text-sm mb-4">
-                  Everything you need to excel
-                </p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-white">
-                    $
-                    {isAnnual
-                      ? annualMonthlyPrice.toFixed(2)
-                      : monthlyPrice.toFixed(2)}
-                  </span>
-                  <span className="text-gray-400 text-sm">/month</span>
+          <div className="flex flex-col min-h-[550px] relative rounded-2xl border border-zinc-700 bg-zinc-800 p-8 shadow-xl">
+            <div className="flex flex-col h-full">
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-medium text-white">Pro</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-primary-blue text-white text-[10px] font-bold uppercase tracking-wider">
+                      Popular
+                    </span>
+                  </div>
                 </div>
-                {isAnnual && (
-                  <p className="text-green-400 text-xs mt-1">
-                    Billed annually (${annualPrice.toFixed(2)}/year)
-                  </p>
-                )}
+
+                <div className="flex items-baseline gap-1 mb-2 h-10">
+                  <span className="text-4xl font-bold text-white tracking-tight flex">
+                    €
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={isAnnual ? "annual" : "monthly"}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="inline-block"
+                      >
+                        {isAnnual
+                          ? annualMonthlyPrice.toFixed(0)
+                          : monthlyPrice.toFixed(0)}
+                      </motion.span>
+                    </AnimatePresence>
+                  </span>
+                  <span className="text-white text-sm font-medium">/month</span>
+                </div>
+                <p className="text-gray-400 text-sm">
+                  Unlock your full potential with advanced capabilities.
+                </p>
               </div>
 
-              <ul className="space-y-3 mb-6">
-                {proFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3">
-                    <Check size={16} className="text-blue-400 flex-shrink-0" />
-                    <span className="text-gray-200 text-sm">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mb-8">
+                <button
+                  onClick={handleCheckout}
+                  className="w-full py-2.5 rounded-full bg-primary-blue text-white font-medium text-sm hover:bg-[var(--color-primary-blue-hover)] transition-all"
+                >
+                  Upgrade to Pro
+                </button>
+              </div>
 
-              <button
-                onClick={handleCheckout}
-                className="relative w-full px-4 py-2.5 rounded-lg bg-white text-gray-900 font-medium text-sm hover:bg-gray-200 transition-all flex items-center justify-center gap-2 shadow"
-              >
-                <span className="relative z-10 flex items-center gap-1">
-                  Upgrade
-                  <ArrowUpRight size={16} />
-                </span>
-              </button>
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-white">Everything in Free +</p>
+                {proFeatures.map((feature, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-5 h-5 rounded-full border border-primary-blue/20 bg-primary-blue/10 text-primary-blue flex-shrink-0">
+                      <Check size={12} strokeWidth={2.5} />
+                    </div>
+                    <span className="text-gray-200 text-sm">{feature}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

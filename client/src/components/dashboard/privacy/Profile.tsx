@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { IconX } from "@tabler/icons-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface ProfileProps {
   onClose: () => void;
@@ -59,7 +60,7 @@ const Profile: React.FC<ProfileProps> = ({ onClose }) => {
         <div className="relative z-10 flex flex-col items-center justify-center p-6 min-w-[200px] border-r border-slate-200/30 dark:border-zinc-800/30">
           <div className="w-24 h-24 rounded-full border border-neutral-300 dark:border-neutral-700 overflow-hidden flex items-center justify-center text-3xl font-semibold text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800">
             {isLoadingSession ? (
-              <div className="w-full h-full animate-pulse bg-neutral-200 dark:bg-neutral-700" />
+              <Skeleton className="w-full h-full" />
             ) : userImage ? (
               <Image
                 src={userImage}
@@ -75,11 +76,13 @@ const Profile: React.FC<ProfileProps> = ({ onClose }) => {
 
           {/* show spinner/text until we have the date */}
           <span className="mt-3 text-xs text-neutral-500">
-            {loadingDate
-              ? "Loading…"
-              : joinedDate
-              ? `Joined ${new Date(joinedDate).toLocaleDateString()}`
-              : "Joined date unavailable"}
+            {loadingDate ? (
+              <Skeleton className="h-3 w-24" />
+            ) : joinedDate ? (
+              `Joined ${new Date(joinedDate).toLocaleDateString()}`
+            ) : (
+              "Joined date unavailable"
+            )}
           </span>
         </div>
 

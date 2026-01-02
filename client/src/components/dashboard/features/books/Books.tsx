@@ -6,6 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Book {
   _id: string;
@@ -23,25 +24,24 @@ const BooksSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
 
   return (
     <div
-      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full animate-pulse ${
-        isSpecialTheme
+      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
           ? "dark bg-zinc-900/50 border border-zinc-800/50"
           : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+        }`}
     >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <div className="h-3 w-12 bg-gray-200 dark:bg-zinc-700 rounded"></div>
-        <div className="h-7 w-24 bg-gray-300 dark:bg-zinc-600 rounded-md"></div>
+        <Skeleton className="h-3 w-12" />
+        <Skeleton className="h-7 w-24 rounded-md" />
       </div>
       <div className="space-y-2 flex-grow">
         {[...Array(numberOfPlaceholderBooks)].map((_, index) => (
           <React.Fragment key={index}>
             <div className="flex items-center justify-between py-1.5">
               <div className="flex items-center gap-2 flex-1 min-w-0 mr-4">
-                <div className="w-2.5 h-2.5 bg-gray-300 dark:bg-zinc-600 rounded-full flex-shrink-0"></div>
-                <div className="h-4 bg-gray-200 dark:bg-zinc-700 rounded w-4/5"></div>
+                <Skeleton className="w-2.5 h-2.5 rounded-full flex-shrink-0" />
+                <Skeleton className="h-4 w-4/5 rounded" />
               </div>
-              <div className="w-4 h-4 bg-gray-300 dark:bg-zinc-600 rounded flex-shrink-0"></div>
+              <Skeleton className="w-4 h-4 rounded flex-shrink-0" />
             </div>
             {index < numberOfPlaceholderBooks - 1 && (
               <div className="h-px bg-gray-200 dark:bg-zinc-700/50"></div>
@@ -50,7 +50,7 @@ const BooksSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
         ))}
       </div>
       <div className="mt-3 text-center flex-shrink-0">
-        <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded mx-auto"></div>
+        <Skeleton className="h-3 w-20 rounded mx-auto" />
       </div>
     </div>
   );
@@ -129,21 +129,23 @@ const Books: React.FC = () => {
 
   return (
     <div
-      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
-        isSpecialTheme
+      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
           ? "dark bg-zinc-900/50 border border-zinc-800/50"
           : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+        }`}
     >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
           BOOKS
         </h1>
-        <Link href="/dashboard/books" passHref legacyBehavior>
-          <a className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 bg-primary-white dark:bg-primary-black-dark px-2 py-1 rounded-md dark:hover:text-gray-100 cursor-pointer border border-slate-200/80 dark:border-zinc-700/80 transition-all">
-            <span>New Book</span>
-            <IconBook2 size={14} />
-          </a>
+
+        <Link
+          href="/dashboard/books"
+          className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 bg-primary-white dark:bg-primary-black-dark px-2 py-1 rounded-md dark:hover:text-gray-100 cursor-pointer border border-slate-200/80 dark:border-zinc-700/80 transition-all"
+          aria-label="Add a new book"
+        >
+          <span>New Book</span>
+          <IconBook2 size={14} />
         </Link>
       </div>
 
@@ -170,17 +172,13 @@ const Books: React.FC = () => {
                       {book.title}
                     </span>
                   </div>
+
                   <Link
                     href={`/dashboard/books/${book._id}`}
-                    passHref
-                    legacyBehavior
+                    aria-label={`View details for ${book.title}`}
+                    className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex-shrink-0"
                   >
-                    <a title={`View details for ${book.title}`}>
-                      <IconArrowUpRight
-                        size={16}
-                        className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors flex-shrink-0"
-                      />
-                    </a>
+                    <IconArrowUpRight size={16} />
                   </Link>
                 </li>
                 {index < recentBooks.length - 1 && (

@@ -24,23 +24,27 @@ const Bubble: React.FC<BubbleProps> = ({ delay, size, xDrift, originX }) => {
     isClient: false,
     targetY: null as number | null,
     computedTransition: null as Transition | null,
+    wobblePath: [] as number[],
   });
 
   useEffect(() => {
     // --- FIX: Disable lint rule for this intentional client-side setup ---
-    // This is necessary to get client-side window dimensions for animation
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    const duration = 4 + Math.random() * 4; // Varying duration based on randomness (could be size based too)
+    const wobble = Math.random() * 30 + 10; // Random wobble amplitude
+
     setBubbleState({
       isClient: true,
-      targetY: -window.innerHeight - 100, // Safely access window.innerHeight
+      targetY: -window.innerHeight - 150,
+      wobblePath: [0, wobble, -wobble, wobble / 2, -wobble / 2, 0], // Sine-like wave
       computedTransition: {
-        y: { duration: 5 + Math.random() * 2, ease: 'linear' as const },
-        x: { duration: 5 + Math.random() * 2, ease: 'easeInOut' as const },
+        y: { duration: duration, ease: 'linear' as const },
+        x: { duration: duration, ease: 'easeInOut' as const, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
         scale: { duration: 3, repeat: Infinity, ease: 'easeInOut' as const },
-        opacity: { duration: 5 + Math.random() * 2, ease: 'linear' as const },
+        opacity: { duration: duration * 0.8, ease: 'easeOut' as const, times: [0, 1] }, // Fade out near end
         delay,
         repeat: Infinity,
-        repeatDelay: Math.random() * 3,
+        repeatDelay: Math.random() * 5,
       },
     });
   }, [delay]);
@@ -50,27 +54,28 @@ const Bubble: React.FC<BubbleProps> = ({ delay, size, xDrift, originX }) => {
     bubbleState.computedTransition === null ||
     bubbleState.targetY === null
   ) {
-    // Render nothing on the server or before client-side values are ready
     return null;
   }
 
   const animateProps: MotionProps['animate'] = {
     y: bubbleState.targetY,
-    x: xDrift,
-    scale: [1, 1.2, 1],
-    opacity: 0,
+    x: bubbleState.wobblePath.map(val => val + xDrift), // Combine wobble with drift
+    scale: [1, 1.1, 0.95, 1.05, 1],
+    opacity: [0, 0.6, 0.6, 0], // Fade in, stay, fade out
   };
 
   return (
     <motion.div
-      className="absolute rounded-full bg-white opacity-40"
+      className="absolute rounded-full bg-white"
       style={{
         width: size,
         height: size,
-        bottom: '10%', // Initial vertical position relative to parent
-        left: originX, // Initial horizontal position
+        bottom: '-10%', // Start slightly below view
+        left: originX,
+        boxShadow: 'inset 0 0 6px rgba(255, 255, 255, 0.8)', // Add depth
+        filter: 'blur(0.5px)',
       }}
-      initial={{ y: 0, x: 0, scale: 1, opacity: 0.5 }} // x:0 means xDrift is purely an animation target
+      initial={{ y: 0, x: 0, scale: 0.5, opacity: 0 }}
       animate={animateProps}
       transition={bubbleState.computedTransition}
     />
@@ -97,28 +102,31 @@ const OceanEnv: React.FC = () => {
     const animateFish = async () => {
       // Reset fish to start off-screen left
       await fishControls.start({
-        x: -FISH_WIDTH, // Start off-screen
-        y: 0,
-        transition: { duration: 0 }, // Instantaneous
+        x: -FISH_WIDTH,
+        y: 100, // Start lower
+        rotate: 0,
+        transition: { duration: 0 },
       });
 
-      // Animate fish across the screen
+      // Animate fish across the screen with a graceful curve
       await fishControls.start({
-        x: window.innerWidth + FISH_WIDTH, // Safely use window.innerWidth
-        y: [0, 20, 0, -20, 0], // Vertical bobbing motion
+        x: window.innerWidth + FISH_WIDTH,
+        y: [100, 50, 120, 60, 100], // Smoother S-curve
+        rotate: [0, -5, 5, -5, 0], // Gentle banking
         transition: {
-          x: { duration: 25, ease: 'linear' as const },
-          y: { duration: 5, ease: 'easeInOut' as const, repeat: Infinity },
+          x: { duration: 35, ease: 'linear' as const }, // Slower, majestic swim
+          y: { duration: 35, ease: 'easeInOut' as const, times: [0, 0.25, 0.5, 0.75, 1] },
+          rotate: { duration: 35, ease: 'easeInOut' as const, times: [0, 0.25, 0.5, 0.75, 1] },
         },
       });
 
-      setCycleCount(prev => prev + 1); // Increment to potentially re-trigger effect if needed for looping
+      setCycleCount(prev => prev + 1);
     };
 
     animateFish(); // Start animation
 
     // If you want the fish to loop based on interval, not just cycleCount:
-    const intervalId = setInterval(animateFish, 30000); // Restart animation every 30 seconds
+    const intervalId = setInterval(animateFish, 40000); // Restart animation every 40 seconds
 
     return () => clearInterval(intervalId); // Cleanup interval
   }, [isMounted, fishControls, cycleCount]); // cycleCount dependency will re-run if it changes

@@ -1,18 +1,21 @@
-import Hero from '../components/landing-page/Hero';
-import Features from '../components/landing-page/Features'
-import Pricing from '../components/landing-page/Pricing'
-import Footer from '../components/landing-page/Footer'
-import Preview from '../components/landing-page/Preview'
-import Cta from '../components/landing-page/Cta'
+import Navbar from "../components/landing-page/Navbar";
+import Hero from "../components/landing-page/Hero";
+import About from "../components/landing-page/About";
+
+import Pricing from "../components/landing-page/Pricing";
+import FAQ from "../components/landing-page/FAQ";
+import CTA from "../components/landing-page/Cta";
+import Footer from "../components/landing-page/Footer";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen w-full bg-secondary-black overflow-x-hidden">
+    <div className="min-h-screen w-full bg-[#121212]">
+      <Navbar />
       <Hero />
-      <Features />
-      <Preview />
+      <About />
       <Pricing />
-      <Cta />
+      <FAQ />
+      <CTA />
       <Footer />
     </div>
   );

@@ -1,80 +1,86 @@
-"use client";
 import React from "react";
-import Link from "next/link";
 import Image from "next/image";
-import logo from "../../assets/brand/logo-v1.5-white.svg";
-import landingGrad from "../../../public/assets/illustrations/landing-gradient.png";
+import Link from "next/link";
+import logo from "@/assets/brand/logo-v1.5.svg";
+import xLogo from "@/assets/icons/x-logo.svg";
+import instagramLogo from "@/assets/icons/instagram-logo.svg";
+import githubLogo from "@/assets/icons/github-logo.svg";
 
 export default function Footer() {
   return (
-    <footer className="bg-secondary-black px-2 py-2">
-      <div className="w-full rounded-3xl overflow-hidden border border-white/10 backdrop-blur-xl bg-white/5 relative">
-        {/* Gradient background */}
-        <Image
-          src={landingGrad}
-          alt="Footer Gradient Background"
-          fill
-          className="absolute inset-0 object-cover opacity-80 pointer-events-none"
-        />
+    <footer className="w-full bg-[#121212] pt-16 pb-8 px-4 flex justify-center relative z-20">
+      <div className="w-full max-w-6xl">
 
-        {/* Content */}
-        <div className="relative z-10 px-10 py-12">
-          {/* Main content */}
-          <div className="flex flex-col items-center text-center space-y-6">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <Image
-                src={logo}
-                alt="Flowivate Logo"
-                width={40}
-                height={40}
-              />
+        {/* Main Content */}
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-16 lg:gap-12 mb-16">
+
+          {/* Brand Column */}
+          <div className="flex flex-col gap-4 max-w-xs">
+            <div className="flex items-center">
+              <Image src={logo} alt="Flowivate Logo" className="w-12 h-12" />
+              <span className="text-lg font-medium text-white">Flowivate</span>
             </div>
-
-            {/* Social links */}
-            <div className="flex gap-6">
-              <Link
-                href="https://instagram.com/flowivate"
-                className="text-white/70 hover:text-white transition-colors duration-300 text-sm font-medium"
-              >
-                Instagram
+            <p className="text-zinc-500 text-sm leading-relaxed">
+              Flowivate empowers you to transform chaos into clear, focused workflows — making deep work easier to achieve and sustain.
+            </p>
+            <div className="flex items-center gap-5 mt-1">
+              <Link href="#" className="opacity-70 hover:opacity-100 transition-opacity">
+                <Image src={xLogo} alt="X" width={18} height={18} className="w-[18px] h-[18px] invert" />
               </Link>
-              <Link
-                href="https://x.com/flowivate"
-                className="text-white/70 hover:text-white transition-colors duration-300 text-sm font-medium"
-              >
-                X
+              <Link href="#" className="opacity-70 hover:opacity-100 transition-opacity">
+                <Image src={instagramLogo} alt="Instagram" width={18} height={18} className="w-[18px] h-[18px] invert" />
+              </Link>
+              <Link href="#" className="opacity-70 hover:opacity-100 transition-opacity">
+                <Image src={githubLogo} alt="GitHub" width={18} height={18} className="w-[18px] h-[18px] invert" />
               </Link>
             </div>
+          </div>
 
-            {/* Legal links */}
-            <div className="flex gap-6">
-              <Link
-                href="#"
-                className="text-white/50 hover:text-white/70 text-sm transition-colors duration-300"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                href="#"
-                className="text-white/50 hover:text-white/70 text-sm transition-colors duration-300"
-              >
-                Cookie Policy
-              </Link>
-              <Link
-                href="#"
-                className="text-white/50 hover:text-white/70 text-sm transition-colors duration-300"
-              >
-                Terms of Service
-              </Link>
+          {/* Links Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-16 gap-y-10 mt-2">
+            <div className="flex flex-col gap-4">
+              <h4 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Product</h4>
+              <div className="flex flex-col gap-3">
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Features</Link>
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Pricing</Link>
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Integrations</Link>
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Changelog</Link>
+              </div>
             </div>
-
-            {/* Copyright */}
-            <div className="text-white/50 text-sm">
-              © 2025 Flowivate. All rights reserved.
+            <div className="flex flex-col gap-4">
+              <h4 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Resources</h4>
+              <div className="flex flex-col gap-3">
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Documentation</Link>
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Tutorials</Link>
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Blog</Link>
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Support</Link>
+              </div>
+            </div>
+            <div className="flex flex-col gap-4">
+              <h4 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Company</h4>
+              <div className="flex flex-col gap-3">
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">About</Link>
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Careers</Link>
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Contact</Link>
+                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Partners</Link>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Divider */}
+        <div className="w-full h-px bg-zinc-800 mb-8" />
+
+        {/* Bottom Bar */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-zinc-500">
+          <p>&copy; 2026 Flowivate. All rights reserved.</p>
+          <div className="flex gap-6">
+            <Link href="#" className="hover:text-zinc-300 transition-colors">Privacy Policy</Link>
+            <Link href="#" className="hover:text-zinc-300 transition-colors">Terms of Service</Link>
+            <Link href="#" className="hover:text-zinc-300 transition-colors">Cookies</Link>
+          </div>
+        </div>
+
       </div>
     </footer>
   );

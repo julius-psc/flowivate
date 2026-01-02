@@ -3,18 +3,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import {
-  IconChevronDown,
-  IconPencil,
-  IconGift,
-  IconShare,
-} from "@tabler/icons-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 
 import lumoLogo from "../../../assets/brand/lumo-logo.svg";
 import ChatPanel from "../features/ai/ChatPanel";
+import ProfilePopup from "./ProfilePopup";
+import ShareModal from "./ShareModal";
 
 interface StatusOption {
   name: string;
@@ -22,11 +19,16 @@ interface StatusOption {
   bgColor: string;
 }
 
-const Navbar: React.FC = () => {
+interface NavbarProps {
+  openSettings: (tab?: string) => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
   const [showProfileComponent, setShowProfileComponent] = useState(false);
-  const [isMounted, setIsMounted] = useState(false); // <--- Add isMounted state
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const { data: session, status: sessionStatus } = useSession();
   const { theme } = useTheme();
@@ -187,7 +189,7 @@ const Navbar: React.FC = () => {
   });
   StatusIndicator.displayName = "StatusIndicator";
 
-  const handleSetConversationId = useCallback((): void => {}, []);
+  const handleSetConversationId = useCallback((): void => { }, []);
 
   // Define base classes that are always present
   const navBaseClasses =
@@ -200,19 +202,21 @@ const Navbar: React.FC = () => {
     ? "dark bg-zinc-900/50 border border-zinc-800/50 opacity-100" // Frosted glass for special themes
     : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50 opacity-100"; // Standard light/dark with transparency
 
-  // Define classes for profile popup
-  const profileBaseClasses = "relative backdrop-blur-md rounded-2xl overflow-hidden transition-opacity duration-300";
-  const profilePreMountClasses = "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 opacity-0";
-  const profilePostMountClasses = isSpecialTheme
-    ? "dark bg-zinc-900/50 border border-zinc-800/50 opacity-100"
-    : "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 opacity-100";
+  const handleEditProfile = useCallback(() => {
+    setShowProfileComponent(false);
+    openSettings("account");
+  }, [openSettings]);
+
+  const handleShare = useCallback(() => {
+    setShowProfileComponent(false);
+    setIsShareModalOpen(true);
+  }, []);
 
   return (
     <>
       <nav
-        className={`${navBaseClasses} ${
-          isMounted ? navPostMountClasses : navPreMountClasses // <--- Apply conditional classes
-        }`}
+        className={`${navBaseClasses} ${isMounted ? navPostMountClasses : navPreMountClasses // <--- Apply conditional classes
+          }`}
       >
         {/* ... rest of Navbar content (Ask Lumo button, Status, Profile Icon) ... */}
         <div className="flex items-center">
@@ -229,7 +233,7 @@ const Navbar: React.FC = () => {
                 height={26}
                 priority
               />
-              <span className="flex-grow mx-1 font-semibold bg-gradient-to-b from-[#3A6EC8] to-[#6DA1C4] bg-clip-text text-transparent">
+              <span className="grow mx-1 font-semibold bg-gradient-to-b from-[#3A6EC8] to-[#6DA1C4] bg-clip-text text-transparent">
                 Ask Lumo
               </span>
             </button>
@@ -258,13 +262,12 @@ const Navbar: React.FC = () => {
 
                 {showStatusMenu && (
                   <div
-                    className={`absolute right-0 mt-1 w-36 backdrop-blur-md rounded-xl p-1.5 z-20 ${
-                      isMounted // Apply conditional classes to dropdown too
+                    className={`absolute right-0 mt-1 w-36 backdrop-blur-md rounded-xl p-1.5 z-20 ${isMounted // Apply conditional classes to dropdown too
                         ? isSpecialTheme
                           ? "dark bg-zinc-900/50 border border-zinc-800/50"
                           : "bg-white/95 dark:bg-zinc-900/95 border border-slate-200/50 dark:border-zinc-800/50"
                         : "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0 pointer-events-none" // Hide before mount
-                    }`}
+                      }`}
                   >
                     {statusOptions.map((option) => (
                       <button
@@ -273,7 +276,7 @@ const Navbar: React.FC = () => {
                         className="w-full flex items-center space-x-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 px-2 py-1.5 rounded-md transition-colors"
                       >
                         <div
-                          className={`w-3 h-3 rounded-full ${option.bgColor} flex items-center justify-center flex-shrink-0`}
+                          className={`w-3 h-3 rounded-full ${option.bgColor} flex items-center justify-center shrink-0`}
                         >
                           <div
                             className={`w-1.5 h-1.5 rounded-full ${option.color}`}
@@ -325,95 +328,14 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {showProfileComponent && (
-                  <div className="profile-popup-container absolute right-0 mt-2 w-80 z-20">
-                    <div
-                      className={`${profileBaseClasses} ${
-                        isMounted
-                          ? profilePostMountClasses
-                          : profilePreMountClasses // <--- Conditional classes for profile popup
-                      }`}
-                    >
-                      <div className="relative p-6">
-                        <button
-                          onClick={() => {}}
-                          className="absolute top-4 right-4 p-2 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 rounded-lg transition-colors"
-                          aria-label="Edit profile"
-                        >
-                          <IconPencil className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        </button>
-                        <div className="flex items-start space-x-4">
-                          <div className="relative">
-                            <div className="w-20 h-20 rounded-full flex items-center justify-center text-white font-semibold text-2xl overflow-hidden">
-                              {session.user.image ? (
-                                <Image
-                                  src={session.user.image}
-                                  alt={
-                                    session.user.username || "User Avatar"
-                                  }
-                                  width={80}
-                                  height={80}
-                                  className="object-cover"
-                                />
-                              ) : (
-                                <span className="flex items-center justify-center w-full h-full bg-green-500">
-                                  {userInitial}
-                                </span>
-                              )}
-                            </div>
-                            <div
-                              className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ${
-                                currentStatus.bgColor
-                              } flex items-center justify-center border-2 ${
-                                // Use isMounted here too for border color consistency
-                                isMounted
-                                  ? isSpecialTheme
-                                    ? "border-zinc-900/50"
-                                    : "border-white dark:border-zinc-900"
-                                  : "border-white dark:border-zinc-900" // Default pre-mount border
-                              } `}
-                            >
-                              <div
-                                className={`w-2 h-2 rounded-full ${currentStatus.color}`}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex-1 pt-1">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                {username}
-                              </h3>
-                              <span className="px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100/60 dark:bg-blue-900/30 rounded-md border border-blue-200/50 dark:border-blue-800/50">
-                                ELITE
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {session.user.email}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                              Member since 03/06/2007
-                            </p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 mt-6">
-                          <button
-                            onClick={() => {}}
-                            className="flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100/60 dark:bg-gray-800/30 hover:bg-gray-200/60 dark:hover:bg-gray-700/30 rounded-lg transition-colors border border-slate-200/30 dark:border-zinc-800/30"
-                          >
-                            <IconGift className="w-4 h-4" />
-                            <span>Referrals</span>
-                          </button>
-                          <button
-                            onClick={() => {}}
-                            className="flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100/60 dark:bg-gray-800/30 hover:bg-gray-200/60 dark:hover:bg-gray-700/30 rounded-lg transition-colors border border-slate-200/30 dark:border-zinc-800/30"
-                          >
-                            <IconShare className="w-4 h-4" />
-                            <span>Share</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <ProfilePopup
+                    session={session}
+                    currentStatus={currentStatus}
+                    isSpecialTheme={isSpecialTheme}
+                    isMounted={isMounted}
+                    onEditProfile={handleEditProfile}
+                    onShare={handleShare}
+                  />
                 )}
               </>
             )}
@@ -441,6 +363,11 @@ const Navbar: React.FC = () => {
           setConversationId={handleSetConversationId}
         />
       )}
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </>
   );
 };

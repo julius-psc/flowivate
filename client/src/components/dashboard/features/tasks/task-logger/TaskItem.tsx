@@ -13,7 +13,7 @@ import PriorityDropdown from "./PriorityDropdown";
 import { priorityLevels } from "./priorityLevels";
 import Checkbox from "../../../recyclable/Checkbox";
 import type { Task } from "@/types/taskTypes";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 
 interface TaskItemProps {
   task: Task;
@@ -291,10 +291,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
                   e.stopPropagation();
                   if (!isDisabled) togglePriorityDropdown(task.id);
                 }}
-                title={`Priority: ${
-                  priorityLevels.find((p) => p.level === task.priority)?.label ||
+                title={`Priority: ${priorityLevels.find((p) => p.level === task.priority)?.label ||
                   "None"
-                }`}
+                  }`}
                 className={`p-1 rounded ${buttonHoverBg} ${iconColor} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                 aria-haspopup="true"
                 aria-expanded={isPriorityDropdownOpen}
@@ -366,11 +365,10 @@ const TaskItem: React.FC<TaskItemProps> = ({
       {!isPlaceholder && level === 0 && (
         <motion.div
           layout
-          className={`mt-1 overflow-hidden transition-all duration-200 ease-in-out ${
-            addingSubtaskTo === task.id
+          className={`mt-1 overflow-hidden transition-all duration-200 ease-in-out ${addingSubtaskTo === task.id
               ? "h-12 py-1"
               : "h-0 group-hover/task:h-8 group-hover/task:py-1"
-          }`}
+            }`}
           style={addSubtaskIndentStyle}
         >
           {addingSubtaskTo === task.id ? (

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence, cubicBezier } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   IconSearch,
   IconX,
@@ -13,6 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { useDebouncedCallback } from "use-debounce";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Message {
   id: string;
@@ -284,13 +285,13 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { duration: 0.25, ease: cubicBezier(0.16, 1, 0.3, 1) }, // <-- FIXED
+      transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }, // <-- FIXED
     },
     exit: {
       opacity: 0,
       y: -15,
       scale: 0.98,
-      transition: { duration: 0.15, ease: cubicBezier(0.4, 0, 0.6, 1) }, // <-- FIXED
+      transition: { duration: 0.15, ease: [0.4, 0, 0.6, 1] as [number, number, number, number] }, // <-- FIXED
     },
   };
 
@@ -300,7 +301,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       height: "auto",
       opacity: 1,
       transition: {
-        height: { duration: 0.25, ease: cubicBezier(0.16, 1, 0.3, 1) }, // <-- FIXED
+        height: { duration: 0.25, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }, // <-- FIXED
         opacity: { duration: 0.2, delay: 0.05 },
       },
     },
@@ -308,7 +309,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
       height: 0,
       opacity: 0,
       transition: {
-        height: { duration: 0.15, ease: cubicBezier(0.4, 0, 0.6, 1) }, // <-- FIXED
+        height: { duration: 0.15, ease: [0.4, 0, 0.6, 1] as [number, number, number, number] }, // <-- FIXED
         opacity: { duration: 0.1 },
       },
     },
@@ -319,15 +320,15 @@ const ChatPanel: React.FC<CommandBarProps> = ({
     animate: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.2, ease: cubicBezier(0.16, 1, 0.3, 1) }, // <-- This one was already correct
+      transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }, // <-- This one was already correct
     },
   };
 
   const SkeletonLoader = () => (
-    <div className="flex flex-col gap-2 pl-2 w-full animate-pulse">
-      <div className="h-3 bg-gray-200 dark:bg-zinc-700 rounded-md w-3/4"></div>
-      <div className="h-3 bg-gray-200 dark:bg-zinc-700 rounded-md w-1/2"></div>
-      <div className="h-3 bg-gray-200 dark:bg-zinc-700 rounded-md w-5/6"></div>
+    <div className="flex flex-col gap-2 pl-2 w-full">
+      <Skeleton className="h-3 rounded-md w-3/4" />
+      <Skeleton className="h-3 rounded-md w-1/2" />
+      <Skeleton className="h-3 rounded-md w-5/6" />
     </div>
   );
 
@@ -370,11 +371,10 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputText.trim() || isLoading}
-                  className={`p-1 rounded-md flex items-center justify-center ${
-                    inputText.trim() && !isLoading
-                      ? "bg-primary hover:bg-primary/80 text-white"
-                      : "bg-gray-200 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                  } transition-colors`}
+                  className={`p-1 rounded-md flex items-center justify-center ${inputText.trim() && !isLoading
+                    ? "bg-primary hover:bg-primary/80 text-white"
+                    : "bg-gray-200 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                    } transition-colors`}
                   aria-label="Send message"
                 >
                   <IconArrowRight className="w-3.5 h-3.5" />
@@ -438,11 +438,10 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                           ) : null}
                           <div className="flex items-start gap-2">
                             <div
-                              className={`grow rounded-md p-2.5 ${
-                                msg.sender === "user"
-                                  ? "text-sm text-gray-700 dark:text-gray-300"
-                                  : "bg-gray-50/70 dark:bg-zinc-800/40 text-sm text-gray-800 dark:text-gray-200"
-                              }`}
+                              className={`grow rounded-md p-2.5 ${msg.sender === "user"
+                                ? "text-sm text-gray-700 dark:text-gray-300"
+                                : "bg-gray-50/70 dark:bg-zinc-800/40 text-sm text-gray-800 dark:text-gray-200"
+                                }`}
                             >
                               <div className="whitespace-pre-wrap leading-relaxed wrap-break-word">
                                 {msg.text}

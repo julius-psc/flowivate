@@ -10,6 +10,7 @@ import { PomodoroProvider } from "@/components/dashboard/features/pomodoro/Pomod
 import MiniPomo from "@/components/dashboard/features/pomodoro/MiniPomo";
 import ThemeBackground from "../../../themes/ThemeBackground";
 import ProductivityBuddy from "@/components/dashboard/features/ai/ProductivityBuddy";
+import Settings from "../../components/dashboard/privacy/settings";
 import logo from "../../assets/brand/logo-v1.5.svg";
 
 export default function DashboardLayout({
@@ -64,6 +65,8 @@ export default function DashboardLayout({
 
 function LayoutCore({ children }: { children: React.ReactNode }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   useEffect(() => {
     const onFullChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onFullChange);
@@ -77,11 +80,26 @@ function LayoutCore({ children }: { children: React.ReactNode }) {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
+
   const toggleFullscreen = () => {
-    const el = document.getElementById("dashboard-container");
-    if (!el) return;
-    if (!document.fullscreenElement) el.requestFullscreen();
-    else document.exitFullscreen();
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((e) => {
+        console.error(`Error attempting to enable fullscreen mode: ${e.message} (${e.name})`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  const openSettings = (tab: string = "account") => {
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.replaceState({}, "", url.toString());
+    }
+    setIsSettingsOpen(true);
   };
 
   const { isFeatureSelected } = useDashboard();
@@ -91,7 +109,7 @@ function LayoutCore({ children }: { children: React.ReactNode }) {
     <PomodoroProvider enabled={pomoEnabled}>
       <div className="relative z-10 flex flex-col h-full">
         <div className="z-20">
-          <Navbar />
+          <Navbar openSettings={openSettings} />
           {pomoEnabled && (
             <div className="mt-2">
               <MiniPomo />
@@ -102,6 +120,7 @@ function LayoutCore({ children }: { children: React.ReactNode }) {
           <Sidebar
             isFullscreen={isFullscreen}
             toggleFullscreen={toggleFullscreen}
+            openSettings={openSettings}
           />
           <main className="flex-1 overflow-y-auto relative z-10">
             {children}
@@ -111,6 +130,10 @@ function LayoutCore({ children }: { children: React.ReactNode }) {
           <ProductivityBuddy />
         </div>
       </div>
+      <Settings
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </PomodoroProvider>
   );
 }

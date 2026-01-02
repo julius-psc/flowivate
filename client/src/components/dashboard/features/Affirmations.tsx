@@ -5,30 +5,30 @@ import { toast } from "sonner";
 import { X, Plus, List, RefreshCcw, Check } from "lucide-react";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const AffirmationsSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
   isSpecialTheme,
 }) => {
   return (
     <div
-      className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col overflow-hidden h-full animate-pulse ${
-        isSpecialTheme
+      className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col overflow-hidden h-full ${isSpecialTheme
           ? "dark bg-zinc-900/50 border border-zinc-800/50"
           : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+        }`}
     >
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded"></div>
-        <div className="h-5 w-12 bg-gray-200 dark:bg-zinc-700 rounded-md"></div>
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-5 w-12 rounded-md" />
       </div>
 
       <div className="flex-grow flex flex-col items-center justify-center relative mb-4">
-        <div className="h-4 w-3/4 bg-gray-200 dark:bg-zinc-700 rounded"></div>
-        <div className="h-4 w-1/2 bg-gray-200 dark:bg-zinc-700 rounded mt-2"></div>
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-4 w-1/2 mt-2" />
       </div>
 
       <div className="flex-shrink-0 flex items-center justify-center">
-        <div className="h-9 w-9 bg-gray-200 dark:bg-zinc-700 rounded-lg"></div>
+        <Skeleton className="h-9 w-9 rounded-lg" />
       </div>
     </div>
   );
@@ -70,7 +70,7 @@ export default function Affirmations() {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(
             errorData.message ||
-              `Error: ${response.statusText} (${response.status})`
+            `Error: ${response.statusText} (${response.status})`
           );
         }
         const data = await response.json();
@@ -127,7 +127,7 @@ export default function Affirmations() {
             .catch(() => ({ message: `HTTP error ${response.status}` }));
           throw new Error(
             errorData.message ||
-              `Failed to add affirmation (${response.status})`
+            `Failed to add affirmation (${response.status})`
           );
         }
         return response.json();
@@ -174,7 +174,7 @@ export default function Affirmations() {
             .catch(() => ({ message: `HTTP error ${response.status}` }));
           throw new Error(
             errorData.message ||
-              `Failed to delete affirmation (${response.status})`
+            `Failed to delete affirmation (${response.status})`
           );
         }
         return response.json();
@@ -182,23 +182,23 @@ export default function Affirmations() {
       {
         success: () => {
           setAffirmations((prev) => {
-              // Create new array *before* calculating next index
-              const nextAffirmations = prev.filter((_, i) => i !== index);
+            // Create new array *before* calculating next index
+            const nextAffirmations = prev.filter((_, i) => i !== index);
 
-              // Calculate next index based on the *old* array length and currentIndex
-              if (index === currentIndex) {
-                  if (prev.length > 1) {
-                      // Need to find a valid next index from the remaining items
-                      setCurrentIndex(prevIndex => (prevIndex % nextAffirmations.length));
-                  } else {
-                      setCurrentIndex(0); // Reset if list becomes empty
-                  }
-              } else if (index < currentIndex) {
-                   // Adjust currentIndex if an item before it was deleted
-                   setCurrentIndex((prevIndex) => Math.max(0, prevIndex - 1));
+            // Calculate next index based on the *old* array length and currentIndex
+            if (index === currentIndex) {
+              if (prev.length > 1) {
+                // Need to find a valid next index from the remaining items
+                setCurrentIndex(prevIndex => (prevIndex % nextAffirmations.length));
+              } else {
+                setCurrentIndex(0); // Reset if list becomes empty
               }
-              // Return the new filtered array
-              return nextAffirmations;
+            } else if (index < currentIndex) {
+              // Adjust currentIndex if an item before it was deleted
+              setCurrentIndex((prevIndex) => Math.max(0, prevIndex - 1));
+            }
+            // Return the new filtered array
+            return nextAffirmations;
           });
           return "Affirmation deleted successfully!";
         },
@@ -259,9 +259,8 @@ export default function Affirmations() {
   if (error) {
     return (
       <div
-        className={`${containerBaseClasses} ${
-            isMounted ? containerPostMountClasses : containerPreMountClasses // Apply conditional classes even for error state
-        } items-center justify-center`} // Added centering for error message
+        className={`${containerBaseClasses} ${isMounted ? containerPostMountClasses : containerPreMountClasses // Apply conditional classes even for error state
+          } items-center justify-center`} // Added centering for error message
       >
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider absolute top-4 left-4">
           Affirmations
@@ -277,9 +276,8 @@ export default function Affirmations() {
 
   return (
     <div
-      className={`${containerBaseClasses} ${
-          isMounted ? containerPostMountClasses : containerPreMountClasses // Apply conditional classes
-      }`}
+      className={`${containerBaseClasses} ${isMounted ? containerPostMountClasses : containerPreMountClasses // Apply conditional classes
+        }`}
     >
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider">
@@ -289,11 +287,10 @@ export default function Affirmations() {
           onClick={() =>
             setViewMode(viewMode === "display" ? "manage" : "display")
           }
-          className={`flex items-center gap-1 text-xs transition-colors px-2 py-1 rounded-md ${
-             isSpecialTheme
-               ? 'text-white/70 hover:text-white hover:bg-white/10'
-               : 'text-primary/70 dark:text-primary-foreground/70 hover:text-primary dark:hover:text-primary-foreground hover:bg-slate-100 dark:hover:bg-zinc-800/50'
-          }`}
+          className={`flex items-center gap-1 text-xs transition-colors px-2 py-1 rounded-md ${isSpecialTheme
+              ? 'text-white/70 hover:text-white hover:bg-white/10'
+              : 'text-primary/70 dark:text-primary-foreground/70 hover:text-primary dark:hover:text-primary-foreground hover:bg-slate-100 dark:hover:bg-zinc-800/50'
+            }`}
           aria-label={
             viewMode === "display" ? "Manage affirmations" : "Done managing"
           }
@@ -308,9 +305,8 @@ export default function Affirmations() {
           <div className="flex-grow flex items-center justify-center w-full px-4">
             {affirmations.length > 0 ? (
               <p
-                className={`text-lg md:text-xl font-medium ${isSpecialTheme ? 'text-white/90' : 'text-black/80 dark:text-white/80'} text-center transition-opacity duration-150 ${
-                  isFading ? "opacity-0" : "opacity-100"
-                }`}
+                className={`text-lg md:text-xl font-medium ${isSpecialTheme ? 'text-white/90' : 'text-black/80 dark:text-white/80'} text-center transition-opacity duration-150 ${isFading ? "opacity-0" : "opacity-100"
+                  }`}
               >
                 {affirmations[currentIndex]}
               </p>
@@ -324,11 +320,10 @@ export default function Affirmations() {
             <button
               onClick={shuffleAffirmation}
               disabled={affirmations.length < 2 || isFading}
-              className={`flex items-center justify-center h-9 w-9 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                 isSpecialTheme
-                   ? 'bg-white/10 text-white/80 hover:bg-white/20'
-                   : 'bg-slate-100 dark:bg-zinc-800/70 text-primary/80 dark:text-primary-foreground/80 hover:bg-slate-200 dark:hover:bg-zinc-800'
-              }`}
+              className={`flex items-center justify-center h-9 w-9 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${isSpecialTheme
+                  ? 'bg-white/10 text-white/80 hover:bg-white/20'
+                  : 'bg-slate-100 dark:bg-zinc-800/70 text-primary/80 dark:text-primary-foreground/80 hover:bg-slate-200 dark:hover:bg-zinc-800'
+                }`}
               aria-label="Show new affirmation"
             >
               <RefreshCcw size={16} />
@@ -350,9 +345,8 @@ export default function Affirmations() {
               affirmations.map((affirmation, index) => (
                 <div
                   key={`${affirmation}-${index}`} // Use a more stable key if possible, but index is fallback
-                  className={`group/item flex items-center justify-between px-3 py-1 rounded-lg transition-colors min-h-[32px] ${
-                      isSpecialTheme ? 'hover:bg-white/5' : 'hover:bg-slate-50 dark:hover:bg-zinc-800'
-                  }`}
+                  className={`group/item flex items-center justify-between px-3 py-1 rounded-lg transition-colors min-h-[32px] ${isSpecialTheme ? 'hover:bg-white/5' : 'hover:bg-slate-50 dark:hover:bg-zinc-800'
+                    }`}
                 >
                   <div className="flex items-center gap-3 min-w-0"> {/* Added min-w-0 */}
                     <span className="text-primary font-medium flex-shrink-0">•</span>
@@ -363,9 +357,8 @@ export default function Affirmations() {
                   <button
                     onClick={() => handleDeleteAffirmation(index, affirmation)}
                     disabled={isDeleting === affirmation}
-                    className={`opacity-0 group-hover/item:opacity-100 focus:opacity-100 transition-opacity p-1 rounded-full flex-shrink-0 ${
-                       isSpecialTheme ? 'hover:bg-white/10' : 'hover:bg-slate-200 dark:hover:bg-zinc-700'
-                    }`}
+                    className={`opacity-0 group-hover/item:opacity-100 focus:opacity-100 transition-opacity p-1 rounded-full flex-shrink-0 ${isSpecialTheme ? 'hover:bg-white/10' : 'hover:bg-slate-200 dark:hover:bg-zinc-700'
+                      }`}
                     aria-label="Delete affirmation"
                   >
                     <X
@@ -387,21 +380,19 @@ export default function Affirmations() {
               placeholder="I am..."
               value={newAffirmation}
               onChange={(e) => setNewAffirmation(e.target.value)}
-              className={`mx-1 rounded-xl border-2 px-2 py-2 text-sm transition-all duration-200 focus:outline-none focus:ring-3 disabled:opacity-60 disabled:cursor-not-allowed ${
-                 isSpecialTheme
-                   ? 'bg-black/10 border-white/15 text-white/90 placeholder:text-white/40 focus:border-white/40 focus:ring-white/10'
-                   : 'text-secondary-black dark:text-secondary-white border-slate-300 dark:border-zinc-700 dark:bg-zinc-800/90 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-primary focus:ring-primary/20 dark:focus:ring-primary/10'
-              }`}
+              className={`mx-1 rounded-xl border-2 px-2 py-2 text-sm transition-all duration-200 focus:outline-none focus:ring-3 disabled:opacity-60 disabled:cursor-not-allowed ${isSpecialTheme
+                  ? 'bg-black/10 border-white/15 text-white/90 placeholder:text-white/40 focus:border-white/40 focus:ring-white/10'
+                  : 'text-secondary-black dark:text-secondary-white border-slate-300 dark:border-zinc-700 dark:bg-zinc-800/90 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-primary focus:ring-primary/20 dark:focus:ring-primary/10'
+                }`}
               disabled={isAdding}
               autoComplete="off"
             />
             <button
               type="submit"
-              className={`w-full flex items-center justify-center gap-1 rounded-lg text-sm px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isSpecialTheme
-                   ? 'bg-white/90 text-zinc-900 hover:bg-white'
-                   : 'bg-primary text-secondary-white hover:bg-primary/90'
-              }`}
+              className={`w-full flex items-center justify-center gap-1 rounded-lg text-sm px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed ${isSpecialTheme
+                  ? 'bg-white/90 text-zinc-900 hover:bg-white'
+                  : 'bg-primary text-secondary-white hover:bg-primary/90'
+                }`}
               disabled={isAdding || !newAffirmation.trim()}
             >
               <Plus size={16} />

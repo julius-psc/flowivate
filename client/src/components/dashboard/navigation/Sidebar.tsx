@@ -4,9 +4,8 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import Settings from "../privacy/settings";
-import { useTheme } from "next-themes"; // Import useTheme
-import { specialSceneThemeNames } from "@/lib/themeConfig"; // Import theme names
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 
 import {
   IconLayoutDashboard,
@@ -31,16 +30,17 @@ interface NavItem {
 interface SidebarProps {
   isFullscreen: boolean;
   toggleFullscreen: () => void;
+  openSettings: (tab?: string) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   isFullscreen,
   toggleFullscreen,
+  openSettings,
 }) => {
   const pathname = usePathname();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false); // Add isMounted state
-  const { theme } = useTheme(); // Get theme
+  const [isMounted, setIsMounted] = useState(false);
+  const { theme } = useTheme();
 
   // Effect runs only on the client after mount
   useEffect(() => {
@@ -144,12 +144,11 @@ const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
-              onClick={() => setIsSettingsOpen(true)}
-              className={`p-2 rounded-lg transition-colors ${hoverBgColor}`} // Use new hover color
+              onClick={() => openSettings("account")}
+              className={`p-2 rounded-lg transition-colors ${hoverBgColor}`}
               aria-label="Settings"
             >
-              <IconSettings className={`w-4 h-auto ${inactiveIconColor}`} />{" "}
-              {/* Use new icon color */}
+              <IconSettings className={`w-4 h-auto ${inactiveIconColor}`} />
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
@@ -162,11 +161,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       </aside>
-
-      <Settings
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
     </>
   );
 };

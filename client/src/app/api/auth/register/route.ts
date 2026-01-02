@@ -12,7 +12,16 @@ type ErrorResponse = {
 
 export async function POST(request: Request) {
   try {
-    const { email, username, password } = await request.json();
+    const {
+      email,
+      username,
+      password,
+      persona,
+      goals,
+      workStyle,
+      challenge,
+      onboardingCompleted
+    } = await request.json();
 
     if (!email || !username || !password) {
       return NextResponse.json<ErrorResponse>(
@@ -102,6 +111,11 @@ export async function POST(request: Request) {
       email: lowerEmail,
       username,
       password: hashedPassword,
+      persona,
+      goals,
+      workStyle,
+      challenge,
+      onboardingCompleted: onboardingCompleted ?? false,
     });
 
     return NextResponse.json(

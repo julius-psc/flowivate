@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Lock } from "lucide-react";
 
 export default function EarlyAccessPage() {
@@ -21,7 +21,7 @@ export default function EarlyAccessPage() {
     });
 
     if (res.ok) {
-      router.push("/register");
+      router.push("/onboarding");
     } else {
       const data = await res.json();
       setError(data.message || "Access denied.");
@@ -45,7 +45,7 @@ export default function EarlyAccessPage() {
         animate={
           {
             backgroundPosition: "100% 50%",
-          } as import("framer-motion").Target
+          } as import("motion/react").Target
         }
         transition={{
           duration: 20,

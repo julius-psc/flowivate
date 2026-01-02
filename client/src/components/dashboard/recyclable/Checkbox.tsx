@@ -8,6 +8,7 @@ interface CheckboxProps {
   label: string;
   disabled?: boolean;
   variant?: 'default' | 'subtask'; // Keep the variants
+  className?: string;
 }
 
 const Checkbox: React.FC<CheckboxProps> = ({
@@ -15,7 +16,8 @@ const Checkbox: React.FC<CheckboxProps> = ({
   onChange,
   label,
   disabled = false,
-  variant = 'default'
+  variant = 'default',
+  className = ''
 }) => {
 
   // Define base classes using CSS variables
@@ -44,7 +46,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
 
   return (
     // Use group for hover states on the container
-    <label className={`flex items-center select-none group ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+    <label className={`flex items-center select-none group min-w-0 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}>
       <input
         type="checkbox"
         checked={checked}
@@ -72,11 +74,9 @@ const Checkbox: React.FC<CheckboxProps> = ({
       <span
         id={labelId}
         // Use Tailwind text color utilities or CSS variables for text
-        className={`text-base text-gray-600 dark:text-gray-400 ${
-          checked && !disabled ? 'line-through text-gray-400 dark:text-gray-500' : ''
-        } ${
-          disabled ? 'text-gray-400 dark:text-gray-500' : '' // Muted color when disabled
-        }`}
+        className={`text-base text-gray-600 dark:text-gray-400 truncate ${checked && !disabled ? 'line-through text-gray-400 dark:text-gray-500' : ''
+          } ${disabled ? 'text-gray-400 dark:text-gray-500' : '' // Muted color when disabled
+          }`}
       >
         {label}
       </span>

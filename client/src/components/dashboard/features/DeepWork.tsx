@@ -8,7 +8,6 @@ import {
   Clock,
   X,
   Target,
-  Loader,
   Volume2,
   VolumeX,
   ArrowLeft,
@@ -17,6 +16,7 @@ import {
   Focus,
   CheckCircle,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 import * as tasksApi from "../../../lib/tasksApi";
 import type { Task, TaskList } from "@/types/taskTypes";
 import {
@@ -390,9 +390,10 @@ const DeepWork: React.FC = () => {
               Your Tasks
             </h3>
             {isLoadingTasks && (
-              <div className="flex items-center text-secondary-black/60 dark:text-secondary-white/60 py-2">
-                <Loader className="animate-spin mr-2" size={16} />
-                Loading tasks...
+              <div className="space-y-2 py-2">
+                <Skeleton className="h-8 w-full rounded-md" />
+                <Skeleton className="h-8 w-full rounded-md" />
+                <Skeleton className="h-8 w-full rounded-md" />
               </div>
             )}
             {isErrorTasks && errorTasks && (
@@ -427,7 +428,7 @@ const DeepWork: React.FC = () => {
           </p>
         )}
       </div>
-      <div className="mt-auto pt-3 flex-shrink-0">
+      <div className="mt-auto pt-3 pb-4 flex-shrink-0">
         <h3 className="text-xs font-medium text-secondary-black/60 dark:text-secondary-white/60 uppercase tracking-wider mb-1.5">
           Custom Task
         </h3>
@@ -443,7 +444,7 @@ const DeepWork: React.FC = () => {
             Add Custom Task
           </button>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-[95%] mx-auto">
             <input
               ref={customTaskInputRef}
               type="text"
@@ -515,11 +516,10 @@ const DeepWork: React.FC = () => {
             <button
               key={duration}
               onClick={() => handleSetDurationPreset(duration)}
-              className={`p-3 rounded-md text-center transition-all duration-150 text-sm border ${
-                !isCustomDurationSelected && focusDuration === duration
-                  ? "bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black border-transparent shadow-md ring-1 ring-black/10 dark:ring-white/10"
-                  : "bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white border-secondary-black/20 dark:border-secondary-white/20 hover:bg-secondary-black/5 dark:hover:bg-secondary-white/10 hover:border-secondary-black/40 dark:hover:border-secondary-white/40"
-              }`}
+              className={`p-3 rounded-md text-center transition-all duration-150 text-sm border ${!isCustomDurationSelected && focusDuration === duration
+                ? "bg-secondary-black dark:bg-secondary-white text-secondary-white dark:text-secondary-black border-transparent shadow-md ring-1 ring-black/10 dark:ring-white/10"
+                : "bg-secondary-white dark:bg-secondary-black text-secondary-black dark:text-secondary-white border-secondary-black/20 dark:border-secondary-white/20 hover:bg-secondary-black/5 dark:hover:bg-secondary-white/10 hover:border-secondary-black/40 dark:hover:border-secondary-white/40"
+                }`}
             >
               <div className="font-semibold">{duration}</div>
               <div className="text-xs opacity-70">minutes</div>
@@ -571,11 +571,10 @@ const DeepWork: React.FC = () => {
                 }
               }}
               placeholder="e.g., 45"
-              className={`${inputClassName} min-w-0 ${
-                isCustomDurationSelected
-                  ? "border-primary ring-1 ring-primary/20 dark:ring-primary/10"
-                  : ""
-              }`}
+              className={`${inputClassName} min-w-0 ${isCustomDurationSelected
+                ? "border-primary ring-1 ring-primary/20 dark:ring-primary/10"
+                : ""
+                }`}
             />
           </div>
         </div>
@@ -612,11 +611,10 @@ const DeepWork: React.FC = () => {
           <button
             key={name}
             onClick={() => handleSelectMusic(name as AmbientSoundName)}
-            className={`w-full p-3 rounded-md transition-colors flex items-center justify-between text-sm text-left ${
-              ambientSoundHook.currentSound === name
-                ? "bg-secondary-black/10 dark:bg-secondary-white/10 ring-1 ring-inset ring-secondary-black/20 dark:ring-secondary-white/20"
-                : "bg-secondary-white dark:bg-secondary-black hover:bg-secondary-black/5 dark:hover:bg-secondary-white/5"
-            }`}
+            className={`w-full p-3 rounded-md transition-colors flex items-center justify-between text-sm text-left ${ambientSoundHook.currentSound === name
+              ? "bg-secondary-black/10 dark:bg-secondary-white/10 ring-1 ring-inset ring-secondary-black/20 dark:ring-secondary-white/20"
+              : "bg-secondary-white dark:bg-secondary-black hover:bg-secondary-black/5 dark:hover:bg-secondary-white/5"
+              }`}
           >
             <div className="flex items-center min-w-0">
               <span className="text-lg mr-3 flex-shrink-0">
@@ -701,7 +699,7 @@ const DeepWork: React.FC = () => {
           {remainingTime !== null ? (
             formatRemainingTime(remainingTime)
           ) : (
-            <Loader className="animate-spin inline-block" size={60} />
+            <Skeleton className="h-20 w-40 inline-block rounded-lg" />
           )}
         </div>
         {endTime && (
@@ -742,17 +740,15 @@ const DeepWork: React.FC = () => {
   return (
     <div
       ref={componentRef}
-      className={`relative rounded-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out backdrop-blur-md ${
-        isSpecialTheme
-          ? "dark bg-zinc-900/50 border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border-slate-200/50 dark:border-zinc-800/50"
-      } ${
-        setupStep === "active"
+      className={`relative rounded-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out backdrop-blur-md ${isSpecialTheme
+        ? "dark bg-zinc-900/50 border-zinc-800/50"
+        : "bg-white/80 dark:bg-zinc-900/80 border-slate-200/50 dark:border-zinc-800/50"
+        } ${setupStep === "active"
           ? "h-full !bg-secondary-white dark:!bg-secondary-black !border-transparent !backdrop-blur-none"
           : setupStep === "idle"
-          ? "h-80"
-          : "h-[500px]"
-      }`}
+            ? "h-80"
+            : "h-[500px]"
+        }`}
       id="deep-work-container"
     >
       {setupStep === "active" ? (

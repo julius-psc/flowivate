@@ -6,46 +6,46 @@ import { Plus, Minus, Pencil, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const WaterSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
   isSpecialTheme,
 }) => {
   return (
     <div
-      className={`p-3 backdrop-blur-md rounded-xl flex flex-col h-full animate-pulse ${
-        isSpecialTheme
+      className={`p-3 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
           ? "dark bg-zinc-900/50 border border-zinc-800/50"
           : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+        }`}
     >
       <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-200 dark:bg-zinc-700 rounded"></div>
-          <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+          <Skeleton className="w-4 h-4" />
+          <Skeleton className="h-3 w-20" />
         </div>
-        <div className="h-4 w-16 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+        <Skeleton className="h-4 w-16" />
       </div>
 
       <div className="flex flex-col items-center my-2">
         <div className="flex items-baseline justify-center">
-          <div className="h-7 w-12 bg-gray-200 dark:bg-zinc-700 rounded mr-1"></div>
-          <div className="h-4 w-14 bg-gray-200 dark:bg-zinc-700 rounded"></div>
+          <Skeleton className="h-7 w-12 mr-1" />
+          <Skeleton className="h-4 w-14" />
         </div>
-        <div className="h-3 w-24 bg-gray-200 dark:bg-zinc-700 rounded mt-1.5"></div>
+        <Skeleton className="h-3 w-24 mt-1.5" />
       </div>
 
       <div className="w-full my-2">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gray-300 dark:bg-zinc-600 rounded-full flex-shrink-0"></div>
-          <div className="h-5 flex-grow bg-gray-200 dark:bg-zinc-700 rounded-full"></div>
-          <div className="w-8 h-8 bg-gray-300 dark:bg-zinc-600 rounded-full flex-shrink-0"></div>
+          <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
+          <Skeleton className="h-5 flex-grow rounded-full" />
+          <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
         </div>
       </div>
 
       <div className="h-4 mb-1"></div>
 
       <div className="flex justify-center mt-auto pt-1.5">
-        <div className="h-8 w-32 bg-gray-300 dark:bg-zinc-600 rounded-full"></div>
+        <Skeleton className="h-8 w-32 rounded-full" />
       </div>
     </div>
   );
@@ -84,7 +84,7 @@ const Water = () => {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(
               errorData.message ||
-                `Failed to fetch water data (${response.status})`
+              `Failed to fetch water data (${response.status})`
             );
           }
 
@@ -202,15 +202,14 @@ const Water = () => {
 
   return (
     <div
-      className={`p-3 backdrop-blur-md rounded-xl flex flex-col h-full ${
-        isSpecialTheme
+      className={`p-3 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
           ? "dark bg-zinc-900/50 border border-zinc-800/50"
           : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+        }`}
     >
       <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <h1 className="text-xs text-secondary-black dark:text-secondary-white opacity-40">
+          <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider absolute top-4 left-4">
             WATER INTAKE
           </h1>
         </div>
@@ -265,11 +264,10 @@ const Water = () => {
           </span>
         </div>
         <p
-          className={`mt-1 text-xs font-medium ${
-            remainingWater > 0
+          className={`mt-1 text-xs font-medium ${remainingWater > 0
               ? "text-gray-500 dark:text-gray-400"
               : "text-green-500 dark:text-green-400"
-          }`}
+            }`}
         >
           {remainingWater > 0
             ? `${remainingWater}ml remaining`
@@ -312,7 +310,7 @@ const Water = () => {
         <button
           onClick={handleSave}
           disabled={isSaveDisabled}
-          className="bg-primary-blue text-white hover:bg-primary-blue dark:text-white dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed mx-2.5 px-5 py-1.5 rounded-full text-xs font-medium transition-colors duration-200"
+          className="bg-primary text-secondary-white dark:bg-primary dark:text-secondary-white mx-2.5 px-6 py-2 rounded-full text-sm font-normal transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading && !isFetching ? "Saving..." : "Log water"}
         </button>

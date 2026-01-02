@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useSettings } from "../useSettings";
-import { AlertTriangle, Loader2, Calendar, Check, Star, CreditCard, Zap, Crown } from "lucide-react";
+import { AlertTriangle, Calendar, Check, Star, CreditCard, Zap, Crown } from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type SubStatus = "active" | "canceled" | "past_due" | "free";
 
@@ -74,11 +75,16 @@ export default function SubscriptionTab(): React.JSX.Element {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2
-          className="animate-spin text-gray-400 dark:text-gray-500"
-          size={32}
-        />
+      <div className="max-w-3xl">
+        <div className="mb-8">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="space-y-6">
+          <Skeleton className="h-40 w-full rounded-lg" />
+          <Skeleton className="h-px w-full" />
+          <Skeleton className="h-24 w-full rounded-lg" />
+        </div>
       </div>
     );
   }

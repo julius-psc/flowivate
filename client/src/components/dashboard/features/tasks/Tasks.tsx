@@ -12,36 +12,36 @@ import { toast } from "sonner";
 import { useGlobalStore } from "@/hooks/useGlobalStore";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const TasksSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({ isSpecialTheme }) => {
   const numberOfPlaceholderTasks = 3;
   return (
     <div
-      className={`p-4 backdrop-blur-md rounded-xl border flex flex-col animate-pulse ${
-        isSpecialTheme
-          ? "dark bg-zinc-900/50 border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+      className={`p-4 backdrop-blur-md rounded-xl border flex flex-col ${isSpecialTheme
+        ? "dark bg-zinc-900/50 border-zinc-800/50"
+        : "bg-white/80 dark:bg-zinc-900/80 border-slate-200/50 dark:border-zinc-800/50"
+        }`}
     >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <div className="h-3 w-12 bg-gray-200 dark:bg-zinc-700 rounded"></div>
-        <div className="h-7 w-28 bg-gray-300 dark:bg-zinc-600 rounded-md"></div>
+        <Skeleton className="h-3 w-12" />
+        <Skeleton className="h-7 w-28 rounded-md" />
       </div>
-      <div className="h-4 w-3/5 bg-gray-200 dark:bg-zinc-700 rounded mb-3 mx-auto"></div>
+      <Skeleton className="h-4 w-3/5 rounded mb-3 mx-auto" />
       <div className="space-y-2 flex-grow">
         {[...Array(numberOfPlaceholderTasks)].map((_, index) => (
           <div
             key={index}
             className="flex items-center p-2 rounded-lg bg-gray-100/50 dark:bg-zinc-800/50 border border-transparent"
           >
-            <div className="w-5 h-5 bg-gray-300 dark:bg-zinc-600 rounded mr-3 flex-shrink-0"></div>
-            <div className="h-4 flex-1 bg-gray-200 dark:bg-zinc-700 rounded"></div>
-            <div className="w-5 h-5 bg-gray-300 dark:bg-zinc-600 rounded ml-auto flex-shrink-0"></div>
+            <Skeleton className="w-5 h-5 rounded mr-3 flex-shrink-0" />
+            <Skeleton className="h-4 flex-1 rounded" />
+            <Skeleton className="w-5 h-5 rounded ml-auto flex-shrink-0" />
           </div>
         ))}
       </div>
       <div className="mt-3 text-center flex-shrink-0">
-        <div className="h-3 w-20 bg-gray-200 dark:bg-zinc-700 rounded mx-auto"></div>
+        <Skeleton className="h-3 w-20 rounded mx-auto" />
       </div>
     </div>
   );
@@ -112,9 +112,8 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
             onSetPriority(listId, taskId, level);
             onClose();
           }}
-          className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 transition-colors ${
-            currentPriority === level ? "bg-slate-50/80 dark:bg-zinc-700/80 font-semibold" : ""
-          }`}
+          className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 transition-colors ${currentPriority === level ? "bg-slate-50/80 dark:bg-zinc-700/80 font-semibold" : ""
+            }`}
         >
           <Icon size={16} className={level === 0 ? "opacity-50 text-slate-400" : color} />
           <span>{label}</span>
@@ -315,7 +314,7 @@ const Tasks: React.FC = () => {
       return (
         <div key={task.id} className="relative group/task">
           <div className="flex items-center p-2 rounded-lg">
-            <Checkbox checked={task.completed} onChange={() => {}} label={task.name} variant="default" disabled />
+            <Checkbox checked={task.completed} onChange={() => { }} label={task.name} variant="default" disabled className="flex-1 min-w-0" />
             <div className="ml-auto pl-2 opacity-0 flex-shrink-0">
               <div className="p-1">
                 <PriorityIconDisplay level={task.priority} />
@@ -335,6 +334,7 @@ const Tasks: React.FC = () => {
             label={task.name}
             variant="default"
             disabled={isListMutating}
+            className="flex-1 min-w-0"
           />
           <div className="relative ml-auto pl-2 flex-shrink-0">
             <div className="relative">
@@ -376,11 +376,10 @@ const Tasks: React.FC = () => {
 
   return (
     <div
-      className={`p-4 backdrop-blur-md rounded-xl border flex flex-col ${
-        isSpecialTheme
-          ? "dark bg-zinc-900/50 border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+      className={`p-4 backdrop-blur-md rounded-xl border flex flex-col ${isSpecialTheme
+        ? "dark bg-zinc-900/50 border-zinc-800/50"
+        : "bg-white/80 dark:bg-zinc-900/80 border-slate-200/50 dark:border-zinc-800/50"
+        }`}
     >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">TASKS</h1>

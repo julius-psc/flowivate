@@ -95,10 +95,11 @@ export const authConfig: NextAuthConfig = {
       await connectDB();
 
       if (trigger === "update") {
-        const dbUser = await User.findById(token.id).select("username image").lean().exec();
+        const dbUser = await User.findById(token.id).select("username image onboardingCompleted").lean().exec();
         if (dbUser) {
           token.username = dbUser.username;
           token.image = dbUser.image;
+          token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
         }
         return token;
       }
@@ -114,6 +115,7 @@ export const authConfig: NextAuthConfig = {
 
         if (dbUser) {
           token.id = dbUser._id.toString();
+          token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
           let changed = false;
 
           if (user.name && dbUser.name !== user.name) {
@@ -145,6 +147,7 @@ export const authConfig: NextAuthConfig = {
           token.image = dbUser.image;
         } else {
           token.username = user.email?.split("@")[0];
+          token.onboardingCompleted = false;
         }
       }
 
@@ -169,7 +172,26 @@ export const authConfig: NextAuthConfig = {
       } else {
         session.user.image = null;
       }
+      session.user.onboardingCompleted = (token.onboardingCompleted as boolean) ?? false;
       return session;
+    },
+
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith(baseUrl)) return url;
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      return baseUrl;
+    },
+
+    async signIn({ user, account }) {
+      if (account?.provider && ["github", "google"].includes(account.provider)) {
+        await connectDB();
+        const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
+
+        if (dbUser && !dbUser.onboardingCompleted) {
+          return "/onboarding";
+        }
+      }
+      return true;
     },
   },
 };
