@@ -85,7 +85,7 @@ export default function Pricing() {
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto items-stretch">
           {/* Free Plan */}
-          <div className="flex flex-col min-h-[550px] rounded-2xl border border-zinc-800 bg-zinc-900/40 p-8 transition-colors hover:border-zinc-700">
+          <div className="flex flex-col min-h-[550px] rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-8">
             <div className="flex flex-col h-full">
               <div className="mb-8">
                 <h3 className="text-lg font-medium text-white mb-2">Free</h3>
@@ -121,7 +121,7 @@ export default function Pricing() {
           </div>
 
           {/* Pro Plan */}
-          <div className="flex flex-col min-h-[550px] relative rounded-2xl border border-zinc-700 bg-zinc-800 p-8 shadow-xl">
+          <div className="flex flex-col min-h-[550px] relative rounded-2xl border border-zinc-800 bg-[#1a1a1a] p-8 shadow-xl">
             <div className="flex flex-col h-full">
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-2">

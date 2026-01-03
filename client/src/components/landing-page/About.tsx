@@ -49,6 +49,7 @@ export default function About() {
     const tagRefs = useRef<(HTMLDivElement | null)[]>([]);
     const [isAnimating, setIsAnimating] = useState(false);
     const [hiddenTags, setHiddenTags] = useState<Set<number>>(new Set());
+    const [animationComplete, setAnimationComplete] = useState(false);
     const hasTriggeredRef = useRef(false);
 
     const startPhysics = useCallback(() => {
@@ -172,6 +173,10 @@ export default function About() {
 
             setHiddenTags(prev => {
                 if (prev.size === newHidden.size) return prev;
+                // Check if all tags are now hidden
+                if (newHidden.size === CLOUD_TAGS.length) {
+                    setAnimationComplete(true);
+                }
                 return newHidden;
             });
 
@@ -271,12 +276,17 @@ export default function About() {
                     {/* Logo Box */}
                     <div
                         ref={boxRef}
-                        className="absolute top-[55%] left-1/2 -translate-x-1/2 w-60 h-60 bg-primary-black rounded-3xl flex items-center justify-center z-30"
+                        className={`absolute top-[55%] left-1/2 -translate-x-1/2 w-60 h-60 bg-primary-black rounded-3xl flex items-center justify-center z-30 transition-all duration-700 ${animationComplete ? 'shadow-[0_0_60px_rgba(0,117,196,0.4)]' : ''
+                            }`}
                     >
                         <Image
                             src={whiteLogo}
                             alt="Flowivate Logo"
-                            className="w-28 h-28 object-contain opacity-90"
+                            className={`w-28 h-28 object-contain transition-all duration-700 ${animationComplete ? 'opacity-100 brightness-110' : 'opacity-90'
+                                }`}
+                            style={{
+                                filter: animationComplete ? 'drop-shadow(0 0 20px rgba(0,117,196,0.5))' : 'none'
+                            }}
                         />
                     </div>
 
