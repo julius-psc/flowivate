@@ -36,7 +36,7 @@ const CLOUD_TAGS = [
     { text: "Affirmations", icon: IconCloverFilled, color: COLORS.yellow, top: "42%", left: "40%", rotate: "-30deg" },
     { text: "Pomodoro", icon: IconAlarmFilled, color: COLORS.blue, top: "32%", left: "65%", rotate: "-12deg" },
     { text: "Sleep", icon: IconBedFilled, color: COLORS.pink, top: "5%", left: "65%", rotate: "-40deg" },
-    { text: "Books", icon: IconBookFilled, color: COLORS.green, top: "10%", left: "30%", rotate: "-10deg" },
+    { text: "Books", icon: IconBookFilled, color: COLORS.purple, top: "2%", left: "40%", rotate: "-10deg" },
     { text: "Water", icon: IconDropletFilled, color: COLORS.blue, top: "60%", left: "48%", rotate: "10deg" },
     { text: "Sounds", icon: IconPiano, color: COLORS.purple, top: "45%", left: "60%", rotate: "40deg" },
     { text: "Tasks", icon: IconCircleCheckFilled, color: COLORS.yellow, top: "-5%", left: "50%", rotate: "25deg" },

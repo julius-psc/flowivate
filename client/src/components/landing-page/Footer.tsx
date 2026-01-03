@@ -37,23 +37,13 @@ export default function Footer() {
           </div>
 
           {/* Links Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-16 gap-y-10 mt-2">
+          <div className="grid grid-cols-2 gap-x-16 gap-y-10 mt-2">
             <div className="flex flex-col gap-4">
-              <h4 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Product</h4>
+              <h4 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">App</h4>
               <div className="flex flex-col gap-3">
-                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Features</Link>
-                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Pricing</Link>
-                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Integrations</Link>
-                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Changelog</Link>
-              </div>
-            </div>
-            <div className="flex flex-col gap-4">
-              <h4 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Resources</h4>
-              <div className="flex flex-col gap-3">
-                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Documentation</Link>
-                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Tutorials</Link>
-                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Blog</Link>
-                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Support</Link>
+                <Link href="/#about" className="text-zinc-300 hover:text-white transition-colors text-sm">Product</Link>
+                <Link href="/#pricing" className="text-zinc-300 hover:text-white transition-colors text-sm">Pricing</Link>
+                <Link href="/updates" className="text-zinc-300 hover:text-white transition-colors text-sm">Updates</Link>
               </div>
             </div>
             <div className="flex flex-col gap-4">
@@ -62,7 +52,6 @@ export default function Footer() {
                 <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">About</Link>
                 <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Careers</Link>
                 <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Contact</Link>
-                <Link href="#" className="text-zinc-300 hover:text-white transition-colors text-sm">Partners</Link>
               </div>
             </div>
           </div>
@@ -75,9 +64,9 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-zinc-500">
           <p>&copy; 2026 Flowivate. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-zinc-300 transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-zinc-300 transition-colors">Terms of Service</Link>
-            <Link href="#" className="hover:text-zinc-300 transition-colors">Cookies</Link>
+            <Link href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-zinc-300 transition-colors">Terms of Service</Link>
+            <Link href="/cookies" className="hover:text-zinc-300 transition-colors">Cookies</Link>
           </div>
         </div>
 

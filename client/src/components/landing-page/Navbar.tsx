@@ -26,13 +26,13 @@ export default function Navbar() {
 
         {/* Links Section */}
         <div className="hidden md:flex items-center gap-5 text-sm font-medium text-gray-300">
-          <Link href="#product" className="hover:text-white transition-colors duration-200">
+          <Link href="/#about" className="hover:text-white transition-colors duration-200">
             Product
           </Link>
-          <Link href="#pricing" className="hover:text-white transition-colors duration-200">
+          <Link href="/#pricing" className="hover:text-white transition-colors duration-200">
             Pricing
           </Link>
-          <Link href="#updates" className="hover:text-white transition-colors duration-200">
+          <Link href="/updates" className="hover:text-white transition-colors duration-200">
             Updates
           </Link>
         </div>
