@@ -43,13 +43,13 @@ export async function POST(req: Request) {
     db.collection("task_lists").find({ userId }).toArray(),
     db
       .collection("moods")
-      .find({ userId })
+      .find({ userId, timestamp: { $gte: today } })
       .sort({ timestamp: -1 })
       .limit(1)
       .toArray(),
     db
       .collection("journalEntries")
-      .find({ userId })
+      .find({ userId, date: { $gte: today.toISOString() } })
       .sort({ date: -1 })
       .limit(1)
       .toArray(),
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       .distinct("date", { userId, date: { $gte: sevenDaysAgo.toISOString() } }),
     db
       .collection("sleep")
-      .find({ userId })
+      .find({ userId, timestamp: { $gte: today } })
       .sort({ timestamp: -1 })
       .limit(1)
       .toArray(),
@@ -104,19 +104,16 @@ export async function POST(req: Request) {
       break;
 
     case "TASK_LIST_COMPLETED":
-      prompt = `User (named ${
-        session.user.name || "friend"
-      }) just completed a whole task list! Awesome work. (1-2 lines)`;
+      prompt = `User (named ${session.user.name || "friend"
+        }) just completed a whole task list! Awesome work. (1-2 lines)`;
       effect = "CONFETTI";
       break;
 
     case "POMO_FINISHED":
       if (context.pomoCountToday > 0 && context.pomoCountToday % 4 === 0) {
-        prompt = `User (named ${
-          session.user.name || "friend"
-        }) just completed a full Pomodoro round (${
-          context.pomoCountToday
-        } sessions today)! Congratulate them on their deep focus. (1-2 lines)`;
+        prompt = `User (named ${session.user.name || "friend"
+          }) just completed a full Pomodoro round (${context.pomoCountToday
+          } sessions today)! Congratulate them on their deep focus. (1-2 lines)`;
         effect = "CONFETTI";
       } else {
         isSilent = true;
@@ -125,9 +122,8 @@ export async function POST(req: Request) {
 
     case "JOURNAL_SAVED":
       if (context.journalStreak === 7) {
-        prompt = `User (named ${
-          session.user.name || "friend"
-        }) just hit a 7-day journaling streak! Acknowledge this awesome consistency. (1-2 lines)`;
+        prompt = `User (named ${session.user.name || "friend"
+          }) just hit a 7-day journaling streak! Acknowledge this awesome consistency. (1-2 lines)`;
         effect = "SPARKLE";
       } else {
         isSilent = true;
@@ -136,11 +132,9 @@ export async function POST(req: Request) {
 
     case "BOOK_LOGGED":
       if (context.bookCountMonth > 0 && context.bookCountMonth % 3 === 0) {
-        prompt = `User (named ${
-          session.user.name || "friend"
-        }) just logged their ${
-          context.bookCountMonth
-        }th book this month! That's amazing. (1-2 lines)`;
+        prompt = `User (named ${session.user.name || "friend"
+          }) just logged their ${context.bookCountMonth
+          }th book this month! That's amazing. (1-2 lines)`;
         effect = "SPARKLE";
       } else {
         isSilent = true;
@@ -150,15 +144,14 @@ export async function POST(req: Request) {
     default:
       prompt = `You're Flowivate's concise and friendly productivity buddy.
 
-Based on the following user context, generate a short, modern summary (no more than 4 lines), starting with a friendly greeting (e.g. "Hey ${
-        session.user.name || "there"
-      }!"). Use emoji section headers (e.g. 📋, 🧠, 😴, 💧) if helpful.
+Based on the following user context, generate a VERY SHORT summary (max 2 sentences).
+Start with a friendly greeting.
 
-- Be positive but realistic.
-- If mood is "sad", include a suggestion like "Want to talk about it?".
-- If sleepHours < 6, suggest rest. If > 8, praise it.
-- If no journal/tasks, say "Ready to start your day?".
-- If productive (e.g., journalStreak > 0, pomoCountToday > 0), celebrate it.
+- ONLY comment on data that is present and positive.
+- CRITICAL: Do NOT ask the user to do things (like "Ready to start?" or "Log your sleep"). We handle missing data with UI buttons.
+- CRITICAL: Do NOT mention missing data (sleep, mood, journal).
+- If everything is missing, just say "Hey there! Ready to conquer the day?".
+- Be punchy and motivating.
 
 User data:
 ${JSON.stringify(context, null, 2)}`;
@@ -197,7 +190,15 @@ ${JSON.stringify(context, null, 2)}`;
     const result = await response.json();
     const speech = result.content?.[0]?.text || "No response.";
 
-    return NextResponse.json({ speech, effect });
+    // Identify missing essentials for the frontend to handle
+    const missingData = {
+      sleep: !context.sleepHours,
+      mood: context.mood === "Unknown",
+      journal: !context.journal,
+      tasks: context.tasks.length === 0,
+    };
+
+    return NextResponse.json({ speech, effect, missingData });
   } catch (err) {
     console.error("Claude API call failed:", err);
     return NextResponse.json(

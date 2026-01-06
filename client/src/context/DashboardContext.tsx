@@ -10,6 +10,11 @@ interface DashboardContextType {
   isFeatureSelected: (featureKey: FeatureKey) => boolean;
   reorderFeatures: (startIndex: number, endIndex: number) => void;
   isLoading: boolean;
+  highlightedFeature: FeatureKey | null;
+  highlightFeature: (featureKey: FeatureKey) => void;
+  triggerDeepWork: boolean;
+  startDeepWork: () => void;
+  clearDeepWorkTrigger: () => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -21,6 +26,21 @@ interface DashboardProviderProps {
 export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }) => {
   const [selectedFeatures, setSelectedFeatures] = useState<FeatureKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [highlightedFeature, setHighlightedFeature] = useState<FeatureKey | null>(null);
+  const [triggerDeepWork, setTriggerDeepWork] = useState(false);
+
+  const highlightFeature = useCallback((featureKey: FeatureKey) => {
+    setHighlightedFeature(featureKey);
+    setTimeout(() => setHighlightedFeature(null), 4000); // Clear after 4 seconds
+  }, []);
+
+  const startDeepWork = useCallback(() => {
+    setTriggerDeepWork(true);
+  }, []);
+
+  const clearDeepWorkTrigger = useCallback(() => {
+    setTriggerDeepWork(false);
+  }, []);
 
   // Load layout from API when component mounts
   useEffect(() => {
@@ -29,7 +49,7 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
         const response = await fetch('/api/layout', {
           credentials: 'include',
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           setSelectedFeatures(data.features || []);
@@ -50,7 +70,7 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
   useEffect(() => {
     // Skip saving during initial load
     if (isLoading) return;
-    
+
     const saveLayout = async () => {
       try {
         await fetch('/api/layout', {
@@ -68,7 +88,7 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
 
     // Debounce the save operation to prevent too many requests
     const timeout = setTimeout(saveLayout, 500);
-    
+
     return () => clearTimeout(timeout);
   }, [selectedFeatures, isLoading]);
 
@@ -106,7 +126,12 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
     removeFeature,
     isFeatureSelected,
     reorderFeatures,
-    isLoading
+    isLoading,
+    highlightedFeature,
+    highlightFeature,
+    triggerDeepWork,
+    startDeepWork,
+    clearDeepWorkTrigger
   };
 
   return (

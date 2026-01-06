@@ -9,9 +9,9 @@ import { DashboardProvider, useDashboard } from "../../context/DashboardContext"
 import { PomodoroProvider } from "@/components/dashboard/features/pomodoro/PomodoroContext";
 import MiniPomo from "@/components/dashboard/features/pomodoro/MiniPomo";
 import ThemeBackground from "../../../themes/ThemeBackground";
-import ProductivityBuddy from "@/components/dashboard/features/ai/ProductivityBuddy";
 import Settings from "../../components/dashboard/privacy/settings";
 import logo from "../../assets/brand/logo-v1.5.svg";
+import ProactiveAssistant from "../../components/dashboard/features/ai/ProactiveAssistant";
 
 export default function DashboardLayout({
   children,
@@ -105,6 +105,7 @@ function LayoutCore({ children }: { children: React.ReactNode }) {
   const { isFeatureSelected } = useDashboard();
   const pomoEnabled = isFeatureSelected("Pomodoro");
 
+
   return (
     <PomodoroProvider enabled={pomoEnabled}>
       <div className="relative z-10 flex flex-col h-full">
@@ -126,14 +127,12 @@ function LayoutCore({ children }: { children: React.ReactNode }) {
             {children}
           </main>
         </div>
-        <div className="relative z-10">
-          <ProductivityBuddy />
-        </div>
       </div>
       <Settings
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
+      <ProactiveAssistant />
     </PomodoroProvider>
   );
 }

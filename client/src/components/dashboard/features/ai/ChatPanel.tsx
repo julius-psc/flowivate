@@ -1,19 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useDashboard } from "@/context/DashboardContext";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  IconSearch,
   IconX,
   IconArrowRight,
-  IconHistory,
-  IconMaximize,
-  IconMinimize,
-  IconSparkles,
 } from "@tabler/icons-react";
 import { useDebouncedCallback } from "use-debounce";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/Skeleton";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
   id: string;
@@ -21,6 +19,12 @@ interface Message {
   text: string;
   timestamp: Date;
   isTyping?: boolean;
+  missingData?: {
+    sleep: boolean;
+    mood: boolean;
+    journal: boolean;
+    tasks: boolean;
+  };
 }
 
 interface CommandBarProps {
@@ -44,10 +48,10 @@ const ChatPanel: React.FC<CommandBarProps> = ({
   conversationId,
   setConversationId,
 }) => {
+  const { highlightFeature, isFeatureSelected } = useDashboard();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [suggestions] = useState([
     "How can i be more focused?",
     "I feel overwhelmed by work, what do I do?",
@@ -120,38 +124,55 @@ const ChatPanel: React.FC<CommandBarProps> = ({
         const conversationHistory = currentHistory
           .filter((msg) => !msg.isTyping)
           .map((msg) => ({ sender: msg.sender, text: msg.text }));
-        const response = await fetch("/api/claude", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: userMessageText,
-            conversationHistory,
-          }),
-        });
+
+        let response;
+        const lowerCaseMessage = userMessageText.toLowerCase();
+
+        // Intercept dashboard summary requests
+        if (
+          lowerCaseMessage.includes("dashboard") &&
+          lowerCaseMessage.includes("summary")
+        ) {
+          response = await fetch("/api/claude/buddy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ event: null }),
+          });
+        } else {
+          // Standard chat request
+          response = await fetch("/api/claude", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: userMessageText,
+              conversationHistory,
+            }),
+          });
+        }
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(
-            errorData.message || `Claude API Error: ${response.status}`
+            errorData.message || `API Error: ${response.status}`
           );
         }
+
         const data = await response.json();
+        const responseText = data.speech || data.response;
+        const missingData = data.missingData;
+
         const aiMessage: Message = {
           id: generateMessageId(),
           sender: "assistant",
-          text: data.response,
+          text: responseText,
           timestamp: new Date(),
+          missingData
         };
         setMessages((prev) => {
           const updatedMessages = [...prev, aiMessage];
           debouncedSaveChat(updatedMessages, conversationId);
           return updatedMessages;
         });
-        if (
-          currentHistory.length === 1 &&
-          currentHistory[0].sender === "user"
-        ) {
-          setExpanded(true);
-        }
       } catch (err: unknown) {
         let errorText = "Sorry, an unknown error occurred. Please try again.";
         if (err instanceof Error) {
@@ -186,7 +207,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
             timestamp: new Date(m.timestamp),
           }))
         );
-        setExpanded(true);
       } else if (initialQuery) {
         const userMessage: Message = {
           id: generateMessageId(),
@@ -198,7 +218,6 @@ const ChatPanel: React.FC<CommandBarProps> = ({
         fetchAndSetClaudeResponse(initialQuery, [userMessage]);
       } else {
         setMessages([]);
-        setExpanded(false);
       }
 
       const timer = setTimeout(() => {
@@ -219,13 +238,13 @@ const ChatPanel: React.FC<CommandBarProps> = ({
   ]);
 
   useEffect(() => {
-    if (expanded) {
+    if (messages.length > 0) {
       const timer = setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [messages, expanded]);
+  }, [messages]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -279,39 +298,19 @@ const ChatPanel: React.FC<CommandBarProps> = ({
     exit: { opacity: 0, transition: { duration: 0.15 } },
   };
 
-  const barVariants = {
+  const panelVariants = {
     hidden: { opacity: 0, y: -20, scale: 0.98 },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }, // <-- FIXED
+      transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
     },
     exit: {
       opacity: 0,
       y: -15,
       scale: 0.98,
-      transition: { duration: 0.15, ease: [0.4, 0, 0.6, 1] as [number, number, number, number] }, // <-- FIXED
-    },
-  };
-
-  const expandedVariants = {
-    collapsed: { height: 0, opacity: 0 },
-    expanded: {
-      height: "auto",
-      opacity: 1,
-      transition: {
-        height: { duration: 0.25, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }, // <-- FIXED
-        opacity: { duration: 0.2, delay: 0.05 },
-      },
-    },
-    exit: {
-      height: 0,
-      opacity: 0,
-      transition: {
-        height: { duration: 0.15, ease: [0.4, 0, 0.6, 1] as [number, number, number, number] }, // <-- FIXED
-        opacity: { duration: 0.1 },
-      },
+      transition: { duration: 0.15, ease: [0.4, 0, 0.6, 1] as [number, number, number, number] },
     },
   };
 
@@ -320,7 +319,7 @@ const ChatPanel: React.FC<CommandBarProps> = ({
     animate: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }, // <-- This one was already correct
+      transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
     },
   };
 
@@ -332,188 +331,233 @@ const ChatPanel: React.FC<CommandBarProps> = ({
     </div>
   );
 
+  const handleActionClick = (action: string) => {
+    let featureKey = "";
+    if (action === "sleep") featureKey = "Sleep";
+    if (action === "mood") featureKey = "Mood";
+    if (action === "journal") featureKey = "Journal";
+    if (action === "tasks") featureKey = "Tasks";
+
+    if (featureKey && isFeatureSelected(featureKey as any)) {
+      setIsOpen(false);
+      highlightFeature(featureKey as any);
+    } else {
+      toast.error(`Please add the ${action} widget to your dashboard first.`);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 md:pt-32 px-4">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-24 md:pt-32 px-4">
+          {/* Overlay with higher z-index to cover sidebar and navbar */}
           <motion.div
             variants={overlayVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           />
 
+          {/* Chat Panel */}
           <motion.div
-            variants={barVariants}
+            variants={panelVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-xl flex flex-col bg-white/90 dark:bg-zinc-900/95 backdrop-blur-md border border-gray-200/50 dark:border-zinc-700/30 rounded-lg overflow-hidden z-51 shadow-lg"
+            className="relative w-full max-w-xl flex flex-col bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden z-[101]"
+            style={{ maxHeight: 'calc(100vh - 180px)' }}
           >
-            <div className="relative flex items-center px-3 py-3">
-              <div className="absolute left-3 text-gray-400 dark:text-gray-500">
-                <IconSearch className="w-4 h-4" />
-              </div>
-              <form onSubmit={handleSendMessage} className="w-full">
+            {/* Header with close button */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {messages.length > 0 ? `${messages.filter(m => !m.isTyping).length} messages` : 'New conversation'}
+              </span>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <IconX className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Messages Area */}
+            <div
+              ref={messagesContainerRef}
+              className="flex-grow overflow-y-auto px-4 py-3 min-h-[200px]"
+            >
+              {messages.length === 0 && !isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full py-8">
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Try one of these:</p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {suggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setInputText(suggestion);
+                          const userMessage: Message = {
+                            id: generateMessageId(),
+                            sender: "user",
+                            text: suggestion,
+                            timestamp: new Date(),
+                          };
+                          setMessages([userMessage]);
+                          fetchAndSetClaudeResponse(suggestion, [userMessage]);
+                        }}
+                        className="px-3 py-1.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-lg text-xs text-gray-600 dark:text-gray-300 transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <AnimatePresence initial={false}>
+                  {messages.map((msg) => (
+                    <motion.div
+                      key={msg.id}
+                      variants={messageVariants}
+                      initial="initial"
+                      animate="animate"
+                      layout
+                      className="mb-4"
+                    >
+                      {msg.sender === "user" ? (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 pl-1">
+                          You
+                        </div>
+                      ) : null}
+                      <div className="flex flex-col items-start gap-2">
+                        <div className="flex items-start gap-2 w-full">
+                          <div
+                            className={`grow rounded-lg p-3 ${msg.sender === "user"
+                              ? "text-sm text-gray-700 dark:text-gray-300"
+                              : "bg-gray-50 dark:bg-zinc-800/50 text-sm text-gray-800 dark:text-gray-200"
+                              }`}
+                          >
+                            <div className="text-sm leading-relaxed text-gray-800 dark:text-gray-200">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  p: ({ node, ...props }) => <p className="mb-3 last:mb-0 leading-7" {...props} />,
+                                  a: ({ node, ...props }) => <a className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                                  ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 last:mb-0 space-y-1.5" {...props} />,
+                                  ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 last:mb-0 space-y-1.5" {...props} />,
+                                  li: ({ node, ...props }) => <li className="pl-1 leading-7" {...props} />,
+                                  h1: ({ node, ...props }) => <h1 className="text-xl font-bold mt-6 mb-3 text-gray-900 dark:text-gray-100" {...props} />,
+                                  h2: ({ node, ...props }) => <h2 className="text-lg font-bold mt-5 mb-2 text-gray-900 dark:text-gray-100" {...props} />,
+                                  h3: ({ node, ...props }) => <h3 className="text-base font-bold mt-4 mb-2 text-gray-900 dark:text-gray-100" {...props} />,
+                                  hr: ({ node, ...props }) => <hr className="my-6 border-gray-200 dark:border-zinc-700" {...props} />,
+                                  blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary/30 pl-4 py-2 my-4 italic text-gray-600 dark:text-gray-400 bg-gray-50/50 dark:bg-zinc-800/30 rounded-r-md" {...props} />,
+                                  strong: ({ node, ...props }) => <span className="font-semibold text-gray-900 dark:text-gray-100" {...props} />,
+                                  code: ({ node, className, children, ...props }: any) => {
+                                    const match = /language-(\w+)/.exec(className || '')
+                                    return !match ? (
+                                      <code className="bg-gray-100 dark:bg-zinc-700/50 px-1.5 py-0.5 rounded text-xs font-mono text-pink-500" {...props}>
+                                        {children}
+                                      </code>
+                                    ) : (
+                                      <code className={className} {...props}>
+                                        {children}
+                                      </code>
+                                    )
+                                  }
+                                }}
+                              >
+                                {msg.text}
+                              </ReactMarkdown>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons for Missing Data */}
+                        {msg.sender === 'assistant' && msg.missingData && (
+                          <div className="flex flex-wrap gap-2 pl-1 mt-1">
+                            {msg.missingData.sleep && isFeatureSelected('Sleep') && (
+                              <button
+                                onClick={() => handleActionClick('sleep')}
+                                className="px-3 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-500 border border-indigo-500/20 text-xs rounded-full transition-colors"
+                              >
+                                Log Sleep
+                              </button>
+                            )}
+                            {msg.missingData.mood && isFeatureSelected('Mood') && (
+                              <button
+                                onClick={() => handleActionClick('mood')}
+                                className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 text-xs rounded-full transition-colors"
+                              >
+                                Log Mood
+                              </button>
+                            )}
+                            {msg.missingData.journal && isFeatureSelected('Journal') && (
+                              <button
+                                onClick={() => handleActionClick('journal')}
+                                className="px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 text-xs rounded-full transition-colors"
+                              >
+                                Write Journal
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                      </div>
+                      <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 text-right pr-2">
+                        {formatTime(msg.timestamp)}
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              )}
+
+              {isLoading && (
+                <motion.div
+                  key="loading-indicator"
+                  variants={messageVariants}
+                  initial="initial"
+                  animate="animate"
+                  layout
+                  className="mb-4"
+                >
+                  <div className="grow rounded-lg p-3 bg-gray-50 dark:bg-zinc-800/50">
+                    <SkeletonLoader />
+                  </div>
+                </motion.div>
+              )}
+              <div ref={messagesEndRef} className="h-1" />
+            </div>
+
+            {/* Input at the bottom - fixed position within panel */}
+            <div className="px-4 py-3 border-t border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+              <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                 <input
                   ref={inputRef}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask anything..."
-                  className="w-full py-1.5 pl-7 pr-8 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none text-sm"
+                  className="flex-1 py-2 px-3 bg-gray-50 dark:bg-zinc-800 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                   autoComplete="off"
                 />
-              </form>
-              <div className="flex items-center">
                 <button
-                  onClick={handleSendMessage}
+                  type="submit"
                   disabled={!inputText.trim() || isLoading}
-                  className={`p-1 rounded-md flex items-center justify-center ${inputText.trim() && !isLoading
+                  className={`p-2 rounded-lg flex items-center justify-center transition-colors ${inputText.trim() && !isLoading
                     ? "bg-primary hover:bg-primary/80 text-white"
                     : "bg-gray-200 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                    } transition-colors`}
+                    }`}
                   aria-label="Send message"
                 >
-                  <IconArrowRight className="w-3.5 h-3.5" />
+                  <IconArrowRight className="w-4 h-4" />
                 </button>
-              </div>
+              </form>
             </div>
-
-            {messages.length === 0 && (
-              <div className="px-3 py-2 flex flex-wrap gap-2">
-                {suggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setInputText(suggestion);
-                      const userMessage: Message = {
-                        id: generateMessageId(),
-                        sender: "user",
-                        text: suggestion,
-                        timestamp: new Date(),
-                      };
-                      setMessages([userMessage]);
-                      fetchAndSetClaudeResponse(suggestion, [userMessage]);
-                    }}
-                    className="px-2.5 py-1 bg-gray-100 dark:bg-zinc-800/70 hover:bg-gray-200 dark:hover:bg-zinc-700/70 rounded-md text-xs text-gray-700 dark:text-gray-300 transition-colors flex items-center gap-1.5"
-                  >
-                    <IconSparkles className="w-3 h-3 text-primary" />
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <AnimatePresence mode="wait">
-              {messages.length > 0 && expanded && (
-                <motion.div
-                  key="messages-container"
-                  initial="collapsed"
-                  animate="expanded"
-                  exit="exit"
-                  variants={expandedVariants}
-                  className="overflow-hidden"
-                >
-                  <div
-                    ref={messagesContainerRef}
-                    className="max-h-96 overflow-y-auto px-3 py-2"
-                  >
-                    <AnimatePresence initial={false}>
-                      {messages.map((msg) => (
-                        <motion.div
-                          key={msg.id}
-                          variants={messageVariants}
-                          initial="initial"
-                          animate="animate"
-                          layout
-                          className="mb-4"
-                        >
-                          {msg.sender === "user" ? (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 pl-1">
-                              You
-                            </div>
-                          ) : null}
-                          <div className="flex items-start gap-2">
-                            <div
-                              className={`grow rounded-md p-2.5 ${msg.sender === "user"
-                                ? "text-sm text-gray-700 dark:text-gray-300"
-                                : "bg-gray-50/70 dark:bg-zinc-800/40 text-sm text-gray-800 dark:text-gray-200"
-                                }`}
-                            >
-                              <div className="whitespace-pre-wrap leading-relaxed wrap-break-word">
-                                {msg.text}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 text-right pr-2">
-                            {formatTime(msg.timestamp)}
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-
-                    {isLoading && (
-                      <motion.div
-                        key="loading-indicator"
-                        variants={messageVariants}
-                        initial="initial"
-                        animate="animate"
-                        layout
-                        className="mb-4"
-                      >
-                        <div className="grow rounded-md p-2.5 bg-gray-50/70 dark:bg-zinc-800/40">
-                          <SkeletonLoader />
-                        </div>
-                      </motion.div>
-                    )}
-                    <div ref={messagesEndRef} className="h-1" />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {messages.length > 0 && (
-              <div className="px-3 py-1.5 flex justify-between items-center border-t border-gray-200/50 dark:border-zinc-700/30 text-xs text-gray-500 dark:text-gray-400">
-                <div className="flex items-center">
-                  <IconHistory className="w-3 h-3 mr-1" />
-                  <span>
-                    {messages.filter((m) => !m.isTyping).length} messages
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => setExpanded(!expanded)}
-                  className="flex items-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                >
-                  {expanded ? (
-                    <>
-                      <IconMinimize className="w-3 h-3 mr-1" />
-                      <span>Collapse</span>
-                    </>
-                  ) : (
-                    <>
-                      <IconMaximize className="w-3 h-3 mr-1" />
-                      <span>Expand</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                >
-                  <IconX className="w-3 h-3" />
-                </button>
-              </div>
-            )}
           </motion.div>
         </div>
       )}
     </AnimatePresence>
   );
 };
+
 
 export default ChatPanel;

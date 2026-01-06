@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTheme } from "next-themes";
 import {
-  IconCircleDashedPlus,
   IconMessage,
   IconTrash,
-  IconLock,
-
+  IconChevronLeft,
+  IconChevronRight,
+  IconPlus,
+  IconCommand,
 } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import logo from "../../../../assets/brand/lumo-logo.svg";
@@ -15,6 +16,7 @@ import Image from "next/image";
 import ChatPanel from "./ChatPanel";
 import { toast } from "sonner";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
+import { motion } from "motion/react";
 
 interface RecentChatSummary {
   id: string;
@@ -30,6 +32,8 @@ interface Message {
   isTyping?: boolean;
 }
 
+const CHATS_PER_PAGE = 5;
+
 const Assistant: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -37,9 +41,12 @@ const Assistant: React.FC = () => {
   const [initialQuery, setInitialQuery] = useState<string | undefined>(
     undefined
   );
-  const [showRecentChats, setShowRecentChats] = useState(false);
   const [recentChats, setRecentChats] = useState<RecentChatSummary[]>([]);
   const [isLoadingRecents, setIsLoadingRecents] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hoveredChatId, setHoveredChatId] = useState<string | null>(null);
+
+  const [view, setView] = useState<"home" | "history">("home");
 
   const { theme } = useTheme();
   const isSpecialTheme =
@@ -72,10 +79,10 @@ const Assistant: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (showRecentChats) {
+    if (view === "history") {
       fetchRecentChats();
     }
-  }, [showRecentChats, fetchRecentChats]);
+  }, [view, fetchRecentChats]);
 
   const formatRelativeTime = (isoTimestamp: string): string => {
     const date = new Date(isoTimestamp);
@@ -99,12 +106,12 @@ const Assistant: React.FC = () => {
       starter: "I would like to plan my day effectively...",
     },
     {
-      text: "Identify my blockers",
+      text: "Identify blockers",
       starter: "What might be preventing me from achieving...",
     },
     { text: "Give me ideas", starter: "I would like ideas for..." },
     {
-      text: "Create me an action plan",
+      text: "Make action plan",
       starter: "I need an action plan for...",
     },
   ];
@@ -114,8 +121,14 @@ const Assistant: React.FC = () => {
     setInitialMessages([]);
     setInitialQuery(starter || "");
     setIsChatOpen(true);
-    setShowRecentChats(false);
   };
+
+  // Pagination logic
+  const totalPages = Math.ceil(recentChats.length / CHATS_PER_PAGE);
+  const paginatedChats = recentChats.slice(
+    currentPage * CHATS_PER_PAGE,
+    (currentPage + 1) * CHATS_PER_PAGE
+  );
 
   const handleRecentChatClick = async (chatId: string) => {
     setIsLoadingRecents(true);
@@ -145,7 +158,6 @@ const Assistant: React.FC = () => {
       setInitialMessages(messagesWithDates);
       setInitialQuery("");
       setIsChatOpen(true);
-      setShowRecentChats(false);
     } catch (error) {
       console.error("Error loading chat history:", error);
       toast.error("Could not load the selected chat.");
@@ -175,6 +187,12 @@ const Assistant: React.FC = () => {
         setInitialMessages([]);
         setInitialQuery(undefined);
       }
+      // Adjust page if current page becomes empty
+      const newTotalChats = recentChats.length - 1;
+      const newTotalPages = Math.ceil(newTotalChats / CHATS_PER_PAGE);
+      if (currentPage >= newTotalPages && currentPage > 0) {
+        setCurrentPage(currentPage - 1);
+      }
     } catch (error) {
       console.error("Error deleting chat:", error);
       toast.error("Could not delete the chat.");
@@ -184,145 +202,212 @@ const Assistant: React.FC = () => {
 
   const handleChatClose = () => {
     setIsChatOpen(false);
-    if (showRecentChats) {
+    if (view === "history") {
       fetchRecentChats();
     }
   };
 
   return (
     <>
-      <div
-        className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
-          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-          }`}
-      >
-        <div className="flex justify-between items-center mb-4 flex-shrink-0">
-          <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
-            MY ASSISTANT
-          </h1>
-        </div>
-        <div className="w-full flex justify-center items-center mb-4">
-          <Image
-            className="w-24 h-auto"
-            src={logo}
-            alt="Flowivate's logo"
-            priority
-          />
-        </div>
+      <div className="relative h-full">
+        {/* Animated glow behind the card */}
+        <motion.div
+          className="absolute -inset-1 bg-primary-blue/20 rounded-2xl blur-xl"
+          animate={{
+            opacity: [0.3, 0.5, 0.3],
+            scale: [1, 1.02, 1],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
 
-        <div className="flex-grow overflow-y-auto mb-4">
-          {!showRecentChats ? (
-            <div className="mx-4">
-              <div className="mb-4">
-                <p className="text-primary-black dark:text-gray-200 font-medium">
-                  How can I help make your day more{" "}
-                  <span className="text-primary">productive</span>?
-                </p>
-                <div className="flex items-center mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  <IconLock className="w-3 h-3 mr-1" />
-                  <span>Privacy is our priority</span>
-                </div>
+        <div
+          className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
+            ? "dark bg-zinc-900/50 border border-zinc-800/50"
+            : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+            }`}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center mb-4 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              {view === "history" && (
+                <button
+                  onClick={() => setView("home")}
+                  className={`p-1 rounded-md transition-colors ${isSpecialTheme
+                    ? "hover:bg-white/10 text-white/60 hover:text-white"
+                    : "hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400"
+                    }`}
+                >
+                  <IconChevronLeft className="w-4 h-4" />
+                </button>
+              )}
+              <h1 className={`text-sm opacity-40 ${isSpecialTheme ? 'text-white/70' : 'text-secondary-black dark:text-secondary-white'}`}>
+                LUMO
+              </h1>
+            </div>
+            {/* View recent chats - top right */}
+            {view === "home" && (
+              <button
+                onClick={() => setView("history")}
+                className={`text-xs transition-colors ${isSpecialTheme
+                  ? "text-white/40 hover:text-white/60"
+                  : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                  }`}
+              >
+                Recent chats →
+              </button>
+            )}
+          </div>
+
+          {view === "home" ? (
+            <div className="flex flex-col h-full">
+              {/* Logo */}
+              <div className="w-full flex flex-col items-center mb-6 mt-4">
+                <Image
+                  className="w-16 h-auto opacity-80"
+                  src={logo}
+                  alt="Lumo logo"
+                  priority
+                />
               </div>
-              <div className="grid grid-cols-2 gap-1.5 w-full mb-4">
+
+              {/* Quick Actions - 2 column grid, no borders */}
+              <div className="mx-2 grid grid-cols-2 gap-2 mb-4">
                 {assistantOptions.map((option, index) => (
                   <button
                     key={index}
                     onClick={() => handleNewChat(option.starter)}
-                    className="flex items-center justify-center bg-primary-white dark:bg-secondary-black dark:border-none border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30 group text-sm text-gray-700 dark:text-gray-300 font-medium"
-                    title={option.text}
+                    className={`text-left px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${isSpecialTheme
+                      ? 'bg-white/5 hover:bg-white/10 text-white/80'
+                      : 'bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300'
+                      }`}
                   >
                     {option.text}
                   </button>
                 ))}
               </div>
-            </div>
-          ) : (
-            <div className="mx-4 mb-4">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Recent Conversations
-                </h3>
+
+              {/* New Chat with keyboard shortcut at bottom */}
+              <div className="mx-2 mt-auto mb-2 flex justify-end">
                 <button
-                  onClick={() => setShowRecentChats(false)}
-                  className="text-xs text-primary dark:text-blue-400 hover:underline"
+                  onClick={() => handleNewChat()}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs transition-colors ${isSpecialTheme
+                    ? 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/80'
+                    : 'bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    }`}
                 >
-                  Back to suggestions
+                  <span className="font-medium">New Chat</span>
+                  <span className={`flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] ${isSpecialTheme
+                    ? 'bg-white/10 text-white/50'
+                    : 'bg-gray-200 dark:bg-zinc-700 text-gray-500 dark:text-gray-400'
+                    }`}>
+                    <IconCommand className="w-2.5 h-2.5" />
+                    <span>F</span>
+                  </span>
                 </button>
               </div>
-              {isLoadingRecents ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-12 w-full rounded-lg" />
-                  <Skeleton className="h-12 w-full rounded-lg" />
-                  <Skeleton className="h-12 w-full rounded-lg" />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {recentChats.length > 0 ? (
-                    recentChats.map((chat) => (
+            </div>
+          ) : (
+            /* Recent Chats Section - Clean list with pagination */
+            <div className="flex-grow overflow-hidden flex flex-col animate-fade-in">
+              <div className="flex justify-between items-center mb-2 px-2">
+                <span className={`text-xs font-medium ${isSpecialTheme ? 'text-white/40' : 'text-gray-400 dark:text-gray-500'}`}>
+                  Recent
+                </span>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                      disabled={currentPage === 0}
+                      className={`p-1 rounded transition-colors disabled:opacity-30 ${isSpecialTheme
+                        ? 'hover:bg-white/10 text-white/60'
+                        : 'hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500'
+                        }`}
+                    >
+                      <IconChevronLeft className="w-3 h-3" />
+                    </button>
+                    <span className={`text-xs ${isSpecialTheme ? 'text-white/40' : 'text-gray-400'}`}>
+                      {currentPage + 1}/{totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                      disabled={currentPage >= totalPages - 1}
+                      className={`p-1 rounded transition-colors disabled:opacity-30 ${isSpecialTheme
+                        ? 'hover:bg-white/10 text-white/60'
+                        : 'hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500'
+                        }`}
+                    >
+                      <IconChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-grow overflow-y-auto">
+                {isLoadingRecents ? (
+                  <div className="space-y-2 px-1">
+                    <Skeleton className="h-10 w-full rounded-lg" />
+                    <Skeleton className="h-10 w-full rounded-lg" />
+                    <Skeleton className="h-10 w-full rounded-lg" />
+                  </div>
+                ) : paginatedChats.length > 0 ? (
+                  <div className="space-y-1 px-1">
+                    {paginatedChats.map((chat) => (
                       <div
                         key={chat.id}
                         onClick={() => handleRecentChatClick(chat.id)}
-                        className="flex items-start p-3 bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors duration-150 group"
+                        onMouseEnter={() => setHoveredChatId(chat.id)}
+                        onMouseLeave={() => setHoveredChatId(null)}
+                        className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors ${isSpecialTheme
+                          ? 'hover:bg-white/5'
+                          : 'hover:bg-gray-50 dark:hover:bg-zinc-800/50'
+                          }`}
                       >
-                        <div className="mr-3 mt-1 flex-shrink-0">
-                          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                            <IconMessage className="w-4 h-4 text-primary dark:text-blue-400" />
-                          </div>
+                        <div className={`mr-2.5 flex-shrink-0 transition-colors ${hoveredChatId === chat.id
+                          ? (isSpecialTheme ? 'text-white' : 'text-primary')
+                          : (isSpecialTheme ? 'text-white/40' : 'text-gray-400 dark:text-gray-500')
+                          }`}>
+                          <IconMessage size={16} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start">
-                            <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                              {chat.title}
-                            </h4>
-                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 shrink-0">
-                              {chat.timestamp}
-                            </span>
-                          </div>
+                          <h4 className={`text-sm truncate ${isSpecialTheme
+                            ? 'text-white/80'
+                            : 'text-gray-700 dark:text-gray-300'
+                            }`}>
+                            {chat.title}
+                          </h4>
                         </div>
+                        <span className={`text-[10px] ml-2 shrink-0 ${isSpecialTheme
+                          ? 'text-white/30'
+                          : 'text-gray-400 dark:text-gray-500'
+                          }`}>
+                          {chat.timestamp}
+                        </span>
                         <button
                           onClick={(e) => handleDeleteChat(e, chat.id)}
-                          className="ml-2 p-1 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className={`ml-2 p-1 rounded opacity-0 transition-opacity ${hoveredChatId === chat.id ? 'opacity-100' : ''
+                            } ${isSpecialTheme
+                              ? 'hover:bg-white/10 text-white/40 hover:text-red-400'
+                              : 'hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-400 hover:text-red-500'
+                            }`}
                           title="Delete chat"
                         >
-                          <IconTrash className="w-4 h-4" />
+                          <IconTrash className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-                      No recent conversations found.
-                    </div>
-                  )}
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className={`text-center py-6 text-sm ${isSpecialTheme ? 'text-white/40' : 'text-gray-400 dark:text-gray-500'}`}>
+                    No conversations yet
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </div>
-
-        <div className="flex justify-between items-center flex-shrink-0">
-          <button
-            onClick={() => {
-              setShowRecentChats(!showRecentChats);
-              if (!showRecentChats) {
-                fetchRecentChats();
-              }
-            }}
-            className="flex bg-primary-white dark:bg-secondary-black px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-secondary-black/80 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30"
-          >
-            <IconMessage className="w-5 h-5 mr-1 text-primary-black/60 dark:text-gray-300/60" />
-            <span className="text-sm text-primary-black/60 dark:text-gray-300/60">
-              {showRecentChats ? "New chat" : "Recent chats"}
-            </span>
-          </button>
-
-          <button
-            onClick={() => handleNewChat()}
-            className="flex bg-primary/10 dark:bg-primary/30 px-3 py-2 rounded-lg transition-colors duration-200 hover:bg-primary/20 dark:hover:bg-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-blue-400/30"
-          >
-            <IconCircleDashedPlus className="w-5 h-5 mr-1 text-primary" />
-            <span className="text-sm text-primary font-medium">New chat</span>
-          </button>
         </div>
       </div>
 

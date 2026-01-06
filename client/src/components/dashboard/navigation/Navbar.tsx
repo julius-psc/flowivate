@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 
-import lumoLogo from "../../../assets/brand/lumo-logo.svg";
 import ChatPanel from "../features/ai/ChatPanel";
 import ProfilePopup from "./ProfilePopup";
 import ShareModal from "./ShareModal";
@@ -219,25 +218,9 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
           }`}
       >
         {/* ... rest of Navbar content (Ask Lumo button, Status, Profile Icon) ... */}
+        {/* ... rest of Navbar content (Status, Profile Icon) ... */}
         <div className="flex items-center">
-          <div className="relative">
-            <button
-              onClick={handleOpenChat}
-              aria-label="Ask your AI assistant Lumo"
-              className="flex items-center py-1 px-2 rounded-lg bg-primary-blue/10 dark:bg-[#3A6EC8]/10 border border-[#3A6EC8]/20 text-sm text-left text-gray-700 dark:text-gray-200 transition-all duration-200 hover:border-primary/80 dark:hover:border-primary/80 focus:outline-none focus:ring-1 focus:ring-primary"
-            >
-              <Image
-                src={lumoLogo}
-                alt="Logo de Lumo"
-                width={26}
-                height={26}
-                priority
-              />
-              <span className="grow mx-1 font-semibold bg-gradient-to-b from-[#3A6EC8] to-[#6DA1C4] bg-clip-text text-transparent">
-                Ask Lumo
-              </span>
-            </button>
-          </div>
+
         </div>
 
         <div className="flex items-center space-x-1">
@@ -263,10 +246,10 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
                 {showStatusMenu && (
                   <div
                     className={`absolute right-0 mt-1 w-36 backdrop-blur-md rounded-xl p-1.5 z-20 ${isMounted // Apply conditional classes to dropdown too
-                        ? isSpecialTheme
-                          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-                          : "bg-white/95 dark:bg-zinc-900/95 border border-slate-200/50 dark:border-zinc-800/50"
-                        : "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0 pointer-events-none" // Hide before mount
+                      ? isSpecialTheme
+                        ? "dark bg-zinc-900/50 border border-zinc-800/50"
+                        : "bg-white/95 dark:bg-zinc-900/95 border border-slate-200/50 dark:border-zinc-800/50"
+                      : "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0 pointer-events-none" // Hide before mount
                       }`}
                   >
                     {statusOptions.map((option) => (

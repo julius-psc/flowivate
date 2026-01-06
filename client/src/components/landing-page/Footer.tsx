@@ -39,7 +39,7 @@ export default function Footer() {
           {/* Links Grid */}
           <div className="grid grid-cols-2 gap-x-16 gap-y-10 mt-2">
             <div className="flex flex-col gap-4">
-              <h4 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">App</h4>
+              <h4 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Core</h4>
               <div className="flex flex-col gap-3">
                 <Link href="/#about" className="text-zinc-300 hover:text-white transition-colors text-sm">Product</Link>
                 <Link href="/#pricing" className="text-zinc-300 hover:text-white transition-colors text-sm">Pricing</Link>
@@ -47,7 +47,7 @@ export default function Footer() {
               </div>
             </div>
             <div className="flex flex-col gap-4">
-              <h4 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Company</h4>
+              <h4 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Resources</h4>
               <div className="flex flex-col gap-3">
                 <Link href="/about" className="text-zinc-300 hover:text-white transition-colors text-sm">About</Link>
                 <Link href="/contact" className="text-zinc-300 hover:text-white transition-colors text-sm">Contact</Link>

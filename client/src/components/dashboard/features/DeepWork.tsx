@@ -26,6 +26,7 @@ import {
 } from "@/hooks/useAmbientSound";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 import { toast } from "sonner";
+import { useDashboard } from "@/context/DashboardContext";
 
 type AmbientSoundHookWithVolume = ReturnType<typeof useAmbientSound> & {
   setVolume?: (volume: number) => void;
@@ -47,6 +48,7 @@ const inputClassName =
 const DeepWork: React.FC = () => {
   const { data: session, status } = useSession();
   const { theme } = useTheme();
+  const { triggerDeepWork, clearDeepWorkTrigger } = useDashboard();
   const queryKey = ["tasks", session?.user?.id];
   const componentRef = useRef<HTMLDivElement>(null);
 
@@ -105,6 +107,14 @@ const DeepWork: React.FC = () => {
       );
     }
   }, [isErrorTasks, errorTasks]);
+
+  // Listen for external trigger to start Deep Work (from ProactiveAssistant)
+  useEffect(() => {
+    if (triggerDeepWork) {
+      setSetupStep("task");
+      clearDeepWorkTrigger();
+    }
+  }, [triggerDeepWork, clearDeepWorkTrigger]);
 
   const formatTime = (date: Date): string => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
