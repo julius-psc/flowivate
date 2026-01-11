@@ -95,11 +95,12 @@ export const authConfig: NextAuthConfig = {
       await connectDB();
 
       if (trigger === "update") {
-        const dbUser = await User.findById(token.id).select("username image onboardingCompleted").lean().exec();
+        const dbUser = await User.findById(token.id).select("username image onboardingCompleted authProvider").lean().exec();
         if (dbUser) {
           token.username = dbUser.username;
           token.image = dbUser.image;
           token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
+          token.authProvider = dbUser.authProvider ?? null;
         }
         return token;
       }
@@ -110,6 +111,12 @@ export const authConfig: NextAuthConfig = {
         token.image = user.image ?? undefined;
       }
 
+      // Set authProvider based on account type
+      if (account) {
+        const provider = account.provider as "google" | "github" | "credentials";
+        token.authProvider = provider;
+      }
+
       if (account && ["github", "google"].includes(account.provider)) {
         const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
 
@@ -117,6 +124,12 @@ export const authConfig: NextAuthConfig = {
           token.id = dbUser._id.toString();
           token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
           let changed = false;
+
+          // Update authProvider if not set
+          if (!dbUser.authProvider) {
+            dbUser.authProvider = account.provider as "google" | "github";
+            changed = true;
+          }
 
           if (user.name && dbUser.name !== user.name) {
             dbUser.name = user.name;
@@ -145,9 +158,11 @@ export const authConfig: NextAuthConfig = {
           if (changed) await dbUser.save();
           token.username = dbUser.username;
           token.image = dbUser.image;
+          token.authProvider = dbUser.authProvider;
         } else {
           token.username = user.email?.split("@")[0];
           token.onboardingCompleted = false;
+          token.authProvider = account.provider as "google" | "github";
         }
       }
 
@@ -173,6 +188,7 @@ export const authConfig: NextAuthConfig = {
         session.user.image = null;
       }
       session.user.onboardingCompleted = (token.onboardingCompleted as boolean) ?? false;
+      session.user.authProvider = token.authProvider as "google" | "github" | "credentials" | null ?? null;
       return session;
     },
 

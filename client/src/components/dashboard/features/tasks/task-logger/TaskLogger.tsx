@@ -92,21 +92,21 @@ const TaskLogger: React.FC = () => {
   const fullInputStyle = `${inputBaseStyle} ${inputBorderStyle} ${inputTextStyle}`;
 
   const addListBaseStyle =
-    "flex items-center justify-center px-4 py-2 border-2 border-dotted rounded-2xl hover:bg-primary/5 transition-colors duration-200";
+    "flex items-center justify-center px-4 py-2.5 border border-dashed rounded-xl transition-all duration-200";
   const addListBorderStyle = !isMounted
-    ? "border-transparent"
+    ? "border-transparent bg-transparent"
     : isSpecialTheme
-      ? "border-white/40 hover:border-white/60"
-      : "border-secondary-black/80 hover:border-secondary-black dark:border-slate-400 dark:hover:border-secondary-white";
+      ? "border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30"
+      : "border-gray-200 dark:border-zinc-700 bg-gray-50/50 dark:bg-zinc-800/30 hover:bg-gray-100/70 dark:hover:bg-zinc-800/50 hover:border-gray-300 dark:hover:border-zinc-600";
   const addListTextStyle = !isMounted
     ? "text-transparent"
     : isSpecialTheme
-      ? "text-white/60 hover:text-white/80"
-      : "text-secondary-black/80 hover:text-secondary-black dark:text-slate-400 dark:hover:text-secondary-white";
+      ? "text-white/50 hover:text-white/70"
+      : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400";
   const fullAddListStyle = `${addListBaseStyle} ${addListBorderStyle} ${addListTextStyle}`;
 
   const listContainerBaseClasses =
-    "mb-6 backdrop-blur-md rounded-xl p-4 transition-opacity duration-300";
+    "mb-6 backdrop-blur-md rounded-xl p-4 transition-opacity duration-300 group/list";
   const listContainerPreMountClasses =
     "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
   const listContainerPostMountClasses = isSpecialTheme
@@ -325,8 +325,8 @@ const TaskLogger: React.FC = () => {
                       }}
                       disabled={updateListMutation.isPending}
                       className={`flex items-center gap-1 ${isSpecialTheme
-                          ? "text-white/70 hover:text-white/90"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                        ? "text-white/70 hover:text-white/90"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                         } text-sm transition-colors duration-200 py-1 mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                       title="Add task"
                     >
@@ -344,7 +344,7 @@ const TaskLogger: React.FC = () => {
       {status === "authenticated" && (
         <div className={stickyFooterClasses}>
           {isAddingList ? (
-            <div className="w-full">
+            <div className={`w-full min-w-[280px] px-4 py-3 rounded-xl ${isSpecialTheme ? 'bg-white/5' : 'bg-white dark:bg-zinc-800/50'}`}>
               <input
                 type="text"
                 value={newListName}
@@ -358,15 +358,15 @@ const TaskLogger: React.FC = () => {
                     }
                   }, 100);
                 }}
-                className={`w-full text-lg font-medium focus:outline-none transition-all duration-200 disabled:opacity-50 ${fullInputStyle}`}
+                className={`w-full text-base font-medium bg-transparent border-none focus:outline-none focus:ring-0 transition-all duration-200 disabled:opacity-50 ${isSpecialTheme ? 'text-white placeholder:text-white/40' : 'text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500'}`}
                 placeholder="New list name..."
                 autoFocus
                 disabled={updateListMutation.isPending}
               />
               <p
-                className={`text-xs mt-1 ${isSpecialTheme
-                    ? "text-white/50"
-                    : "text-slate-500 dark:text-slate-400"
+                className={`text-xs mt-1.5 ${isSpecialTheme
+                  ? "text-white/40"
+                  : "text-gray-400 dark:text-gray-500"
                   }`}
               >
                 Press Enter to save or Escape to cancel

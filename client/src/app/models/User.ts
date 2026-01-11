@@ -26,6 +26,7 @@ export interface IUser extends Document {
   goals?: string[];
   workStyle?: string | null;
   challenge?: string | null;
+  authProvider?: "google" | "github" | "credentials" | null;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -84,6 +85,11 @@ const UserSchema = new Schema<IUser>(
     goals: { type: [String], default: [] },
     workStyle: { type: String, default: null },
     challenge: { type: String, default: null },
+    authProvider: {
+      type: String,
+      enum: ["google", "github", "credentials", null],
+      default: null,
+    },
   },
   { timestamps: true }
 );

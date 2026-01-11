@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { AlertCircle, AlertTriangle, Loader2, ArrowRight } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowRight } from "lucide-react";
 import JournalLog from "../../../components/dashboard/features/journal/Journal";
+import { Skeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
 
 export default function Journal() {
@@ -57,14 +58,33 @@ export default function Journal() {
 
   if (sessionStatus === "loading" || loadingSub) {
     return (
-      <div className="flex items-center justify-center h-full w-full">
-        <Loader2
-          className="animate-spin text-gray-400 dark:text-gray-500"
-          size={24}
-        />
+      <div className="flex flex-col h-full w-full">
+        {/* Header Skeleton */}
+        <div className="px-4 py-4">
+          <div className="max-w-screen-lg mx-auto flex justify-end items-center space-x-1">
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-16 rounded-md" />
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="flex-1 overflow-hidden max-w-screen-lg mx-auto w-full p-6 space-y-6">
+          <Skeleton className="h-12 w-[30%] rounded-lg" />
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-full rounded-md" />
+            <Skeleton className="h-4 w-full rounded-md" />
+            <Skeleton className="h-4 w-[90%] rounded-md" />
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-full rounded-md" />
+            <Skeleton className="h-4 w-full rounded-md" />
+            <Skeleton className="h-4 w-[75%] rounded-md" />
+          </div>
+        </div>
       </div>
     );
   }
+
 
   if (sessionStatus === "unauthenticated") {
     return (

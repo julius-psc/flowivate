@@ -88,29 +88,30 @@ export const useSettings = () => {
     };
   }, [statusMessage, clearStatusMessage]);
 
+  // Modern, clean styling inspired by Vercel/Linear
   const styling: StylingClasses = useMemo(
     () => ({
       inputClasses:
-        "w-full h-9 px-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed",
+        "w-full h-9 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-400 dark:focus:border-zinc-600 text-zinc-900 dark:text-zinc-100 text-[13px] placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
       labelClasses:
-        "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5",
+        "block text-[13px] font-medium text-zinc-700 dark:text-zinc-300 mb-1.5",
       buttonBaseClasses:
-        "text-sm font-medium rounded-md inline-flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950 disabled:opacity-50 disabled:cursor-not-allowed",
+        "text-[13px] font-medium rounded-lg inline-flex items-center justify-center transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 disabled:opacity-50 disabled:cursor-not-allowed",
       buttonPrimaryClasses:
-        "px-4 h-9 text-white bg-primary hover:bg-primary/85 focus:ring-primary min-w-[96px]",
+        "px-3.5 h-9 text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100",
       buttonSecondaryClasses:
-        "px-4 h-9 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-gray-400",
+        "px-3.5 h-9 text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 focus-visible:ring-zinc-400",
       buttonDangerClasses:
-        "px-4 h-9 text-white bg-red-600 hover:bg-red-700 focus:ring-red-500 min-w-[96px]",
+        "px-3.5 h-9 text-white bg-red-600 hover:bg-red-700 focus-visible:ring-red-500",
       buttonDangerOutlineClasses:
-        "px-4 h-9 text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 hover:bg-red-100/30 dark:hover:bg-red-900/20 focus:ring-red-500",
+        "px-3.5 h-9 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/30 focus-visible:ring-red-500",
       linkButtonPrimaryClasses: "text-xs !px-3 !h-8",
       linkButtonSecondaryClasses: "text-xs !px-3 !h-8 inline-flex items-center",
       sectionHeaderClasses:
-        "border-b border-gray-200 dark:border-gray-800 pb-4 mb-6",
+        "border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-6",
       sectionTitleClasses:
-        "text-xl font-semibold text-gray-900 dark:text-gray-100",
-      sectionDescriptionClasses: "text-sm text-gray-500 dark:text-gray-400 mt-1",
+        "text-lg font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight",
+      sectionDescriptionClasses: "text-[13px] text-zinc-500 dark:text-zinc-500 mt-1",
     }),
     []
   );

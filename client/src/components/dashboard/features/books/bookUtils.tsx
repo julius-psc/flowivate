@@ -72,7 +72,7 @@ export const slashCommandItems = [
   },
   {
     title: "Emoji",
-    command: ({}: { editor: Editor }) => {},
+    command: ({ }: { editor: Editor }) => { },
     icon: <span>😊</span>,
   },
 ];
@@ -132,13 +132,13 @@ export const getStatusLabel = (status: Book["status"]) => {
 export const getStatusColor = (status: Book["status"]) => {
   switch (status) {
     case "not-started":
-      return "text-gray-700 dark:text-gray-400";
+      return "bg-gray-500";
     case "in-progress":
-      return "text-yellow-800 dark:text-yellow-400";
+      return "bg-yellow-500";
     case "completed":
-      return "text-green-800 dark:text-green-400";
+      return "bg-green-500";
     default:
-      return "text-gray-700 dark:text-gray-300";
+      return "bg-gray-500";
   }
 };
 

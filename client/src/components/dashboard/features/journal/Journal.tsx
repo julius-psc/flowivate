@@ -36,6 +36,7 @@ import {
 import { toast } from "sonner";
 import { useGlobalStore } from "@/hooks/useGlobalStore"; // Adjust path if needed
 import { useTheme } from "next-themes";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { specialSceneThemeNames } from "@/lib/themeConfig"; // Adjust path if needed
 
 interface JournalEntryData {
@@ -52,9 +53,9 @@ interface JournalProps {
 }
 
 interface SlashCommandItem {
-    title: string;
-    command: ({ editor }: { editor: Editor }) => void;
-    icon: React.ReactNode; // Use React.ReactNode for JSX Elements
+  title: string;
+  command: ({ editor }: { editor: Editor }) => void;
+  icon: React.ReactNode; // Use React.ReactNode for JSX Elements
 }
 
 const lowlight = createLowlight();
@@ -106,7 +107,7 @@ const slashCommandItems: SlashCommandItem[] = [
   },
   {
     title: "Emoji",
-    command: ({}: { editor: Editor }) => {
+    command: ({ }: { editor: Editor }) => {
       // Placeholder or implement emoji picker logic
     },
     icon: <span>😊</span>,
@@ -189,9 +190,8 @@ export const Journal: React.FC<JournalProps> = ({
     content: "",
     editorProps: {
       attributes: {
-        class: `prose dark:prose-invert focus:outline-none w-full h-full px-6 py-4 ${
-          isSpecialTheme ? "prose-invert text-white/90" : "text-secondary-black dark:text-secondary-white"
-        }`,
+        class: `prose dark:prose-invert focus:outline-none w-full h-full px-6 py-4 ${isSpecialTheme ? "prose-invert text-white/90" : "text-secondary-black dark:text-secondary-white"
+          }`,
       },
     },
     injectCSS: false,
@@ -239,13 +239,12 @@ export const Journal: React.FC<JournalProps> = ({
           }
         } else if (response.status === 404) {
           if (isSameDay(selectedDate, date)) {
-             editorRef.current.commands.setContent("<p></p>");
+            editorRef.current.commands.setContent("<p></p>");
           }
         } else {
           const errorData = await response.json();
-          const errorMessage = `Failed to load entry: ${
-            errorData.message || response.statusText
-          }`;
+          const errorMessage = `Failed to load entry: ${errorData.message || response.statusText
+            }`;
           if (isSameDay(selectedDate, date)) {
             toast.error(errorMessage);
             editorRef.current.commands.setContent(
@@ -256,7 +255,7 @@ export const Journal: React.FC<JournalProps> = ({
       } catch (err: unknown) { // Type err as unknown
         let errorMessage = "A network error occurred while loading the entry.";
         if (err instanceof Error) {
-            errorMessage = `Error loading entry: ${err.message}`;
+          errorMessage = `Error loading entry: ${err.message}`;
         }
         console.error("Network or other error fetching entry:", err);
         if (isSameDay(selectedDate, date)) {
@@ -268,7 +267,7 @@ export const Journal: React.FC<JournalProps> = ({
         }
       } finally {
         if (isSameDay(selectedDate, date)) {
-            setIsLoading(false);
+          setIsLoading(false);
         }
       }
     },
@@ -280,9 +279,9 @@ export const Journal: React.FC<JournalProps> = ({
     if (editor && editorRef.current && isValid(selectedDate)) {
       fetchJournalEntry(selectedDate);
     }
-     return () => {
-       setIsLoading(false);
-     };
+    return () => {
+      setIsLoading(false);
+    };
   }, [editor, selectedDate, fetchJournalEntry]);
 
 
@@ -306,16 +305,15 @@ export const Journal: React.FC<JournalProps> = ({
         triggerLumoEvent("JOURNAL_SAVED");
       } else {
         const errorData = await response.json();
-        const errorMessage = `Save failed: ${
-          errorData.message || response.statusText
-        }`;
+        const errorMessage = `Save failed: ${errorData.message || response.statusText
+          }`;
         toast.error(errorMessage);
       }
     } catch (err: unknown) { // Type err as unknown
-        let errorMessage = "A network error occurred while saving.";
-         if (err instanceof Error) {
-            errorMessage = `Error saving entry: ${err.message}`;
-        }
+      let errorMessage = "A network error occurred while saving.";
+      if (err instanceof Error) {
+        errorMessage = `Error saving entry: ${err.message}`;
+      }
       console.error("Network or other error saving entry:", err);
       toast.error(errorMessage);
     } finally {
@@ -345,16 +343,15 @@ export const Journal: React.FC<JournalProps> = ({
         editorRef.current.commands.setContent("<p></p>");
       } else {
         const errorData = await response.json();
-        const errorMessage = `Delete failed: ${
-          errorData.message || response.statusText
-        }`;
+        const errorMessage = `Delete failed: ${errorData.message || response.statusText
+          }`;
         toast.error(errorMessage);
       }
     } catch (err: unknown) { // Type err as unknown
-        let errorMessage = "A network error occurred while deleting.";
-        if (err instanceof Error) {
-            errorMessage = `Error deleting entry: ${err.message}`;
-        }
+      let errorMessage = "A network error occurred while deleting.";
+      if (err instanceof Error) {
+        errorMessage = `Error deleting entry: ${err.message}`;
+      }
       console.error("Network or other error deleting entry:", err);
       toast.error(errorMessage);
     } finally {
@@ -444,7 +441,7 @@ export const Journal: React.FC<JournalProps> = ({
 
       <div className={`${containerBaseClasses} ${isMounted ? containerPostMountClasses : containerPreMountClasses}`}>
         <div className={`flex items-center justify-between px-6 py-3 border-b ${isSpecialTheme ? 'border-white/10' : 'border-gray-200 dark:border-gray-800'}`}>
-           <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
             <button
               onClick={() => handleDateSelect(subDays(selectedDate, 1))}
               className={`p-2 rounded-md ${buttonHoverBg}`}
@@ -465,11 +462,10 @@ export const Journal: React.FC<JournalProps> = ({
             {isCalendarOpen && (
               <div
                 ref={calendarRef}
-                className={`absolute z-50 border rounded-lg shadow-lg p-3 ${
-                  isSpecialTheme
-                  ? 'bg-zinc-900/70 border-zinc-700/50 backdrop-blur-sm' // Apply backdrop-blur here too
-                  : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
-                }`}
+                className={`absolute z-50 border rounded-lg shadow-lg p-3 ${isSpecialTheme
+                    ? 'bg-zinc-900/70 border-zinc-700/50 backdrop-blur-sm' // Apply backdrop-blur here too
+                    : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
+                  }`}
                 style={{
                   minWidth: "250px",
                   top: dateButtonRef.current
@@ -485,7 +481,7 @@ export const Journal: React.FC<JournalProps> = ({
                     onClick={handlePrevMonth}
                     className={`p-1 rounded-md ${buttonHoverBg}`}
                   >
-                    <ChevronLeft size={16} className={dateTextColor}/>
+                    <ChevronLeft size={16} className={dateTextColor} />
                   </button>
                   <span className={`font-medium ${dateTextColor}`}>
                     {format(currentMonth, "MMMM yyyy")}
@@ -494,7 +490,7 @@ export const Journal: React.FC<JournalProps> = ({
                     onClick={handleNextMonth}
                     className={`p-1 rounded-md ${buttonHoverBg}`}
                   >
-                    <ChevronRight size={16} className={dateTextColor}/>
+                    <ChevronRight size={16} className={dateTextColor} />
                   </button>
                 </div>
 
@@ -521,12 +517,11 @@ export const Journal: React.FC<JournalProps> = ({
                         onClick={() => handleDateSelect(day)}
                         className={`
                           h-8 w-8 rounded-md flex items-center justify-center text-sm transition-colors
-                          ${
-                            isSelectedDay
-                              ? isSpecialTheme
-                                ? "bg-white text-zinc-900 font-medium"
-                                : "bg-secondary-black dark:bg-white text-white dark:text-secondary-black font-medium"
-                              : isTodayDate
+                          ${isSelectedDay
+                            ? isSpecialTheme
+                              ? "bg-white text-zinc-900 font-medium"
+                              : "bg-secondary-black dark:bg-white text-white dark:text-secondary-black font-medium"
+                            : isTodayDate
                               ? isSpecialTheme
                                 ? "border border-white/40 text-white/80 hover:bg-white/10"
                                 : "border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -569,18 +564,31 @@ export const Journal: React.FC<JournalProps> = ({
         </div>
 
         <div className="relative flex-1 overflow-auto">
-          <div
-            className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-10 ${
-              isLoading
-                ? "opacity-100 pointer-events-auto bg-black/10 dark:bg-black/20 backdrop-blur-sm"
-                : "opacity-0 pointer-events-none"
-            }`}
-          >
-             <div className={`h-8 w-8 border-2 ${isSpecialTheme ? 'border-white' : 'border-secondary-black dark:border-white'} border-t-transparent rounded-full animate-spin`} />
-          </div>
-
-          {editor && <EditorContent editor={editor} className="h-full" />}
-          {editor && <ContextMenu editor={editor} />}
+          {isLoading ? (
+            <div className="px-6 py-4 space-y-6 h-full overflow-hidden">
+              <Skeleton className="h-12 w-[30%] rounded-lg" />
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-[90%] rounded-md" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-[75%] rounded-md" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-[60%] rounded-md" />
+              </div>
+            </div>
+          ) : (
+            <>
+              {editor && <EditorContent editor={editor} className="h-full" />}
+              {editor && <ContextMenu editor={editor} />}
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ChangeEvent, useState } from "react";
-import { AlertTriangle, Trash2, Loader2, ShieldAlert } from "lucide-react";
+import { Trash2, Loader2 } from "lucide-react";
 import { fetchApi } from "../api";
 import { useSettings } from "../useSettings";
 
@@ -62,93 +62,74 @@ export default function DangerTab(): React.JSX.Element {
 
   const handleInputChange =
     (setter: React.Dispatch<React.SetStateAction<string>>) =>
-    (e: ChangeEvent<HTMLInputElement>) =>
-      setter(e.target.value);
+      (e: ChangeEvent<HTMLInputElement>) =>
+        setter(e.target.value);
 
   if (sessionStatus !== "authenticated" || !session?.user) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center px-4">
-        <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-          <ShieldAlert className="text-gray-400 dark:text-gray-500" size={20} />
+        <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
+          <Trash2 className="text-zinc-500" size={20} />
         </div>
-        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <h3 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
           Sign in required
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm">
-          You need to be signed in to access danger zone settings.
+        <p className="text-[13px] text-zinc-500 max-w-sm">
+          You need to be signed in to access these settings.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-2xl">
+      {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <AlertTriangle size={20} className="text-red-600 dark:text-red-400" />
-          <h2 className="text-xl font-semibold text-red-600 dark:text-red-400">
-            Danger Zone
-          </h2>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Irreversible and destructive actions. Please proceed with caution.
+        <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 tracking-tight">
+          Danger Zone
+        </h2>
+        <p className="text-[13px] text-zinc-500 mt-1">
+          Irreversible actions. Proceed with caution.
         </p>
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-lg border-2 border-red-200 dark:border-red-900/50 bg-gradient-to-br from-red-50/50 to-white dark:from-red-900/5 dark:to-gray-900/50 overflow-hidden">
-          <div className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
-                <Trash2 size={20} className="text-red-600 dark:text-red-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  Delete account
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Permanently delete your account and all associated data. This action cannot be undone.
-                </p>
-                <div className="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 p-3 mb-4">
-                  <div className="flex gap-2">
-                    <AlertTriangle
-                      size={16}
-                      className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
-                    />
-                    <div className="text-xs text-red-700 dark:text-red-400">
-                      <p className="font-medium mb-1">This will immediately:</p>
-                      <ul className="list-disc list-inside space-y-0.5 ml-1">
-                        <li>Delete all your projects and data</li>
-                        <li>Cancel any active subscriptions</li>
-                        <li>Remove your account from all teams</li>
-                        <li>Permanently erase your profile</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                {!showDeleteConfirm && (
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className={`${styling.buttonBaseClasses} text-gray-900 inline-flex items-center gap-2`}
-                    disabled={isDeletingAccount}
-                  >
-                    <Trash2 size={16} />
-                    Delete my account
-                  </button>
-                )}
-              </div>
-            </div>
+        {/* Delete Account */}
+        <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+          <div>
+            <label className="text-[13px] font-medium text-red-600 dark:text-red-400">
+              Delete account
+            </label>
+            <p className="text-[12px] text-zinc-500 mt-0.5">
+              Permanent action
+            </p>
           </div>
+          <div>
+            {!showDeleteConfirm ? (
+              <div className="space-y-3">
+                <p className="text-[13px] text-zinc-600 dark:text-zinc-400">
+                  This will permanently delete your account and all associated data.
+                </p>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className={`${styling.buttonBaseClasses} ${styling.buttonDangerOutlineClasses}`}
+                  disabled={isDeletingAccount}
+                >
+                  Delete my account
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4 p-4 rounded-lg bg-red-50 dark:bg-red-950/20">
+                <p className="text-[12px] text-red-700 dark:text-red-400">
+                  This will delete all projects, cancel subscriptions, and erase your profile.
+                </p>
 
-          {showDeleteConfirm && (
-            <div className="border-t-2 border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10 p-6">
-              <div className="space-y-4">
                 <div>
                   <label
                     htmlFor="current-password-input"
-                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                    className="block text-[12px] font-medium text-zinc-700 dark:text-zinc-300 mb-1.5"
                   >
-                    Confirm your password
+                    Your password
                   </label>
                   <input
                     id="current-password-input"
@@ -156,8 +137,8 @@ export default function DangerTab(): React.JSX.Element {
                     type="password"
                     value={currentPassword}
                     onChange={handleInputChange(setCurrentPassword)}
-                    className={`${styling.inputClasses} border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500`}
-                    placeholder="Enter your current password"
+                    className={styling.inputClasses}
+                    placeholder="Enter your password"
                     disabled={isDeletingAccount}
                     autoFocus
                   />
@@ -166,34 +147,41 @@ export default function DangerTab(): React.JSX.Element {
                 <div>
                   <label
                     htmlFor="delete-confirm-input"
-                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                    className="block text-[12px] font-medium text-zinc-700 dark:text-zinc-300 mb-1.5"
                   >
-                    Confirm deletion
-                  </label>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    To confirm, type{" "}
-                    <code className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-xs">
+                    Type{" "}
+                    <code className="px-1 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-[11px]">
                       delete my account
                     </code>{" "}
-                    or your username{" "}
-                    <code className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-xs">
-                      {username}
-                    </code>{" "}
-                    below:
-                  </p>
+                    to confirm
+                  </label>
                   <input
                     id="delete-confirm-input"
                     name="delete-confirm"
                     type="text"
                     value={deleteConfirmText}
                     onChange={handleInputChange(setDeleteConfirmText)}
-                    className={`${styling.inputClasses} border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500`}
-                    placeholder={username || "delete my account"}
+                    className={styling.inputClasses}
+                    placeholder="delete my account"
                     disabled={isDeletingAccount}
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-red-200 dark:border-red-900/50">
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    onClick={handleDeleteAccount}
+                    className={`${styling.buttonBaseClasses} ${styling.buttonDangerClasses} inline-flex items-center gap-2`}
+                    disabled={!canDeleteAccount}
+                  >
+                    {isDeletingAccount ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete permanently"
+                    )}
+                  </button>
                   <button
                     onClick={cancelDeleteAccount}
                     className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses}`}
@@ -201,48 +189,28 @@ export default function DangerTab(): React.JSX.Element {
                   >
                     Cancel
                   </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    className={`${styling.buttonBaseClasses} bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center py-2 px-1 gap-2`}
-                    disabled={!canDeleteAccount}
-                  >
-                    {isDeletingAccount ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Deleting...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 size={16} />
-                        Delete account permanently
-                      </>
-                    )}
-                  </button>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-              <ShieldAlert size={18} className="text-gray-600 dark:text-gray-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Need help?
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                If you&#39;re experiencing issues or have concerns about your account, our support team is here to help before you take irreversible action.
-              </p>
-              <a
-                href="mailto:support@flowivate.com"
-                className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses} text-sm inline-block`}
-              >
-                Contact support
-              </a>
-            </div>
+        <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
+
+        {/* Help */}
+        <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+          <div>
+            <label className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100">
+              Need help?
+            </label>
+          </div>
+          <div>
+            <a
+              href="mailto:support@flowivate.com"
+              className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses}`}
+            >
+              Contact support
+            </a>
           </div>
         </div>
       </div>

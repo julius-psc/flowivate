@@ -14,27 +14,28 @@ export default function AppearanceTab(): React.JSX.Element {
     value: ThemeMode;
     label: string;
     icon: LucideIcon;
+    description: string;
   }> = [
-    { value: "light", label: "Light", icon: SunMedium },
-    { value: "dark", label: "Dark", icon: Moon },
-    { value: "system", label: "System", icon: Monitor },
-  ];
+      { value: "light", label: "Light", icon: SunMedium, description: "Bright and clean" },
+      { value: "dark", label: "Dark", icon: Moon, description: "Easy on the eyes" },
+      { value: "system", label: "System", icon: Monitor, description: "Follow OS setting" },
+    ];
 
   const ThemePreview = ({ mode }: { mode: ThemeMode }) => {
     if (mode === "light") {
       return (
-        <div className="h-full w-full bg-white rounded-md overflow-hidden border border-gray-200">
-          <div className="h-6 bg-gray-50 border-b border-gray-200 flex items-center px-2 gap-1">
+        <div className="h-full w-full bg-white rounded-lg overflow-hidden">
+          <div className="h-5 bg-zinc-100 border-b border-zinc-200 flex items-center px-2 gap-1">
             <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
             <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
             <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
           </div>
-          <div className="p-3 space-y-2">
-            <div className="h-2 w-16 rounded bg-gray-300" />
-            <div className="h-8 w-full rounded bg-gray-100 border border-gray-200" />
-            <div className="grid grid-cols-2 gap-2">
-              <div className="h-12 rounded bg-gray-50 border border-gray-200" />
-              <div className="h-12 rounded bg-gray-50 border border-gray-200" />
+          <div className="p-2.5 space-y-1.5">
+            <div className="h-1.5 w-12 rounded-full bg-zinc-300" />
+            <div className="h-6 w-full rounded-md bg-zinc-100" />
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="h-8 rounded-md bg-zinc-50 border border-zinc-200" />
+              <div className="h-8 rounded-md bg-zinc-50 border border-zinc-200" />
             </div>
           </div>
         </div>
@@ -42,18 +43,18 @@ export default function AppearanceTab(): React.JSX.Element {
     }
     if (mode === "dark") {
       return (
-        <div className="h-full w-full bg-gray-950 rounded-md overflow-hidden border border-gray-800">
-          <div className="h-6 bg-gray-900 border-b border-gray-800 flex items-center px-2 gap-1">
+        <div className="h-full w-full bg-zinc-950 rounded-lg overflow-hidden">
+          <div className="h-5 bg-zinc-900 border-b border-zinc-800 flex items-center px-2 gap-1">
             <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
             <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
             <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
           </div>
-          <div className="p-3 space-y-2">
-            <div className="h-2 w-16 rounded bg-gray-700" />
-            <div className="h-8 w-full rounded bg-gray-900 border border-gray-800" />
-            <div className="grid grid-cols-2 gap-2">
-              <div className="h-12 rounded bg-gray-900 border border-gray-800" />
-              <div className="h-12 rounded bg-gray-900 border border-gray-800" />
+          <div className="p-2.5 space-y-1.5">
+            <div className="h-1.5 w-12 rounded-full bg-zinc-700" />
+            <div className="h-6 w-full rounded-md bg-zinc-900" />
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="h-8 rounded-md bg-zinc-900 border border-zinc-800" />
+              <div className="h-8 rounded-md bg-zinc-900 border border-zinc-800" />
             </div>
           </div>
         </div>
@@ -61,42 +62,42 @@ export default function AppearanceTab(): React.JSX.Element {
     }
     // "system" — split view
     return (
-      <div className="h-full w-full relative rounded-md overflow-hidden">
+      <div className="h-full w-full relative rounded-lg overflow-hidden">
         <div className="h-full w-1/2 absolute top-0 left-0">
           <ThemePreview mode="light" />
         </div>
         <div className="h-full w-1/2 absolute top-0 right-0">
           <ThemePreview mode="dark" />
         </div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-px h-full bg-gradient-to-b from-transparent via-gray-400 to-transparent" />
-        </div>
+        <div className="absolute inset-y-0 left-1/2 w-px bg-gradient-to-b from-transparent via-zinc-400 to-transparent" />
       </div>
     );
   };
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-2xl">
+      {/* Header */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
           Appearance
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Customize the look and feel of Flowivate to match your preferences.
+        <p className="text-[13px] text-zinc-500 mt-1">
+          Customize the look and feel of Flowivate.
         </p>
       </div>
 
       <div className="space-y-8">
+        {/* Theme Selection */}
         <div>
           <div className="mb-4">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <h3 className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 mb-1">
               Theme
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Select your preferred color theme for the interface.
+            <p className="text-[13px] text-zinc-500">
+              Choose how Flowivate looks to you.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {themeOptions.map((option) => {
               const active = theme === option.value;
               const Icon = option.icon;
@@ -105,48 +106,46 @@ export default function AppearanceTab(): React.JSX.Element {
                   key={option.value}
                   onClick={() => setTheme(option.value)}
                   className={[
-                    "relative rounded-lg border-2 transition-all group",
+                    "relative rounded-xl border transition-all duration-200 text-left",
                     active
-                      ? "border-primary shadow-sm"
-                      : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700",
+                      ? "border-primary"
+                      : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700",
                   ].join(" ")}
                   aria-pressed={active}
                 >
-                  <div className="aspect-video w-full p-3">
+                  <div className="aspect-[4/3] w-full p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-t-[10px]">
                     <ThemePreview mode={option.value} />
                   </div>
-                  <div
-                    className={[
-                      "flex items-center justify-center gap-2 py-3 border-t",
-                      active
-                        ? "bg-primary/5 dark:bg-primary/10 border-primary/20"
-                        : "bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800",
-                    ].join(" ")}
-                  >
-                    <Icon
-                      size={16}
-                      className={
-                        active
-                          ? "text-primary"
-                          : "text-gray-600 dark:text-gray-400"
-                      }
-                    />
-                    <span
-                      className={[
-                        "text-sm font-medium",
-                        active
-                          ? "text-primary"
-                          : "text-gray-700 dark:text-gray-300",
-                      ].join(" ")}
-                    >
-                      {option.label}
-                    </span>
+                  <div className="p-3 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="flex items-center gap-2">
+                      <Icon
+                        size={14}
+                        className={
+                          active
+                            ? "text-primary"
+                            : "text-zinc-500"
+                        }
+                      />
+                      <span
+                        className={[
+                          "text-[13px] font-medium",
+                          active
+                            ? "text-zinc-900 dark:text-zinc-100"
+                            : "text-zinc-600 dark:text-zinc-400",
+                        ].join(" ")}
+                      >
+                        {option.label}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 mt-0.5 ml-5">
+                      {option.description}
+                    </p>
                   </div>
                   {active && (
-                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                      <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
                         <path
-                          d="M1 5L4.5 8.5L11 1.5"
+                          d="M1 4L3.5 6.5L9 1"
                           stroke="white"
                           strokeWidth={2}
                           strokeLinecap="round"
@@ -161,16 +160,14 @@ export default function AppearanceTab(): React.JSX.Element {
           </div>
         </div>
 
-        <div className="h-px bg-gray-200 dark:bg-gray-800" />
+        <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
 
+        {/* Accent Color */}
         <div>
           <div className="mb-4">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <h3 className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100">
               Accent color
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Choose an accent color to personalize your experience.
-            </p>
           </div>
           <ThemeToggle />
         </div>

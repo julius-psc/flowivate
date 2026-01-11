@@ -2,18 +2,15 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
-import {
-  IconVinyl,
-  IconMusic,
-  IconPlayerPlay,
-  IconPlayerPause,
-} from "@tabler/icons-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import {
   useAmbientSound,
   ambientSoundNames,
   AmbientSoundName,
 } from "@/hooks/useAmbientSound";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { motion, AnimatePresence } from "motion/react";
 
 const Ambient: React.FC = () => {
   const {
@@ -23,258 +20,333 @@ const Ambient: React.FC = () => {
     selectSound,
     playSound,
     pauseSound,
+    volume,
+    setVolume,
   } = useAmbientSound();
 
-  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
-  const selectorContainerRef = useRef<HTMLDivElement>(null);
-  const vinylButtonRef = useRef<HTMLDivElement>(null);
-
+  const [isMounted, setIsMounted] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { theme } = useTheme();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isDropdownOpen]);
+
   const isSpecialTheme =
-    theme &&
+    isMounted &&
+    !!theme &&
     specialSceneThemeNames.includes(
       theme as (typeof specialSceneThemeNames)[number]
     );
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isSelectorOpen &&
-        selectorContainerRef.current &&
-        !selectorContainerRef.current.contains(event.target as Node)
-      ) {
-        setIsSelectorOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isSelectorOpen]);
-
-  useEffect(() => {
-    if (isPlaying) {
-      const timer = setTimeout(() => {
-        setShowNotes(true);
-      }, 100);
-      return () => clearTimeout(timer);
-    } else {
-      setShowNotes(false);
-    }
-  }, [isPlaying]);
-
-  const togglePlayPause = (event?: React.MouseEvent) => {
-    event?.stopPropagation();
-    if (!currentSound || currentSound === "None") return;
-    if (isPlaying) {
-      pauseSound();
-    } else {
-      playSound();
-    }
-  };
-
-  const toggleSelector = () => {
-    setIsSelectorOpen((prevIsSelectorOpen) => !prevIsSelectorOpen);
-  };
+  const soundsForDisplay = ambientSoundNames.filter((name) => name !== "None");
 
   const handleSoundSelect = (soundName: AmbientSoundName) => {
     selectSound(soundName);
-    setIsSelectorOpen(false);
+    setIsDropdownOpen(false);
   };
 
-  const innerRadius = 70;
-  const outerRadius = 130;
-  const soundsForDisplay = ambientSoundNames.filter((name) => name !== "None");
-  const totalItems = soundsForDisplay.length;
-  const angleStep = (2 * Math.PI) / totalItems;
-  const buttonSize = 48;
-  const placementRadius = (innerRadius + outerRadius) / 2;
+  const handleVinylClick = () => {
+    if (currentSound && currentSound !== "None") {
+      if (isPlaying) {
+        pauseSound();
+      } else {
+        playSound();
+      }
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setVolume(parseFloat(e.target.value));
+  };
+
+  // Get current sound info
+  const currentSoundInfo = currentSound && currentSound !== "None"
+    ? availableSounds[currentSound as AmbientSoundName]
+    : null;
+
+  // Dynamic styling
+  const containerBg = isSpecialTheme
+    ? "dark bg-zinc-900/50 border border-zinc-800/50"
+    : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50";
+
+  const headerText = isSpecialTheme
+    ? "text-white/70"
+    : "text-secondary-black dark:text-secondary-white";
+
+  const subtleText = isSpecialTheme
+    ? "text-white/40"
+    : "text-gray-400 dark:text-gray-500";
+
+  // Vinyl colors - lighter for light mode
+  const vinylOuter = isSpecialTheme
+    ? "bg-zinc-800"
+    : "bg-white dark:bg-zinc-800 border border-gray-200/50 dark:border-transparent";
+
+  const vinylInner = isSpecialTheme
+    ? "bg-zinc-900"
+    : "bg-gray-50 dark:bg-zinc-900";
+
+  const vinylGroove = isSpecialTheme
+    ? "border-zinc-700/30"
+    : "border-gray-200/60 dark:border-zinc-700/30";
+
+  const vinylCenter = isSpecialTheme
+    ? "bg-zinc-700"
+    : "bg-gray-100 dark:bg-zinc-700";
+
+  const vinylSpindle = isSpecialTheme
+    ? "bg-zinc-950"
+    : "bg-gray-300 dark:bg-zinc-950";
+
+  const dropdownBg = isSpecialTheme
+    ? "bg-zinc-800/95 border-zinc-700/50"
+    : "bg-white/95 dark:bg-zinc-800/95 border-gray-200 dark:border-zinc-700/50";
+
+  const dropdownItemHover = isSpecialTheme
+    ? "hover:bg-white/10"
+    : "hover:bg-gray-100 dark:hover:bg-zinc-700/50";
+
+  const volumeTrackBg = isSpecialTheme
+    ? "bg-zinc-700/50"
+    : "bg-gray-200/80 dark:bg-zinc-700/50";
+
+  // Loading skeleton
+  if (!isMounted) {
+    return (
+      <div className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${containerBg}`}>
+        <div className="flex justify-between items-center mb-4">
+          <Skeleton className="h-3 w-16" />
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <Skeleton className="w-28 h-28 rounded-full" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col h-full overflow-hidden ${
-        isSpecialTheme
-          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-      }`}
-    >
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
+    <div className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full relative ${containerBg}`}>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-3 flex-shrink-0">
+        <h1 className={`text-sm tracking-wider font-medium opacity-60 ${headerText}`}>
           AMBIENT
         </h1>
-        <span
-          className="text-xs text-gray-500 dark:text-gray-400 truncate"
-          aria-live="polite"
-        >
-          {currentSound && currentSound !== "None" ? currentSound : "Select Sound"}
-        </span>
+        {currentSound && currentSound !== "None" && (
+          <button
+            onClick={() => selectSound("None" as AmbientSoundName)}
+            className={`text-xs font-medium transition-colors ${subtleText} hover:opacity-100`}
+          >
+            Stop
+          </button>
+        )}
       </div>
 
-      <div className="relative flex flex-grow flex-col items-center justify-center min-h-0 pt-16 pb-16">
-        <div
-          ref={selectorContainerRef}
-          className="relative flex flex-col items-center justify-center"
-        >
-          <div className="relative flex items-center justify-center">
-            {isSelectorOpen && (
-              <div
-                className="absolute z-30 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                style={{
-                  width: `${outerRadius * 2}px`,
-                  height: `${outerRadius * 2}px`,
-                }}
-                aria-label="Ambient sound options"
-                role="menu"
-              >
-                {soundsForDisplay.map((soundName, index) => {
-                  const angle = index * angleStep - Math.PI / 2;
-                  const x = placementRadius * Math.cos(angle);
-                  const y = placementRadius * Math.sin(angle);
-                  const soundInfo =
-                    availableSounds[soundName as AmbientSoundName];
-
-                  return (
-                    <button
-                      key={soundName}
-                      onClick={() =>
-                        handleSoundSelect(soundName as AmbientSoundName)
-                      }
-                      title={soundName}
-                      className={`absolute flex items-center justify-center transition-all duration-150 ease-in-out pointer-events-auto
-                                  bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm
-                                  text-secondary-black dark:text-secondary-white
-                                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent
-                                  ${
-                                    currentSound === soundName
-                                      ? "ring-2 ring-blue-500 dark:ring-blue-400 shadow-lg"
-                                      : "ring-1 ring-gray-300 dark:ring-zinc-700 shadow-md"
-                                  }
-                                `}
-                      style={{
-                        width: `${buttonSize}px`,
-                        height: `${buttonSize}px`,
-                        borderRadius: "50%",
-                        top: "50%",
-                        left: "50%",
-                        transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
-                      }}
-                      aria-label={`Select ${soundName} sound`}
-                      aria-checked={currentSound === soundName}
-                      role="menuitemradio"
-                    >
-                      <div className="text-center">
-                        <div className="text-lg" aria-hidden="true">
-                          {soundInfo.emoji}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            <div
-              ref={vinylButtonRef}
-              className={`relative z-20 cursor-pointer group ${
-                isPlaying ? "animate-spin-slow" : ""
-              }`}
-              onClick={toggleSelector}
-              aria-label={
-                isSelectorOpen
-                  ? "Close sound selector"
-                  : "Open ambient sound selector"
-              }
-              aria-haspopup="true"
-              aria-expanded={isSelectorOpen}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) =>
-                (e.key === "Enter" || e.key === " ") && toggleSelector()
-              }
+      {/* Main content with conditional volume slider */}
+      <div className="flex-1 flex items-stretch gap-3">
+        {/* Minimal Volume Slider - only when playing */}
+        <AnimatePresence>
+          {isPlaying && (
+            <motion.div
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 12 }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col items-center justify-center py-6"
             >
-              <div
-                className="absolute inset-0 rounded-full border border-gray-200/80 dark:border-gray-600/50 -m-3 pointer-events-none group-hover:border-gray-300/80 dark:group-hover:border-gray-500/60 transition-colors"
-                aria-hidden="true"
-              />
-              <div
-                className="absolute inset-0 rounded-full border border-gray-200/70 dark:border-gray-600/40 -m-6 pointer-events-none group-hover:border-gray-300/70 dark:group-hover:border-gray-500/50 transition-colors delay-75"
-                aria-hidden="true"
-              />
-              <div
-                className="absolute inset-0 rounded-full border border-gray-200/60 dark:border-gray-600/30 -m-9 pointer-events-none group-hover:border-gray-300/60 dark:group-hover:border-gray-500/40 transition-colors delay-150"
-                aria-hidden="true"
-              />
-              <div
-                className="absolute inset-0 rounded-full border border-gray-200/50 dark:border-gray-600/20 -m-12 pointer-events-none group-hover:border-gray-300/50 dark:group-hover:border-gray-500/30 transition-colors delay-200"
-                aria-hidden="true"
-              />
-              <div
-                className="absolute inset-0 rounded-full border border-gray-200/40 dark:border-gray-600/10 -m-15 pointer-events-none group-hover:border-gray-300/40 dark:group-hover:border-gray-500/20 transition-colors delay-300"
-                aria-hidden="true"
-              />
-              <div
-                className={`relative bg-white dark:bg-zinc-700 p-2.5 rounded-full border-2 border-gray-300 dark:border-zinc-600 shadow-md group-hover:shadow-lg transition-all ${
-                  isSelectorOpen ? "ring-2 ring-blue-500 dark:ring-blue-400" : ""
-                }`}
-              >
-                <IconVinyl
-                  size={32}
-                  className="text-primary-black dark:text-gray-200"
+              <div className="relative h-full w-1.5 flex flex-col items-center justify-center">
+                {/* Volume track */}
+                <div className={`absolute inset-0 w-full rounded-full ${volumeTrackBg}`} />
+
+                {/* Filled portion */}
+                <div
+                  className="absolute bottom-0 w-full rounded-full bg-primary-blue transition-all"
+                  style={{ height: `${(volume ?? 0.5) * 100}%` }}
+                />
+
+                {/* Invisible range input */}
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={volume ?? 0.5}
+                  onChange={handleVolumeChange}
+                  className="absolute h-full w-4 opacity-0 cursor-pointer"
+                  style={{
+                    writingMode: "vertical-lr",
+                    direction: "rtl",
+                  }}
+                  title={`Volume: ${Math.round((volume ?? 0.5) * 100)}%`}
                 />
               </div>
-            </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            {showNotes && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                <div
-                  className="absolute text-blue-500 dark:text-blue-400 animate-float-note1"
-                  style={{ position: "absolute", top: "10%", left: "45%" }}
-                  aria-hidden="true"
+        {/* Vinyl and controls */}
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="relative">
+            {/* Colorful ambient glow behind vinyl - only when playing */}
+            <AnimatePresence>
+              {isPlaying && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute -inset-3 pointer-events-none"
                 >
-                  <IconMusic size={16} />
-                </div>
-                <div
-                  className="absolute text-blue-500 dark:text-blue-400 animate-float-note2"
-                  style={{ position: "absolute", top: "10%", left: "50%" }}
-                  aria-hidden="true"
-                >
-                  <IconMusic size={14} />
-                </div>
-                <div
-                  className="absolute text-blue-500 dark:text-blue-400 animate-float-note3"
-                  style={{ position: "absolute", top: "10%", left: "55%" }}
-                  aria-hidden="true"
-                >
-                  <IconMusic size={15} />
-                </div>
-                <div
-                  className="absolute text-blue-500 dark:text-blue-400 animate-float-note4"
-                  style={{ position: "absolute", top: "10%", left: "48%" }}
-                  aria-hidden="true"
-                >
-                  <IconMusic size={13} />
-                </div>
+                  <motion.div
+                    className="absolute inset-0 rounded-full blur-xl bg-pink-400/40"
+                    animate={{ opacity: [0.4, 0.1, 0.1, 0.4] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-full blur-xl bg-blue-400/40"
+                    animate={{ opacity: [0.1, 0.4, 0.1, 0.1] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-full blur-xl bg-purple-400/40"
+                    animate={{ opacity: [0.1, 0.1, 0.4, 0.1] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-full blur-xl bg-cyan-400/40"
+                    animate={{ opacity: [0.1, 0.1, 0.1, 0.4] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Vinyl Record */}
+            <motion.div
+              onClick={handleVinylClick}
+              className={`relative w-28 h-28 rounded-full cursor-pointer shadow-lg ${vinylOuter}`}
+              animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
+              transition={isPlaying ? { duration: 8, repeat: Infinity, ease: "linear" } : { duration: 0.3 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              title={currentSoundInfo ? (isPlaying ? "Click to pause" : "Click to play") : "Select a sound first"}
+            >
+              {/* Inner vinyl layer */}
+              <div className={`absolute inset-1 rounded-full ${vinylInner}`} />
+
+              {/* Vinyl grooves */}
+              <div className={`absolute inset-2 rounded-full border ${vinylGroove}`} />
+              <div className={`absolute inset-4 rounded-full border ${vinylGroove}`} />
+              <div className={`absolute inset-6 rounded-full border ${vinylGroove}`} />
+              <div className={`absolute inset-8 rounded-full border ${vinylGroove}`} />
+
+              {/* Center label */}
+              <div className={`absolute inset-0 m-auto w-10 h-10 rounded-full flex items-center justify-center ${vinylCenter}`}>
+                {currentSoundInfo && (
+                  <span className="text-xl">{currentSoundInfo.emoji}</span>
+                )}
               </div>
-            )}
+
+              {/* Spindle hole - hidden when playing */}
+              {!isPlaying && (
+                <div className={`absolute inset-0 m-auto w-1.5 h-1.5 rounded-full ${vinylSpindle}`} />
+              )}
+            </motion.div>
+
+            {/* Tonearm - vertical by default, longer and positioned away from disk */}
+            <motion.div
+              className={`absolute -right-2 top-1/2 -translate-y-1/2 w-0.5 h-9 rounded-full origin-bottom ${isSpecialTheme ? "bg-zinc-500" : "bg-gray-400 dark:bg-zinc-500"
+                }`}
+              animate={isPlaying ? { rotate: -45 } : { rotate: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
           </div>
 
-          <button
-            onClick={togglePlayPause}
-            className={`mt-4 p-2 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-200 rounded-full transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900 focus:ring-blue-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md hover:shadow-lg hover:bg-gray-200 dark:hover:bg-zinc-600 disabled:hover:bg-gray-1Example-Component.tsx100 dark:disabled:hover:bg-zinc-700`}
-            disabled={!currentSound || currentSound === "None"}
-            aria-label={
-              isPlaying ? "Pause ambient sound" : "Play ambient sound"
-            }
-            aria-pressed={isPlaying}
-          >
-            {isPlaying ? (
-              <IconPlayerPause size={20} />
-            ) : (
-              <IconPlayerPlay size={20} />
-            )}
-          </button>
+          {/* Sound selector */}
+          <div className="mt-3 relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-1 group"
+            >
+              {/* Green dot when playing */}
+              {isPlaying && (
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-0.5" />
+              )}
+              <span className={`text-xs ${subtleText}`}>
+                {currentSoundInfo ? "Playing" : "Select a"}
+              </span>
+              <span className={`text-xs font-medium underline underline-offset-2 transition-colors ${isSpecialTheme
+                ? "text-white/70 decoration-white/30 group-hover:text-white group-hover:decoration-white/50"
+                : "text-gray-600 dark:text-gray-300 decoration-gray-300 dark:decoration-gray-500 group-hover:text-gray-900 dark:group-hover:text-white group-hover:decoration-gray-400 dark:group-hover:decoration-gray-400"
+                }`}>
+                {currentSoundInfo ? currentSound : "sound"}
+              </span>
+              <motion.div
+                animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <IconChevronDown size={12} className={`${subtleText} group-hover:opacity-100`} />
+              </motion.div>
+            </button>
+
+            {/* Compact dropdown popup - appears above */}
+            <AnimatePresence>
+              {isDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-32 max-h-40 overflow-y-auto rounded-lg border shadow-xl backdrop-blur-xl z-50 ${dropdownBg}`}
+                >
+                  <div className="py-1">
+                    {soundsForDisplay.map((soundName) => {
+                      const soundInfo = availableSounds[soundName as AmbientSoundName];
+                      const isActive = currentSound === soundName;
+
+                      return (
+                        <button
+                          key={soundName}
+                          onClick={() => handleSoundSelect(soundName as AmbientSoundName)}
+                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-colors ${dropdownItemHover} ${isActive ? "bg-primary-blue/10" : ""
+                            }`}
+                        >
+                          <span className="text-sm">{soundInfo.emoji}</span>
+                          <span className={`text-[11px] truncate ${isActive
+                            ? "text-primary-blue font-medium"
+                            : isSpecialTheme
+                              ? "text-white/70"
+                              : "text-gray-600 dark:text-gray-300"
+                            }`}>
+                            {soundName}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
+      {/* Preload audio files */}
       <div style={{ display: "none" }} aria-hidden="true">
         {Object.values(availableSounds)
           .filter((s) => s.src)

@@ -33,6 +33,7 @@ export interface AmbientSoundHook {
   playSound: () => void;
   pauseSound: () => void;
   stopSound: () => void;
+  volume: number;
   setVolume: (volume: number) => void;
 }
 
@@ -150,6 +151,7 @@ export const useAmbientSound = (): AmbientSoundHook => {
     playSound,
     pauseSound,
     stopSound,
+    volume,
     setVolume,
   };
 };

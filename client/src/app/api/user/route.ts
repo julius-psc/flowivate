@@ -56,7 +56,7 @@ export async function GET() {
   await connectDB();
 
   const user = await User.findById(userObjectId)
-    .select("createdAt passwordLastUpdatedAt")
+    .select("createdAt passwordLastUpdatedAt authProvider")
     .exec();
 
   if (!user) {
@@ -67,6 +67,7 @@ export async function GET() {
     {
       joinedDate: user.createdAt,
       passwordLastUpdatedAt: user.passwordLastUpdatedAt,
+      authProvider: user.authProvider ?? null,
     },
     { status: 200 }
   );
@@ -307,7 +308,7 @@ export async function DELETE(request: NextRequest) {
   let body: DeleteBody = {};
   try {
     body = await request.json();
-  } catch {}
+  } catch { }
   const { currentPassword } = body;
 
   await connectDB();

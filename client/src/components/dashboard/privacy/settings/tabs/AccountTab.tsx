@@ -12,12 +12,10 @@ import {
   User,
   Loader2,
   Mail,
-  ImagePlus,
+  Camera,
   Check,
   X,
   Pencil,
-  KeyRound,
-  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { fetchApi } from "../api";
@@ -54,7 +52,8 @@ export default function AccountTab(): React.JSX.Element {
   const [accountDetails, setAccountDetails] = useState<{
     joinedDate: Date | null;
     passwordLastUpdatedAt: Date | null;
-  }>({ joinedDate: null, passwordLastUpdatedAt: null });
+    authProvider: "google" | "github" | "credentials" | null;
+  }>({ joinedDate: null, passwordLastUpdatedAt: null, authProvider: null });
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +74,7 @@ export default function AccountTab(): React.JSX.Element {
           const details = await fetchApi<{
             joinedDate: Date;
             passwordLastUpdatedAt: Date | null;
+            authProvider: "google" | "github" | "credentials" | null;
           }>("/api/user", { method: "GET" });
           setAccountDetails(details);
         } catch (error) {
@@ -214,8 +214,8 @@ export default function AccountTab(): React.JSX.Element {
 
   const handleInputChange =
     (setter: React.Dispatch<React.SetStateAction<string>>) =>
-    (e: ChangeEvent<HTMLInputElement>) =>
-      setter(e.target.value);
+      (e: ChangeEvent<HTMLInputElement>) =>
+        setter(e.target.value);
 
   const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     setConfirmPassword(e.target.value);
@@ -281,8 +281,8 @@ export default function AccountTab(): React.JSX.Element {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2
-          className="animate-spin text-gray-400 dark:text-gray-500"
-          size={32}
+          className="animate-spin text-zinc-400 dark:text-zinc-600"
+          size={24}
         />
       </div>
     );
@@ -291,13 +291,13 @@ export default function AccountTab(): React.JSX.Element {
   if (sessionStatus === "unauthenticated") {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center px-4">
-        <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-          <User className="text-gray-400 dark:text-gray-500" size={20} />
+        <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
+          <User className="text-zinc-500" size={20} />
         </div>
-        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <h3 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
           Sign in required
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-sm">
+        <p className="text-[13px] text-zinc-500 mb-6 max-w-sm">
           You need to be signed in to manage your account settings.
         </p>
         <Link
@@ -311,18 +311,20 @@ export default function AccountTab(): React.JSX.Element {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-2xl">
+      {/* Header */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
           Account
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-[13px] text-zinc-500 mt-1">
           Manage your personal information and account security.
         </p>
       </div>
 
-      <div className="space-y-6">
-        <div className="flex items-center gap-6 pb-6 border-b border-gray-200 dark:border-gray-800">
+      <div className="space-y-8">
+        {/* Avatar Section */}
+        <div className="flex items-center gap-5">
           <input
             ref={fileInputRef}
             type="file"
@@ -330,237 +332,249 @@ export default function AccountTab(): React.JSX.Element {
             accept="image/png, image/jpeg"
             onChange={handleAvatarChange}
           />
-          <div className="relative shrink-0">
+          <div className="relative group">
             {session?.user?.image ? (
               <Image
                 src={session.user.image}
                 alt="Avatar"
-                width={80}
-                height={80}
-                className="h-20 w-20 rounded-full object-cover border border-gray-200 dark:border-gray-800 cursor-pointer"
-                onClick={handleAvatarClick}
+                width={72}
+                height={72}
+                className="h-[72px] w-[72px] rounded-full object-cover ring-1 ring-zinc-200 dark:ring-zinc-800"
               />
             ) : (
-              <div
-                className="h-20 w-20 rounded-full bg-linear-to-br from-primary/20 to-primary/5 dark:from-primary/30 dark:to-primary/10 flex items-center justify-center border border-gray-200 dark:border-gray-800 cursor-pointer"
-                onClick={handleAvatarClick}
-              >
-                <User size={32} className="text-primary" />
+              <div className="h-[72px] w-[72px] rounded-full bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-900 flex items-center justify-center ring-1 ring-zinc-200 dark:ring-zinc-800">
+                <User size={28} className="text-zinc-400 dark:text-zinc-600" />
               </div>
             )}
 
             <button
               onClick={handleAvatarClick}
               disabled={uploadingAvatar}
-              className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/40 flex items-center justify-center transition-all duration-200 cursor-pointer"
               title="Change avatar"
             >
               {uploadingAvatar ? (
-                <Loader2
-                  size={14}
-                  className="animate-spin text-gray-600 dark:text-gray-400"
-                />
+                <Loader2 size={20} className="animate-spin text-white opacity-0 group-hover:opacity-100" />
               ) : (
-                <ImagePlus
-                  size={14}
-                  className="text-gray-600 dark:text-gray-400"
-                />
+                <Camera size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
               )}
             </button>
           </div>
+          <div>
+            <p className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100">
+              Profile photo
+            </p>
+            <p className="text-[12px] text-zinc-500 mt-0.5">
+              Click to upload a new photo. Max 5MB.
+            </p>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center gap-6">
-            <div className="w-32 shrink-0">
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-900 dark:text-gray-100"
-              >
-                Username
-              </label>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                Your unique identifier
-              </p>
+        <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
+
+        {/* Username Field */}
+        <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+          <div>
+            <label
+              htmlFor="username"
+              className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100"
+            >
+              Username
+            </label>
+            <p className="text-[12px] text-zinc-500 mt-0.5">Your unique identifier</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                id="username"
+                type="text"
+                className={styling.inputClasses}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter username"
+                disabled={savingUsername || !editingUsername}
+              />
+              {editingUsername && usernameDirty && (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <button
+                    onClick={handleCancelUsername}
+                    className="p-1 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    disabled={savingUsername}
+                    title="Cancel"
+                  >
+                    <X size={14} />
+                  </button>
+                  <button
+                    onClick={onSaveUsername}
+                    className="p-1 rounded text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
+                    disabled={savingUsername}
+                    title="Save"
+                  >
+                    {savingUsername ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Check size={14} />
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="flex-1 flex items-center gap-3">
+            {!editingUsername && (
+              <button
+                onClick={() => setEditingUsername(true)}
+                className="p-2 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Edit username"
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Email Field */}
+        <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+          <div>
+            <label
+              htmlFor="email"
+              className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100"
+            >
+              Email
+            </label>
+            <p className="text-[12px] text-zinc-500 mt-0.5">Used for login</p>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
-                  id="username"
-                  type="text"
+                  id="email"
+                  type="email"
                   className={styling.inputClasses}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter username"
-                  disabled={savingUsername || !editingUsername}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  disabled={savingEmail || !editingEmail}
                 />
-                {editingUsername && usernameDirty && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                {editingEmail && emailDirty && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     <button
-                      onClick={handleCancelUsername}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                      disabled={savingUsername}
+                      onClick={handleCancelEmail}
+                      className="p-1 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                      disabled={savingEmail}
                       title="Cancel"
                     >
-                      <X size={16} />
+                      <X size={14} />
                     </button>
                     <button
-                      onClick={onSaveUsername}
-                      className="text-primary hover:text-primary/80"
-                      disabled={savingUsername}
+                      onClick={onSaveEmail}
+                      className="p-1 rounded text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
+                      disabled={savingEmail}
                       title="Save"
                     >
-                      {savingUsername ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                      {savingEmail ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        <Check size={16} />
+                        <Check size={14} />
                       )}
                     </button>
                   </div>
                 )}
               </div>
-              {!editingUsername && (
+              {!editingEmail && (
                 <button
-                  onClick={() => setEditingUsername(true)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                  title="Edit username"
+                  onClick={() => setEditingEmail(true)}
+                  className="p-2 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                  title="Edit email"
                 >
-                  <Pencil size={16} />
+                  <Pencil size={14} />
                 </button>
               )}
             </div>
+
+            {!email.endsWith(initial.e) && initial.e && (
+              <div className="flex items-center gap-2 text-[12px] text-zinc-500 bg-zinc-50 dark:bg-zinc-900 rounded-md px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+                <Mail size={12} />
+                <span>Current verified: {initial.e}</span>
+              </div>
+            )}
           </div>
+        </div>
 
-          <div className="h-px bg-gray-200 dark:bg-gray-800"></div>
+        <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
 
-          <div className="flex items-start gap-6">
-            <div className="w-32 shrink-0 pt-2">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-900 dark:text-gray-100"
-              >
-                Email
+        {/* Authentication Section - Show provider for OAuth users, password form for credentials users */}
+        {accountDetails.authProvider && ["google", "github"].includes(accountDetails.authProvider) ? (
+          /* OAuth Provider Section */
+          <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+            <div>
+              <label className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100">
+                Sign-in method
               </label>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                Used for login
+              <p className="text-[12px] text-zinc-500 mt-0.5">
+                Linked account
               </p>
             </div>
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1">
-                  <input
-                    id="email"
-                    type="email"
-                    className={styling.inputClasses}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    disabled={savingEmail || !editingEmail}
-                  />
-                  {editingEmail && emailDirty && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                      <button
-                        onClick={handleCancelEmail}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        disabled={savingEmail}
-                        title="Cancel"
-                      >
-                        <X size={16} />
-                      </button>
-                      <button
-                        onClick={onSaveEmail}
-                        className="text-primary hover:text-primary/80"
-                        disabled={savingEmail}
-                        title="Save"
-                      >
-                        {savingEmail ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Check size={16} />
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {!editingEmail && (
-                  <button
-                    onClick={() => setEditingEmail(true)}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                    title="Edit email"
-                  >
-                    <Pencil size={16} />
-                  </button>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 px-3.5 h-9 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                {accountDetails.authProvider === "google" ? (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-zinc-900 dark:text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                  </svg>
                 )}
+                <span className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 capitalize">
+                  {accountDetails.authProvider}
+                </span>
               </div>
-
-              {!email.endsWith(initial.e) && initial.e && (
-                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 rounded-md px-3 py-2">
-                  <Mail size={14} />
-                  <span>Current verified: {initial.e}</span>
-                </div>
-              )}
+              <span className="text-[12px] text-zinc-500">
+                Signed in with {accountDetails.authProvider === "google" ? "Google" : "GitHub"}
+              </span>
             </div>
           </div>
-
-          <div className="h-px bg-gray-200 dark:bg-gray-800"></div>
-
-          <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 overflow-hidden">
-            <div className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                    <KeyRound
-                      size={18}
-                      className="text-gray-600 dark:text-gray-400"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-                      Password
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {showPasswordForm
-                        ? "Update your account password"
-                        : "Set a unique password to protect your account"}
-                    </p>
-                    {!showPasswordForm && (
-                      <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        <Clock size={12} />
-                        {accountDetails.passwordLastUpdatedAt ? (
-                          <span>
-                            Last changed{" "}
-                            {formatDistanceToNow(
-                              new Date(accountDetails.passwordLastUpdatedAt),
-                              { addSuffix: true }
-                            )}
-                          </span>
-                        ) : session?.user?.email ? (
-                          <span>Password has not been set</span>
-                        ) : (
-                          <span>Loading...</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {!showPasswordForm && (
-                  <button
-                    onClick={() => setShowPasswordForm(true)}
-                    className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses} text-sm`}
-                  >
-                    Change password
-                  </button>
-                )}
-              </div>
+        ) : (
+          /* Password Section for credentials users */
+          <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+            <div>
+              <label className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100">
+                Password
+              </label>
+              <p className="text-[12px] text-zinc-500 mt-0.5">
+                {accountDetails.passwordLastUpdatedAt
+                  ? `Changed ${formatDistanceToNow(new Date(accountDetails.passwordLastUpdatedAt), { addSuffix: true })}`
+                  : "Not set"}
+              </p>
             </div>
-
-            {showPasswordForm && (
-              <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-4">
+            <div>
+              {!showPasswordForm ? (
+                <button
+                  onClick={() => setShowPasswordForm(true)}
+                  className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses}`}
+                >
+                  Change password
+                </button>
+              ) : (
                 <div className="space-y-4">
                   <div>
                     <label
                       htmlFor="current-password-input"
-                      className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                      className="block text-[12px] font-medium text-zinc-600 dark:text-zinc-400 mb-1.5"
                     >
                       Current password
                     </label>
@@ -579,7 +593,7 @@ export default function AccountTab(): React.JSX.Element {
                   <div>
                     <label
                       htmlFor="new-password-input"
-                      className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                      className="block text-[12px] font-medium text-zinc-600 dark:text-zinc-400 mb-1.5"
                     >
                       New password
                     </label>
@@ -592,17 +606,14 @@ export default function AccountTab(): React.JSX.Element {
                       className={styling.inputClasses}
                       autoComplete="new-password"
                       minLength={8}
-                      placeholder="Enter new password"
+                      placeholder="Minimum 8 characters"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      Must be at least 8 characters long
-                    </p>
                   </div>
 
                   <div>
                     <label
                       htmlFor="confirm-password-input"
-                      className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
+                      className="block text-[12px] font-medium text-zinc-600 dark:text-zinc-400 mb-1.5"
                     >
                       Confirm new password
                     </label>
@@ -615,63 +626,55 @@ export default function AccountTab(): React.JSX.Element {
                       className={[
                         styling.inputClasses,
                         passwordError ||
-                        (newPassword &&
-                          confirmPassword &&
-                          newPassword !== confirmPassword)
-                          ? "border-red-400 dark:border-red-600 focus:ring-red-500"
+                          (newPassword &&
+                            confirmPassword &&
+                            newPassword !== confirmPassword)
+                          ? "!border-red-400 dark:!border-red-600"
                           : "",
                       ].join(" ")}
                       autoComplete="new-password"
                       placeholder="Confirm new password"
                     />
-                    {passwordError && (
-                      <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                        {passwordError}
-                      </p>
-                    )}
-                    {!passwordError &&
-                      newPassword &&
-                      confirmPassword &&
-                      newPassword !== confirmPassword && (
-                        <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                          Passwords do not match
+                    {(passwordError ||
+                      (newPassword &&
+                        confirmPassword &&
+                        newPassword !== confirmPassword)) && (
+                        <p className="text-[12px] text-red-600 dark:text-red-400 mt-1.5">
+                          {passwordError || "Passwords do not match"}
                         </p>
                       )}
                   </div>
-                </div>
 
-                <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
-                  <button
-                    type="button"
-                    onClick={onCancelPassword}
-                    disabled={isUpdatingPassword}
-                    className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses}`}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleUpdatePassword}
-                    disabled={!canUpdatePassword}
-                    className={`${styling.buttonBaseClasses} ${styling.buttonPrimaryClasses} inline-flex items-center gap-2`}
-                  >
-                    {isUpdatingPassword ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        <Check size={16} />
-                        Update password
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleUpdatePassword}
+                      disabled={!canUpdatePassword}
+                      className={`${styling.buttonBaseClasses} ${styling.buttonPrimaryClasses} inline-flex items-center gap-2`}
+                    >
+                      {isUpdatingPassword ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        "Update password"
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onCancelPassword}
+                      disabled={isUpdatingPassword}
+                      className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses}`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

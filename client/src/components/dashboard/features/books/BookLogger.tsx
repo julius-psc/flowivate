@@ -45,11 +45,18 @@ const BookLogger: React.FC = () => {
       }
       const data = await response.json();
       setBooks(data.books);
+      if (data.books.length > 0 && !selectedBook) {
+        setSelectedBook(data.books[0]);
+      } else if (data.books.length > 0) {
+        // If a book was selected (e.g. persisted), ensure it's still in the list, else select first
+        const exists = data.books.find((b: Book) => b._id === selectedBook?._id);
+        if (!exists) setSelectedBook(data.books[0]);
+      }
     } catch (err: unknown) {
-        let message = "Error loading books. Please try again.";
-        if (err instanceof Error) message = err.message;
-        toast.error(message);
-        console.error("Fetch books error:", err);
+      let message = "Error loading books. Please try again.";
+      if (err instanceof Error) message = err.message;
+      toast.error(message);
+      console.error("Fetch books error:", err);
     } finally {
       setLoading(false);
     }
@@ -131,10 +138,10 @@ const BookLogger: React.FC = () => {
       setSelectedBook(data.book);
       setIsEditing(false);
     } catch (err: unknown) {
-        let message = "Error saving book. Please try again.";
-        if (err instanceof Error) message = err.message;
-        toast.error(message);
-        console.error("Save book error:", err);
+      let message = "Error saving book. Please try again.";
+      if (err instanceof Error) message = err.message;
+      toast.error(message);
+      console.error("Save book error:", err);
     }
   };
 
@@ -162,10 +169,10 @@ const BookLogger: React.FC = () => {
       setSelectedBook(null);
       setIsEditing(false);
     } catch (err: unknown) {
-        let message = "Error deleting book. Please try again.";
-        if (err instanceof Error) message = err.message;
-        toast.error(message);
-        console.error("Delete book error:", err);
+      let message = "Error deleting book. Please try again.";
+      if (err instanceof Error) message = err.message;
+      toast.error(message);
+      console.error("Delete book error:", err);
     }
   };
 
@@ -190,21 +197,23 @@ const BookLogger: React.FC = () => {
 
   // Prevent rendering until mounted to avoid hydration errors
   if (!isMounted) {
-     return <div className="flex flex-col h-full w-full items-center justify-center">Loading...</div>; // Or a proper skeleton
+    return <div className="flex flex-col h-full w-full items-center justify-center">Loading...</div>; // Or a proper skeleton
   }
 
   return (
     <div className={`flex flex-col h-full w-full ${isSpecialTheme ? 'text-white' : 'text-secondary-black dark:text-secondary-white'}`}>
       <div className="px-4 py-4">
         <div className="max-w-screen-lg mx-auto flex justify-end items-center">
-          <button
-            onClick={handleAddNewBook}
-            className={`flex items-center space-x-1 px-3 py-1.5 ${addButtonBg} ${addButtonText} rounded-md disabled:opacity-50 transition-colors`}
-            disabled={loading}
-          >
-            <IconPlus size={18} />
-            <span className="text-sm font-medium">Add Book</span>
-          </button>
+          {books.length > 0 && (
+            <button
+              onClick={handleAddNewBook}
+              className={`flex items-center space-x-1 px-3 py-1.5 ${addButtonBg} ${addButtonText} rounded-md disabled:opacity-50 transition-colors`}
+              disabled={loading}
+            >
+              <IconPlus size={18} />
+              <span className="text-sm font-medium">Add Book</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -219,7 +228,8 @@ const BookLogger: React.FC = () => {
           onSearchChange={(e) => setSearchTerm(e.target.value)}
           onFilterChange={setStatusFilter}
           getBookCountByStatus={getBookCountByStatus}
-          isSpecialTheme={isSpecialTheme} // Pass prop
+          isSpecialTheme={isSpecialTheme}
+          onAddNew={handleAddNewBook}
         />
         <BookDisplayPanel
           selectedBook={selectedBook}

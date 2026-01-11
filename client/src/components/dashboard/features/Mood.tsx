@@ -1,77 +1,77 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  IconMoodSmileDizzy,
-  IconMoodCry,
-  IconMoodHappy,
-  IconMoodTongueWink,
-  IconMoodSad,
-  IconMoodEmpty,
-  IconMoodAngry,
-  IconChevronLeft,
-} from "@tabler/icons-react";
+import { IconChevronLeft } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 import { Skeleton } from "@/components/ui/Skeleton";
 
-const moodIcons = [
+interface MoodOption {
+  emoji: string;
+  value: string;
+  color: string;
+  hoverColor: string;
+  textColor: string;
+  label: string;
+}
+
+const moodIcons: MoodOption[] = [
   {
-    icon: IconMoodAngry,
+    emoji: "😡",
     value: "angry",
-    color: "bg-[#f12828]",
-    hoverColor: "bg-[#f34747]",
-    textColor: "text-[#f12828] dark:text-[#f85c5c]",
+    color: "bg-red-500",
+    hoverColor: "bg-red-600",
+    textColor: "text-red-500 dark:text-red-400",
     label: "Angry",
   },
   {
-    icon: IconMoodCry,
+    emoji: "😭",
     value: "miserable",
-    color: "bg-[#FF5151]",
-    hoverColor: "bg-[#ff7070]",
-    textColor: "text-[#FF5151] dark:text-[#ff7b7b]",
+    color: "bg-orange-600",
+    hoverColor: "bg-orange-700",
+    textColor: "text-orange-600 dark:text-orange-400",
     label: "Miserable",
   },
   {
-    icon: IconMoodSad,
+    emoji: "😢",
     value: "sad",
-    color: "bg-[#FF7449]",
-    hoverColor: "bg-[#ff8d68]",
-    textColor: "text-[#FF7449] dark:text-[#ff9a76]",
+    color: "bg-orange-400",
+    hoverColor: "bg-orange-500",
+    textColor: "text-orange-400 dark:text-orange-300",
     label: "Sad",
   },
   {
-    icon: IconMoodEmpty,
+    emoji: "😐",
     value: "neutral",
-    color: "bg-[#FF9B19]",
-    hoverColor: "bg-[#ffac45]",
-    textColor: "text-[#FF9B19] dark:text-[#ffbc5c]",
+    color: "bg-yellow-400",
+    hoverColor: "bg-yellow-500",
+    textColor: "text-yellow-600 dark:text-yellow-400",
     label: "Neutral",
   },
   {
-    icon: IconMoodTongueWink,
+    emoji: "🙂",
     value: "cheerful",
-    color: "bg-[#75DB74]",
-    hoverColor: "bg-[#8fe28e]",
-    textColor: "text-[#75DB74] dark:text-[#9cea9c]",
+    color: "bg-lime-400",
+    hoverColor: "bg-lime-500",
+    textColor: "text-lime-600 dark:text-lime-400",
     label: "Cheerful",
   },
   {
-    icon: IconMoodHappy,
+    emoji: "😊",
     value: "happy",
-    color: "bg-[#46AE3A]",
-    hoverColor: "bg-[#55c248]",
-    textColor: "text-[#46AE3A] dark:text-[#6cd45e]",
+    color: "bg-green-500",
+    hoverColor: "bg-green-600",
+    textColor: "text-green-600 dark:text-green-400",
     label: "Happy",
   },
   {
-    icon: IconMoodSmileDizzy,
+    emoji: "🤩",
     value: "ecstatic",
-    color: "bg-[#22C55E]",
-    hoverColor: "bg-[#1FAD55]",
-    textColor: "text-[#22C55E] dark:text-[#34D399]",
+    color: "bg-emerald-500",
+    hoverColor: "bg-emerald-600",
+    textColor: "text-emerald-600 dark:text-emerald-400",
     label: "Ecstatic",
   },
 ];
@@ -105,21 +105,22 @@ const MoodInsights: React.FC<{
         );
       });
       if (entry) {
+        const moodData = moodIcons.find((m) => m.value === entry.mood);
         return {
           day,
           isLogged: true,
-          color:
-            moodIcons.find((m) => m.value === entry.mood)?.color ||
-            "bg-gray-200",
+          color: moodData?.color || "bg-gray-300",
+          emoji: moodData?.emoji || "😐",
         };
       }
       const isPast = day < currentDay;
       return {
         day,
         isLogged: false,
+        emoji: null,
         baseClass: isPast
-          ? "border border-gray-300 dark:border-zinc-700 bg-transparent"
-          : "border border-gray-200 dark:border-zinc-800 bg-transparent opacity-50",
+          ? "bg-gray-100 dark:bg-zinc-800/50"
+          : "bg-gray-50 dark:bg-zinc-900/50 opacity-50",
       };
     });
 
@@ -128,7 +129,7 @@ const MoodInsights: React.FC<{
     return (
       entryDate.getMonth() === currentMonth &&
       entryDate.getFullYear() === currentYear &&
-      ["ecstatic", "happy"].includes(entry.mood)
+      ["ecstatic", "happy", "cheerful"].includes(entry.mood)
     );
   }).length;
   const entriesThisMonth = moodHistory.filter((entry) => {
@@ -143,74 +144,80 @@ const MoodInsights: React.FC<{
       ? Math.round((positiveMoods / entriesThisMonth) * 100)
       : 0;
 
-  const oneWeekAgo = new Date(now);
-  oneWeekAgo.setDate(now.getDate() - 7);
-  const weekHistory: MoodEntry[] = moodHistory.filter(
-    (entry: MoodEntry) => new Date(entry.timestamp) >= oneWeekAgo
-  );
-  const weeklyPositive = weekHistory.filter((entry) =>
-    ["ecstatic", "happy"].includes(entry.mood)
-  ).length;
-  const weeklyPercentage =
-    weekHistory.length > 0
-      ? Math.round((weeklyPositive / weekHistory.length) * 100)
-      : 0;
-
   const currentMonthName = now.toLocaleString("default", { month: "long" });
 
-
-  const insightsSubtleTextColor = isSpecialTheme ? "text-white/60" : "text-primary-black dark:text-gray-300 opacity-60";
-  const insightsPercentageColor = isSpecialTheme ? "text-white" : "text-secondary-black dark:text-secondary-white";
-
+  const subtleText = isSpecialTheme
+    ? "text-white/50"
+    : "text-gray-400 dark:text-gray-500";
+  const mainText = isSpecialTheme
+    ? "text-white"
+    : "text-secondary-black dark:text-secondary-white";
 
   return (
     <div
-      className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
+      className={`p-5 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
           ? "dark bg-zinc-900/50 border border-zinc-800/50"
           : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
         }`}
     >
-      <div className="flex items-center mb-4">
-        <button
-          onClick={onBack}
-          className={`mr-2 p-1 rounded-full transition-colors ${isSpecialTheme ? 'hover:bg-white/10' : 'hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
-        >
-          <IconChevronLeft
-            size={20}
-            className={isSpecialTheme ? 'text-white/80' : 'text-gray-800 dark:text-gray-200'}
-          />
-        </button>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onBack}
+            className={`p-1.5 rounded-lg transition-colors ${isSpecialTheme
+                ? "hover:bg-white/10 text-white/70"
+                : "hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400"
+              }`}
+          >
+            <IconChevronLeft size={18} />
+          </button>
+          <span className={`text-sm font-medium ${mainText}`}>
+            {`${currentMonthName} ${currentYear}`}
+          </span>
+        </div>
+        <div className={`text-xs font-medium ${subtleText}`}>
+          {entriesThisMonth}/{daysInMonth} logged
+        </div>
       </div>
-      <div className="mt-1">
-        <span className={`font-medium text-sm ${insightsSubtleTextColor}`}>
-          {`${currentMonthName} ${currentYear}`}
-        </span>
-      </div>
-      <div className="flex flex-1 mt-4">
-        <div className="grid grid-cols-7 gap-2 mr-6">
+
+      {/* Calendar Grid */}
+      <div className="flex-1 flex flex-col justify-center">
+        <div className="grid grid-cols-7 gap-2 mb-6">
           {grid.map((item, index) => (
             <div
               key={index}
-              className={`w-5 h-5 rounded flex items-center justify-center text-[10px] ${item.isLogged ? item.color : item.baseClass
+              className={`aspect-square rounded-lg flex items-center justify-center text-sm transition-all cursor-default ${item.isLogged
+                  ? `${item.color} hover:scale-105`
+                  : item.baseClass
                 }`}
-              title={item.isLogged ? `Day ${item.day}: Logged` : `Day ${item.day}: Not logged`}
+              title={
+                item.isLogged
+                  ? `Day ${item.day}: ${item.emoji}`
+                  : `Day ${item.day}: Not logged`
+              }
             >
-              {(!item.isLogged || isSpecialTheme) && (
-                <span className={`font-medium ${isSpecialTheme ? 'text-white opacity-90' : 'text-black dark:text-white opacity-75'}`}>
+              {item.isLogged ? (
+                <span className="text-base select-none">{item.emoji}</span>
+              ) : (
+                <span className={`text-xs font-medium ${subtleText}`}>
                   {item.day}
                 </span>
               )}
             </div>
           ))}
         </div>
-        <div className={insightsPercentageColor}>
-          <div className="mb-4">
-            <div className="text-3xl font-extrabold">{monthlyPercentage}%</div>
-            <div className="text-sm opacity-60">Monthly positivity</div>
+
+        {/* Monthly Stats */}
+        <div
+          className={`flex items-center justify-center gap-3 py-3 px-4 rounded-xl ${isSpecialTheme ? "bg-white/5" : "bg-gray-50 dark:bg-zinc-800/50"
+            }`}
+        >
+          <div className={`text-4xl font-bold tracking-tight ${mainText}`}>
+            {monthlyPercentage}%
           </div>
-          <div>
-            <div className="text-xl font-extrabold">{weeklyPercentage}%</div>
-            <div className="text-xs opacity-60">Weekly positivity</div>
+          <div className={`text-xs font-medium uppercase tracking-wide leading-tight ${subtleText}`}>
+            Positive<br />this month
           </div>
         </div>
       </div>
@@ -224,8 +231,8 @@ const MoodPickerSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
   return (
     <div
       className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
-          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+        ? "dark bg-zinc-900/50 border border-zinc-800/50"
+        : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
         }`}
     >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
@@ -233,17 +240,15 @@ const MoodPickerSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
         <Skeleton className="h-4 w-20" />
       </div>
       <div className="flex-grow flex flex-col justify-center">
-        <div className="flex flex-wrap justify-center gap-4 mb-6">
+        <div className="flex flex-wrap justify-center gap-3 mb-6">
           {Array(7)
             .fill(null)
             .map((_, index) => (
-              <div key={index} className="flex justify-center">
-                <Skeleton className="w-10 h-10 rounded-full" />
-              </div>
+              <Skeleton key={index} className="w-10 h-10 rounded-2xl" />
             ))}
         </div>
         <div className="flex justify-center items-center gap-4">
-          <Skeleton className="h-9 w-28 rounded-lg" />
+          <Skeleton className="h-10 w-32 rounded-lg" />
         </div>
       </div>
     </div>
@@ -256,18 +261,17 @@ const MoodPicker: React.FC = () => {
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
   const [hoveredMood, setHoveredMood] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isMounted, setIsMounted] = useState(false); // Add isMounted state
+  const [isMounted, setIsMounted] = useState(false);
   const { data: session, status } = useSession();
   const { theme } = useTheme();
 
   useEffect(() => {
-    setIsMounted(true); // Set mounted on client
+    setIsMounted(true);
   }, []);
 
-  // Calculate theme *after* mount and ensure boolean type
   const isSpecialTheme =
-    isMounted && // Check if mounted
-    !!theme && // Ensure theme is defined
+    isMounted &&
+    !!theme &&
     specialSceneThemeNames.includes(
       theme as (typeof specialSceneThemeNames)[number]
     );
@@ -276,6 +280,8 @@ const MoodPicker: React.FC = () => {
   const todayEntry = moodHistory.find(
     (e) => new Date(e.timestamp).toDateString() === todayStr
   );
+  // Do NOT automatically select today's mood if it's already logged, just highlight it visually if possible,
+  // OR pre-select it but allow changing. Pre-selection is usually good.
   const displayMood = selectedMood ?? todayEntry?.mood ?? null;
 
   useEffect(() => {
@@ -321,7 +327,6 @@ const MoodPicker: React.FC = () => {
     };
     fetchMoodHistory();
   }, [session, status, isMounted]);
-
 
   const handleMoodClick = (value: string) => {
     setSelectedMood(value);
@@ -390,15 +395,15 @@ const MoodPicker: React.FC = () => {
     setShowInsights(!showInsights);
   };
 
-  const containerBaseClasses = "p-4 backdrop-blur-md rounded-xl flex flex-col h-full transition-opacity duration-300";
-  const containerPreMountClasses = "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
+  const containerBaseClasses =
+    "p-4 backdrop-blur-md rounded-xl flex flex-col h-full transition-opacity duration-300";
+  const containerPreMountClasses =
+    "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
   const containerPostMountClasses = isSpecialTheme
     ? "dark bg-zinc-900/50 border border-zinc-800/50 opacity-100"
     : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50 opacity-100";
 
-
   if (loading || !isMounted) {
-    // Pass the boolean value correctly
     return <MoodPickerSkeleton isSpecialTheme={!!isSpecialTheme} />;
   }
 
@@ -408,7 +413,10 @@ const MoodPicker: React.FC = () => {
         className={`${containerBaseClasses} ${isMounted ? containerPostMountClasses : containerPreMountClasses
           } justify-center items-center`}
       >
-        <p className={`text-center ${isSpecialTheme ? 'text-white/70' : 'text-gray-600 dark:text-gray-400'}`}>
+        <p
+          className={`text-center ${isSpecialTheme ? "text-white/70" : "text-gray-600 dark:text-gray-400"
+            }`}
+        >
           Please sign in to track your mood.
         </p>
       </div>
@@ -420,17 +428,17 @@ const MoodPicker: React.FC = () => {
       <MoodInsights
         moodHistory={moodHistory}
         onBack={handleToggleInsights}
-        isSpecialTheme={isSpecialTheme} // Pass the calculated boolean
+        isSpecialTheme={isSpecialTheme}
       />
     );
   }
 
-  const moodIconBg = isSpecialTheme ? 'dark:bg-white/5' : 'bg-gray-200 dark:bg-secondary-black';
-  const moodIconText = isSpecialTheme ? 'text-white/50' : 'text-gray-500 dark:text-gray-400';
-  const moodIconHoverText = isSpecialTheme ? 'text-white/90' : 'text-gray-700 dark:text-gray-200';
-  const viewInsightsButtonColor = isSpecialTheme ? 'text-white/60 hover:text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200';
-  const logButtonInactiveBg = isSpecialTheme ? 'bg-white/10 text-white/40' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500';
-
+  const viewInsightsButtonColor = isSpecialTheme
+    ? "text-white/60 hover:text-white"
+    : "text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200";
+  const logButtonInactiveBg = isSpecialTheme
+    ? "bg-white/10 text-white/40"
+    : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500";
 
   return (
     <div
@@ -438,21 +446,25 @@ const MoodPicker: React.FC = () => {
         }`}
     >
       <div className="flex justify-between items-center mb-6 flex-shrink-0">
-        <h1 className={`text-sm opacity-40 ${isSpecialTheme ? 'text-white/70' : 'text-secondary-black dark:text-secondary-white'}`}>
+        <h1
+          className={`text-sm tracking-wider font-medium opacity-60 ${isSpecialTheme
+            ? "text-white/70"
+            : "text-secondary-black dark:text-secondary-white"
+            }`}
+        >
           MOOD
         </h1>
         <button
           onClick={handleToggleInsights}
-          className={`text-sm transition-colors ${viewInsightsButtonColor}`}
+          className={`text-xs font-medium transition-colors ${viewInsightsButtonColor}`}
         >
-          View Insights
+          Insights
         </button>
       </div>
 
       <div className="flex-grow flex flex-col justify-center">
-        <div className="flex flex-wrap justify-center gap-4 mb-6">
+        <div className="flex flex-wrap justify-center gap-2 mb-6">
           {moodIcons.map((mood) => {
-            const IconComponent = mood.icon;
             const isSelected = displayMood === mood.value;
             const isHovered = hoveredMood === mood.value;
 
@@ -462,38 +474,37 @@ const MoodPicker: React.FC = () => {
                 onClick={() => handleMoodClick(mood.value)}
                 onMouseEnter={() => setHoveredMood(mood.value)}
                 onMouseLeave={() => setHoveredMood(null)}
-                className="flex flex-col items-center justify-center cursor-pointer"
+                className="flex flex-col items-center justify-center cursor-pointer group"
               >
                 <div
                   className={`
-                    p-2 rounded-full transition-transform duration-200
-                    ${isSelected ? mood.color : moodIconBg}
-                    ${isSelected || isHovered ? "transform scale-110 shadow-md" : "shadow-sm"}
+                    w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-300 ease-out
+                    ${isSelected
+                      ? `${mood.color} text-white scale-110 shadow-lg`
+                      : isSpecialTheme
+                        ? "bg-white/5 hover:bg-white/10 text-white/50"
+                        : "bg-gray-50 dark:bg-zinc-800/80 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                    }
+                    ${!isSelected && isHovered ? "scale-105" : ""}
                   `}
                 >
-                  <IconComponent
-                    size={24}
-                    className={`transition-colors duration-200 ${isSelected
-                        ? "text-white"
-                        : isHovered
-                          ? moodIconHoverText
-                          : moodIconText
-                      }`}
-                  />
+                  <span className={`text-2xl select-none ${isSelected || isHovered ? "opacity-100 scale-110" : "opacity-80 scale-100"} transition-transform duration-200`}>
+                    {mood.emoji}
+                  </span>
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div className="flex justify-center items-center">
+        <div className="flex justify-center items-center h-10">
           <button
             className={`
-              px-5 py-2 rounded-lg text-sm font-normal transition-all duration-200 ease-in-out
+              px-6 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ease-out
               ${selectedMood
                 ? `${moodIcons.find((m) => m.value === selectedMood)?.color
-                } text-white cursor-pointer hover:opacity-90 transform active:scale-95 shadow-md`
-                : `${logButtonInactiveBg} cursor-not-allowed opacity-80`
+                } text-white cursor-pointer hover:opacity-90 hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0 select-none`
+                : `${logButtonInactiveBg} cursor-not-allowed`
               }
             `}
             onClick={handleLogMood}
@@ -501,7 +512,7 @@ const MoodPicker: React.FC = () => {
           >
             {selectedMood
               ? `Log ${moodIcons.find((m) => m.value === selectedMood)?.label}`
-              : "Log mood"}
+              : "Select a mood"}
           </button>
         </div>
       </div>

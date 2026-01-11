@@ -82,19 +82,19 @@ export const BookDisplayPanel: React.FC<BookDisplayPanelProps> = ({
       const initialData = selectedBook
         ? { ...selectedBook, notes: selectedBook.notes || "<p></p>" }
         : {
-            title: "",
-            author: "",
-            status: "not-started" as Book["status"],
-            genre: "",
-            notes: "<p></p>",
-            rating: 0,
-          };
+          title: "",
+          author: "",
+          status: "not-started" as Book["status"],
+          genre: "",
+          notes: "<p></p>",
+          rating: 0,
+        };
       setFormData(initialData);
       notesEditor?.commands.setContent(initialData.notes || "<p></p>");
     } else if (selectedBook && notesEditor && !notesEditor.isDestroyed) {
-         notesEditor.commands.setContent(selectedBook.notes || "<p></p>");
+      notesEditor.commands.setContent(selectedBook.notes || "<p></p>");
     } else if (!selectedBook && notesEditor && !notesEditor.isDestroyed) {
-         notesEditor.commands.setContent("<p></p>");
+      notesEditor.commands.setContent("<p></p>");
     }
   }, [isEditing, selectedBook, notesEditor]);
 
@@ -111,8 +111,8 @@ export const BookDisplayPanel: React.FC<BookDisplayPanelProps> = ({
       ...(name === "status" && value === "completed" && !prev.dateCompleted
         ? { dateCompleted: new Date().toISOString() }
         : name === "status" && value !== "completed"
-        ? { dateCompleted: undefined }
-        : {}),
+          ? { dateCompleted: undefined }
+          : {}),
     }));
   };
 
@@ -133,7 +133,7 @@ export const BookDisplayPanel: React.FC<BookDisplayPanelProps> = ({
   };
 
   // Base classes for the display panel
-   const displayPanelBaseClasses = `w-2/3 flex flex-col ${panelBg} backdrop-blur-md`;
+  const displayPanelBaseClasses = `w-2/3 flex flex-col ${panelBg} backdrop-blur-md`;
 
   if (isEditing) {
     return (
@@ -238,13 +238,12 @@ export const BookDisplayPanel: React.FC<BookDisplayPanelProps> = ({
                     >
                       <IconStarFilled
                         size={24}
-                        className={`transition-colors ${
-                          rating <= (formData.rating || 0)
+                        className={`transition-colors ${rating <= (formData.rating || 0)
                             ? "text-yellow-500"
                             : isSpecialTheme
-                            ? "text-white/20"
-                            : "text-gray-300 dark:text-gray-600"
-                        }`}
+                              ? "text-white/20"
+                              : "text-gray-300 dark:text-gray-600"
+                          }`}
                       />
                     </button>
                   ))}
@@ -294,7 +293,7 @@ export const BookDisplayPanel: React.FC<BookDisplayPanelProps> = ({
     return (
       // Added rounded-r-xl for right corners
       <div className={`${displayPanelBaseClasses} rounded-r-xl`}>
-         <style jsx>{`
+        <style jsx>{`
           .prose p { margin-top: 0.5rem; margin-bottom: 0.5rem; line-height: 1.5; }
           .dark .prose-invert a { color: #93c5fd; }
           .dark .prose-invert strong { color: #fff; }
@@ -424,23 +423,6 @@ export const BookDisplayPanel: React.FC<BookDisplayPanelProps> = ({
 
   // Fallback / Initial state view
   return (
-    // Added rounded-r-xl for right corners
-    <div className={`${displayPanelBaseClasses} rounded-r-xl items-center justify-center h-full p-6`}>
-      <IconBook2 size={48} className={`mb-4 ${subtleText}`} />
-      <h3 className={`text-xl font-semibold mb-2 ${panelText}`}>
-        Your Digital Bookshelf
-      </h3>
-      <p className={`text-center max-w-md mb-4 ${subtleText}`}>
-        Track your reading journey, capture your thoughts, and never forget a
-        book you&apos;ve read.
-      </p>
-      <button
-        onClick={onAddNew}
-        className={`flex items-center space-x-1 px-4 py-2 rounded-md transition-opacity ${firstButtonBg}`}
-      >
-        <IconPlus size={18} />
-        <span>Add Your First Book</span>
-      </button>
-    </div>
+    <div className={`w-2/3 ${panelBg} backdrop-blur-md rounded-r-xl`} />
   );
 };

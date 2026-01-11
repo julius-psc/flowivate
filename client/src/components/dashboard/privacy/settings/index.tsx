@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { X, User, Settings, CreditCard, AlertTriangle } from "lucide-react";
+import { X, User, Palette, CreditCard, AlertTriangle } from "lucide-react";
 import StatusIndicator from "./StatusIndicator";
 import { useSettings } from "./useSettings";
 import { SettingsModalProps, Tab, TabId } from "./types";
@@ -14,9 +14,9 @@ const DangerTab = React.lazy(() => import("./tabs/DangerTab"));
 
 const tabs: Tab[] = [
   { id: "account", label: "Account", icon: <User size={16} /> },
-  { id: "appearance", label: "Appearance", icon: <Settings size={16} /> },
+  { id: "appearance", label: "Appearance", icon: <Palette size={16} /> },
   { id: "subscription", label: "Billing", icon: <CreditCard size={16} /> },
-  { id: "danger", label: "Danger", icon: <AlertTriangle size={16} /> },
+  { id: "danger", label: "Danger Zone", icon: <AlertTriangle size={16} /> },
 ];
 
 function useQueryState(key: string, initial: string) {
@@ -136,75 +136,79 @@ export default function SettingsModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-modal-title"
-        className="fixed inset-0 z-1000 bg-white dark:bg-[#0B0B0D]"
+        className="fixed inset-0 z-1000 bg-white dark:bg-[#09090B]"
       >
-        <div className="grid w-full h-full grid-cols-1 sm:grid-cols-[240px_1fr]">
-          <aside className="hidden sm:flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#111113]">
-            <div className="px-4 py-5 border-b border-gray-200/80 dark:border-gray-800/80">
-              <h1
-                id="settings-modal-title"
-                className="text-sm font-semibold text-gray-900 dark:text-gray-100"
-              >
-                Settings
-              </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Manage your Flowivate workspace
-              </p>
-            </div>
-            <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-              {tabs.map((t) => {
-                const active = validActive === t.id;
-                const isDirty = dirtyTabs.has(t.id);
-                const danger = t.id === "danger";
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => onChangeTab(t.id)}
-                    className={[
-                      "w-full flex items-center justify-between rounded-md px-3 py-2 text-sm transition-all",
-                      active
-                        ? "bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium"
-                        : danger
-                        ? "text-red-600 dark:text-red-400 hover:bg-red-50/60 dark:hover:bg-red-950/30"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60",
-                    ].join(" ")}
-                    aria-current={active ? "page" : undefined}
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <span className={danger ? "text-red-500" : undefined}>
-                        {t.icon}
+        <div className="grid w-full h-full grid-cols-1 sm:grid-cols-[220px_1fr]">
+          {/* Sidebar */}
+          <aside className="hidden sm:flex flex-col border-r border-zinc-200 dark:border-zinc-800/70 bg-zinc-50/50 dark:bg-zinc-900/30">
+            <nav className="flex-1 px-3 pt-6 pb-4">
+              <h1 id="settings-modal-title" className="sr-only">Settings</h1>
+              <div className="space-y-0.5">
+                {tabs.map((t) => {
+                  const active = validActive === t.id;
+                  const isDirty = dirtyTabs.has(t.id);
+                  const danger = t.id === "danger";
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => onChangeTab(t.id)}
+                      className={[
+                        "w-full flex items-center justify-between gap-2 rounded-md px-3 py-2 text-[13px] transition-all duration-150",
+                        active
+                          ? "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium"
+                          : danger
+                            ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+                            : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-200",
+                      ].join(" ")}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      <span className="inline-flex items-center gap-2.5">
+                        <span
+                          className={
+                            danger
+                              ? "text-red-500 dark:text-red-400"
+                              : active
+                                ? "text-zinc-700 dark:text-zinc-300"
+                                : "text-zinc-500 dark:text-zinc-500"
+                          }
+                        >
+                          {t.icon}
+                        </span>
+                        {t.label}
                       </span>
-                      {t.label}
-                    </span>
-                    {isDirty && (
-                      <span
-                        className="ml-2 h-2 w-2 rounded-full bg-amber-500"
-                        aria-hidden="true"
-                      />
-                    )}
-                  </button>
-                );
-              })}
+                      {isDirty && (
+                        <span
+                          className="h-1.5 w-1.5 rounded-full bg-amber-500"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </nav>
           </aside>
 
-          <section className="relative flex flex-col h-full overflow-y-auto">
+          {/* Main Content */}
+          <section className="relative flex flex-col h-full overflow-y-auto bg-white dark:bg-[#09090B]">
+            {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-5 right-5 z-20 rounded-md p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="absolute top-5 right-5 z-20 rounded-md p-1.5 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
               aria-label="Close settings"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
-            <div className="w-full px-6 sm:px-10 py-8">
-              <div className="max-w-3xl mx-auto">
+            {/* Content Area */}
+            <div className="w-full px-6 sm:px-12 py-10">
+              <div className="max-w-2xl">
                 <Suspense
                   fallback={
-                    <div className="animate-pulse space-y-3">
-                      <div className="h-6 w-40 rounded-md bg-gray-200 dark:bg-gray-800" />
-                      <div className="h-4 w-72 rounded-md bg-gray-200 dark:bg-gray-800" />
-                      <div className="h-24 rounded-md bg-gray-200 dark:bg-gray-800" />
+                    <div className="space-y-4">
+                      <div className="h-7 w-32 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+                      <div className="h-4 w-64 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+                      <div className="h-32 rounded-lg bg-zinc-100 dark:bg-zinc-800 animate-pulse mt-6" />
                     </div>
                   }
                 >
