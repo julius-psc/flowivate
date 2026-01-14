@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { AlertCircle, AlertTriangle, ArrowRight } from "lucide-react";
 import JournalLog from "../../../components/dashboard/features/journal/Journal";
+import PaywallPopup from "@/components/dashboard/PaywallPopup";
 import { Skeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
 
@@ -13,6 +14,7 @@ export default function Journal() {
     "active" | "canceled" | "past_due" | "free"
   >("free");
   const [loadingSub, setLoadingSub] = useState(true);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     if (sessionStatus === "authenticated") {
@@ -109,17 +111,16 @@ export default function Journal() {
   if (subscriptionStatus === "free") {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full p-6">
-        <p className="mb-6 text-center text-lg text-secondary-black dark:text-secondary-white">
-          Journalling is available to Pro subscribers only. Upgrade to unlock
-          this feature.
+        <p className="text-center text-lg text-secondary-black dark:text-secondary-white">
+          Journalling is available to users part of the{" "}
+          <span
+            onClick={() => setShowPaywall(true)}
+            className="text-primary-blue cursor-pointer hover:underline font-medium"
+          >
+            Elite
+          </span>
         </p>
-        <button
-          onClick={handleUpgradeToPro}
-          className="mt-3 rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/80 transition-colors flex items-center gap-2"
-        >
-          <AlertTriangle size={16} />
-          Upgrade to Pro
-        </button>
+        <PaywallPopup isOpen={showPaywall} onClose={() => setShowPaywall(false)} />
       </div>
     );
   }

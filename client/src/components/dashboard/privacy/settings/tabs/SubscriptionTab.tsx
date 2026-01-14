@@ -111,7 +111,7 @@ export default function SubscriptionTab(): React.JSX.Element {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-[13px] text-zinc-900 dark:text-zinc-100">
-                {subscriptionStatus === "free" ? "Free" : "Pro"}
+                {subscriptionStatus === "free" ? "Free" : "Elite"}
               </span>
               <span
                 className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${subscriptionStatus === "active"
@@ -135,7 +135,7 @@ export default function SubscriptionTab(): React.JSX.Element {
                 onClick={handleUpgradeToPro}
                 className={`${styling.buttonBaseClasses} ${styling.buttonPrimaryClasses}`}
               >
-                Upgrade to Pro
+                Upgrade to Elite
               </button>
             ) : (
               <button
@@ -174,7 +174,7 @@ export default function SubscriptionTab(): React.JSX.Element {
             <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
             <div className="rounded-lg bg-red-50 dark:bg-red-950/30 p-4">
               <p className="text-[13px] text-red-700 dark:text-red-400">
-                Your payment failed. Please update your payment method to continue using Pro features.
+                Your payment failed. Please update your payment method to continue using Elite features.
               </p>
               <button
                 onClick={handleManageSubscription}

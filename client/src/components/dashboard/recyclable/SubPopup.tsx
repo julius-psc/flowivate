@@ -76,7 +76,7 @@ const SubPopup: React.FC<SubPopupProps> = ({
             {showBadge && (
               <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
                 <Crown size={12} />
-                Pro
+                Elite
               </div>
             )}
           </div>
@@ -111,7 +111,7 @@ const SubPopup: React.FC<SubPopupProps> = ({
               disabled={loading}
               className="w-full px-4 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {loading ? "Redirecting..." : "Upgrade to Pro"}
+              {loading ? "Redirecting..." : "Upgrade to Elite"}
               {!loading && <Crown size={16} />}
             </button>
 

@@ -12,6 +12,8 @@ export interface IUser extends Document {
   updatedAt: Date;
 
   passwordLastUpdatedAt?: Date | null;
+  resetPasswordToken?: string | null;
+  resetPasswordExpires?: Date | null;
 
   stripeCustomerId?: string | null;
   subscriptionStatus?: "active" | "canceled" | "past_due" | "unpaid" | "free";
@@ -62,6 +64,8 @@ const UserSchema = new Schema<IUser>(
     },
 
     passwordLastUpdatedAt: { type: Date, default: null },
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
 
     stripeCustomerId: { type: String, default: null },
     subscriptionStatus: {

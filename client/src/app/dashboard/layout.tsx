@@ -128,10 +128,19 @@ function LayoutCore({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
-      <Settings
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+      {isSettingsOpen && (
+        <Settings
+          isOpen={isSettingsOpen}
+          onClose={() => {
+            setIsSettingsOpen(false);
+            if (typeof window !== "undefined") {
+              const url = new URL(window.location.href);
+              url.searchParams.delete("tab");
+              window.history.replaceState({}, "", url.toString());
+            }
+          }}
+        />
+      )}
       <ProactiveAssistant />
     </PomodoroProvider>
   );

@@ -21,6 +21,7 @@ Instructions:
 Output Constraints:
 * The response MUST contain ONLY the raw JSON array.
 * Do NOT include any introductory sentences, concluding remarks, explanations, apologies, or markdown code fences (like \`\`\`json).
+* If the input describes a task that is clearly NOT related to productivity, work, study, or organization (e.g. gibberish, offensive content, or general knowledge questions), return strictly this JSON object: {"error": "Invalid task content"}.
 
 Complex Task: "${task}"
 
@@ -62,6 +63,14 @@ export async function POST(req: NextRequest) {
 
     try {
       const parsedJsonResponse = JSON.parse(aiResponseText);
+
+      if (parsedJsonResponse.error) {
+        return NextResponse.json(
+          { message: "Please provide a valid productivity or organization task." },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json({ response: JSON.stringify(parsedJsonResponse) });
     } catch (parseError) {
       console.error("API route /api/claude/subtasks - AI response JSON parsing error:", {
@@ -77,11 +86,11 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     let errorContext: Record<string, unknown> = {};
     if (error instanceof Error) {
-        errorContext = { name: error.name, message: error.message, cause: error.cause };
+      errorContext = { name: error.name, message: error.message, cause: error.cause };
     } else if (typeof error === 'object' && error !== null) {
-        errorContext = { errorDetails: error };
+      errorContext = { errorDetails: error };
     } else {
-        errorContext = { errorInfo: String(error) };
+      errorContext = { errorInfo: String(error) };
     }
     console.error("API route /api/claude/subtasks - General error:", errorContext);
 

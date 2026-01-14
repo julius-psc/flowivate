@@ -130,11 +130,10 @@ const Pomodoro: React.FC = () => {
 
   return (
     <div
-      className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${
-        isSpecialTheme
-          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
-      }`}
+      className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
+        ? "dark bg-zinc-900/50 border border-zinc-800/50"
+        : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+        }`}
     >
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
@@ -150,19 +149,18 @@ const Pomodoro: React.FC = () => {
                 <button
                   key={m}
                   onClick={() => switchMode(m)}
-                  className={`py-1.5 text-xs font-medium transition-colors rounded-lg ${
-                    mode === m
-                      ? `${modeColors.lightBg} ${modeColors.text}`
-                      : "text-accent-grey-hover dark:text-secondary-white/70 hover:bg-accent-lightgrey/10 dark:hover:bg-accent-grey/10"
-                  }`}
+                  className={`py-1.5 text-xs font-medium transition-colors rounded-lg ${mode === m
+                    ? `${modeColors.lightBg} ${modeColors.text}`
+                    : "text-accent-grey-hover dark:text-secondary-white/70 hover:bg-accent-lightgrey/10 dark:hover:bg-accent-grey/10"
+                    }`}
                 >
                   <div className="flex items-center justify-center">
                     <span className="mr-1.5">{icons[m]}</span>
                     {m === "focus"
                       ? "Focus"
                       : m === "shortBreak"
-                      ? "Short"
-                      : "Long"}
+                        ? "Short"
+                        : "Long"}
                   </div>
                 </button>
               ))}
@@ -191,27 +189,53 @@ const Pomodoro: React.FC = () => {
                   }).map((_, i) => (
                     <div
                       key={i}
-                      className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${
-                        i < sessions % settings.longBreakAfter ||
+                      className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${i < sessions % settings.longBreakAfter ||
                         (sessions > 0 &&
                           sessions % settings.longBreakAfter === 0)
-                          ? modeColors.main
-                          : "bg-accent-lightgrey/30 dark:bg-accent-grey/30"
-                      }`}
+                        ? modeColors.main
+                        : "bg-accent-lightgrey/30 dark:bg-accent-grey/30"
+                        }`}
                     />
                   ))}
                 </div>
               </div>
 
               <div className="flex items-center justify-center space-x-4">
-                <button
-                  ref={resetBtnRef}
-                  onClick={() => setShowResetMenu((prev) => !prev)}
-                  aria-label="Reset Timer"
-                  className="p-2 text-accent-grey-hover dark:text-accent-grey hover:text-secondary-black dark:hover:text-secondary-white bg-accent-lightgrey/10 dark:bg-accent-grey/10 hover:bg-accent-lightgrey/20 dark:hover:bg-accent-grey/20 transition-colors rounded-full focus:outline-none"
-                >
-                  <IconRefresh size={18} />
-                </button>
+                <div className="relative">
+                  <button
+                    ref={resetBtnRef}
+                    onClick={() => setShowResetMenu((prev) => !prev)}
+                    aria-label="Reset Timer"
+                    className="p-2 text-accent-grey-hover dark:text-accent-grey hover:text-secondary-black dark:hover:text-secondary-white bg-accent-lightgrey/10 dark:bg-accent-grey/10 hover:bg-accent-lightgrey/20 dark:hover:bg-accent-grey/20 transition-colors rounded-full focus:outline-none"
+                  >
+                    <IconRefresh size={18} />
+                  </button>
+                  {showResetMenu && (
+                    <div
+                      ref={resetMenuRef}
+                      className="absolute z-10 w-36 bg-white dark:bg-zinc-800 border border-slate-200/50 dark:border-zinc-700/50 rounded-lg shadow-xl bottom-full left-1/2 -translate-x-1/2 mb-2"
+                    >
+                      <button
+                        onClick={() => {
+                          resetRound();
+                          setShowResetMenu(false);
+                        }}
+                        className="w-full text-left text-sm px-3 py-2 text-secondary-black dark:text-secondary-white hover:bg-slate-50 dark:hover:bg-zinc-700/50 rounded-t-lg"
+                      >
+                        Reset Round
+                      </button>
+                      <button
+                        onClick={() => {
+                          reset();
+                          setShowResetMenu(false);
+                        }}
+                        className="w-full text-left text-sm px-3 py-2 text-secondary-black dark:text-secondary-white hover:bg-slate-50 dark:hover:bg-zinc-700/50 rounded-b-lg"
+                      >
+                        Reset Session
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={isActive ? pause : start}
                   aria-label={isActive ? "Pause Timer" : "Start Timer"}
@@ -317,7 +341,7 @@ const Pomodoro: React.FC = () => {
                         ) as HTMLInputElement | null;
                         inp?.stepUp();
                       }}
-className="p-1 rounded-full bg-accent-lightgrey/20 dark:bg-accent-grey/20 text-secondary-black dark:text-secondary-white hover:bg-accent-lightgrey/30 dark:hover:bg-accent-grey/30"
+                      className="p-1 rounded-full bg-accent-lightgrey/20 dark:bg-accent-grey/20 text-secondary-black dark:text-secondary-white hover:bg-accent-lightgrey/30 dark:hover:bg-accent-grey/30"
                     >
                       <IconPlus size={16} />
                     </button>
@@ -347,42 +371,6 @@ className="p-1 rounded-full bg-accent-lightgrey/20 dark:bg-accent-grey/20 text-s
           </form>
         )}
       </div>
-
-      {showResetMenu && (
-        <div
-          ref={resetMenuRef}
-          className="absolute z-10 w-36 bg-white dark:bg-zinc-800 border border-slate-200/50 dark:border-zinc-700/50 rounded-lg shadow-xl"
-          style={{
-            top:
-              (resetBtnRef.current?.offsetTop ?? 0) +
-              (resetBtnRef.current?.offsetHeight ?? 0) +
-              8,
-            left:
-              (resetBtnRef.current?.offsetLeft ?? 0) +
-              (resetBtnRef.current?.offsetWidth ?? 0) / 2,
-            transform: "translateX(-50%)",
-          }}
-        >
-          <button
-            onClick={() => {
-              reset();
-              setShowResetMenu(false);
-            }}
-            className="w-full text-left text-sm px-3 py-2 text-secondary-black dark:text-secondary-white hover:bg-slate-50 dark:hover:bg-zinc-700/50 rounded-t-lg"
-          >
-            Reset Session
-          </button>
-          <button
-            onClick={() => {
-              resetRound();
-              setShowResetMenu(false);
-            }}
-            className="w-full text-left text-sm px-3 py-2 text-secondary-black dark:text-secondary-white hover:bg-slate-50 dark:hover:bg-zinc-700/50 rounded-b-lg"
-          >
-            Reset Round
-          </button>
-        </div>
-      )}
     </div>
   );
 };

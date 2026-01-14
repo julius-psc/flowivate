@@ -156,8 +156,8 @@ const MoodInsights: React.FC<{
   return (
     <div
       className={`p-5 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
-          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+        ? "dark bg-zinc-900/50 border border-zinc-800/50"
+        : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
         }`}
     >
       {/* Header */}
@@ -166,8 +166,8 @@ const MoodInsights: React.FC<{
           <button
             onClick={onBack}
             className={`p-1.5 rounded-lg transition-colors ${isSpecialTheme
-                ? "hover:bg-white/10 text-white/70"
-                : "hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400"
+              ? "hover:bg-white/10 text-white/70"
+              : "hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400"
               }`}
           >
             <IconChevronLeft size={18} />
@@ -188,8 +188,8 @@ const MoodInsights: React.FC<{
             <div
               key={index}
               className={`aspect-square rounded-lg flex items-center justify-center text-sm transition-all cursor-default ${item.isLogged
-                  ? `${item.color} hover:scale-105`
-                  : item.baseClass
+                ? `${item.color} hover:scale-105`
+                : item.baseClass
                 }`}
               title={
                 item.isLogged
@@ -447,7 +447,7 @@ const MoodPicker: React.FC = () => {
     >
       <div className="flex justify-between items-center mb-6 flex-shrink-0">
         <h1
-          className={`text-sm tracking-wider font-medium opacity-60 ${isSpecialTheme
+          className={`text-sm opacity-40 ${isSpecialTheme
             ? "text-white/70"
             : "text-secondary-black dark:text-secondary-white"
             }`}

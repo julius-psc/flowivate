@@ -144,7 +144,7 @@ const Ambient: React.FC = () => {
     <div className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full relative ${containerBg}`}>
       {/* Header */}
       <div className="flex justify-between items-center mb-3 flex-shrink-0">
-        <h1 className={`text-sm tracking-wider font-medium opacity-60 ${headerText}`}>
+        <h1 className={`text-sm opacity-40 ${headerText}`}>
           AMBIENT
         </h1>
         {currentSound && currentSound !== "None" && (

@@ -192,7 +192,7 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
 
   // Define base classes that are always present
   const navBaseClasses =
-    "flex items-center justify-between py-2 px-2 mx-2 mt-2 backdrop-blur-md rounded-2xl transition-opacity duration-300";
+    "flex items-center justify-between z-30 py-2 px-2 mx-2 mt-2 backdrop-blur-md rounded-2xl transition-opacity duration-300";
   // Define pre-mount classes (solid, maybe invisible to prevent flicker)
   const navPreMountClasses =
     "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";

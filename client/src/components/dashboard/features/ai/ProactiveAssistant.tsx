@@ -7,6 +7,8 @@ import { IconX, IconArrowRight } from "@tabler/icons-react";
 import { useDashboard } from "@/context/DashboardContext";
 import { toast } from "sonner";
 import logo from "../../../../assets/brand/lumo-logo.svg";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
     sender: "assistant" | "user";
@@ -38,20 +40,19 @@ export default function ProactiveAssistant() {
 
     useEffect(() => {
         const checkTrigger = () => {
-            // Uncomment for production:
-            // const lastCheck = localStorage.getItem("flowivate_proactive_last_check");
-            // const now = Date.now();
-            // if (!lastCheck || (now - parseInt(lastCheck)) > CHECK_IN_INTERVAL) {
-            const hour = new Date().getHours();
-            let greeting = "How's your day going? content?";
-            if (hour < 11) greeting = "Good morning! Ready for a quick recap of your work?";
-            else if (hour > 17) greeting = "Wrapping up? Want a summary of your day?";
-            else greeting = "Checking in! Need a quick recap of your progress?";
+            const lastCheck = localStorage.getItem("flowivate_proactive_last_check");
+            const now = Date.now();
+            if (!lastCheck || (now - parseInt(lastCheck)) > CHECK_IN_INTERVAL) {
+                const hour = new Date().getHours();
+                let greeting = "How's your day going? content?";
+                if (hour < 11) greeting = "Good morning! Ready for a quick recap of your work?";
+                else if (hour > 17) greeting = "Wrapping up? Want a summary of your day?";
+                else greeting = "Checking in! Need a quick recap of your progress?";
 
-            setMessages([{ sender: "assistant", text: greeting }]);
-            setIsOpen(true);
-            // localStorage.setItem("flowivate_proactive_last_check", now.toString());
-            // }
+                setMessages([{ sender: "assistant", text: greeting }]);
+                setIsOpen(true);
+                localStorage.setItem("flowivate_proactive_last_check", now.toString());
+            }
         };
 
         const timer = setTimeout(checkTrigger, 2000);
@@ -189,7 +190,21 @@ export default function ProactiveAssistant() {
                                         {msg.text}
                                     </span>
                                 ) : (
-                                    <span>{msg.text}</span>
+                                    <div className="prose prose-sm dark:prose-invert prose-p:my-1 prose-ul:my-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                                a: ({ node, ...props }) => <a className="text-primary hover:underline cursor-pointer" {...props} />,
+                                                ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 space-y-1" {...props} />,
+                                                ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2 space-y-1" {...props} />,
+                                                li: ({ node, ...props }) => <li className="pl-1" {...props} />,
+                                                strong: ({ node, ...props }) => <span className="font-semibold text-gray-900 dark:text-gray-100" {...props} />,
+                                            }}
+                                        >
+                                            {msg.text}
+                                        </ReactMarkdown>
+                                    </div>
                                 )}
                             </div>
                         ))}

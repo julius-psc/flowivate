@@ -99,8 +99,7 @@ export const useTaskLoggerState = () => {
     onError: (error) => {
       console.error("Error adding list:", error);
       toast.error(
-        `Failed to add list: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `Failed to add list: ${error instanceof Error ? error.message : "Unknown error"
         }`
       );
     },
@@ -114,8 +113,7 @@ export const useTaskLoggerState = () => {
     onError: (error) => {
       console.error("Error updating list:", error);
       toast.error(
-        `Failed to update list: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `Failed to update list: ${error instanceof Error ? error.message : "Unknown error"
         }`
       );
     },
@@ -140,8 +138,7 @@ export const useTaskLoggerState = () => {
         queryClient.setQueryData(queryKey, context.previousTaskLists);
       }
       toast.error(
-        `Failed to delete list: ${
-          err instanceof Error ? err.message : "Unknown error"
+        `Failed to delete list: ${err instanceof Error ? err.message : "Unknown error"
         }`
       );
     },
@@ -318,6 +315,7 @@ export const useTaskLoggerState = () => {
 
       const finalTasks = [...list.tasks, mainTask];
       triggerListUpdate(listId, finalTasks);
+      setExpandedTasks((prev) => ({ ...prev, [mainTask.id]: true }));
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown AI breakdown error.";

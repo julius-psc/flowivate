@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, FormEvent, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { X, Plus, List, RefreshCcw, Check } from "lucide-react";
+import { ChevronLeft, List, RefreshCcw } from "lucide-react";
+import { IconTrash } from "@tabler/icons-react";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -13,8 +14,8 @@ const AffirmationsSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
   return (
     <div
       className={`relative p-4 backdrop-blur-md rounded-xl flex flex-col overflow-hidden h-full ${isSpecialTheme
-          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+        ? "dark bg-zinc-900/50 border border-zinc-800/50"
+        : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
         }`}
     >
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
@@ -97,14 +98,28 @@ export default function Affirmations() {
     fetchAffirmations();
   }, []); // Empty dependency array means fetch only once on mount
 
+  // Auto-rotate affirmations every 5 minutes in display mode
+  useEffect(() => {
+    if (viewMode !== "display" || affirmations.length < 2) return;
+
+    const intervalId = setInterval(() => {
+      setIsFading(true);
+      setTimeout(() => {
+        setCurrentIndex((prev) => (prev + 1) % affirmations.length);
+        setIsFading(false);
+      }, 150);
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(intervalId);
+  }, [viewMode, affirmations.length]);
+
   useEffect(() => {
     if (viewMode === "manage") {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [viewMode]);
 
-  const handleAddAffirmation = async (event: FormEvent) => {
-    event.preventDefault();
+  const handleAddAffirmation = async () => {
     const trimmedAffirmation = newAffirmation.trim();
 
     if (!trimmedAffirmation) {
@@ -280,24 +295,38 @@ export default function Affirmations() {
         }`}
     >
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider">
-          Affirmations
-        </h1>
-        <button
-          onClick={() =>
-            setViewMode(viewMode === "display" ? "manage" : "display")
-          }
-          className={`flex items-center gap-1 text-xs transition-colors px-2 py-1 rounded-md ${isSpecialTheme
-              ? 'text-white/70 hover:text-white hover:bg-white/10'
-              : 'text-primary/70 dark:text-primary-foreground/70 hover:text-primary dark:hover:text-primary-foreground hover:bg-slate-100 dark:hover:bg-zinc-800/50'
-            }`}
-          aria-label={
-            viewMode === "display" ? "Manage affirmations" : "Done managing"
-          }
-        >
-          {viewMode === "display" ? <List size={14} /> : <Check size={14} />}
-          {viewMode === "display" ? "Manage" : "Done"}
-        </button>
+        {viewMode === "manage" ? (
+          <button
+            onClick={() => setViewMode("display")}
+            className={`flex items-center gap-1 transition-colors rounded-md ${isSpecialTheme
+              ? 'text-white/40 hover:text-white/60'
+              : 'text-secondary-black/40 dark:text-secondary-white/40 hover:text-secondary-black/60 dark:hover:text-secondary-white/60'
+              }`}
+            aria-label="Back to affirmations"
+          >
+            <ChevronLeft size={16} />
+            <span className="text-sm uppercase tracking-wider">
+              Affirmations
+            </span>
+          </button>
+        ) : (
+          <>
+            <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40 uppercase tracking-wider">
+              Affirmations
+            </h1>
+            <button
+              onClick={() => setViewMode("manage")}
+              className={`flex items-center gap-1 text-xs transition-colors px-2 py-1 rounded-md ${isSpecialTheme
+                ? 'text-white/70 hover:text-white hover:bg-white/10'
+                : 'text-primary/70 dark:text-primary-foreground/70 hover:text-primary dark:hover:text-primary-foreground hover:bg-slate-100 dark:hover:bg-zinc-800/50'
+                }`}
+              aria-label="Manage affirmations"
+            >
+              <List size={14} />
+              Manage
+            </button>
+          </>
+        )}
       </div>
 
       {viewMode === "display" && (
@@ -321,8 +350,8 @@ export default function Affirmations() {
               onClick={shuffleAffirmation}
               disabled={affirmations.length < 2 || isFading}
               className={`flex items-center justify-center h-9 w-9 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${isSpecialTheme
-                  ? 'bg-white/10 text-white/80 hover:bg-white/20'
-                  : 'bg-slate-100 dark:bg-zinc-800/70 text-primary/80 dark:text-primary-foreground/80 hover:bg-slate-200 dark:hover:bg-zinc-800'
+                ? 'bg-white/10 text-white/80 hover:bg-white/20'
+                : 'bg-slate-100 dark:bg-zinc-800/70 text-primary/80 dark:text-primary-foreground/80 hover:bg-slate-200 dark:hover:bg-zinc-800'
                 }`}
               aria-label="Show new affirmation"
             >
@@ -357,48 +386,42 @@ export default function Affirmations() {
                   <button
                     onClick={() => handleDeleteAffirmation(index, affirmation)}
                     disabled={isDeleting === affirmation}
-                    className={`opacity-0 group-hover/item:opacity-100 focus:opacity-100 transition-opacity p-1 rounded-full flex-shrink-0 ${isSpecialTheme ? 'hover:bg-white/10' : 'hover:bg-slate-200 dark:hover:bg-zinc-700'
+                    className={`opacity-0 group-hover/item:opacity-100 focus:opacity-100 transition-opacity p-1.5 rounded-md flex-shrink-0 ${isSpecialTheme
+                      ? 'hover:bg-red-500/20'
+                      : 'hover:bg-red-100/80 dark:hover:bg-red-900/50'
                       }`}
                     aria-label="Delete affirmation"
                   >
-                    <X
-                      size={16}
-                      className={isSpecialTheme ? 'text-white/50' : 'text-slate-500 dark:text-zinc-400'}
+                    <IconTrash
+                      size={14}
+                      className="text-red-500 dark:text-red-400"
                     />
                   </button>
                 </div>
               ))
             )}
           </div>
-          <form
-            onSubmit={handleAddAffirmation}
-            className="mt-auto flex flex-col gap-2 flex-shrink-0 pt-4"
-          >
+          <div className="mt-auto flex-shrink-0 pt-4">
             <input
               ref={inputRef}
               type="text"
-              placeholder="I am..."
+              placeholder="Add affirmation... (press Enter)"
               value={newAffirmation}
               onChange={(e) => setNewAffirmation(e.target.value)}
-              className={`mx-1 rounded-xl border-2 px-2 py-2 text-sm transition-all duration-200 focus:outline-none focus:ring-3 disabled:opacity-60 disabled:cursor-not-allowed ${isSpecialTheme
-                  ? 'bg-black/10 border-white/15 text-white/90 placeholder:text-white/40 focus:border-white/40 focus:ring-white/10'
-                  : 'text-secondary-black dark:text-secondary-white border-slate-300 dark:border-zinc-700 dark:bg-zinc-800/90 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-primary focus:ring-primary/20 dark:focus:ring-primary/10'
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isAdding && newAffirmation.trim()) {
+                  e.preventDefault();
+                  handleAddAffirmation();
+                }
+              }}
+              className={`w-full bg-transparent border-none outline-none px-1 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed ${isSpecialTheme
+                ? 'text-white/90 placeholder:text-white/40'
+                : 'text-secondary-black dark:text-secondary-white placeholder:text-slate-400 dark:placeholder:text-zinc-500'
                 }`}
               disabled={isAdding}
               autoComplete="off"
             />
-            <button
-              type="submit"
-              className={`w-full flex items-center justify-center gap-1 rounded-lg text-sm px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed ${isSpecialTheme
-                  ? 'bg-white/90 text-zinc-900 hover:bg-white'
-                  : 'bg-primary text-secondary-white hover:bg-primary/90'
-                }`}
-              disabled={isAdding || !newAffirmation.trim()}
-            >
-              <Plus size={16} />
-              Add
-            </button>
-          </form>
+          </div>
         </div>
       )}
     </div>

@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Define base classes
   const asideBaseClasses =
-    "flex flex-col z-40 px-2 py-4 ml-2 mx-2 my-1 mb-2 w-16 backdrop-blur-xl rounded-xl transition-opacity duration-300";
+    "flex flex-col z-30 px-2 py-4 ml-2 mx-2 my-1 mb-2 w-16 backdrop-blur-xl rounded-xl transition-opacity duration-300";
   // Define pre-mount classes (solid, maybe invisible)
   const asidePreMountClasses =
     "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
@@ -83,9 +83,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       <aside
-        className={`${asideBaseClasses} ${
-          isMounted ? asidePostMountClasses : asidePreMountClasses // Apply conditional classes
-        }`}
+        className={`${asideBaseClasses} ${isMounted ? asidePostMountClasses : asidePreMountClasses // Apply conditional classes
+          }`}
       >
         <div className="flex flex-col items-center h-full">
           {/* Logo */}
@@ -106,16 +105,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <li key={item.name} className="relative group">
                   <Link href={item.path}>
                     <div
-                      className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                        pathname === item.path ? activeBgColor : hoverBgColor // Use new color vars
-                      }`}
+                      className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-200 ${pathname === item.path ? activeBgColor : hoverBgColor // Use new color vars
+                        }`}
                     >
                       <item.icon
-                        className={`w-5 h-5 ${
-                          pathname === item.path
+                        className={`w-5 h-5 ${pathname === item.path
                             ? activeIconColor
                             : inactiveIconColor // Use new color vars
-                        }`}
+                          }`}
                       />
                     </div>
                   </Link>

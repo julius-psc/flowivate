@@ -371,7 +371,7 @@ const DeepWork: React.FC = () => {
       <div className="flex flex-col items-center gap-3 w-full">
         <button
           onClick={handleStartSetup}
-          className="w-full max-w-[220px] px-4 py-3 flex items-center justify-center bg-secondary-black text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-600"
+          className="w-full max-w-[220px] px-4 py-3 flex items-center justify-center bg-secondary-black text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:opacity-85"
         >
           Start Focus Session
         </button>
@@ -765,7 +765,7 @@ const DeepWork: React.FC = () => {
         renderActive()
       ) : (
         <div className="relative p-4 flex flex-col h-full overflow-hidden">
-          <h1 className="text-sm font-medium text-secondary-black dark:text-secondary-white opacity-40 mb-2 uppercase tracking-wider flex-shrink-0">
+          <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40 mb-2 uppercase tracking-wider flex-shrink-0">
             DEEP WORK
           </h1>
           <div className="flex-grow flex flex-col overflow-hidden">

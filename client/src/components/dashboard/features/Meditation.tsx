@@ -181,8 +181,8 @@ const Meditation = () => {
   return (
     <div
       className={`p-4 backdrop-blur-md rounded-xl flex flex-col h-full ${isSpecialTheme
-          ? "dark bg-zinc-900/50 border border-zinc-800/50"
-          : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
+        ? "dark bg-zinc-900/50 border border-zinc-800/50"
+        : "bg-white/80 dark:bg-zinc-900/80 border border-slate-200/50 dark:border-zinc-800/50"
         }`}
     >
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
@@ -209,7 +209,7 @@ const Meditation = () => {
               <button
                 key={time.label}
                 onClick={() => startMeditation(time)}
-                className="w-full max-w-[220px] px-4 py-3 flex items-center justify-between bg-secondary-black text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-600"
+                className="w-full max-w-[220px] px-4 py-3 flex items-center justify-between bg-secondary-black text-white dark:text-gray-200 rounded-lg cursor-pointer transition-colors text-sm hover:opacity-85"
               >
                 <span>{time.label}</span>
                 <span className="text-xs opacity-70">

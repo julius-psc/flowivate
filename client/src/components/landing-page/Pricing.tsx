@@ -126,7 +126,7 @@ export default function Pricing() {
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-medium text-white">Pro</h3>
+                    <h3 className="text-lg font-medium text-white">Elite</h3>
                     <span className="px-2 py-0.5 rounded-full bg-primary-blue text-white text-[10px] font-bold uppercase tracking-wider">
                       Popular
                     </span>
@@ -163,7 +163,7 @@ export default function Pricing() {
                   onClick={handleCheckout}
                   className="w-full py-2.5 rounded-full bg-primary-blue text-white font-medium text-sm hover:bg-[var(--color-primary-blue-hover)] transition-all"
                 >
-                  Upgrade to Pro
+                  Upgrade to Elite
                 </button>
               </div>
 

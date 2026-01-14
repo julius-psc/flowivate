@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { IconLoader2, IconSquareRoundedPlus2 } from "@tabler/icons-react";
-import SubPopup from "@/components/dashboard/recyclable/SubPopup";
+import PaywallPopup from "@/components/dashboard/PaywallPopup";
 import ListHeader from "./ListHeader";
 import TaskItem from "./TaskItem";
 import AddTaskInput from "./AddTaskInput";
@@ -133,8 +133,8 @@ const TaskLogger: React.FC = () => {
 
   return (
     <div className="p-4 flex flex-col min-h-screen">
-      <SubPopup
-        open={showUpgradeModal}
+      <PaywallPopup
+        isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
       />
 
@@ -304,6 +304,8 @@ const TaskLogger: React.FC = () => {
                       onAiClick={() => handleAiBreakdown(list._id!)}
                       isDisabled={isDisabled}
                       isSpecialTheme={isSpecialTheme}
+                      isFreeUser={isFreeUser}
+                      onPaywallTrigger={() => setShowUpgradeModal(true)}
                     />
                   )}
 

@@ -20,7 +20,7 @@ export default function WithProGuard({
         <div className="absolute inset-0 backdrop-blur-[2px] flex flex-col items-center justify-center text-slate-700 dark:text-slate-300 z-10">
           <div className="text-4xl mb-3 animate-pulse">🔒</div>
           <div className="text-lg font-semibold mb-1 tracking-tight">
-            Pro Feature
+            Elite Feature
           </div>
           <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">
             Upgrade to unlock

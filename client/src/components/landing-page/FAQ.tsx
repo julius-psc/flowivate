@@ -16,7 +16,7 @@ const FAQ_ITEMS: FAQItem[] = [
     },
     {
         question: "Is Flowivate free to use?",
-        answer: "Yes! We offer a generous Free plan that gives you access to the core Deep Work environment and basic components. For unlimited usage, AI assistance, and advanced analytics, you can upgrade to our Pro plan."
+        answer: "Yes! We offer a generous Free plan that gives you access to the core Deep Work environment and basic components. For unlimited usage, AI assistance, and advanced analytics, you can upgrade to our Elite plan."
     },
     {
         question: "How does it help me focus?",
@@ -27,8 +27,8 @@ const FAQ_ITEMS: FAQItem[] = [
         answer: "Absolutely. Flowivate includes dedicated trackers for sleep, hydration, reading, and mood, allowing you to see how your personal well-being correlates with your productivity."
     },
     {
-        question: "What is included in the Pro plan?",
-        answer: "The Pro plan unlocks unlimited component usage, our AI-powered assistant for personalized insights, unlimited journal entries, and deep-dive analytics into your work patterns."
+        question: "What is included in the Elite plan?",
+        answer: "The Elite plan unlocks unlimited component usage, our AI-powered assistant for personalized insights, unlimited journal entries, and deep-dive analytics into your work patterns."
     }
 ];
 

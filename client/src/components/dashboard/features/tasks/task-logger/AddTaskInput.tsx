@@ -19,6 +19,8 @@ interface AddTaskInputProps {
   onAiClick: () => void;
   isDisabled: boolean;
   isSpecialTheme: boolean; // <-- Added theme prop
+  isFreeUser: boolean;
+  onPaywallTrigger: () => void;
 }
 
 const AddTaskInput: React.FC<AddTaskInputProps> = ({
@@ -34,6 +36,8 @@ const AddTaskInput: React.FC<AddTaskInputProps> = ({
   onAiClick,
   isDisabled,
   isSpecialTheme, // <-- Destructure theme prop
+  isFreeUser,
+  onPaywallTrigger,
 }) => {
   // Theme-aware styles
   const inputBg = isSpecialTheme
@@ -48,7 +52,7 @@ const AddTaskInput: React.FC<AddTaskInputProps> = ({
   const inputFocusRing = isSpecialTheme
     ? "focus:ring-white/50 dark:focus:ring-white/50" // Lighter focus ring
     : "focus:ring-blue-500 dark:focus:ring-blue-400";
-   const placeholderText = isSpecialTheme
+  const placeholderText = isSpecialTheme
     ? "placeholder:text-white/40" // Lighter placeholder
     : "placeholder:text-slate-400 dark:placeholder:text-zinc-500"; // Default placeholder
 
@@ -58,6 +62,10 @@ const AddTaskInput: React.FC<AddTaskInputProps> = ({
       {/* AI Button - Keeping primary color as it should contrast well */}
       <button
         onClick={() => {
+          if (isFreeUser) {
+            onPaywallTrigger();
+            return;
+          }
           setAiPrimedListId(listId);
           onAiClick();
         }}
@@ -91,9 +99,10 @@ const AddTaskInput: React.FC<AddTaskInputProps> = ({
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={(e) => handleKeyDown(e, listId)}
         onBlur={(e) => handleBlur(e, listId)}
-        className={`flex-1 w-full p-2 ${inputBg} backdrop-blur-md rounded-lg ${inputBorder} focus:outline-none focus:ring-1 ${inputFocusRing} text-sm ${inputText} ${placeholderText} transition-all duration-200 disabled:opacity-50 ${
-          isAiPrimed ? "ring-1 ring-blue-500 dark:ring-blue-400" : "" // AI Primed ring overrides focus ring intentionally
-        }`}
+        className={`flex-1 w-full p-2 ${inputBg} backdrop-blur-md rounded-lg ${inputBorder} focus:outline-none focus:ring-1 ${inputFocusRing} text-sm ${inputText} ${placeholderText} transition-all duration-200 disabled:opacity-50 ${isAiPrimed
+            ? "ring-1 ring-blue-500 dark:ring-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:shadow-[0_0_15px_rgba(96,165,250,0.5)]"
+            : "" // AI Primed ring and glow overrides focus ring intentionally
+          }`}
         placeholder={
           isAiPrimed ? "Enter goal for AI breakdown..." : "New task..."
         }

@@ -27,6 +27,7 @@ interface PomodoroContextType {
   timeLeft: number;
   isActive: boolean;
   sessions: number;
+  dailySessions: number;
   isLoading: boolean;
   start: () => void;
   pause: () => void;
@@ -77,8 +78,26 @@ export function PomodoroProvider({
   const [timeLeft, setTimeLeft] = useState(settings.focusTime);
   const [isActive, setIsActive] = useState(false);
   const [sessions, setSessions] = useState(0);
+  const [dailySessions, setDailySessions] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const endTimeRef = useRef<number | null>(null);
+
+  // Load daily sessions from localStorage on mount
+  useEffect(() => {
+    if (!enabled) return;
+    const stored = localStorage.getItem("pomodoroDailySessions");
+    const storedDate = localStorage.getItem("pomodoroDailyDate");
+    const today = new Date().toDateString();
+
+    if (stored && storedDate === today) {
+      setDailySessions(Number(stored) || 0);
+    } else {
+      // Reset if it's a new day
+      localStorage.setItem("pomodoroDailySessions", "0");
+      localStorage.setItem("pomodoroDailyDate", today);
+      setDailySessions(0);
+    }
+  }, [enabled]);
 
   const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
   const appCommand = useGlobalStore((state) => state.appCommand);
@@ -220,8 +239,7 @@ export function PomodoroProvider({
         }
       } catch (err) {
         toast.error(
-          `Error loading Pomodoro: ${
-            err instanceof Error ? err.message : "unknown"
+          `Error loading Pomodoro: ${err instanceof Error ? err.message : "unknown"
           }`
         );
         setTimeLeft(settings.focusTime);
@@ -289,21 +307,39 @@ export function PomodoroProvider({
     if (mode === "focus") {
       const nextCount = sessions + 1;
       setSessions(nextCount);
+
+      // Increment daily sessions and persist
+      const newDailySessions = dailySessions + 1;
+      setDailySessions(newDailySessions);
+      localStorage.setItem("pomodoroDailySessions", newDailySessions.toString());
+      localStorage.setItem("pomodoroDailyDate", new Date().toDateString());
+
       triggerLumoEvent("POMO_FINISHED");
-      const nextMode =
-        nextCount % settings.longBreakAfter === 0 ? "longBreak" : "shortBreak";
+
+      const isLongBreakDue = nextCount % settings.longBreakAfter === 0;
+      const nextMode = isLongBreakDue ? "longBreak" : "shortBreak";
+
       setTimeout(() => {
         setMode(nextMode);
         toast.info(
-          nextMode === "longBreak"
+          isLongBreakDue
             ? "Time for a long break!"
             : "Time for a short break!"
         );
+
+        // Auto-reset round after long break is due (reached longBreakAfter sessions)
+        if (isLongBreakDue) {
+          // Sessions will reset but dailySessions persists
+          setSessions(0);
+        }
       }, 50);
+
       if (session?.user?.id) {
         fetch("/api/features/pomodoro", {
           method: "PUT",
           credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dailySessions: newDailySessions }),
         }).catch(() => toast.error("Failed to sync focus session to server."));
       }
     } else {
@@ -316,6 +352,7 @@ export function PomodoroProvider({
     enabled,
     timeLeft,
     sessions,
+    dailySessions,
     mode,
     settings.longBreakAfter,
     session?.user?.id,
@@ -358,6 +395,7 @@ export function PomodoroProvider({
         timeLeft,
         isActive,
         sessions,
+        dailySessions,
         isLoading,
         start,
         pause,
