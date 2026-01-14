@@ -558,7 +558,7 @@ export default function AccountTab(): React.JSX.Element {
               <p className="text-[12px] text-zinc-500 mt-0.5">
                 {accountDetails.passwordLastUpdatedAt
                   ? `Changed ${formatDistanceToNow(new Date(accountDetails.passwordLastUpdatedAt), { addSuffix: true })}`
-                  : "Not set"}
+                  : "Password set"}
               </p>
             </div>
             <div>
@@ -567,7 +567,7 @@ export default function AccountTab(): React.JSX.Element {
                   onClick={() => setShowPasswordForm(true)}
                   className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses}`}
                 >
-                  Change password
+                  Update password
                 </button>
               ) : (
                 <div className="space-y-4">

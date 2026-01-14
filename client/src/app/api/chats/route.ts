@@ -65,7 +65,7 @@ function generateChatTitle(messages: { sender: string; text: string; timestamp: 
   const words = firstMessage.split(/\s+/);
   const shortTitle = words.slice(0, 10).join(' ');
   if (shortTitle.length > 50) {
-      return shortTitle.substring(0, 50) + '...';
+    return shortTitle.substring(0, 50) + '...';
   }
   return shortTitle || "New Chat";
 }
@@ -92,9 +92,9 @@ export async function GET() {
       { userId: userObjectId },
       { projection: { _id: 1, title: 1, updatedAt: 1 } }
     )
-    .sort({ updatedAt: -1 })
-    .limit(20)
-    .toArray();
+      .sort({ updatedAt: -1 })
+      .limit(20)
+      .toArray();
 
     const chatSummaries = recentChats.map(chat => ({
       id: chat._id.toString(),
@@ -128,20 +128,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { messages: rawMessages } = body;
 
+    // Strict access control: Only allow "active" or "trialing" subscriptions to use AI
+    // "free" users should be blocked here if the frontend check is bypassed
+    // @ts-ignore - Check if session status is available from our custom auth.ts
+    const subscriptionStatus = session.user?.subscriptionStatus || "free";
+
+    // Allow 'active' and maybe 'trialing' if you have that status.
+    // Adjust logic based on your exact status enum
+    if (subscriptionStatus !== "active" && subscriptionStatus !== "trialing") {
+      logApiError('POST', endpoint, sessionUserId, new Error(`Restricted access attempted by user with status: ${subscriptionStatus}`));
+      return NextResponse.json({ message: 'Upgrade to Elite to use Lumo.' }, { status: 403 });
+    }
+
     if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
-        logApiError('POST', endpoint, sessionUserId, new Error('Invalid or empty messages array in request body'));
-        return NextResponse.json({ message: 'Messages array is required and cannot be empty' }, { status: 400 });
+      logApiError('POST', endpoint, sessionUserId, new Error('Invalid or empty messages array in request body'));
+      return NextResponse.json({ message: 'Messages array is required and cannot be empty' }, { status: 400 });
     }
 
     const validMessages: ChatMessage[] = rawMessages.map((msg: { sender: string; text: string; timestamp: string }) => ({
-        sender: typeof msg.sender === 'string' ? msg.sender : 'unknown',
-        content: typeof msg.text === 'string' ? msg.text : '',
-        timestamp: typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : new Date(),
+      sender: typeof msg.sender === 'string' ? msg.sender : 'unknown',
+      content: typeof msg.text === 'string' ? msg.text : '',
+      timestamp: typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : new Date(),
     })).filter(msg => msg.content.length > 0);
 
     if (validMessages.length === 0) {
-        logApiError('POST', endpoint, sessionUserId, new Error('No valid messages found after parsing'));
-        return NextResponse.json({ message: 'No valid messages to save' }, { status: 400 });
+      logApiError('POST', endpoint, sessionUserId, new Error('No valid messages found after parsing'));
+      return NextResponse.json({ message: 'No valid messages to save' }, { status: 400 });
     }
 
     const title = generateChatTitle(rawMessages);
@@ -162,8 +174,8 @@ export async function POST(request: NextRequest) {
     const result = await chatsCollection.insertOne(newChat);
 
     if (!result.acknowledged) {
-        logApiError('POST', endpoint, sessionUserId, new Error('MongoDB insert operation not acknowledged'));
-        return NextResponse.json({ message: 'Failed to create chat' }, { status: 500 });
+      logApiError('POST', endpoint, sessionUserId, new Error('MongoDB insert operation not acknowledged'));
+      return NextResponse.json({ message: 'Failed to create chat' }, { status: 500 });
     }
 
     return NextResponse.json({ conversationId: result.insertedId.toString() }, { status: 201 });

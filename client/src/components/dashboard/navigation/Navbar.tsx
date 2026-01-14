@@ -245,21 +245,21 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
 
                 {showStatusMenu && (
                   <div
-                    className={`absolute right-0 mt-1 w-36 backdrop-blur-md rounded-xl p-1.5 z-20 ${isMounted // Apply conditional classes to dropdown too
-                      ? isSpecialTheme
-                        ? "dark bg-zinc-900/50 border border-zinc-800/50"
-                        : "bg-white/95 dark:bg-zinc-900/95 border border-slate-200/50 dark:border-zinc-800/50"
-                      : "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0 pointer-events-none" // Hide before mount
+                    className={`absolute right-0 mt-4 w-36 rounded-xl p-1.5 z-50 border transition-all duration-200 ${isMounted
+                        ? isSpecialTheme
+                          ? "bg-zinc-900/90 border-zinc-800 backdrop-blur-xl"
+                          : "bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800"
+                        : "opacity-0"
                       }`}
                   >
                     {statusOptions.map((option) => (
                       <button
                         key={option.name}
                         onClick={() => changeStatus(option)}
-                        className="w-full flex items-center space-x-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-gray-800/30 px-2 py-1.5 rounded-md transition-colors"
+                        className="w-full flex items-center space-x-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-900 px-2 py-1.5 rounded-lg transition-colors"
                       >
                         <div
-                          className={`w-3 h-3 rounded-full ${option.bgColor} flex items-center justify-center shrink-0`}
+                          className={`w-3 h-3 rounded-full ${option.bgColor} flex items-center justify-center shrink-0 border border-transparent dark:border-zinc-800`}
                         >
                           <div
                             className={`w-1.5 h-1.5 rounded-full ${option.color}`}

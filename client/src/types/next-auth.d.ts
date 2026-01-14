@@ -10,6 +10,7 @@ declare module "next-auth" {
       username?: string | null;
       onboardingCompleted?: boolean;
       authProvider?: AuthProvider;
+      subscriptionStatus?: string;
     } & DefaultUser;
   }
 
@@ -17,6 +18,7 @@ declare module "next-auth" {
     username?: string | null;
     onboardingCompleted?: boolean;
     authProvider?: AuthProvider;
+    subscriptionStatus?: string;
   }
 }
 
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
     username?: string;
     onboardingCompleted?: boolean;
     authProvider?: AuthProvider;
+    subscriptionStatus?: string;
   }
 }

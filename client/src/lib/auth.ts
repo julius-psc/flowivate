@@ -95,12 +95,13 @@ export const authConfig: NextAuthConfig = {
       await connectDB();
 
       if (trigger === "update") {
-        const dbUser = await User.findById(token.id).select("username image onboardingCompleted authProvider").lean().exec();
+        const dbUser = await User.findById(token.id).select("username image onboardingCompleted authProvider subscriptionStatus").lean().exec();
         if (dbUser) {
           token.username = dbUser.username;
           token.image = dbUser.image;
           token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
           token.authProvider = dbUser.authProvider ?? null;
+          token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
         }
         return token;
       }
@@ -109,6 +110,8 @@ export const authConfig: NextAuthConfig = {
         token.id = user.id;
         token.username = user.username ?? undefined;
         token.image = user.image ?? undefined;
+        // @ts-ignore
+        token.subscriptionStatus = user.subscriptionStatus ?? "free";
       }
 
       // Set authProvider based on account type
@@ -123,6 +126,7 @@ export const authConfig: NextAuthConfig = {
         if (dbUser) {
           token.id = dbUser._id.toString();
           token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
+          token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
           let changed = false;
 
           // Update authProvider if not set
@@ -163,6 +167,7 @@ export const authConfig: NextAuthConfig = {
           token.username = user.email?.split("@")[0];
           token.onboardingCompleted = false;
           token.authProvider = account.provider as "google" | "github";
+          token.subscriptionStatus = "free";
         }
       }
 
@@ -189,6 +194,7 @@ export const authConfig: NextAuthConfig = {
       }
       session.user.onboardingCompleted = (token.onboardingCompleted as boolean) ?? false;
       session.user.authProvider = token.authProvider as "google" | "github" | "credentials" | null ?? null;
+      session.user.subscriptionStatus = token.subscriptionStatus as string ?? "free";
       return session;
     },
 
