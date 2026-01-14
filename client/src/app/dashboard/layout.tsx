@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
+
 import ClientProvider from "../providers/ClientProvider";
 import Sidebar from "../../components/dashboard/navigation/Sidebar";
 import Navbar from "../../components/dashboard/navigation/Navbar";
@@ -10,8 +10,9 @@ import { PomodoroProvider } from "@/components/dashboard/features/pomodoro/Pomod
 import MiniPomo from "@/components/dashboard/features/pomodoro/MiniPomo";
 import ThemeBackground from "../../../themes/ThemeBackground";
 import Settings from "../../components/dashboard/privacy/settings";
-import logo from "../../assets/brand/logo-v1.5.svg";
+
 import ProactiveAssistant from "../../components/dashboard/features/ai/ProactiveAssistant";
+import MobileRestricted from "../../components/dashboard/MobileRestricted";
 
 export default function DashboardLayout({
   children,
@@ -27,23 +28,7 @@ export default function DashboardLayout({
   }, []);
 
   if (isMobile) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen px-4 bg-secondary-black">
-        <Image
-          src={logo}
-          alt="Flowivate"
-          width={120}
-          height={40}
-          className="mx-auto"
-        />
-        <h1 className="mt-8 text-2xl font-semibold text-secondary-white">
-          Under construction... 🚧
-        </h1>
-        <p className="mt-4 text-center text-lg text-secondary-white">
-          Flowivate is coming soon to mobile. Please use desktop!
-        </p>
-      </div>
-    );
+    return <MobileRestricted />;
   }
 
   return (

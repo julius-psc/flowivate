@@ -8,14 +8,14 @@ import githubLogo from "@/assets/icons/github-logo.svg";
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-[#121212] pt-16 pb-8 px-4 flex justify-center relative z-20">
+    <footer className="w-full bg-[#121212] pt-10 md:pt-16 pb-8 px-4 flex justify-center relative z-20">
       <div className="w-full max-w-6xl">
 
         {/* Main Content */}
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-16 lg:gap-12 mb-16">
 
           {/* Brand Column */}
-          <div className="flex flex-col gap-4 max-w-xs">
+          <div className="flex flex-col gap-4 max-w-xs items-center md:items-start text-center md:text-left mx-auto md:mx-0">
             <div className="flex items-center">
               <Image src={logo} alt="Flowivate Logo" className="w-12 h-12" />
               <span className="text-lg font-medium text-white">Flowivate</span>

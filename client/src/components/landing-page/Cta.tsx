@@ -8,7 +8,7 @@ import landingGrad from "../../../public/assets/illustrations/landing-gradient.p
 
 export default function CTA() {
   return (
-    <section className="w-full px-4 py-10 bg-[#121212] flex justify-center">
+    <section className="flex w-full px-4 py-10 bg-[#121212] justify-center">
       <div className="w-full h-[350px] relative rounded-2xl overflow-hidden shadow-2xl">
 
         {/* Gradient Background Image */}

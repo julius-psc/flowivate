@@ -46,7 +46,7 @@ export default function Pricing() {
   };
 
   return (
-    <div id="pricing" className="w-full px-4 py-20 relative overflow-hidden">
+    <div id="pricing" className="w-full px-4 py-16 md:py-20 relative overflow-hidden">
       <div className="max-w-3xl mx-auto relative z-10">
 
         {/* Header - Minimalist, just the toggle */}
@@ -83,14 +83,14 @@ export default function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto items-stretch">
+        <div className="grid md:grid-cols-2 gap-4 md:gap-6 max-w-3xl mx-auto items-stretch">
           {/* Free Plan */}
-          <div className="flex flex-col min-h-[550px] rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-8">
+          <div className="flex flex-col min-h-[450px] md:min-h-[550px] rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-5 md:p-8">
             <div className="flex flex-col h-full">
-              <div className="mb-8">
+              <div className="mb-6 md:mb-8">
                 <h3 className="text-lg font-medium text-white mb-2">Free</h3>
                 <div className="flex items-baseline gap-1 mb-2 h-10">
-                  <span className="text-4xl font-bold text-white tracking-tight">€0</span>
+                  <span className="text-3xl md:text-4xl font-bold text-white tracking-tight">€0</span>
                   <span className="text-white text-sm font-medium">/year</span>
                 </div>
                 <p className="text-gray-400 text-sm">
@@ -98,7 +98,7 @@ export default function Pricing() {
                 </p>
               </div>
 
-              <div className="mb-8">
+              <div className="mb-6 md:mb-8">
                 <button
                   className="w-full py-2.5 rounded-full bg-zinc-800 text-white font-medium text-sm hover:bg-zinc-700 transition-all shadow-sm"
                 >
@@ -106,7 +106,7 @@ export default function Pricing() {
                 </button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 <p className="text-sm font-medium text-white">Includes:</p>
                 {freeFeatures.map((feature, index) => (
                   <div key={index} className="flex items-center gap-3">
@@ -121,9 +121,9 @@ export default function Pricing() {
           </div>
 
           {/* Pro Plan */}
-          <div className="flex flex-col min-h-[550px] relative rounded-2xl border border-zinc-800 bg-[#1a1a1a] p-8 shadow-xl">
+          <div className="flex flex-col min-h-[450px] md:min-h-[550px] relative rounded-2xl border border-zinc-800 bg-[#1a1a1a] p-5 md:p-8 shadow-xl">
             <div className="flex flex-col h-full">
-              <div className="mb-8">
+              <div className="mb-6 md:mb-8">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-medium text-white">Elite</h3>
@@ -134,7 +134,7 @@ export default function Pricing() {
                 </div>
 
                 <div className="flex items-baseline gap-1 mb-2 h-10">
-                  <span className="text-4xl font-bold text-white tracking-tight flex">
+                  <span className="text-3xl md:text-4xl font-bold text-white tracking-tight flex">
                     €
                     <AnimatePresence mode="wait">
                       <motion.span
@@ -158,7 +158,7 @@ export default function Pricing() {
                 </p>
               </div>
 
-              <div className="mb-8">
+              <div className="mb-6 md:mb-8">
                 <button
                   onClick={handleCheckout}
                   className="w-full py-2.5 rounded-full bg-primary-blue text-white font-medium text-sm hover:bg-[var(--color-primary-blue-hover)] transition-all"
@@ -167,7 +167,7 @@ export default function Pricing() {
                 </button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 <p className="text-sm font-medium text-white">Everything in Free +</p>
                 {proFeatures.map((feature, index) => (
                   <div key={index} className="flex items-center gap-3">

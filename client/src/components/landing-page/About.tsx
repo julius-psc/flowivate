@@ -88,15 +88,18 @@ export default function About() {
         const leftWall = Bodies.rectangle(boxCenterX - boxWidth / 2 + 10, boxTopY + boxHeight / 2, 20, boxHeight, wallOptions);
         const rightWall = Bodies.rectangle(boxCenterX + boxWidth / 2 - 10, boxTopY + boxHeight / 2, 20, boxHeight, wallOptions);
 
+        const isMobile = window.innerWidth < 768;
+        const funnelGap = isMobile ? boxWidth * 1.1 : 300;
+
         const funnelLeft = Bodies.rectangle(
-            boxCenterX - 300,
+            boxCenterX - funnelGap,
             boxTopY - 200,
             30,
             600,
             { ...wallOptions, angle: -Math.PI / 6 }
         );
         const funnelRight = Bodies.rectangle(
-            boxCenterX + 300,
+            boxCenterX + funnelGap,
             boxTopY - 200,
             30,
             600,
@@ -197,24 +200,24 @@ export default function About() {
             ([entry]) => {
                 if (entry.isIntersecting && !hasTriggeredRef.current) {
                     hasTriggeredRef.current = true;
-                    // INCREASED DELAY to 2.0s
+                    // Reduced delay for snappier feel
                     setTimeout(() => {
                         startPhysics();
-                    }, 2000);
+                    }, 500);
                 }
             },
-            { threshold: 0.8 }
+            { threshold: 0.3 }
         );
 
-        if (containerRef.current) {
-            observer.observe(containerRef.current);
+        if (sceneRef.current) {
+            observer.observe(sceneRef.current);
         }
 
         return () => observer.disconnect();
     }, [startPhysics]);
 
     return (
-        <section ref={containerRef} className="relative w-full py-24 px-6 md:px-12 lg:px-24 overflow-hidden flex justify-center">
+        <section ref={containerRef} className="relative w-full py-16 md:py-20 px-6 md:px-12 lg:px-24 overflow-hidden flex justify-center">
             <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
                 {/* Left Column */}
@@ -250,7 +253,7 @@ export default function About() {
                 </div>
 
                 {/* Right Column */}
-                <div ref={sceneRef} className="relative w-full h-[600px]">
+                <div ref={sceneRef} className="relative w-full h-[500px] md:h-[600px]">
 
                     {/* Tags */}
                     {CLOUD_TAGS.map((tag, i) => (
