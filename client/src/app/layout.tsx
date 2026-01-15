@@ -2,6 +2,7 @@ import "./globals.css";
 import ThemeProvider from "../../themes/ThemeProvider";
 import { Metadata } from "next";
 import { Toaster } from "sonner";
+import CookieConsent from "../components/CookieConsent";
 
 export const metadata: Metadata = {
   title: "Flowivate",
@@ -22,6 +23,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
+        <CookieConsent />
         <ThemeProvider
           attribute="data-theme"
           defaultTheme="default"

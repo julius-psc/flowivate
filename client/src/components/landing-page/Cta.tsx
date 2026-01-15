@@ -36,7 +36,7 @@ export default function CTA() {
               href="/register"
               className="bg-white text-primary-black hover:bg-gray-100 transition-colors px-5 py-2.5 rounded-full font-semibold text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 duration-200"
             >
-              Start Your 14-Day Free Trial Today
+              Join now
             </Link>
             <span className="text-white/80 text-xs font-medium">
               Cancel anytime, no questions asked

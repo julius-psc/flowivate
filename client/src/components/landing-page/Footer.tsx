@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,6 +9,11 @@ import instagramLogo from "@/assets/icons/instagram-logo.svg";
 import githubLogo from "@/assets/icons/github-logo.svg";
 
 export default function Footer() {
+  const openCookieSettings = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.dispatchEvent(new Event("openCookieSettings"));
+  };
+
   return (
     <footer className="w-full bg-[#121212] pt-10 md:pt-16 pb-8 px-4 flex justify-center relative z-20">
       <div className="w-full max-w-6xl">
@@ -62,10 +69,11 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-zinc-500">
           <p>&copy; 2026 Flowivate. All rights reserved.</p>
-          <div className="flex gap-6">
+          <div className="flex gap-6 flex-wrap justify-center">
             <Link href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-zinc-300 transition-colors">Terms of Service</Link>
-            <Link href="/cookies" className="hover:text-zinc-300 transition-colors">Cookies</Link>
+            <Link href="/legal-notice" className="hover:text-zinc-300 transition-colors">Legal Notice</Link>
+            <button onClick={openCookieSettings} className="hover:text-zinc-300 transition-colors">Cookie Settings</button>
           </div>
         </div>
 
