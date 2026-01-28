@@ -33,15 +33,30 @@ export async function POST(request: Request) {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return NextResponse.json<ErrorResponse>(
         {
-          error: "Password must be at least 6 characters long",
+          error: "Password must be at least 8 characters long",
           code: "weak_password",
         },
         { status: 400 }
       );
     }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+      return NextResponse.json<ErrorResponse>(
+        {
+          error: "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+          code: "weak_password",
+        },
+        { status: 400 }
+      );
+    }
+
 
     await connectDB();
 

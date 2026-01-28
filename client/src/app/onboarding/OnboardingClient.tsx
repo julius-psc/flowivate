@@ -54,6 +54,8 @@ export default function OnboardingClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isOAuthUser, setIsOAuthUser] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isChecking, setIsChecking] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -87,7 +89,81 @@ export default function OnboardingClient() {
     }));
   };
 
-  const handleNext = () => {
+  const validateAccountStep = async (): Promise<boolean> => {
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
+
+    // Password Validation
+    if (data.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long";
+      isValid = false;
+    } else if (!/[A-Z]/.test(data.password)) {
+      newErrors.password = "Password must contain at least one uppercase letter";
+      isValid = false;
+    } else if (!/[a-z]/.test(data.password)) {
+      newErrors.password = "Password must contain at least one lowercase letter";
+      isValid = false;
+    } else if (!/\d/.test(data.password)) {
+      newErrors.password = "Password must contain at least one number";
+      isValid = false;
+    }
+
+    // Username Validation
+    if (data.username.length < 3) {
+      newErrors.username = "Username must be at least 3 characters long";
+      isValid = false;
+    }
+
+    // Email Validation
+    if (!data.email || !/.+\@.+\..+/.test(data.email)) {
+      newErrors.email = "Please enter a valid email address";
+      isValid = false;
+    }
+
+    if (!isValid) {
+      setErrors(newErrors);
+      return false;
+    }
+
+    // Server-side Availability Check
+    setIsChecking(true);
+    try {
+      const response = await fetch("/api/auth/check-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: data.username, email: data.email }),
+      });
+
+      const result = await response.json();
+
+      if (!result.available) {
+        if (result.conflicts.username) {
+          newErrors.username = result.conflicts.username;
+        }
+        if (result.conflicts.email) {
+          newErrors.email = result.conflicts.email;
+        }
+        setErrors(newErrors);
+        setIsChecking(false);
+        return false;
+      }
+    } catch (error) {
+      toast.error("Failed to validate account availability");
+      setIsChecking(false);
+      return false;
+    }
+
+    setIsChecking(false);
+    setErrors({});
+    return true;
+  };
+
+  const handleNext = async () => {
+    if (currentStep === 1 && !isOAuthUser) {
+      const isValid = await validateAccountStep();
+      if (!isValid) return;
+    }
+
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     }
@@ -253,7 +329,18 @@ export default function OnboardingClient() {
 
           {/* Step Content */}
           <div key={currentStep} className="w-full">
-            {currentStep === 1 && <Step1Account data={data} updateData={updateData} showPassword={showPassword} setShowPassword={setShowPassword} handleSocialSignIn={handleSocialSignIn} isLoading={isLoading} />}
+            {currentStep === 1 && (
+              <Step1Account
+                data={data}
+                updateData={updateData}
+                showPassword={showPassword}
+                setShowPassword={setShowPassword}
+                handleSocialSignIn={handleSocialSignIn}
+                isLoading={isLoading}
+                errors={errors}
+                setErrors={setErrors}
+              />
+            )}
             {currentStep === 2 && <FactStep fact={facts[0]} />}
             {currentStep === 3 && <Step2Persona data={data} updateData={updateData} />}
             {currentStep === 4 && <FactStep fact={facts[1]} />}
@@ -285,8 +372,17 @@ export default function OnboardingClient() {
                 disabled={!canProceed()}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-blue hover:bg-primary-blue/90 text-white font-medium transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
               >
-                Continue
-                <ArrowRight size={16} />
+                {isChecking ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Checking...
+                  </div>
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRight size={16} />
+                  </>
+                )}
               </button>
             ) : (
               <button
@@ -330,14 +426,32 @@ function FactStep({ fact }: { fact: { stat: string; title: string; description: 
   );
 }
 
-function Step1Account({ data, updateData, showPassword, setShowPassword, handleSocialSignIn, isLoading }: {
+function Step1Account({
+  data,
+  updateData,
+  showPassword,
+  setShowPassword,
+  handleSocialSignIn,
+  isLoading,
+  errors,
+  setErrors
+}: {
   data: OnboardingData;
   updateData: (field: keyof OnboardingData, value: string) => void;
   showPassword: boolean;
   setShowPassword: (value: boolean) => void;
   handleSocialSignIn: (provider: string) => void;
   isLoading: boolean;
+  errors: Record<string, string>;
+  setErrors: (errors: Record<string, string>) => void;
 }) {
+  const handleChange = (field: keyof OnboardingData, value: string) => {
+    updateData(field, value);
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: "" });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="text-center mb-4">
@@ -379,34 +493,43 @@ function Step1Account({ data, updateData, showPassword, setShowPassword, handleS
 
       {/* Form Fields */}
       <div className="space-y-3">
-        <input
-          id="username"
-          type="text"
-          value={data.username}
-          onChange={(e) => updateData("username", e.target.value)}
-          placeholder="Username"
-          className="w-full h-11 px-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-white placeholder-[#666666] focus:outline-none focus:border-primary-blue transition-colors duration-200"
-          required
-        />
+        <div>
+          <input
+            id="username"
+            type="text"
+            value={data.username}
+            onChange={(e) => handleChange("username", e.target.value)}
+            placeholder="Username"
+            className={`w-full h-11 px-4 bg-[#1a1a1a] border rounded-lg text-white placeholder-[#666666] focus:outline-none transition-colors duration-200 ${errors.username ? "border-red-500 focus:border-red-500" : "border-[#2a2a2a] focus:border-primary-blue"
+              }`}
+            required
+          />
+          {errors.username && <p className="text-red-500 text-xs mt-1 ml-1">{errors.username}</p>}
+        </div>
 
-        <input
-          id="email"
-          type="email"
-          value={data.email}
-          onChange={(e) => updateData("email", e.target.value)}
-          placeholder="Email address"
-          className="w-full h-11 px-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-white placeholder-[#666666] focus:outline-none focus:border-primary-blue transition-colors duration-200"
-          required
-        />
+        <div>
+          <input
+            id="email"
+            type="email"
+            value={data.email}
+            onChange={(e) => handleChange("email", e.target.value)}
+            placeholder="Email address"
+            className={`w-full h-11 px-4 bg-[#1a1a1a] border rounded-lg text-white placeholder-[#666666] focus:outline-none transition-colors duration-200 ${errors.email ? "border-red-500 focus:border-red-500" : "border-[#2a2a2a] focus:border-primary-blue"
+              }`}
+            required
+          />
+          {errors.email && <p className="text-red-500 text-xs mt-1 ml-1">{errors.email}</p>}
+        </div>
 
         <div className="relative">
           <input
             id="password"
             type={showPassword ? "text" : "password"}
             value={data.password}
-            onChange={(e) => updateData("password", e.target.value)}
-            placeholder="Password (min 6 characters)"
-            className="w-full h-11 px-4 pr-11 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-white placeholder-[#666666] focus:outline-none focus:border-primary-blue transition-colors duration-200"
+            onChange={(e) => handleChange("password", e.target.value)}
+            placeholder="Password (min 8 characters)"
+            className={`w-full h-11 px-4 pr-11 bg-[#1a1a1a] border rounded-lg text-white placeholder-[#666666] focus:outline-none transition-colors duration-200 ${errors.password ? "border-red-500 focus:border-red-500" : "border-[#2a2a2a] focus:border-primary-blue"
+              }`}
             required
           />
           <button
@@ -417,6 +540,7 @@ function Step1Account({ data, updateData, showPassword, setShowPassword, handleS
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
+        {errors.password && <p className="text-red-500 text-xs mt-1 ml-1">{errors.password}</p>}
       </div>
     </div>
   );
