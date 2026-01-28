@@ -242,13 +242,13 @@ const Assistant: React.FC = () => {
                 onClick={() => handleNewChat()}
                 className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg mb-4 transition-all ${isSpecialTheme
                   ? 'bg-white/5 hover:bg-white/10 border border-white/10'
-                  : 'bg-gray-100/80 dark:bg-zinc-800/80 hover:bg-gray-200/80 dark:hover:bg-zinc-700/80 border border-gray-200/50 dark:border-zinc-700/50'
+                  : 'bg-gray-100/80 dark:bg-secondary-black hover:bg-gray-200/80 dark:hover:bg-zinc-900/50 border border-gray-200/50 dark:border-white/10'
                   }`}
               >
                 {/* Keyboard shortcut indicator */}
                 <span className={`flex items-center justify-center gap-0.5 px-1.5 h-5 rounded text-[10px] font-medium ${isSpecialTheme
                   ? 'bg-white/10 text-white/50'
-                  : 'bg-gray-200 dark:bg-zinc-700 text-gray-500 dark:text-gray-400'
+                  : 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-zinc-500'
                   }`}>
                   <IconCommand className="w-3 h-3" />
                   <span>F</span>

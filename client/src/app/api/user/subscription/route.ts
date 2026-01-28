@@ -16,5 +16,6 @@ export async function GET() {
 
   return NextResponse.json({
     subscriptionStatus: user?.subscriptionStatus ?? "free",
+    nextInvoiceDate: user?.lemonSqueezyRenewsAt ? new Date(user.lemonSqueezyRenewsAt).toLocaleDateString() : null,
   });
 }

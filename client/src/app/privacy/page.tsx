@@ -61,7 +61,7 @@ export default function PrivacyPage() {
                             <strong>Retention:</strong> We retain your personal data only as long as necessary to provide our services and comply with legal obligations (e.g., accounting records). Generally, inactive account data is retained for [3 years] after the last activity unless deletion is requested.
                         </p>
                         <p className="text-zinc-400 text-[15px] leading-relaxed">
-                            <strong>Deletion:</strong> You have the right to request the complete deletion of your data. You can exercise this right by contacting us at <a href="mailto:privacy@flowivate.com" className="text-white hover:underline">privacy@flowivate.com</a>. We will process your request in accordance with RGPD/GDPR regulations.
+                            <strong>Deletion:</strong> You have the right to request the complete deletion of your data. You can exercise this right by contacting us at <a href="mailto:flowivate@gmail.com" className="text-white hover:underline">flowivate@gmail.com</a>. We will process your request in accordance with RGPD/GDPR regulations.
                         </p>
                     </section>
 
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
                     <section>
                         <h2 className="text-xl font-semibold text-white mb-4">7. Contact Us</h2>
                         <p className="text-zinc-400 text-[15px] leading-relaxed">
-                            If you have any questions about this privacy policy or our privacy practices, please contact us at privacy@flowivate.com.
+                            If you have any questions about this privacy policy or our privacy practices, please contact us at flowivate@gmail.com.
                         </p>
                     </section>
 

@@ -3,6 +3,8 @@ import Navbar from "@/components/landing-page/Navbar";
 import Footer from "@/components/landing-page/Footer";
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
+import juliusPfp from "@/assets/images/julius-pfp2.png";
 
 export default function AboutPage() {
     return (
@@ -17,7 +19,11 @@ export default function AboutPage() {
                     {/* Profile Section */}
                     <div className="flex items-center gap-6">
                         {/* Avatar Placeholder */}
-                        <div className="w-20 h-20 rounded-full bg-zinc-800 border border-zinc-700 flex-shrink-0" />
+                        <Image
+                            src={juliusPfp}
+                            alt="Julius Peschard"
+                            className="w-20 h-20 rounded-full border border-zinc-700 object-cover flex-shrink-0"
+                        />
 
                         <div>
                             <h2 className="text-lg font-semibold text-white">Julius Peschard</h2>

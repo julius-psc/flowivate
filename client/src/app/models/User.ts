@@ -15,8 +15,13 @@ export interface IUser extends Document {
   resetPasswordToken?: string | null;
   resetPasswordExpires?: Date | null;
 
+  lemonSqueezyCustomerId?: string | null;
+  lemonSqueezySubscriptionId?: string | null;
+  lemonSqueezyVariantId?: string | null;
+  lemonSqueezyRenewsAt?: Date | null;
+
   stripeCustomerId?: string | null;
-  subscriptionStatus?: "active" | "canceled" | "past_due" | "unpaid" | "free";
+  subscriptionStatus?: "active" | "canceled" | "past_due" | "unpaid" | "free" | "on_trial" | "expired" | "paused";
   subscriptionPriceId?: string | null;
 
   pendingEmail?: string | null;
@@ -67,13 +72,18 @@ const UserSchema = new Schema<IUser>(
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
 
-    stripeCustomerId: { type: String, default: null },
+    lemonSqueezyCustomerId: { type: String, default: null },
+    lemonSqueezySubscriptionId: { type: String, default: null },
+    lemonSqueezyVariantId: { type: String, default: null },
+    lemonSqueezyRenewsAt: { type: Date, default: null },
+
+    stripeCustomerId: { type: String, default: null }, // Deprecated
     subscriptionStatus: {
       type: String,
-      enum: ["active", "canceled", "past_due", "unpaid", "free"],
+      enum: ["active", "canceled", "past_due", "unpaid", "free", "on_trial", "expired", "paused"], // Added LS statuses
       default: "free",
     },
-    subscriptionPriceId: { type: String, default: null },
+    subscriptionPriceId: { type: String, default: null }, // Deprecated
 
     pendingEmail: {
       type: String,

@@ -4,7 +4,7 @@ import Footer from "@/components/landing-page/Footer";
 import React from "react";
 
 // Types
-type UpdateTag = "AI" | "Performance" | "Reasoning" | "Multi-modal" | "UI/UX" | "Fix";
+type UpdateTag = "AI" | "Performance" | "Reasoning" | "Multi-modal" | "UI/UX" | "Fix" | "Launch";
 
 interface UpdateFeature {
   text: string;
@@ -29,36 +29,15 @@ interface Update {
 const updates: Update[] = [
   {
     version: "1.0",
-    date: "January 3, 2026",
-    title: "Flowivate Launch",
-    tags: ["AI", "UI/UX", "Performance"],
+    date: "January 19, 2026",
+    title: "Official Launch of Flowivate",
+    tags: ["Launch", "AI", "UI/UX"],
+    description: "We are thrilled to announce the official launch of Flowivate! After months of building and refining, we are ready to help you reclaim your focus and achieve your most important work.",
     features: [
-      { text: "Meet Lumo,", detail: "your AI-powered productivity companion" },
-      { text: "Focus Suite,", detail: "deep work timers, ambient sounds, and distraction blocking" },
-      { text: "Radically Modular,", detail: "customize your workspace exactly how you need it" },
-      { text: "Visual Momentum,", detail: "track your progress with beautiful, motivating dashboards" },
-    ],
-  },
-  {
-    version: "0.9-beta",
-    date: "December 20, 2025",
-    title: "API & Developer Tools",
-    tags: ["Performance"],
-    codeSnippet: {
-      language: "typescript",
-      code: `// Initialize Flowivate client
-import { Flowivate } from '@flowivate/sdk';
-
-const client = new Flowivate({
-  apiKey: process.env.FLOWIVATE_API_KEY,
-});
-
-await client.focus.startSession({ duration: 25 });`
-    },
-    features: [
-      { text: "Public API,", detail: "integrate Flowivate into your existing tools" },
-      { text: "Webhooks,", detail: "real-time notifications for focus sessions" },
-      { text: "SDK for TypeScript,", detail: "type-safe client library" },
+      { text: "Meet Lumo,", detail: "your proactive AI companion that helps you plan, prioritize, and reflect on your work." },
+      { text: "Deep Work Suite,", detail: "integrated timer, distraction blocking, and ambient soundscapes to induce flow." },
+      { text: "Modular Dashboard,", detail: "fully customizable workspace with widgets for tasks, habits, journal, and more." },
+      { text: "Visual Momentum,", detail: "beautiful analytics and streaks to keep you motivated and consistent." },
     ],
   },
 ];

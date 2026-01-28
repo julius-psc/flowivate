@@ -206,7 +206,7 @@ export default function DangerTab(): React.JSX.Element {
           </div>
           <div>
             <a
-              href="mailto:support@flowivate.com"
+              href="mailto:flowivate@gmail.com"
               className={`${styling.buttonBaseClasses} ${styling.buttonSecondaryClasses}`}
             >
               Contact support

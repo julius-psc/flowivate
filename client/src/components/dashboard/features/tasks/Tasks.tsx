@@ -327,7 +327,7 @@ const Tasks: React.FC = () => {
 
     return (
       <div key={task.id} className="relative group/task" title={task.name}>
-        <div className="flex items-center p-2 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-100/50 dark:border-zinc-700/50 hover:border-slate-200/70 dark:hover:border-zinc-600/70 transition-all duration-200">
+        <div className="flex items-center p-2 rounded-lg bg-white/90 dark:bg-secondary-black backdrop-blur-md border border-slate-100/50 dark:border-white/5 hover:border-slate-200/70 dark:hover:border-white/10 transition-all duration-200">
           <Checkbox
             checked={task.completed}
             onChange={() => handleToggleTaskCompletion(task.listId, task.id)}
@@ -397,7 +397,7 @@ const Tasks: React.FC = () => {
         !isLoadingLists &&
         !isErrorLists &&
         !taskLists?.some((l) => l._id?.startsWith("placeholder-")) && (
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 text-center">
+          <p className="text-xs text-slate-500 dark:text-zinc-600 mb-3 text-center">
             You have <span className="font-semibold">{totalIncomplete}</span> task{totalIncomplete !== 1 ? "s" : ""} remaining.
           </p>
         )}

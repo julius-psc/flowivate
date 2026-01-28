@@ -24,24 +24,28 @@ export default function Pricing() {
   const annualPrice = monthlyPrice * 12 * 0.8;
   const annualMonthlyPrice = annualPrice / 12;
 
-  const monthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID!;
-  const annualPriceId = process.env.NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID!;
+  const monthlyVariantId = process.env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID!;
+  const annualVariantId = process.env.NEXT_PUBLIC_LEMONSQUEEZY_ANNUAL_VARIANT_ID!;
 
   const handleCheckout = async () => {
-    const res = await fetch("/api/stripe/create-checkout-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        priceId: isAnnual ? annualPriceId : monthlyPriceId,
-        cancelUrl: window.location.href,
-      }),
-    });
+    try {
+      const res = await fetch("/api/lemonsqueezy/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          variantId: isAnnual ? annualVariantId : monthlyVariantId,
+          redirectUrl: `${window.location.origin}/dashboard`,
+        }),
+      });
 
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      console.error("Failed to create checkout session", data);
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("Failed to create checkout session", data);
+      }
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
     }
   };
 

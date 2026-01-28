@@ -38,13 +38,13 @@ const SubPopup: React.FC<SubPopupProps> = ({
   const handleUpgrade = async () => {
     setLoading(true);
     try {
-      const priceId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID!;
-      const res = await fetch("/api/stripe/create-checkout-session", {
+      const variantId = process.env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID!;
+      const res = await fetch("/api/lemonsqueezy/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          priceId,
-          cancelUrl: window.location.href,
+          variantId,
+          redirectUrl: `${window.location.origin}/dashboard`
         }),
       });
 

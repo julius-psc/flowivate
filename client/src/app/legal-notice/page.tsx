@@ -29,38 +29,24 @@ export default function LegalNoticePage() {
                             The website Flowivate is edited by:
                         </p>
                         <ul className="space-y-2 text-zinc-400 text-[15px]">
-                            <li><span className="text-white font-medium">Full Name (Micro-entrepreneur):</span> [Your Full Name]</li>
-                            <li><span className="text-white font-medium">Professional Address:</span> [Your Professional Address]</li>
-                            <li><span className="text-white font-medium">SIRET Number:</span> [Your SIRET Number]</li>
-                            <li><span className="text-white font-medium">RCS City:</span> [RCS City]</li>
-                            <li><span className="text-white font-medium">Contact Email:</span> contact@flowivate.com</li>
-                            <li><span className="text-white font-medium">Publication Director (Directeur de la publication):</span> [Your Full Name]</li>
+                            <li><span className="text-white font-medium">Full Name (Micro-entrepreneur):</span> Julius Peschard</li>
+                            <li><span className="text-white font-medium">Professional Address:</span> 15 Rue Jean Baptiste Colbert 14000 CAEN</li>
+                            <li><span className="text-white font-medium">SIRET Number:</span> 99928205600012</li>
+                            <li><span className="text-white font-medium">Contact Email:</span> flowivate@gmail.com</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-semibold text-white mb-4">2. Web Hosting</h2>
-                        <p className="text-zinc-400 text-[15px] leading-relaxed mb-4">
-                            The website is hosted by:
-                        </p>
-                        <ul className="space-y-2 text-zinc-400 text-[15px]">
-                            <li><span className="text-white font-medium">Host Name:</span> [Web Host Name, e.g., Vercel Inc.]</li>
-                            <li><span className="text-white font-medium">Address:</span> [Web Host Address]</li>
-                            <li><span className="text-white font-medium">Phone Number:</span> [Web Host Phone Number]</li>
-                        </ul>
-                    </section>
-
-                    <section>
-                        <h2 className="text-xl font-semibold text-white mb-4">3. Intellectual Property</h2>
+                        <h2 className="text-xl font-semibold text-white mb-4">2. Intellectual Property</h2>
                         <p className="text-zinc-400 text-[15px] leading-relaxed">
                             All content on this website (text, images, graphics, logo, icons, etc.) is the exclusive property of Flowivate unless otherwise stated. Any reproduction, distribution, modification, adaptation, retransmission, or publication of these elements, even partial, is strictly prohibited without the express written consent of the publication director.
                         </p>
                     </section>
 
                 </div>
-            </main>
+            </main >
 
             <Footer />
-        </div>
+        </div >
     );
 }

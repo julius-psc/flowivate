@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import whiteLogo from "../../assets/brand/logo-v1.5-white.svg";
+
+
 import {
     IconTarget,
     IconLungsFilled,
@@ -222,20 +224,7 @@ export default function About() {
 
                 {/* Left Column */}
                 <div className="flex flex-col items-start space-y-8 z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="flex -space-x-4">
-                            {[1, 2, 3, 4].map((i) => (
-                                <div
-                                    key={i}
-                                    className="w-10 h-10 rounded-full border-2 border-primary-black"
-                                    style={{ backgroundColor: `hsl(0, 0%, ${20 + i * 10}%)` }}
-                                />
-                            ))}
-                        </div>
-                        <span className="text-neutral-400 text-sm font-medium">
-                            100+ active users right now
-                        </span>
-                    </div>
+
 
                     <div className="space-y-4">
                         <h2 className="text-4xl md:text-5xl font-semibold text-white leading-tight tracking-tight">

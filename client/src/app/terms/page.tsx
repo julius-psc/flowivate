@@ -94,7 +94,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-xl font-semibold text-white mb-4">9. Contact Us</h2>
                         <p className="text-zinc-400 text-[15px] leading-relaxed">
-                            If you have any questions about these Terms of Service, please contact us at legal@flowivate.com.
+                            If you have any questions about these Terms of Service, please contact us at flowivate@gmail.com.
                         </p>
                     </section>
 

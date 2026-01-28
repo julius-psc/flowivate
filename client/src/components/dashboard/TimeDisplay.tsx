@@ -120,26 +120,26 @@ export default function TimeDisplay({
   const greetingTextClass = !isMounted
     ? 'text-transparent'
     : theme === 'jungle' || theme === 'ocean'
-    ? 'text-white/80'
-    : 'text-gray-600 dark:text-gray-400';
+      ? 'text-white/80'
+      : 'text-zinc-500 dark:text-zinc-500';
 
   const timeTextClass = !isMounted
     ? 'text-transparent'
     : theme === 'jungle' || theme === 'ocean'
-    ? 'text-white'
-    : 'text-gray-900 dark:text-gray-100';
+      ? 'text-white'
+      : 'text-gray-900 dark:text-gray-100';
 
   const quoteTextClass = !isMounted
     ? 'text-transparent'
     : theme === 'jungle' || theme === 'ocean'
-    ? 'text-white/70'
-    : 'text-gray-500 dark:text-gray-500';
+      ? 'text-white/70'
+      : 'text-zinc-400 dark:text-zinc-600';
 
   const streakColorClass = !isMounted
     ? 'text-transparent'
     : theme === 'jungle' || theme === 'ocean'
-    ? 'text-white'
-    : 'text-orange-500 dark:text-orange-400';
+      ? 'text-white'
+      : 'text-orange-500 dark:text-orange-400';
 
   const containerClasses = isCenteredFullScreen
     ? "min-h-screen flex flex-col items-center justify-center text-center p-4"
@@ -151,8 +151,10 @@ export default function TimeDisplay({
         <TimeDisplayPlaceholder isCenteredFullScreen={isCenteredFullScreen} />
       ) : (
         <div className="flex flex-col items-center w-full max-w-xl space-y-3">
-          <div className={`text-sm font-medium ${greetingTextClass}`}>
-            {greeting}, {username} • {formattedDate}
+          <div className="text-sm font-medium flex items-center gap-1">
+            <span className={quoteTextClass}>{greeting},</span>
+            <span className={greetingTextClass}>{username}</span>
+            <span className={quoteTextClass}>• {formattedDate}</span>
           </div>
 
           <div className="flex items-center gap-3">

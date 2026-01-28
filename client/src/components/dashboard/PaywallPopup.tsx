@@ -35,22 +35,22 @@ export default function PaywallPopup({ isOpen, onClose }: PaywallPopupProps) {
     const handleUpgrade = async () => {
         try {
             setLoading(true);
-            const monthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID;
-            const annualPriceId = process.env.NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID;
+            const monthlyVariantId = process.env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID;
+            const annualVariantId = process.env.NEXT_PUBLIC_LEMONSQUEEZY_ANNUAL_VARIANT_ID;
 
-            const priceId = isAnnual ? annualPriceId : monthlyPriceId;
+            const variantId = isAnnual ? annualVariantId : monthlyVariantId;
 
-            if (!priceId) {
-                console.error("Price ID not found");
+            if (!variantId) {
+                console.error("Variant ID not found");
                 return;
             }
 
-            const res = await fetch("/api/stripe/create-checkout-session", {
+            const res = await fetch("/api/lemonsqueezy/create-checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    priceId,
-                    cancelUrl: window.location.href,
+                    variantId,
+                    redirectUrl: `${window.location.origin}/dashboard`
                 }),
             });
             const data = await res.json();
@@ -166,7 +166,7 @@ export default function PaywallPopup({ isOpen, onClose }: PaywallPopupProps) {
                         {loading ? "Redirecting..." : "Upgrade to Elite"}
                     </button>
                     <p className="mt-4 text-[11px] text-center text-gray-400 dark:text-zinc-600">
-                        Cancel anytime. Secure payment via Stripe.
+                        Cancel anytime. Secure payment via Lemon Squeezy.
                     </p>
                 </div>
             </div>

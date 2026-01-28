@@ -200,7 +200,7 @@ const Meditation = () => {
             <h3 className="text-lg font-medium text-primary-black dark:text-secondary-white">
               Mindful Breathing
             </h3>
-            <p className="text-xs text-primary-black dark:text-gray-300 opacity-70 px-2">
+            <p className="text-xs text-slate-500 dark:text-zinc-600 px-2">
               Choose a duration to begin your meditation
             </p>
           </div>

@@ -364,7 +364,7 @@ const DeepWork: React.FC = () => {
         <h3 className="text-lg font-medium text-secondary-black dark:text-secondary-white">
           Deep Focus
         </h3>
-        <p className="text-xs text-primary-black dark:text-gray-300 opacity-70 px-2 text-center">
+        <p className="text-xs text-slate-500 dark:text-zinc-600 px-2 text-center">
           A distraction-free environment for your most important work
         </p>
       </div>
