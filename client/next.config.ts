@@ -25,7 +25,6 @@ const nextConfig: NextConfig = {
     ],
     qualities: [75, 95, 100],
   },
-  serverExternalPackages: ['isomorphic-dompurify', 'jsdom'],
 };
 
 export default nextConfig;

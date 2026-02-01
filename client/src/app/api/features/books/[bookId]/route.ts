@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { checkRateLimit } from "@/lib/checkRateLimit";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeNotes } from "@/lib/sanitize";
 
 interface Book {
   _id: ObjectId;
@@ -274,7 +274,7 @@ export async function PUT(
           }
         } else if (field === "notes") {
           if (typeof data[field] === "string") {
-            const trimmed = DOMPurify.sanitize(data[field]).trim();
+            const trimmed = sanitizeNotes(data[field]).trim();
             updatePayload[field] = trimmed === "" ? null : trimmed;
           } else if (data[field] === null) {
             updatePayload[field] = null;

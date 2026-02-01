@@ -4,7 +4,7 @@ import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { parse, isValid as isValidDateFn, format } from "date-fns";
 import { checkRateLimit } from "@/lib/checkRateLimit";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeNotes } from "@/lib/sanitize";
 
 interface JournalEntry {
   _id: ObjectId;
@@ -233,7 +233,7 @@ export async function PUT(
       );
     }
 
-    const content = DOMPurify.sanitize(data.content).trim();
+    const content = sanitizeNotes(data.content).trim();
     if (content.length > MAX_CONTENT_LENGTH) {
       return NextResponse.json(
         {

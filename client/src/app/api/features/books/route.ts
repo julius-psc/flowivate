@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { checkRateLimit } from "@/lib/checkRateLimit";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeNotes } from "@/lib/sanitize";
 
 interface Book {
   _id: ObjectId;
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
         );
       }
       // Sanitize notes before trimming and length check
-      notes = DOMPurify.sanitize(data.notes).trim();
+      notes = sanitizeNotes(data.notes).trim();
 
       if (notes.length > MAX_NOTES_LENGTH) {
         return NextResponse.json(
