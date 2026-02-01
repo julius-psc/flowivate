@@ -125,13 +125,19 @@ export async function POST(request: NextRequest) {
 
     const userObjectId = new ObjectId(sessionUserId);
 
-    const body = await request.json();
-    const { messages: rawMessages } = body;
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB || "Flowivate");
 
-    // Strict access control: Only allow "active" or "trialing" subscriptions to use AI
-    // "free" users should be blocked here if the frontend check is bypassed
+    // Verify subscription status directly from DB to avoid stale session data
+    // This fixes the issue where a user upgrades but their session still says "free"
+    const user = await db.collection('users').findOne(
+      { _id: userObjectId },
+      { projection: { subscriptionStatus: 1 } }
+    );
+
     // @ts-ignore - Check if session status is available from our custom auth.ts
-    const subscriptionStatus = session.user?.subscriptionStatus || "free";
+    // Use the DB status if available, fallback to session, then "free"
+    const subscriptionStatus = user?.subscriptionStatus || session.user?.subscriptionStatus || "free";
 
     // Allow 'active' and maybe 'trialing' if you have that status.
     // Adjust logic based on your exact status enum
@@ -139,6 +145,9 @@ export async function POST(request: NextRequest) {
       logApiError('POST', endpoint, sessionUserId, new Error(`Restricted access attempted by user with status: ${subscriptionStatus}`));
       return NextResponse.json({ message: 'Upgrade to Elite to use Lumo.' }, { status: 403 });
     }
+
+    const body = await request.json();
+    const { messages: rawMessages } = body;
 
     if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
       logApiError('POST', endpoint, sessionUserId, new Error('Invalid or empty messages array in request body'));
@@ -167,8 +176,6 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     };
 
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB || "Flowivate");
     const chatsCollection = db.collection<ChatConversation>('chats');
 
     const result = await chatsCollection.insertOne(newChat);

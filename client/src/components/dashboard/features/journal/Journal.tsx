@@ -129,6 +129,25 @@ export const Journal: React.FC<JournalProps> = ({
   const dateButtonRef = useRef<HTMLButtonElement>(null);
 
   const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
+  const [journalDates, setJournalDates] = useState<Set<string>>(new Set());
+
+  const fetchJournalDates = useCallback(async () => {
+    try {
+      const response = await fetch("/api/features/journal");
+      if (response.ok) {
+        const data = await response.json();
+        // Assuming the API returns { entries: [...] } and each entry has a date field
+        const dates = new Set<string>(data.entries.map((entry: any) => String(entry.date)));
+        setJournalDates(dates);
+      }
+    } catch (error) {
+      console.error("Failed to fetch journal dates", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchJournalDates();
+  }, [fetchJournalDates]);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -303,6 +322,7 @@ export const Journal: React.FC<JournalProps> = ({
           response.status === 201 ? "Entry created" : "Entry saved"
         );
         triggerLumoEvent("JOURNAL_SAVED");
+        fetchJournalDates();
       } else {
         const errorData = await response.json();
         const errorMessage = `Save failed: ${errorData.message || response.statusText
@@ -338,6 +358,7 @@ export const Journal: React.FC<JournalProps> = ({
       if (response.ok) {
         toast.success("Entry deleted");
         editorRef.current.commands.setContent("<p></p>");
+        fetchJournalDates();
       } else if (response.status === 404) {
         toast.error("Entry not found.");
         editorRef.current.commands.setContent("<p></p>");
@@ -389,7 +410,7 @@ export const Journal: React.FC<JournalProps> = ({
   const startDay = getDay(monthStart);
   const daysGrid = [...Array(startDay).fill(null), ...daysInMonth];
 
-  const containerBaseClasses = "flex flex-col flex-1 overflow-hidden max-w-screen-lg mx-auto w-full backdrop-blur-md rounded-xl transition-opacity duration-300 mb-4";
+  const containerBaseClasses = "flex flex-col flex-1 min-h-0 max-w-screen-lg mx-auto w-full backdrop-blur-md rounded-xl transition-opacity duration-300 mb-4";
   const containerPreMountClasses = "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
   const containerPostMountClasses = isSpecialTheme
     ? "dark bg-zinc-900/50 border border-zinc-800/50 opacity-100"
@@ -450,94 +471,97 @@ export const Journal: React.FC<JournalProps> = ({
               <ChevronLeft size={16} className={dateTextColor} />
             </button>
 
-            <button
-              ref={dateButtonRef}
-              onClick={toggleCalendar}
-              className={`text-3xl font-bold hover:opacity-70 transition-opacity relative ${dateTextColor}`}
-              disabled={isLoading || isSaving || isDeleting}
-            >
-              {format(selectedDate, "d")}
-            </button>
-
-            {isCalendarOpen && (
-              <div
-                ref={calendarRef}
-                className={`absolute z-50 border rounded-lg shadow-lg p-3 ${isSpecialTheme
-                    ? 'bg-zinc-900/70 border-zinc-700/50 backdrop-blur-sm' // Apply backdrop-blur here too
-                    : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
-                  }`}
-                style={{
-                  minWidth: "250px",
-                  top: dateButtonRef.current
-                    ? dateButtonRef.current.getBoundingClientRect().bottom + window.scrollY + 4
-                    : "auto",
-                  left: dateButtonRef.current
-                    ? dateButtonRef.current.getBoundingClientRect().left
-                    : "auto",
-                }}
+            <div className="relative">
+              <button
+                ref={dateButtonRef}
+                onClick={toggleCalendar}
+                className={`text-3xl font-bold hover:opacity-70 transition-opacity relative ${dateTextColor}`}
+                disabled={isLoading || isSaving || isDeleting}
               >
-                <div className="flex justify-between items-center mb-3">
-                  <button
-                    onClick={handlePrevMonth}
-                    className={`p-1 rounded-md ${buttonHoverBg}`}
-                  >
-                    <ChevronLeft size={16} className={dateTextColor} />
-                  </button>
-                  <span className={`font-medium ${dateTextColor}`}>
-                    {format(currentMonth, "MMMM yyyy")}
-                  </span>
-                  <button
-                    onClick={handleNextMonth}
-                    className={`p-1 rounded-md ${buttonHoverBg}`}
-                  >
-                    <ChevronRight size={16} className={dateTextColor} />
-                  </button>
-                </div>
+                {format(selectedDate, "d")}
+              </button>
 
-                <div className="grid grid-cols-7 gap-1 text-center">
-                  {dayOfWeekNames.map((day, index) => (
-                    <div
-                      key={index}
-                      className={`text-xs font-medium p-1 ${isSpecialTheme ? 'text-white/50' : 'text-gray-500 dark:text-gray-400'}`}
+              {isCalendarOpen && (
+                <div
+                  ref={calendarRef}
+                  className={`absolute z-50 border rounded-lg shadow-lg p-3 mt-2 left-1/2 -translate-x-1/2 ${isSpecialTheme
+                    ? "bg-zinc-900/90 border-zinc-700/50 backdrop-blur-md"
+                    : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
+                    }`}
+                  style={{
+                    minWidth: "280px",
+                  }}
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <button
+                      onClick={handlePrevMonth}
+                      className={`p-1 rounded-md ${buttonHoverBg}`}
                     >
-                      {day}
-                    </div>
-                  ))}
+                      <ChevronLeft size={16} className={dateTextColor} />
+                    </button>
+                    <span className={`font-medium ${dateTextColor}`}>
+                      {format(currentMonth, "MMMM yyyy")}
+                    </span>
+                    <button
+                      onClick={handleNextMonth}
+                      className={`p-1 rounded-md ${buttonHoverBg}`}
+                    >
+                      <ChevronRight size={16} className={dateTextColor} />
+                    </button>
+                  </div>
 
-                  {daysGrid.map((day, index) => {
-                    if (!day) {
-                      return <div key={`empty-${index}`} className="p-1 h-8 w-8" />;
-                    }
-                    const isSelectedDay = isSameDay(day, selectedDate);
-                    const isTodayDate = isToday(day);
-
-                    return (
-                      <button
-                        key={format(day, "yyyy-MM-dd")}
-                        onClick={() => handleDateSelect(day)}
-                        className={`
-                          h-8 w-8 rounded-md flex items-center justify-center text-sm transition-colors
-                          ${isSelectedDay
-                            ? isSpecialTheme
-                              ? "bg-white text-zinc-900 font-medium"
-                              : "bg-secondary-black dark:bg-white text-white dark:text-secondary-black font-medium"
-                            : isTodayDate
-                              ? isSpecialTheme
-                                ? "border border-white/40 text-white/80 hover:bg-white/10"
-                                : "border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
-                              : isSpecialTheme
-                                ? "text-white/80 hover:bg-white/10"
-                                : `hover:bg-gray-100 dark:hover:bg-gray-800 ${dateTextColor}` // Apply default text color if not today/selected
-                          }
-                        `}
+                  <div className="grid grid-cols-7 gap-1 text-center">
+                    {dayOfWeekNames.map((day, index) => (
+                      <div
+                        key={index}
+                        className={`text-xs font-medium p-1 ${isSpecialTheme
+                          ? "text-white/50"
+                          : "text-gray-500 dark:text-gray-400"
+                          }`}
                       >
-                        {format(day, "d")}
-                      </button>
-                    );
-                  })}
+                        {day}
+                      </div>
+                    ))}
+
+                    {daysGrid.map((day, index) => {
+                      if (!day) {
+                        return <div key={`empty-${index}`} className="p-1 h-8 w-8" />;
+                      }
+                      const dateString = format(day, "yyyy-MM-dd");
+                      const isSelectedDay = isSameDay(day, selectedDate);
+                      const isTodayDate = isToday(day);
+                      const hasEntry = journalDates.has(dateString);
+
+                      return (
+                        <button
+                          key={dateString}
+                          onClick={() => handleDateSelect(day)}
+                          className={`
+                            h-8 w-8 rounded-md flex items-center justify-center text-sm transition-colors relative
+                            ${isSelectedDay
+                              ? isSpecialTheme
+                                ? "bg-white text-zinc-900 font-medium"
+                                : "bg-secondary-black dark:bg-white text-white dark:text-secondary-black font-medium"
+                              : hasEntry
+                                ? "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-medium"
+                                : isTodayDate
+                                  ? isSpecialTheme
+                                    ? "border border-white/40 text-white/80 hover:bg-white/10"
+                                    : "border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                  : isSpecialTheme
+                                    ? "text-white/80 hover:bg-white/10"
+                                    : `hover:bg-gray-100 dark:hover:bg-gray-800 ${dateTextColor}`
+                            }
+                          `}
+                        >
+                          {format(day, "d")}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="flex flex-col">
               <span className={`text-sm font-medium ${dateTextColor}`}>
@@ -563,7 +587,7 @@ export const Journal: React.FC<JournalProps> = ({
           </div>
         </div>
 
-        <div className="relative flex-1 overflow-auto">
+        <div className="relative flex-1 overflow-auto rounded-b-xl">
           {isLoading ? (
             <div className="px-6 py-4 space-y-6 h-full overflow-hidden">
               <Skeleton className="h-12 w-[30%] rounded-lg" />

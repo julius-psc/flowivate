@@ -12,7 +12,11 @@ import { BookDisplayPanel } from "@/components/dashboard/features/books/BookDisp
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 
-const BookLogger: React.FC = () => {
+interface BookLoggerProps {
+  initialBookId?: string;
+}
+
+const BookLogger: React.FC<BookLoggerProps> = ({ initialBookId }) => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -45,12 +49,24 @@ const BookLogger: React.FC = () => {
       }
       const data = await response.json();
       setBooks(data.books);
-      if (data.books.length > 0 && !selectedBook) {
-        setSelectedBook(data.books[0]);
-      } else if (data.books.length > 0) {
-        // If a book was selected (e.g. persisted), ensure it's still in the list, else select first
-        const exists = data.books.find((b: Book) => b._id === selectedBook?._id);
-        if (!exists) setSelectedBook(data.books[0]);
+
+      // Selection logic with initialBookId support
+      if (data.books.length > 0) {
+        if (initialBookId) {
+          const preSelected = data.books.find((b: Book) => b._id === initialBookId);
+          if (preSelected) {
+            setSelectedBook(preSelected);
+          } else {
+            // Fallback if ID invalid/not found
+            setSelectedBook(data.books[0]);
+          }
+        } else if (!selectedBook) {
+          setSelectedBook(data.books[0]);
+        } else {
+          // If a book was selected (e.g. state persisted somehow, rare on fresh load), ensure it exists
+          const exists = data.books.find((b: Book) => b._id === selectedBook?._id);
+          if (!exists) setSelectedBook(data.books[0]);
+        }
       }
     } catch (err: unknown) {
       let message = "Error loading books. Please try again.";
