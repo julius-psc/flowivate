@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   res.cookies.set('earlyAccess', 'granted', {
     path: '/',
     httpOnly: true,
-    expires: new Date('2025-06-02T23:59:59Z'),
+    expires: new Date('2030-06-02T23:59:59Z'),
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
   });

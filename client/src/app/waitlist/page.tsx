@@ -59,84 +59,24 @@ export default function WaitlistPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-secondary-black px-4 py-12 text-secondary-white">
-      {/* Enhanced moving gradient background */}
-      <motion.div
-        className="absolute inset-0 z-0"
-        style={
-          {
-            backgroundImage:
-              "linear-gradient(135deg, #0075C4, #141618, #0075C4, #FCFDFF)",
-            backgroundSize: "400% 400%",
-            backgroundPosition: "0% 50%", // TS-safe with casting
-            opacity: 0.15,
-          } as React.CSSProperties
-        }
-        animate={
-          {
-            backgroundPosition: "100% 50%",
-          } as import("motion/react").Target
-        }
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "easeInOut",
-        }}
-      />
-
-      {/* Subtle animated accent circles */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-        <motion.div
-          className="absolute w-96 h-96 rounded-full bg-primary/10 blur-3xl"
-          initial={{ x: "-10%", y: "30%" }}
-          animate={{ x: "5%", y: "35%" }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut",
-          }}
-        />
-        <motion.div
-          className="absolute w-96 h-96 rounded-full bg-primary/5 blur-3xl"
-          initial={{ x: "80%", y: "60%" }}
-          animate={{ x: "70%", y: "65%" }}
-          transition={{
-            duration: 18,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut",
-          }}
-        />
-      </div>
-
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#121212] px-4 py-12 text-white">
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center gap-8 text-center max-w-xl">
+      <div className="relative z-10 flex flex-col items-center gap-8 text-center max-w-xl w-full">
         <div className="flex flex-col items-center gap-3">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <Image className="w-28 h-auto" alt="Flowivate's logo" src={logo} />
+            <Image className="w-16 h-auto" alt="Flowivate's logo" src={logo} />
           </motion.div>
-
-          <motion.h1
-            className="text-5xl md:text-6xl font-bold tracking-tight bg-gradient-to-r from-white to-primary bg-clip-text text-transparent"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            Flowivate
-          </motion.h1>
         </div>
 
         <motion.p
-          className="text-lg font-light text-secondary-white/90 leading-relaxed"
+          className="text-lg font-light text-[#999999] leading-relaxed max-w-md"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
         >
           Be the first to experience Flowivate — your all-in-one AI productivity
           dashboard built to help you focus, track, and thrive.
@@ -147,7 +87,7 @@ export default function WaitlistPage() {
           className="flex w-full max-w-md items-center gap-3 mt-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
         >
           <input
             type="email"
@@ -156,12 +96,12 @@ export default function WaitlistPage() {
             placeholder="Enter your email"
             required
             disabled={isSubmitting}
-            className="flex-1 rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 backdrop-blur-lg shadow-lg"
+            className="flex-1 h-12 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] px-4 text-white placeholder:text-[#666666] focus:outline-none focus:border-blue-500 transition-colors"
           />
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex items-center justify-center h-12 w-12 rounded-xl bg-white/5 border border-white/15 text-white transition-all hover:bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center h-12 w-12 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-white hover:bg-[#222222] hover:border-[#333333] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Join Waitlist"
           >
             {isSubmitting ? (
@@ -196,7 +136,7 @@ export default function WaitlistPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className={`mt-3 text-sm font-medium ${submitStatus === "success" ? "text-green-400" : "text-red-400"
+            className={`mt-1 text-sm font-medium ${submitStatus === "success" ? "text-green-400" : "text-red-400"
               }`}
           >
             {submitMessage}
@@ -207,26 +147,24 @@ export default function WaitlistPage() {
           className="flex flex-col items-center gap-6 mt-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
         >
-          <p className="text-sm font-medium text-white/50">
+          <p className="text-sm font-medium text-[#666666]">
             Launching 03.06.2025
           </p>
 
-          <div className="flex items-center gap-3 pl-2 pr-4 py-2 rounded-full bg-white/5 border border-white/10">
+          <div className="flex items-center gap-3 pl-2 pr-4 py-2 rounded-full bg-[#1a1a1a] border border-[#2a2a2a]">
             <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500/20">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
             </div>
-            <p className="text-sm text-secondary-white/80">
-              50+ already onboard
-            </p>
+            <p className="text-sm text-[#999999]">50+ already onboard</p>
           </div>
         </motion.div>
-        <p className="text-sm text-white/50 mt-6">
+        <p className="text-sm text-[#666666] mt-6">
           Already have access?{" "}
           <a
             href="/early-access"
-            className="text-primary underline hover:text-white transition"
+            className="text-blue-500 underline hover:text-blue-400 transition"
           >
             Enter password here
           </a>
@@ -237,7 +175,7 @@ export default function WaitlistPage() {
             target="_blank"
             rel="noopener noreferrer"
             href="https://instagram.com/flowivate"
-            className="text-white/70 hover:text-white transition-colors text-sm font-medium"
+            className="text-[#666666] hover:text-white transition-colors text-sm font-medium"
             aria-label="Instagram"
           >
             Instagram
@@ -246,7 +184,7 @@ export default function WaitlistPage() {
             target="_blank"
             rel="noopener noreferrer"
             href="https://x.com/flowivate"
-            className="text-white/70 hover:text-white transition-colors text-sm font-medium"
+            className="text-[#666666] hover:text-white transition-colors text-sm font-medium"
             aria-label="X"
           >
             X
