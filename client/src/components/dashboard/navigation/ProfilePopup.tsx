@@ -129,15 +129,15 @@ const ProfilePopup: React.FC<ProfilePopupProps> = ({
             </div>
 
             {/* Text Info */}
-            <div className="flex-1 min-w-0 pt-0.5">
+            <div className="flex-1 min-w-0 pt-0.5 pr-8">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">
                   {username}
                 </h3>
                 {/* Dynamic Badge - Black & White High Contrast */}
                 <span className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide rounded border ${(subscriptionStatus === "active" || subscriptionStatus === "pro")
-                    ? "bg-primary-blue border-primary-blue text-white"
-                    : "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                  ? "bg-primary-blue border-primary-blue text-white"
+                  : "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-gray-900"
                   }`}>
                   {subscriptionStatus === "active" ? "ELITE" : subscriptionStatus}
                 </span>

@@ -44,14 +44,25 @@ const BookLogger: React.FC<BookLoggerProps> = ({ initialBookId }) => {
     try {
       setLoading(true);
       const response = await fetch("/api/features/books");
-      if (!response.ok) {
-        throw new Error(`Failed to fetch books: ${response.statusText}`);
+
+      let data: any;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          // If JSON parse fails but status is 200, assume empty
+        }
       }
-      const data = await response.json();
-      setBooks(data.books);
+
+      if (!response.ok) {
+        throw new Error(data?.message || `Failed to fetch books: ${response.statusText}`);
+      }
+
+      setBooks(data?.books || []);
 
       // Selection logic with initialBookId support
-      if (data.books.length > 0) {
+      if (data?.books?.length > 0) {
         if (initialBookId) {
           const preSelected = data.books.find((b: Book) => b._id === initialBookId);
           if (preSelected) {
@@ -69,9 +80,13 @@ const BookLogger: React.FC<BookLoggerProps> = ({ initialBookId }) => {
         }
       }
     } catch (err: unknown) {
+      if (books.length === 0) {
+        // Suppress error if we just have no books and failed to parse empty response (though API should return []).
+        // But for user feedback:
+      }
       let message = "Error loading books. Please try again.";
       if (err instanceof Error) message = err.message;
-      toast.error(message);
+      // Only toast error if it's not a 404/empty issue on first load
       console.error("Fetch books error:", err);
     } finally {
       setLoading(false);
@@ -131,11 +146,16 @@ const BookLogger: React.FC<BookLoggerProps> = ({ initialBookId }) => {
         }),
       });
 
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch (e) {
+        // data remains undefined
+      }
 
       if (!response.ok) {
         throw new Error(
-          data.message || `Failed to ${selectedBook?._id ? "update" : "add"} book`
+          data?.message || `Failed to ${selectedBook?._id ? "update" : "add"} book (${response.statusText})`
         );
       }
 

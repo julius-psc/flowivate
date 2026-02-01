@@ -13,6 +13,7 @@ import Settings from "../../components/dashboard/privacy/settings";
 
 import ProactiveAssistant from "../../components/dashboard/features/ai/ProactiveAssistant";
 import MobileRestricted from "../../components/dashboard/MobileRestricted";
+import { AmbientProvider } from "@/context/AmbientContext";
 
 export default function DashboardLayout({
   children,
@@ -41,7 +42,9 @@ export default function DashboardLayout({
           <ThemeBackground />
         </div>
         <DashboardProvider>
-          <LayoutCore>{children}</LayoutCore>
+          <AmbientProvider>
+            <LayoutCore>{children}</LayoutCore>
+          </AmbientProvider>
         </DashboardProvider>
       </div>
     </ClientProvider>

@@ -7,8 +7,6 @@ import { type JWT as JWTType } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
-import { MongoDBAdapter } from "@auth/mongodb-adapter";
-import clientPromise from "@/lib/mongodb";
 
 import connectDB from "@/lib/mongoose";
 import User, { IUser } from "@/app/models/User";
@@ -18,7 +16,8 @@ const MONGODB_DB = process.env.MONGODB_DB;
 if (!MONGODB_DB) throw new Error("❌ MONGODB_DB environment variable not set");
 
 export const authConfig: NextAuthConfig = {
-  adapter: MongoDBAdapter(clientPromise, { databaseName: MONGODB_DB }),
+  // Removed MongoDBAdapter to handle user creation manually with Mongoose validation
+  // adapter: MongoDBAdapter(clientPromise, { databaseName: MONGODB_DB }),
 
   providers: [
     GitHub({
@@ -91,6 +90,59 @@ export const authConfig: NextAuthConfig = {
   session: { strategy: "jwt" },
 
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider && ["github", "google"].includes(account.provider)) {
+        await connectDB();
+
+        if (!user.email) return false;
+
+        try {
+          const existingUser = await User.findOne<IUser>({ email: user.email }).exec();
+
+          if (!existingUser) {
+            // New User Creation
+            let baseUsername =
+              user.email.split("@")[0] ||
+              user.name?.replace(/\s+/g, "").toLowerCase() ||
+              `user${Date.now()}`;
+
+            // Ensure unique username
+            let uniqueUsername = baseUsername;
+            let i = 0;
+            while (await User.exists({ username: uniqueUsername })) {
+              i++;
+              uniqueUsername = `${baseUsername}${i}`;
+            }
+
+            // Create user with Mongoose to ensure schema defaults and validation
+            await User.create({
+              email: user.email,
+              name: user.name || uniqueUsername,
+              image: user.image,
+              username: uniqueUsername,
+              authProvider: account.provider,
+              onboardingCompleted: false,
+              subscriptionStatus: "free",
+              // createdAt/updatedAt handled by timestamps
+            });
+
+            return "/onboarding";
+          }
+
+          // Existing User: Update info if needed (optional)
+          // We can sync image or name here if desired, but let's keep it simple.
+          // If onboarding not completed, redirect.
+          if (!existingUser.onboardingCompleted) {
+            return "/onboarding";
+          }
+        } catch (error) {
+          console.error("Error during social sign in:", error);
+          return false;
+        }
+      }
+      return true;
+    },
+
     async jwt({ token, user, account, trigger }): Promise<JWTType> {
       await connectDB();
 
@@ -107,67 +159,31 @@ export const authConfig: NextAuthConfig = {
       }
 
       if (user) {
-        token.id = user.id;
-        token.username = user.username ?? undefined;
-        token.image = user.image ?? undefined;
-        // @ts-ignore
-        token.subscriptionStatus = user.subscriptionStatus ?? "free";
-      }
+        // This runs on sign in.
+        // User should already exist in DB due to signIn callback.
+        // But we might need to fetch the DB ID if 'user' object from provider doesn't have it (it usually doesn't for social login initially unless adapter is used).
 
-      // Set authProvider based on account type
-      if (account) {
-        const provider = account.provider as "google" | "github" | "credentials";
-        token.authProvider = provider;
-      }
-
-      if (account && ["github", "google"].includes(account.provider)) {
-        const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
-
-        if (dbUser) {
-          token.id = dbUser._id.toString();
-          token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
-          token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
-          let changed = false;
-
-          // Update authProvider if not set
-          if (!dbUser.authProvider) {
-            dbUser.authProvider = account.provider as "google" | "github";
-            changed = true;
+        if (account && ["github", "google"].includes(account.provider)) {
+          const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
+          if (dbUser) {
+            token.id = dbUser._id.toString();
+            token.username = dbUser.username;
+            token.image = dbUser.image || user.image;
+            token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
+            token.authProvider = dbUser.authProvider as "google" | "github";
+            token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
           }
-
-          if (user.name && dbUser.name !== user.name) {
-            dbUser.name = user.name;
-            changed = true;
-          }
-          if (user.image && dbUser.image !== user.image) {
-            dbUser.image = user.image;
-            changed = true;
-          }
-          if (!dbUser.username) {
-            const baseUsername =
-              user.email?.split("@")[0] ||
-              user.name?.replace(/\s+/g, "").toLowerCase() ||
-              `user${Date.now()}`;
-
-            let potential = baseUsername;
-            let i = 0;
-            while (await User.findOne({ username: potential }).exec()) {
-              i++;
-              potential = `${baseUsername}${i}`;
-            }
-            dbUser.username = potential;
-            changed = true;
-          }
-
-          if (changed) await dbUser.save();
-          token.username = dbUser.username;
-          token.image = dbUser.image;
-          token.authProvider = dbUser.authProvider;
         } else {
-          token.username = user.email?.split("@")[0];
-          token.onboardingCompleted = false;
-          token.authProvider = account.provider as "google" | "github";
-          token.subscriptionStatus = "free";
+          // Credentials login returns correct user object with ID
+          token.id = user.id;
+          token.username = user.username ?? undefined;
+          token.image = user.image ?? undefined;
+          // @ts-ignore
+          token.subscriptionStatus = user.subscriptionStatus ?? "free";
+          // @ts-ignore
+          token.authProvider = user.authProvider || "credentials";
+          // @ts-ignore
+          token.onboardingCompleted = user.onboardingCompleted ?? false;
         }
       }
 
@@ -202,18 +218,6 @@ export const authConfig: NextAuthConfig = {
       if (url.startsWith(baseUrl)) return url;
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       return baseUrl;
-    },
-
-    async signIn({ user, account }) {
-      if (account?.provider && ["github", "google"].includes(account.provider)) {
-        await connectDB();
-        const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
-
-        if (dbUser && !dbUser.onboardingCompleted) {
-          return "/onboarding";
-        }
-      }
-      return true;
     },
   },
 };

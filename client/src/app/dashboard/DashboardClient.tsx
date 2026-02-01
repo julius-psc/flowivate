@@ -25,7 +25,7 @@ import {
 import {
   SortableContext,
   useSortable,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Masonry from "react-masonry-css";
@@ -128,7 +128,7 @@ export default function DashboardClient({
           >
             <SortableContext
               items={selectedFeatures}
-              strategy={verticalListSortingStrategy}
+              strategy={rectSortingStrategy}
             >
               <Masonry
                 breakpointCols={breakpointColumnsObj}
