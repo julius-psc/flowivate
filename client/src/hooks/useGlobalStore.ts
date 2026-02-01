@@ -10,6 +10,11 @@ export type LumoEvent =
 
 export type AppCommand = "START_BREAK" | "START_TIMER" | null;
 
+export interface MoodEntry {
+  mood: string;
+  timestamp: Date;
+}
+
 interface GlobalStoreState {
   lumoEvent: LumoEvent;
   triggerLumoEvent: (event: LumoEvent) => void;
@@ -18,6 +23,9 @@ interface GlobalStoreState {
   appCommand: AppCommand;
   triggerAppCommand: (command: AppCommand) => void;
   clearAppCommand: () => void;
+
+  moodHistory: MoodEntry[] | null;
+  setMoodHistory: (history: MoodEntry[]) => void;
 }
 
 export const useGlobalStore = create<GlobalStoreState>((set) => ({
@@ -28,4 +36,7 @@ export const useGlobalStore = create<GlobalStoreState>((set) => ({
   appCommand: null,
   triggerAppCommand: (command: AppCommand): void => set({ appCommand: command }),
   clearAppCommand: (): void => set({ appCommand: null }),
+
+  moodHistory: null,
+  setMoodHistory: (history: MoodEntry[]): void => set({ moodHistory: history }),
 }));

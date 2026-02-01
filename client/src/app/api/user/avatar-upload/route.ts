@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   let formData;
   try {
     formData = await request.formData();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return NextResponse.json(
       { message: "Invalid request payload" },
@@ -50,9 +50,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "No file provided" }, { status: 400 });
   }
 
-  if (!file.type.startsWith("image/")) {
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/jpg",
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
     return NextResponse.json(
-      { message: "Invalid file type. Only images are allowed." },
+      { message: "Invalid file type. Only JPG, PNG, WEBP, and GIF are allowed." },
       { status: 400 }
     );
   }
@@ -64,7 +72,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const fileExtension = file.name.split(".").pop();
+  // Determine extension from MIME type or original filename for safer handling
+  let fileExtension = file.name.split(".").pop()?.toLowerCase();
+
+  // Basic mapping/validation to prevent mismatch (e.g. exploit.html with image/jpeg header)
+  const mimeToExt: Record<string, string[]> = {
+    "image/jpeg": ["jpg", "jpeg"],
+    "image/png": ["png"],
+    "image/webp": ["webp"],
+    "image/gif": ["gif"],
+    "image/jpg": ["jpg", "jpeg"]
+  };
+
+  if (!fileExtension || !mimeToExt[file.type]?.includes(fileExtension)) {
+    // Fallback to a default extension based on MIME type if mismatch or missing
+    fileExtension = mimeToExt[file.type]?.[0] || "jpg";
+  }
+
   const blobName = `avatars/${userId}.${fileExtension}`;
 
   try {

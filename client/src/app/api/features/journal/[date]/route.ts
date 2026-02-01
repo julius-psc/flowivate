@@ -4,6 +4,7 @@ import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { parse, isValid as isValidDateFn, format } from "date-fns";
 import { checkRateLimit } from "@/lib/checkRateLimit";
+import DOMPurify from "isomorphic-dompurify";
 
 interface JournalEntry {
   _id: ObjectId;
@@ -232,7 +233,7 @@ export async function PUT(
       );
     }
 
-    const content = data.content.trim();
+    const content = DOMPurify.sanitize(data.content).trim();
     if (content.length > MAX_CONTENT_LENGTH) {
       return NextResponse.json(
         {
@@ -241,6 +242,7 @@ export async function PUT(
         { status: 400 }
       );
     }
+
 
     const client = await clientPromise;
     const db = client.db(DEFAULT_DB_NAME);

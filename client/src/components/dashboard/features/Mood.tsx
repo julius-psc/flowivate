@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { useGlobalStore, type MoodEntry } from "@/hooks/useGlobalStore";
 
 interface MoodOption {
   emoji: string;
@@ -76,10 +77,7 @@ const moodIcons: MoodOption[] = [
   },
 ];
 
-interface MoodEntry {
-  mood: string;
-  timestamp: Date;
-}
+// MoodEntry interface removed, imported from useGlobalStore
 
 const MoodInsights: React.FC<{
   moodHistory: MoodEntry[];
@@ -258,9 +256,10 @@ const MoodPickerSkeleton: React.FC<{ isSpecialTheme: boolean }> = ({
 const MoodPicker: React.FC = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [showInsights, setShowInsights] = useState(false);
-  const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
+  const { moodHistory, setMoodHistory } = useGlobalStore();
+  const history = moodHistory || [];
   const [hoveredMood, setHoveredMood] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(moodHistory === null);
   const [isMounted, setIsMounted] = useState(false);
   const { data: session, status } = useSession();
   const { theme } = useTheme();
@@ -277,7 +276,7 @@ const MoodPicker: React.FC = () => {
     );
 
   const todayStr = new Date().toDateString();
-  const todayEntry = moodHistory.find(
+  const todayEntry = history.find(
     (e) => new Date(e.timestamp).toDateString() === todayStr
   );
   // Do NOT automatically select today's mood if it's already logged, just highlight it visually if possible,
@@ -287,7 +286,8 @@ const MoodPicker: React.FC = () => {
   useEffect(() => {
     const fetchMoodHistory = async () => {
       if (status === "loading" || !isMounted) {
-        setLoading(true);
+        // Only show loading if we don't have history yet
+        if (!moodHistory) setLoading(true);
         return;
       }
       if (status === "unauthenticated") {
@@ -296,7 +296,8 @@ const MoodPicker: React.FC = () => {
         return;
       }
       if (session?.user?.email) {
-        setLoading(true);
+        // Only show loading if we don't have history yet
+        if (!moodHistory) setLoading(true);
         try {
           const res = await fetch("/api/features/mood", {
             credentials: "include",
@@ -349,12 +350,12 @@ const MoodPicker: React.FC = () => {
     }
 
     const now = new Date();
-    const todayMoodIndex = moodHistory.findIndex(
+    const todayMoodIndex = history.findIndex(
       (entry) => new Date(entry.timestamp).toDateString() === now.toDateString()
     );
     const newMoodEntry = { mood: selectedMood, timestamp: now };
-    const previousHistory = [...moodHistory];
-    const updatedHistory = [...moodHistory];
+    const previousHistory = [...history];
+    const updatedHistory = [...history];
 
     if (todayMoodIndex > -1) updatedHistory[todayMoodIndex] = newMoodEntry;
     else updatedHistory.unshift(newMoodEntry);
@@ -426,7 +427,7 @@ const MoodPicker: React.FC = () => {
   if (showInsights) {
     return (
       <MoodInsights
-        moodHistory={moodHistory}
+        moodHistory={history}
         onBack={handleToggleInsights}
         isSpecialTheme={isSpecialTheme}
       />

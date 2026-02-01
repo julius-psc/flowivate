@@ -195,10 +195,12 @@ export async function PUT(request: NextRequest) {
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
     const verificationLink = `${baseUrl}/api/user/verify-email?token=${token}`;
-    console.log(
-      "[DEV] Email change verification link:",
-      verificationLink
-    );
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        "[DEV] Email change verification link:",
+        verificationLink
+      );
+    }
 
     return NextResponse.json(
       {

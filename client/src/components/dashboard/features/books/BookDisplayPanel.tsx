@@ -21,6 +21,7 @@ import {
   getStatusColor,
   formatDate,
 } from "@/components/dashboard/features/books/bookUtils";
+import DOMPurify from "isomorphic-dompurify";
 
 interface BookDisplayPanelProps {
   selectedBook: Book | null;
@@ -129,7 +130,8 @@ export const BookDisplayPanel: React.FC<BookDisplayPanelProps> = ({
   };
 
   const renderNotesContent = (notes: string | undefined): { __html: string } => {
-    return { __html: notes || "<p>No notes available.</p>" };
+    const safeNotes = DOMPurify.sanitize(notes || "<p>No notes available.</p>");
+    return { __html: safeNotes };
   };
 
   // Base classes for the display panel
@@ -239,10 +241,10 @@ export const BookDisplayPanel: React.FC<BookDisplayPanelProps> = ({
                       <IconStarFilled
                         size={24}
                         className={`transition-colors ${rating <= (formData.rating || 0)
-                            ? "text-yellow-500"
-                            : isSpecialTheme
-                              ? "text-white/20"
-                              : "text-gray-300 dark:text-gray-600"
+                          ? "text-yellow-500"
+                          : isSpecialTheme
+                            ? "text-white/20"
+                            : "text-gray-300 dark:text-gray-600"
                           }`}
                       />
                     </button>

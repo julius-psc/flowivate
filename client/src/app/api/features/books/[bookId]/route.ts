@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { checkRateLimit } from "@/lib/checkRateLimit";
+import DOMPurify from "isomorphic-dompurify";
 
 interface Book {
   _id: ObjectId;
@@ -257,9 +258,9 @@ export async function PUT(
         } else if (field === "rating") {
           updatePayload[field] =
             data[field] === null ||
-            (typeof data[field] === "number" &&
-              data[field] >= 0 &&
-              data[field] <= 5)
+              (typeof data[field] === "number" &&
+                data[field] >= 0 &&
+                data[field] <= 5)
               ? data[field]
               : existingBook.rating;
         } else if (field === "genre") {
@@ -273,7 +274,7 @@ export async function PUT(
           }
         } else if (field === "notes") {
           if (typeof data[field] === "string") {
-            const trimmed = data[field].trim();
+            const trimmed = DOMPurify.sanitize(data[field]).trim();
             updatePayload[field] = trimmed === "" ? null : trimmed;
           } else if (data[field] === null) {
             updatePayload[field] = null;
