@@ -84,7 +84,7 @@ const ProfilePopup: React.FC<ProfilePopupProps> = ({
       month: "long",
       year: "numeric",
     }).format(joinedDate)
-    : "Unknown";
+    : "Recently joined";
 
   return (
     <div className={containerClasses}>

@@ -272,17 +272,20 @@ export default function Features() {
                     key={feature.key}
                     className={`
                       relative p-4 rounded-xl transition-all duration-150
-                      border
                       ${isLocked
                         ? "opacity-60 cursor-not-allowed"
                         : "cursor-pointer"
                       }
+                      ${isSpecialTheme
+                        ? "bg-zinc-900/60 backdrop-blur-md"
+                        : "border"
+                      }
                       ${isSelected
                         ? isSpecialTheme
-                          ? "border-secondary-white/20 bg-secondary-white/[0.05]"
+                          ? "bg-zinc-900/70"
                           : "border-secondary-black/12 bg-secondary-black/[0.02] dark:border-secondary-white/15 dark:bg-secondary-white/[0.03]"
                         : isSpecialTheme
-                          ? "border-secondary-white/10 hover:border-secondary-white/15"
+                          ? "hover:bg-zinc-900/80"
                           : "border-secondary-black/[0.06] hover:border-secondary-black/10 dark:border-secondary-white/[0.08] dark:hover:border-secondary-white/12"
                       }
                     `}

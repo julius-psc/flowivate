@@ -63,9 +63,21 @@ export async function GET() {
     return NextResponse.json({ message: "User not found" }, { status: 404 });
   }
 
+  // Debug logging for createdAt issue
+  if (!user.createdAt) {
+    console.warn(`[User API] User ${userObjectId} is missing createdAt timestamp. Setting it now.`);
+    // Attempt to set createdAt for users missing it
+    try {
+      user.createdAt = new Date();
+      await user.save();
+    } catch (updateError) {
+      console.error(`[User API] Failed to set createdAt for user ${userObjectId}:`, updateError);
+    }
+  }
+
   return NextResponse.json(
     {
-      joinedDate: user.createdAt,
+      joinedDate: user.createdAt || null,
       passwordLastUpdatedAt: user.passwordLastUpdatedAt,
       authProvider: user.authProvider ?? null,
     },
