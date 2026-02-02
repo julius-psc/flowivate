@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/Skeleton";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 
 interface Message {
   id: string;
@@ -49,6 +51,13 @@ const ChatPanel: React.FC<CommandBarProps> = ({
   setConversationId,
 }) => {
   const { highlightFeature, isFeatureSelected } = useDashboard();
+  const { theme } = useTheme();
+  const isSpecialTheme =
+    theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -366,17 +375,25 @@ const ChatPanel: React.FC<CommandBarProps> = ({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-xl flex flex-col bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden z-[101]"
+            className={`relative w-full max-w-xl flex flex-col rounded-xl overflow-hidden z-[101] transition-colors duration-300 ${isSpecialTheme
+              ? "bg-zinc-900/90 border-zinc-800 backdrop-blur-xl"
+              : "bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800"
+              }`}
             style={{ maxHeight: 'calc(100vh - 180px)' }}
           >
             {/* Header with close button */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className={`flex items-center justify-between px-4 py-3 border-b ${isSpecialTheme ? "border-zinc-800" : "border-gray-100 dark:border-zinc-800"
+              }`}>
+              <span className={`text-sm font-medium ${isSpecialTheme ? "text-white" : "text-gray-700 dark:text-gray-300"
+                }`}>
                 {messages.length > 0 ? `${messages.filter(m => !m.isTyping).length} messages` : 'New conversation'}
               </span>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className={`p-1 rounded-md transition-colors ${isSpecialTheme
+                  ? "hover:bg-zinc-800 text-zinc-400 hover:text-white"
+                  : "hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  }`}
               >
                 <IconX className="w-4 h-4" />
               </button>
@@ -405,7 +422,10 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                           setMessages([userMessage]);
                           fetchAndSetClaudeResponse(suggestion, [userMessage]);
                         }}
-                        className="px-3 py-1.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-lg text-xs text-gray-600 dark:text-gray-300 transition-colors"
+                        className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${isSpecialTheme
+                          ? "bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+                          : "bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-600 dark:text-gray-300"
+                          }`}
                       >
                         {suggestion}
                       </button>
@@ -432,8 +452,12 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                         <div className="flex items-start gap-2 w-full">
                           <div
                             className={`grow rounded-lg p-3 ${msg.sender === "user"
-                              ? "text-sm text-gray-700 dark:text-gray-300"
-                              : "bg-gray-50 dark:bg-zinc-800/50 text-sm text-gray-800 dark:text-gray-200"
+                              ? isSpecialTheme
+                                ? "text-sm text-white"
+                                : "text-sm text-gray-700 dark:text-gray-300"
+                              : isSpecialTheme
+                                ? "bg-zinc-800/80 text-sm text-gray-200 border border-zinc-700/50"
+                                : "bg-gray-50 dark:bg-zinc-800/50 text-sm text-gray-800 dark:text-gray-200"
                               }`}
                           >
                             <div className="text-sm leading-relaxed text-gray-800 dark:text-gray-200">
@@ -528,7 +552,8 @@ const ChatPanel: React.FC<CommandBarProps> = ({
             </div>
 
             {/* Input at the bottom - fixed position within panel */}
-            <div className="px-4 py-3 border-t border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+            <div className={`px-4 py-3 border-t ${isSpecialTheme ? "border-zinc-800 bg-transparent" : "border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+              }`}>
               <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                 <input
                   ref={inputRef}
@@ -536,7 +561,10 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask anything..."
-                  className="flex-1 py-2 px-3 bg-gray-50 dark:bg-zinc-800 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                  className={`flex-1 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm ${isSpecialTheme
+                    ? "bg-zinc-800/50 text-white placeholder-zinc-500 border border-zinc-700/50"
+                    : "bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                    }`}
                   autoComplete="off"
                 />
                 <button
@@ -544,7 +572,9 @@ const ChatPanel: React.FC<CommandBarProps> = ({
                   disabled={!inputText.trim() || isLoading}
                   className={`p-2 rounded-lg flex items-center justify-center transition-colors ${inputText.trim() && !isLoading
                     ? "bg-primary hover:bg-primary/80 text-white"
-                    : "bg-gray-200 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                    : isSpecialTheme
+                      ? "bg-zinc-800 text-zinc-600 cursor-not-allowed"
+                      : "bg-gray-200 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                     }`}
                   aria-label="Send message"
                 >

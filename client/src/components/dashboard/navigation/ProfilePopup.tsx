@@ -29,23 +29,13 @@ const ProfilePopup: React.FC<ProfilePopupProps> = ({
   onShare,
 }) => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>("free");
-  const [joinedDate, setJoinedDate] = useState<Date | null>(null);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [userRes, subRes] = await Promise.all([
-          fetch("/api/user"),
-          fetch("/api/user/subscription"),
-        ]);
-
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          if (userData.joinedDate) {
-            setJoinedDate(new Date(userData.joinedDate));
-          }
-        }
+        const subRes = await fetch("/api/user/subscription");
 
         if (subRes.ok) {
           const subData = await subRes.json();
@@ -78,13 +68,7 @@ const ProfilePopup: React.FC<ProfilePopupProps> = ({
     }
   `;
 
-  // Dynamic formatting for "Member since"
-  const formattedJoinDate = joinedDate
-    ? new Intl.DateTimeFormat("en-US", {
-      month: "long",
-      year: "numeric",
-    }).format(joinedDate)
-    : "Recently joined";
+
 
   return (
     <div className={containerClasses}>
@@ -147,9 +131,7 @@ const ProfilePopup: React.FC<ProfilePopupProps> = ({
                 {session.user.email}
               </p>
 
-              <p className="text-xs text-gray-400 dark:text-gray-500">
-                Member since {loading ? "..." : formattedJoinDate}
-              </p>
+
             </div>
           </div>
 

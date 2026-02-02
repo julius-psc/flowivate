@@ -216,7 +216,7 @@ function SortableFeature({
   }, [isHighlighted]);
 
   const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform) || undefined,
+    transform: CSS.Translate.toString(transform) || undefined,
     transition: transition || undefined,
     zIndex: isDragging ? 50 : "auto",
     opacity: isDragging ? 0.5 : 1,
