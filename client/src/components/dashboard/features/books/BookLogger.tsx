@@ -11,6 +11,8 @@ import { BookListPanel } from "@/components/dashboard/features/books/BookListPan
 import { BookDisplayPanel } from "@/components/dashboard/features/books/BookDisplayPanel";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
+import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
+import PaywallPopup from "@/components/dashboard/PaywallPopup";
 
 interface BookLoggerProps {
   initialBookId?: string;
@@ -32,6 +34,10 @@ const BookLogger: React.FC<BookLoggerProps> = ({ initialBookId }) => {
     setIsMounted(true);
     fetchBooks();
   }, []);
+
+  const { status: subscriptionStatus } = useSubscriptionStatus();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const isFreeUser = subscriptionStatus === "free";
 
   const isSpecialTheme =
     isMounted &&
@@ -94,6 +100,10 @@ const BookLogger: React.FC<BookLoggerProps> = ({ initialBookId }) => {
   };
 
   const handleAddNewBook = () => {
+    if (isFreeUser && books.length >= 3) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setSelectedBook(null);
     setIsEditing(true);
   };
@@ -238,6 +248,10 @@ const BookLogger: React.FC<BookLoggerProps> = ({ initialBookId }) => {
 
   return (
     <div className={`flex flex-col h-full w-full ${isSpecialTheme ? 'text-white' : 'text-secondary-black dark:text-secondary-white'}`}>
+      <PaywallPopup
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
       <div className="px-4 py-4">
         <div className="max-w-screen-lg mx-auto flex justify-end items-center">
           {books.length > 0 && (

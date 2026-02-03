@@ -750,7 +750,7 @@ const DeepWork: React.FC = () => {
   return (
     <div
       ref={componentRef}
-      className={`relative rounded-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out backdrop-blur-md ${isSpecialTheme
+      className={`relative rounded-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out backdrop-blur-md border ${isSpecialTheme
         ? "dark bg-zinc-900/50 border-zinc-800/50"
         : "bg-white/80 dark:bg-zinc-900/80 border-slate-200/50 dark:border-zinc-800/50"
         } ${setupStep === "active"

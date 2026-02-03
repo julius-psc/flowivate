@@ -117,10 +117,9 @@ const TaskLogger: React.FC = () => {
     }`;
 
   const isFreeUser = subscriptionStatus === "free";
-  const canAddList = !isFreeUser || taskLists.length < 2;
+  const canAddList = !isFreeUser || taskLists.length < 3;
 
-  const canAddTask = (list: (typeof taskLists)[number]) =>
-    !isFreeUser || list.tasks.length < 4;
+  const canAddTask = (list: (typeof taskLists)[number]) => true;
 
   const showNoListsMessage =
     status === "authenticated" &&

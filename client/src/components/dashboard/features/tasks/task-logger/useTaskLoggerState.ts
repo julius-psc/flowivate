@@ -201,12 +201,13 @@ export const useTaskLoggerState = () => {
     const isAddingTopLevelTask = !parentTaskId;
     const isFreeUser = subscriptionStatus === "free";
 
-    if (isAddingTopLevelTask && isFreeUser && list.tasks.length >= 4) {
-      toast.error(
-        "Free users can only have 4 tasks per list. Upgrade for more!"
-      );
-      return;
-    }
+    // Unlimited tasks for all users
+    // if (isAddingTopLevelTask && isFreeUser && list.tasks.length >= 4) {
+    //   toast.error(
+    //     "Free users can only have 4 tasks per list. Upgrade for more!"
+    //   );
+    //   return;
+    // }
 
     const newTask = createNewTask(taskName);
 
@@ -382,7 +383,7 @@ export const useTaskLoggerState = () => {
 
   const handleAddList = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const isFreeUser = subscriptionStatus === "free";
-    const canAddList = !isFreeUser || taskLists.length < 2;
+    const canAddList = !isFreeUser || taskLists.length < 3;
 
     if (
       e.key === "Enter" &&

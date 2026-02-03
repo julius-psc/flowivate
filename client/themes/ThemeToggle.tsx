@@ -8,10 +8,15 @@ import {
   specialSceneThemes,
   type ThemeName,
 } from "@/lib/themeConfig";
+import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
+import PaywallPopup from "@/components/dashboard/PaywallPopup";
 
 const ThemeToggle: React.FC = () => {
   const { theme, setTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
+  const { status: subscriptionStatus } = useSubscriptionStatus();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const isFreeUser = subscriptionStatus === "free";
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -22,9 +27,13 @@ const ThemeToggle: React.FC = () => {
 
   const handleThemeSelection = useCallback(
     (newTheme: ThemeName) => {
+      if (isFreeUser && newTheme !== "default") {
+        setShowUpgradeModal(true);
+        return;
+      }
       setTheme(newTheme);
     },
-    [setTheme]
+    [setTheme, isFreeUser]
   );
 
   if (!isMounted) {
@@ -41,6 +50,10 @@ const ThemeToggle: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <PaywallPopup
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
       <div>
         <div
           className="flex items-center space-x-3 p-1"
@@ -59,10 +72,9 @@ const ThemeToggle: React.FC = () => {
                 transition-all duration-200 ease-in-out
                 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950
                 focus:ring-secondary-black dark:focus:ring-secondary-white
-                ${
-                  theme === themeConfig.name
-                    ? "ring-2 ring-secondary-black dark:ring-secondary-white ring-offset-1 dark:ring-offset-gray-800 scale-110 shadow-md"
-                    : "hover:scale-110 hover:shadow-sm"
+                ${theme === themeConfig.name
+                  ? "ring-2 ring-secondary-black dark:ring-secondary-white ring-offset-1 dark:ring-offset-gray-800 scale-110 shadow-md"
+                  : "hover:scale-110 hover:shadow-sm"
                 }
               `}
               style={{ backgroundColor: themeConfig.color }}
@@ -91,10 +103,9 @@ const ThemeToggle: React.FC = () => {
                 style={{ backgroundColor: sceneTheme.color }}
                 className={`
                   w-12 h-8 rounded border border-gray-300 dark:border-gray-600 group-hover:shadow-md transition-shadow duration-150
-                  ${
-                    theme === sceneTheme.name
-                      ? "ring-2 ring-secondary-black dark:ring-secondary-white"
-                      : ""
+                  ${theme === sceneTheme.name
+                    ? "ring-2 ring-secondary-black dark:ring-secondary-white"
+                    : ""
                   }
                 `}
                 aria-hidden="true"

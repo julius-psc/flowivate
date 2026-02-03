@@ -39,16 +39,16 @@ type FeatureEntry = {
 export const featureComponents: Record<FeatureKey, FeatureEntry> = {
   Tasks: { component: Tasks },
   Pomodoro: { component: Pomodoro },
-  Ambient: { component: Ambient },
-  Mood: { component: Mood },
-  Assistant: { component: Assistant },
+  Ambient: { component: Ambient, isPro: true },
+  Mood: { component: Mood, isPro: true },
+  Assistant: { component: Assistant, isPro: true },
   Meditation: { component: Meditation },
   Water: { component: Water },
   Books: { component: Books },
-  Sleep: { component: Sleep },
+  Sleep: { component: Sleep, isPro: true },
   Affirmations: { component: Affirmations },
   Journal: { component: Journal },
-  DeepWork: { component: DeepWork },
+  DeepWork: { component: DeepWork, isPro: true },
 };
 
 // Optional: Get an array of available feature keys if needed elsewhere

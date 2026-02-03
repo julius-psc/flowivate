@@ -1,5 +1,6 @@
 import "./globals.css";
 import ThemeProvider from "../../themes/ThemeProvider";
+import DarkModeInit from "../../themes/DarkModeInit";
 import { Metadata } from "next";
 import { Toaster } from "sonner";
 import CookieConsent from "../components/CookieConsent";
@@ -21,6 +22,21 @@ export default function RootLayout({
           href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap"
           rel="stylesheet"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const theme = localStorage.getItem("theme") || "system";
+                const root = document.documentElement;
+                if (theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+                  root.classList.add("dark");
+                } else {
+                  root.classList.remove("dark");
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
       </head>
       <body className="font-sans antialiased">
         <CookieConsent />
@@ -30,6 +46,7 @@ export default function RootLayout({
           storageKey="background-theme"
           disableTransitionOnChange
         >
+          <DarkModeInit />
           <Toaster
             position="top-center"
             richColors
