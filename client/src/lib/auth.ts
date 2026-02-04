@@ -141,10 +141,9 @@ export const authConfig: NextAuthConfig = {
 
           // Existing User: Update info if needed (optional)
           // We can sync image or name here if desired, but let's keep it simple.
-          // If onboarding not completed, redirect.
-          if (!existingUser.onboardingCompleted) {
-            return "/onboarding";
-          }
+          // We do NOT force redirect to onboarding for existing users, as they might be logging in
+          // via a different methods or have completed it without the flag updating.
+          // By returning true, we allow the default redirection (e.g. to /dashboard).
         } catch (error) {
           console.error("Error during social sign in:", error);
           return false;
@@ -174,14 +173,16 @@ export const authConfig: NextAuthConfig = {
         // But we might need to fetch the DB ID if 'user' object from provider doesn't have it (it usually doesn't for social login initially unless adapter is used).
 
         if (account && ["github", "google"].includes(account.provider)) {
-          const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
-          if (dbUser) {
-            token.id = dbUser._id.toString();
-            token.username = dbUser.username;
-            token.image = dbUser.image || user.image;
-            token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
-            token.authProvider = dbUser.authProvider as "google" | "github";
-            token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
+          if (user.email) {
+            const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
+            if (dbUser) {
+              token.id = dbUser._id.toString();
+              token.username = dbUser.username;
+              token.image = dbUser.image || user.image;
+              token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
+              token.authProvider = dbUser.authProvider as "google" | "github";
+              token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
+            }
           }
         } else {
           // Credentials login returns correct user object with ID
