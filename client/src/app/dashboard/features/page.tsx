@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useDashboard } from "../../../context/DashboardContext";
-import { FeatureKey } from "../../../components/dashboard/features/featureMap";
+import { FeatureKey, featureComponents } from "../../../components/dashboard/features/featureMap";
 import { useTheme } from "next-themes";
 import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -19,7 +19,6 @@ const featureCategories = [
         key: "Assistant",
         displayName: "Lumo",
         description: "AI-powered productivity assistant",
-        proOnly: true,
         icon: "✨",
       },
     ],
@@ -31,28 +30,24 @@ const featureCategories = [
         key: "Tasks",
         displayName: "Tasks",
         description: "Plan and track your daily tasks",
-        proOnly: false,
         icon: "✓",
       },
       {
         key: "Pomodoro",
         displayName: "Pomodoro",
         description: "Timed sessions for focused work",
-        proOnly: false,
         icon: "⏱",
       },
       {
         key: "DeepWork",
         displayName: "Deep Work",
         description: "Distraction-free work mode",
-        proOnly: false,
         icon: "🎯",
       },
       {
         key: "Ambient",
         displayName: "Ambient",
         description: "Background sounds for concentration",
-        proOnly: false,
         icon: "🎧",
       },
     ],
@@ -64,21 +59,18 @@ const featureCategories = [
         key: "Meditation",
         displayName: "Meditation",
         description: "Guided sessions for mental clarity",
-        proOnly: false,
         icon: "🧘",
       },
       {
         key: "Affirmations",
         displayName: "Affirmations",
         description: "Daily positive reminders",
-        proOnly: false,
         icon: "💬",
       },
       {
         key: "Mood",
         displayName: "Mood",
         description: "Track and reflect on emotions",
-        proOnly: false,
         icon: "😊",
       },
     ],
@@ -90,21 +82,18 @@ const featureCategories = [
         key: "Water",
         displayName: "Water",
         description: "Hydration tracking throughout the day",
-        proOnly: false,
         icon: "💧",
       },
       {
         key: "Sleep",
         displayName: "Sleep",
         description: "Monitor and improve rest quality",
-        proOnly: false,
         icon: "🌙",
       },
       {
         key: "Books",
         displayName: "Books",
         description: "Organize your reading list",
-        proOnly: false,
         icon: "📚",
       },
     ],
@@ -252,16 +241,18 @@ export default function Features() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {category.features.map((feature) => {
                 const isSelected = isFeatureSelected(feature.key as FeatureKey);
-                const isProFeature = feature.proOnly;
+                // Determine if feature is Elite using the featureMap
+                const isEliteFeature = featureComponents[feature.key as FeatureKey]?.isPro;
+
                 const hasReachedLimit =
                   isFreeUser && selectedFeatures.length >= 4 && !isSelected;
 
                 let isLocked = false;
                 let lockReason = "";
 
-                if (isProFeature && isFreeUser) {
+                if (isEliteFeature && isFreeUser) {
                   isLocked = true;
-                  lockReason = "Pro";
+                  lockReason = "Elite";
                 } else if (hasReachedLimit) {
                   isLocked = true;
                   lockReason = "Limit";
@@ -270,6 +261,13 @@ export default function Features() {
                 return (
                   <div
                     key={feature.key}
+                    onClick={() => {
+                      if (isLocked) {
+                        setShowPaywall(true);
+                      } else {
+                        handleToggle(feature.key as FeatureKey);
+                      }
+                    }}
                     className={`
                       relative p-4 rounded-xl transition-all duration-150
                       ${isLocked
@@ -289,13 +287,6 @@ export default function Features() {
                           : "border-secondary-black/[0.06] hover:border-secondary-black/10 dark:border-secondary-white/[0.08] dark:hover:border-secondary-white/12"
                       }
                     `}
-                    onClick={() => {
-                      if (isLocked) {
-                        setShowPaywall(true);
-                      } else {
-                        handleToggle(feature.key as FeatureKey);
-                      }
-                    }}
                   >
                     {/* Card Layout: Icon left, Content middle, Toggle right */}
                     <div className="flex items-center gap-3">
@@ -319,10 +310,10 @@ export default function Features() {
                           >
                             {feature.displayName}
                           </span>
-                          {/* Pro Badge - inline with name */}
-                          {isProFeature && (
+                          {/* Elite Badge - inline with name */}
+                          {isEliteFeature && (
                             <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded text-primary-blue bg-primary-blue/10">
-                              Pro
+                              Elite
                             </span>
                           )}
                         </div>
@@ -391,7 +382,7 @@ export default function Features() {
             onClick={() => setShowPaywall(true)}
             className="text-primary-blue cursor-pointer hover:underline"
           >
-            Upgrade to Pro
+            Upgrade to Elite
           </span>{" "}
           for unlimited access.
         </p>
