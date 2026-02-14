@@ -10,6 +10,8 @@ interface ListHeaderProps {
   isPlaceholder: boolean;
   isDeleting: boolean;
   onDelete: () => void;
+  onClearAll?: () => void;
+  hasTasks?: boolean;
   isSpecialTheme: boolean;
 }
 
@@ -20,7 +22,9 @@ const ListHeader: React.FC<ListHeaderProps> = ({
   isPlaceholder,
   isDeleting,
   onDelete,
-  isSpecialTheme, // Destructure prop
+  onClearAll,
+  hasTasks = false,
+  isSpecialTheme,
 }) => {
   const dividerColor = isSpecialTheme
     ? "border-white/20"
@@ -34,6 +38,9 @@ const ListHeader: React.FC<ListHeaderProps> = ({
   const deleteTextColor = isSpecialTheme
     ? "text-red-400 hover:text-red-300 dark:hover:text-red-300"
     : "text-red-500 hover:text-red-600 dark:hover:text-red-400";
+  const clearTextColor = isSpecialTheme
+    ? "text-white/50 hover:text-white/80"
+    : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300";
 
   return (
     <div className="flex items-center justify-between mb-3">
@@ -49,6 +56,15 @@ const ListHeader: React.FC<ListHeaderProps> = ({
         >
           {completionRatio}
         </span>
+
+        {!isPlaceholder && onClearAll && hasTasks && (
+          <button
+            onClick={onClearAll}
+            className={`${clearTextColor} text-xs transition-colors duration-200`}
+          >
+            Clear all
+          </button>
+        )}
 
         {!isPlaceholder && (
           <button

@@ -107,15 +107,45 @@ export const useTaskLoggerState = () => {
 
   const updateListMutation = useMutation({
     mutationFn: tasksApi.updateTaskList,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
+    onMutate: async (updateData) => {
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey });
+
+      // Snapshot the previous value
+      const previousTaskLists = queryClient.getQueryData<TaskList[]>(queryKey);
+
+      // Optimistically update the cache
+      if (previousTaskLists) {
+        queryClient.setQueryData(
+          queryKey,
+          previousTaskLists.map((list) =>
+            list._id === updateData.id
+              ? {
+                ...list,
+                ...(updateData.tasks !== undefined && { tasks: updateData.tasks }),
+                ...(updateData.name !== undefined && { name: updateData.name }),
+              }
+              : list
+          )
+        );
+      }
+
+      return { previousTaskLists };
     },
-    onError: (error) => {
+    onError: (error, _updateData, context) => {
       console.error("Error updating list:", error);
+      // Revert to the previous state on error
+      if (context?.previousTaskLists) {
+        queryClient.setQueryData(queryKey, context.previousTaskLists);
+      }
       toast.error(
         `Failed to update list: ${error instanceof Error ? error.message : "Unknown error"
         }`
       );
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state is in sync
+      queryClient.invalidateQueries({ queryKey });
     },
   });
 

@@ -24,7 +24,6 @@ const Checkbox: React.FC<CheckboxProps> = ({
   const defaultColors = `
     border-primary dark:border-primary
     ${checked ? 'bg-primary dark:bg-primary' : 'bg-transparent'}
-    peer-focus:ring-primary-ring/50 dark:peer-focus:ring-primary-ring-dark/50 
     group-hover:border-primary dark:group-hover:border-primary
     ${disabled ? 'group-hover:border-primary dark:group-hover:border-primary' : ''}
   `;
@@ -32,7 +31,6 @@ const Checkbox: React.FC<CheckboxProps> = ({
   const subtaskColors = `
     border-accent-pink dark:border-accent-pink
     ${checked ? 'bg-accent-pink dark:bg-accent-pink' : 'bg-transparent'}
-    peer-focus:ring-accent-pink/50 dark:peer-focus:ring-accent-pink/50
     group-hover:border-accent-pink dark:group-hover:border-accent-pink
     ${disabled ? 'group-hover:border-accent-pink dark:group-hover:border-accent-pink' : ''} 
   `;
@@ -46,13 +44,13 @@ const Checkbox: React.FC<CheckboxProps> = ({
 
   return (
     // Use group for hover states on the container
-    <label className={`flex items-center select-none group min-w-0 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}>
+    <label className={`flex items-center select-none group min-w-0 transition-opacity duration-200 ${checked && !disabled ? 'opacity-50' : ''} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}>
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
         disabled={disabled}
-        className="absolute opacity-0 w-0 h-0 peer" // Peer is used for focus styles on the custom box
+        className="absolute opacity-0 w-0 h-0 peer focus:outline-none" // Peer is used for focus styles on the custom box
         aria-labelledby={labelId}
       />
       <span
@@ -60,9 +58,8 @@ const Checkbox: React.FC<CheckboxProps> = ({
           relative inline-block w-5 h-5 mr-3 flex-shrink-0
           border-2 rounded
           transition-all duration-300
-          peer-focus:ring-2 /* Enable ring, color/opacity set by variant */
           ${colorClasses}
-          ${disabled ? 'opacity-50' : ''} /* Apply opacity to the box itself when disabled */
+          ${disabled ? 'opacity-50' : ''}
         `}
         aria-hidden="true" // Hide visual representation from screen readers
       >
@@ -74,9 +71,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
       <span
         id={labelId}
         // Use Tailwind text color utilities or CSS variables for text
-        className={`text-base text-gray-600 dark:text-gray-400 truncate ${checked && !disabled ? 'line-through text-gray-400 dark:text-gray-500' : ''
-          } ${disabled ? 'text-gray-400 dark:text-gray-500' : '' // Muted color when disabled
-          }`}
+        className={`text-base text-gray-600 dark:text-gray-400 truncate ${disabled ? 'text-gray-400 dark:text-gray-500' : ''}`}
       >
         {label}
       </span>

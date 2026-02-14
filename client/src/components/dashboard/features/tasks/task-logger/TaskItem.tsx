@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   IconChevronDown,
   IconChevronRight,
   IconEdit,
   IconTrash,
   IconCopyPlus,
+  IconGripVertical,
 } from "@tabler/icons-react";
 import PriorityIconDisplay from "./PriorityIconDisplay";
 import PriorityDropdown from "./PriorityDropdown";
@@ -14,6 +15,8 @@ import { priorityLevels } from "./priorityLevels";
 import Checkbox from "../../../recyclable/Checkbox";
 import type { Task } from "@/types/taskTypes";
 import { motion, AnimatePresence } from "motion/react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface TaskItemProps {
   task: Task;
@@ -57,6 +60,7 @@ interface TaskItemProps {
   isDisabled: boolean;
   subscriptionStatus?: "active" | "canceled" | "past_due" | "free";
   isSpecialTheme: boolean;
+  isDraggable?: boolean;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -88,8 +92,10 @@ const TaskItem: React.FC<TaskItemProps> = ({
   isDisabled,
   subscriptionStatus = "free",
   isSpecialTheme,
+  isDraggable = false,
 }) => {
   const MAX_SUBTASKS = 6;
+  const MAX_TASK_NAME_LENGTH = 255;
   const isFreeUser = subscriptionStatus === "free";
   const isEditing = editingTaskId === task.id;
   const isExpanded = !!expandedTasks[task.id];
@@ -99,6 +105,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const subtaskLimitReached =
     isFreeUser && (task.subtasks?.length || 0) >= MAX_SUBTASKS;
 
+  const [isTextExpanded, setIsTextExpanded] = useState(false);
+
   const indentSize = 1.5;
   const indentStyle = { paddingLeft: `${level * indentSize}rem` };
   const addSubtaskIndentStyle = {
@@ -106,6 +114,26 @@ const TaskItem: React.FC<TaskItemProps> = ({
   };
 
   const taskItemRef = useRef<HTMLDivElement>(null);
+
+  // Sortable hook for drag-and-drop
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition: sortableTransition,
+    isDragging,
+  } = useSortable({
+    id: task.id,
+    disabled: !isDraggable || isDisabled || isPlaceholder,
+  });
+
+  const sortableStyle: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform) || undefined,
+    transition: sortableTransition || undefined,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : 'auto',
+  };
 
   const itemBg = isSpecialTheme
     ? "bg-white/5 dark:bg-white/5"
@@ -116,7 +144,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const itemHoverBorder = isSpecialTheme
     ? "hover:border-white/20 dark:hover:border-white/20"
     : "hover:border-slate-200/70 dark:hover:border-zinc-600/70";
-  const itemHoverShadow = isSpecialTheme ? "" : "hover:shadow-sm";
+  const itemHoverShadow = isSpecialTheme
+    ? ""
+    : "hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:hover:shadow-[0_2px_8px_rgba(0,0,0,0.2)]";
 
   const buttonHoverBg = isSpecialTheme
     ? "hover:bg-white/10 dark:hover:bg-white/10"
@@ -167,8 +197,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   }, [addingSubtaskTo, task.id, subtaskInputRef]);
 
+  // Sort subtasks: incomplete first (by priority desc), completed at bottom
   const sortedSubtasks = useMemo(() => {
-    return task.subtasks?.slice().sort((a, b) => b.priority - a.priority) ?? [];
+    if (!task.subtasks) return [];
+    const incomplete = task.subtasks
+      .filter((s) => !s.completed)
+      .sort((a, b) => b.priority - a.priority);
+    const completed = task.subtasks.filter((s) => s.completed);
+    return [...incomplete, ...completed];
   }, [task.subtasks]);
 
   const prevSubtaskCountRef = useRef(task.subtasks?.length || 0);
@@ -205,7 +241,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
             onChange={(e) => setEditingTaskValue?.(e.target.value)}
             onKeyDown={(e) => handleEditInputKeyDown(e, listId)}
             onBlur={() => handleSaveEditing(listId)}
-            className={`flex-1 bg-transparent focus:outline-none text-sm font-medium ${editInputText}`}
+            maxLength={MAX_TASK_NAME_LENGTH}
+            className={`flex-1 min-w-0 bg-transparent focus:outline-none text-sm font-medium ${editInputText}`}
             autoFocus
             disabled={isDisabled}
           />
@@ -215,221 +252,260 @@ const TaskItem: React.FC<TaskItemProps> = ({
   }
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.1 } }}
-      transition={{ duration: 0.2, layout: { duration: 0.2 } }}
-      ref={taskItemRef}
-      key={task.id}
-      className="relative group/task"
-      style={indentStyle}
+    <div
+      ref={(node) => {
+        setNodeRef(node);
+        (taskItemRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      }}
+      style={{ ...indentStyle, ...sortableStyle }}
+      className={`relative group/task ${isDragging ? "z-50" : isPriorityDropdownOpen ? "z-[9999]" : ""}`}
     >
-      <div
-        className={`flex items-center p-2 rounded-lg ${itemBg} ${itemBorder} ${itemHoverBorder} ${itemHoverShadow} backdrop-blur-md transition-all duration-200`}
+      <motion.div
+        layout={!isDragging}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.1 } }}
+        transition={{ duration: 0.2, layout: { duration: 0.2 } }}
       >
-        <div className="w-5 flex-shrink-0 flex items-center justify-center mr-2">
-          {hasSubtasks ? (
-            <button
-              onClick={() => toggleTaskExpansion(task.id)}
-              className={`p-1 rounded ${buttonHoverBg} ${iconColor} transition-colors`}
-              aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
-              aria-expanded={isExpanded}
-              disabled={isDisabled}
+        <div
+          className={`flex items-center p-2 rounded-lg border ${itemBg} ${itemBorder} ${itemHoverBorder} ${itemHoverShadow} backdrop-blur-md transition-all duration-200`}
+        >
+          {/* Drag handle */}
+          {isDraggable && !isPlaceholder && (
+            <div
+              {...attributes}
+              {...listeners}
+              className={`flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 mr-1 rounded opacity-0 group-hover/task:opacity-60 hover:!opacity-100 transition-opacity ${iconColor}`}
+              aria-label="Drag to reorder"
             >
-              {isExpanded ? (
-                <IconChevronDown size={14} />
-              ) : (
-                <IconChevronRight size={14} />
-              )}
-            </button>
-          ) : (
-            <div className="w-5" aria-hidden="true"></div>
+              <IconGripVertical size={14} />
+            </div>
+          )}
+
+          <div className="w-5 flex-shrink-0 flex items-center justify-center mr-2">
+            {hasSubtasks ? (
+              <button
+                onClick={() => toggleTaskExpansion(task.id)}
+                className={`p-1 rounded ${buttonHoverBg} ${iconColor} transition-colors`}
+                aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+                aria-expanded={isExpanded}
+                disabled={isDisabled}
+              >
+                {isExpanded ? (
+                  <IconChevronDown size={14} />
+                ) : (
+                  <IconChevronRight size={14} />
+                )}
+              </button>
+            ) : (
+              <div className="w-5" aria-hidden="true"></div>
+            )}
+          </div>
+
+          <div
+            className="flex-1 mr-2 cursor-pointer min-w-0"
+            onDoubleClick={() => !isDisabled && handleStartEditing(listId, task)}
+          >
+            <Checkbox
+              checked={task.completed}
+              onChange={() =>
+                !isDisabled && handleToggleTaskCompletion(listId, task.id)
+              }
+              label={task.name}
+              variant={isSubtask ? "subtask" : "default"}
+              disabled={isDisabled}
+              className={isTextExpanded ? "" : ""}
+            />
+            {/* Show full text or truncated */}
+            {!isTextExpanded && task.name.length > 60 && (
+              <button
+                onClick={() => setIsTextExpanded(true)}
+                className={`text-xs ml-8 mt-0.5 ${isSpecialTheme ? "text-white/40 hover:text-white/60" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"} transition-colors`}
+              >
+                Show more
+              </button>
+            )}
+            {isTextExpanded && task.name.length > 60 && (
+              <button
+                onClick={() => setIsTextExpanded(false)}
+                className={`text-xs ml-8 mt-0.5 ${isSpecialTheme ? "text-white/40 hover:text-white/60" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"} transition-colors`}
+              >
+                Show less
+              </button>
+            )}
+          </div>
+
+          {!isPlaceholder && (
+            <div className="flex items-center gap-1 ml-auto pl-1 flex-shrink-0">
+              <div className="flex items-center gap-1 opacity-0 group-hover/task:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                <button
+                  onClick={() => !isDisabled && handleStartEditing(listId, task)}
+                  title="Edit task"
+                  className={`p-1 rounded ${buttonHoverBg} ${iconColor} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                  disabled={isDisabled}
+                >
+                  <IconEdit size={14} />
+                </button>
+                <button
+                  onClick={() => !isDisabled && handleDeleteTask(listId, task.id)}
+                  title="Delete task"
+                  className={`p-1 rounded ${deleteHoverBg} ${deleteIconColor} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                  disabled={isDisabled}
+                >
+                  <IconTrash size={14} />
+                </button>
+              </div>
+
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (!isDisabled) togglePriorityDropdown(task.id);
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  title={`Priority: ${priorityLevels.find((p) => p.level === task.priority)?.label ||
+                    "None"
+                    }`}
+                  className={`p-1 rounded ${buttonHoverBg} ${iconColor} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                  aria-haspopup="true"
+                  aria-expanded={isPriorityDropdownOpen}
+                  disabled={isDisabled}
+                >
+                  <PriorityIconDisplay level={task.priority} />
+                </button>
+                {isPriorityDropdownOpen && (
+                  <PriorityDropdown
+                    taskId={task.id}
+                    listId={listId}
+                    currentPriority={task.priority}
+                    onSetPriority={handleSetPriority}
+                    onClose={() => togglePriorityDropdown(task.id)}
+                  />
+                )}
+              </div>
+            </div>
           )}
         </div>
 
-        <div
-          className="flex-1 mr-2 cursor-pointer min-w-0"
-          onDoubleClick={() => !isDisabled && handleStartEditing(listId, task)}
-        >
-          <Checkbox
-            checked={task.completed}
-            onChange={() =>
-              !isDisabled && handleToggleTaskCompletion(listId, task.id)
-            }
-            label={task.name}
-            variant={isSubtask ? "subtask" : "default"}
-            disabled={isDisabled}
-          />
-        </div>
-
-        {!isPlaceholder && (
-          <div className="flex items-center gap-1 ml-auto pl-1 flex-shrink-0">
-            <div className="flex items-center gap-1 opacity-0 group-hover/task:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-              <button
-                onClick={() => !isDisabled && handleStartEditing(listId, task)}
-                title="Edit task"
-                className={`p-1 rounded ${buttonHoverBg} ${iconColor} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                disabled={isDisabled}
-              >
-                <IconEdit size={14} />
-              </button>
-              <button
-                onClick={() => !isDisabled && handleDeleteTask(listId, task.id)}
-                title="Delete task"
-                className={`p-1 rounded ${deleteHoverBg} ${deleteIconColor} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                disabled={isDisabled}
-              >
-                <IconTrash size={14} />
-              </button>
-            </div>
-
-            <div className="relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!isDisabled) togglePriorityDropdown(task.id);
-                }}
-                title={`Priority: ${priorityLevels.find((p) => p.level === task.priority)?.label ||
-                  "None"
-                  }`}
-                className={`p-1 rounded ${buttonHoverBg} ${iconColor} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                aria-haspopup="true"
-                aria-expanded={isPriorityDropdownOpen}
-                disabled={isDisabled}
-              >
-                <PriorityIconDisplay level={task.priority} />
-              </button>
-              {isPriorityDropdownOpen && (
-                <PriorityDropdown
-                  taskId={task.id}
+        <AnimatePresence initial={false}>
+          {hasSubtasks && isExpanded && (
+            <motion.div
+              key="subtasks-container"
+              initial={{ height: 0, opacity: 0, overflow: "hidden" }}
+              animate={{ height: "auto", opacity: 1, overflow: "visible" }}
+              exit={{ height: 0, opacity: 0, overflow: "hidden" }}
+              transition={{ duration: 0.2, overflow: { delay: 0.2 } }}
+              className="mt-1 space-y-1"
+            >
+              {sortedSubtasks.map((subtask: Task) => (
+                <TaskItem
+                  key={subtask.id}
+                  task={subtask}
                   listId={listId}
-                  currentPriority={task.priority}
-                  onSetPriority={handleSetPriority}
-                  onClose={() => togglePriorityDropdown(task.id)}
+                  level={level + 1}
+                  expandedTasks={expandedTasks}
+                  toggleTaskExpansion={toggleTaskExpansion}
+                  editingTaskId={editingTaskId}
+                  editingTaskValue={editingTaskValue}
+                  editInputRef={editInputRef}
+                  handleStartEditing={handleStartEditing}
+                  setEditingTaskValue={setEditingTaskValue}
+                  handleEditInputKeyDown={handleEditInputKeyDown}
+                  handleSaveEditing={handleSaveEditing}
+                  handleCancelEditing={handleCancelEditing}
+                  openPriorityDropdown={openPriorityDropdown}
+                  togglePriorityDropdown={togglePriorityDropdown}
+                  handleToggleTaskCompletion={handleToggleTaskCompletion}
+                  handleDeleteTask={handleDeleteTask}
+                  handleSetPriority={handleSetPriority}
+                  addingSubtaskTo={addingSubtaskTo}
+                  setAddingSubtaskTo={setAddingSubtaskTo}
+                  subtaskInputRef={subtaskInputRef}
+                  activeTaskInputValues={activeTaskInputValues}
+                  setActiveTaskInputValues={setActiveTaskInputValues}
+                  handleKeyDownTaskInput={handleKeyDownTaskInput}
+                  isPlaceholder={isPlaceholder}
+                  isDisabled={isDisabled}
+                  subscriptionStatus={subscriptionStatus}
+                  isSpecialTheme={isSpecialTheme}
+                  isDraggable={false}
                 />
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      <AnimatePresence initial={false}>
-        {hasSubtasks && isExpanded && (
+        {!isPlaceholder && level === 0 && (
           <motion.div
-            key="subtasks-container"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mt-1 space-y-1 overflow-hidden"
-          >
-            {sortedSubtasks.map((subtask: Task) => (
-              <TaskItem
-                key={subtask.id}
-                task={subtask}
-                listId={listId}
-                level={level + 1}
-                expandedTasks={expandedTasks}
-                toggleTaskExpansion={toggleTaskExpansion}
-                editingTaskId={editingTaskId}
-                editingTaskValue={editingTaskValue}
-                editInputRef={editInputRef}
-                handleStartEditing={handleStartEditing}
-                setEditingTaskValue={setEditingTaskValue}
-                handleEditInputKeyDown={handleEditInputKeyDown}
-                handleSaveEditing={handleSaveEditing}
-                handleCancelEditing={handleCancelEditing}
-                openPriorityDropdown={openPriorityDropdown}
-                togglePriorityDropdown={togglePriorityDropdown}
-                handleToggleTaskCompletion={handleToggleTaskCompletion}
-                handleDeleteTask={handleDeleteTask}
-                handleSetPriority={handleSetPriority}
-                addingSubtaskTo={addingSubtaskTo}
-                setAddingSubtaskTo={setAddingSubtaskTo}
-                subtaskInputRef={subtaskInputRef}
-                activeTaskInputValues={activeTaskInputValues}
-                setActiveTaskInputValues={setActiveTaskInputValues}
-                handleKeyDownTaskInput={handleKeyDownTaskInput}
-                isPlaceholder={isPlaceholder}
-                isDisabled={isDisabled}
-                subscriptionStatus={subscriptionStatus}
-                isSpecialTheme={isSpecialTheme}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {!isPlaceholder && level === 0 && (
-        <motion.div
-          layout
-          className={`mt-1 overflow-hidden transition-all duration-200 ease-in-out ${addingSubtaskTo === task.id
+            layout={!isDragging}
+            className={`mt-1 overflow-hidden transition-all duration-200 ease-in-out ${addingSubtaskTo === task.id
               ? "h-12 py-1"
               : "h-0 group-hover/task:h-8 group-hover/task:py-1"
-            }`}
-          style={addSubtaskIndentStyle}
-        >
-          {addingSubtaskTo === task.id ? (
-            <input
-              ref={(el) => {
-                if (subtaskInputRef.current) {
-                  subtaskInputRef.current[task.id] = el;
-                }
-              }}
-              id={`subtask-input-${task.id}`}
-              type="text"
-              value={activeTaskInputValues[`subtask-${task.id}`] ?? ""}
-              onChange={(e) => {
-                const { value } = e.target;
-                setActiveTaskInputValues((prev) => ({
-                  ...prev,
-                  [`subtask-${task.id}`]: value,
-                }));
-              }}
-              onKeyDown={(e) => handleKeyDownTaskInput(e, listId, task.id)}
-              onBlur={(e) => {
-                setTimeout(() => {
-                  const relatedTarget =
-                    (e.relatedTarget as HTMLElement) || document.activeElement;
-                  const isFocusOutside =
-                    !taskItemRef.current?.contains(relatedTarget);
-                  if (
-                    isFocusOutside &&
-                    !e.target.value.trim() &&
-                    addingSubtaskTo === task.id
-                  ) {
-                    setAddingSubtaskTo(null);
-                    setActiveTaskInputValues((prev) => {
-                      const newState = { ...prev };
-                      delete newState[`subtask-${task.id}`];
-                      return newState;
-                    });
+              }`}
+            style={{ ...addSubtaskIndentStyle, paddingRight: '0.25rem' }}
+          >
+            {addingSubtaskTo === task.id ? (
+              <input
+                ref={(el) => {
+                  if (subtaskInputRef.current) {
+                    subtaskInputRef.current[task.id] = el;
                   }
-                }, 100);
-              }}
-              className={`p-2 ${subtaskInputBg} backdrop-blur-md rounded-lg ${subtaskInputBorder} focus:outline-none focus:ring-1 ${subtaskInputFocusRing} text-sm ${subtaskInputText} transition-all duration-200 disabled:opacity-50 block w-full`}
-              placeholder="New subtask..."
-              disabled={isDisabled}
-              autoFocus
-            />
-          ) : (
-            !subtaskLimitReached && (
-              <button
-                onClick={() => !isDisabled && setAddingSubtaskTo(task.id)}
-                className={`flex items-center gap-1 ${addSubtaskText} text-sm transition-colors duration-200 py-1 disabled:opacity-50 disabled:cursor-not-allowed w-full h-full`}
-                title="Add subtask"
+                }}
+                id={`subtask-input-${task.id}`}
+                type="text"
+                value={activeTaskInputValues[`subtask-${task.id}`] ?? ""}
+                onChange={(e) => {
+                  const { value } = e.target;
+                  setActiveTaskInputValues((prev) => ({
+                    ...prev,
+                    [`subtask-${task.id}`]: value,
+                  }));
+                }}
+                onKeyDown={(e) => handleKeyDownTaskInput(e, listId, task.id)}
+                onBlur={(e) => {
+                  setTimeout(() => {
+                    const relatedTarget =
+                      (e.relatedTarget as HTMLElement) || document.activeElement;
+                    const isFocusOutside =
+                      !taskItemRef.current?.contains(relatedTarget);
+                    if (
+                      isFocusOutside &&
+                      !e.target.value.trim() &&
+                      addingSubtaskTo === task.id
+                    ) {
+                      setAddingSubtaskTo(null);
+                      setActiveTaskInputValues((prev) => {
+                        const newState = { ...prev };
+                        delete newState[`subtask-${task.id}`];
+                        return newState;
+                      });
+                    }
+                  }, 100);
+                }}
+                maxLength={MAX_TASK_NAME_LENGTH}
+                className={`p-2 min-w-0 box-border ${subtaskInputBg} backdrop-blur-md rounded-lg border ${subtaskInputBorder} focus:outline-none focus:ring-1 ${subtaskInputFocusRing} text-sm ${subtaskInputText} transition-all duration-200 disabled:opacity-50 block w-full`}
+                placeholder="New subtask..."
                 disabled={isDisabled}
-                tabIndex={-1}
-              >
-                <IconCopyPlus size={14} /> <span>Add subtask</span>
-              </button>
-            )
-          )}
-        </motion.div>
-      )}
-    </motion.div>
+                autoFocus
+              />
+            ) : (
+              !subtaskLimitReached && (
+                <button
+                  onClick={() => !isDisabled && setAddingSubtaskTo(task.id)}
+                  className={`flex items-center gap-1 ${addSubtaskText} text-sm transition-colors duration-200 py-1 disabled:opacity-50 disabled:cursor-not-allowed w-full h-full`}
+                  title="Add subtask"
+                  disabled={isDisabled}
+                  tabIndex={-1}
+                >
+                  <IconCopyPlus size={14} /> <span>Add subtask</span>
+                </button>
+              )
+            )}
+          </motion.div>
+        )}
+      </motion.div>
+    </div>
   );
 };
 

@@ -283,7 +283,7 @@ export default function Sleep() {
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-sm text-secondary-black dark:text-secondary-white opacity-40">
           SLEEP
-        </h1> 
+        </h1>
       </div>
       <div className="">
         <div className="flex items-center justify-center">

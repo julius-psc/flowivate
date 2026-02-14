@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useCallback } from "react";
 import { IconSparkles, IconLoader2 } from "@tabler/icons-react";
 
 interface AddTaskInputProps {
@@ -18,7 +18,7 @@ interface AddTaskInputProps {
   handleBlur: (e: React.FocusEvent<HTMLInputElement>, listId: string) => void;
   onAiClick: () => void;
   isDisabled: boolean;
-  isSpecialTheme: boolean; // <-- Added theme prop
+  isSpecialTheme: boolean;
   isFreeUser: boolean;
   onPaywallTrigger: () => void;
 }
@@ -35,51 +35,74 @@ const AddTaskInput: React.FC<AddTaskInputProps> = ({
   handleBlur,
   onAiClick,
   isDisabled,
-  isSpecialTheme, // <-- Destructure theme prop
+  isSpecialTheme,
   isFreeUser,
   onPaywallTrigger,
 }) => {
   // Theme-aware styles
   const inputBg = isSpecialTheme
-    ? "bg-black/10 dark:bg-black/10" // Subtle dark input bg
+    ? "bg-black/10 dark:bg-black/10"
     : "bg-slate-50/90 dark:bg-zinc-800/90";
   const inputBorder = isSpecialTheme
-    ? "border-white/15 dark:border-white/15" // Lighter border
+    ? "border-white/15 dark:border-white/15"
     : "border-slate-200/50 dark:border-zinc-700/50";
   const inputText = isSpecialTheme
-    ? "text-white/90 dark:text-white/90" // Lighter text
+    ? "text-white/90 dark:text-white/90"
     : "text-slate-900 dark:text-slate-200";
   const inputFocusRing = isSpecialTheme
-    ? "focus:ring-white/50 dark:focus:ring-white/50" // Lighter focus ring
+    ? "focus:ring-white/50 dark:focus:ring-white/50"
     : "focus:ring-blue-500 dark:focus:ring-blue-400";
   const placeholderText = isSpecialTheme
-    ? "placeholder:text-white/40" // Lighter placeholder
-    : "placeholder:text-slate-400 dark:placeholder:text-zinc-500"; // Default placeholder
+    ? "placeholder:text-white/40"
+    : "placeholder:text-slate-400 dark:placeholder:text-zinc-500";
 
+  // Handle Escape to exit AI mode
+  const handleInputKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape" && isAiPrimed) {
+        e.preventDefault();
+        setAiPrimedListId(null);
+        return;
+      }
+      handleKeyDown(e, listId);
+    },
+    [handleKeyDown, listId, isAiPrimed, setAiPrimedListId]
+  );
+
+  const handleAiButtonClick = () => {
+    if (isFreeUser) {
+      onPaywallTrigger();
+      return;
+    }
+    // Toggle AI mode — clicking again deactivates
+    if (isAiPrimed) {
+      setAiPrimedListId(null);
+      return;
+    }
+    setAiPrimedListId(listId);
+    onAiClick();
+  };
 
   return (
     <div className="mt-2 flex items-center gap-2 relative">
-      {/* AI Button - Keeping primary color as it should contrast well */}
+      {/* AI Button with glow when not primed */}
       <button
-        onClick={() => {
-          if (isFreeUser) {
-            onPaywallTrigger();
-            return;
-          }
-          setAiPrimedListId(listId);
-          onAiClick();
-        }}
-        title="AI Task Breakdown"
+        onClick={handleAiButtonClick}
+        title={isAiPrimed ? "Exit AI mode (Esc)" : "AI Task Breakdown"}
         className={`
           relative flex items-center justify-center
-          w-10 h-10 rounded-full
+          w-10 h-10 rounded-full flex-shrink-0
           bg-primary
           text-secondary-white
-          transform transition duration-300 ease-out
+          transform transition-all duration-300 ease-out
           hover:scale-110
           focus:outline-none focus:ring-4 focus:ring-primary/30 dark:focus:ring-primary/50
           active:scale-95
           disabled:opacity-50 disabled:cursor-not-allowed
+          ${isAiPrimed
+            ? "ring-2 ring-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.5)] dark:shadow-[0_0_20px_rgba(96,165,250,0.5)]"
+            : "shadow-[0_0_12px_rgba(var(--color-primary-rgb,139,92,246),0.4)] hover:shadow-[0_0_20px_rgba(var(--color-primary-rgb,139,92,246),0.6)]"
+          }
         `}
         disabled={isDisabled || isAiLoading}
       >
@@ -90,21 +113,22 @@ const AddTaskInput: React.FC<AddTaskInputProps> = ({
         )}
       </button>
 
-      {/* Task Input */}
+      {/* Task Input — fixed overflow with min-w-0 */}
       <input
         ref={inputRef}
         id={`task-input-${listId}`}
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={(e) => handleKeyDown(e, listId)}
+        onKeyDown={handleInputKeyDown}
         onBlur={(e) => handleBlur(e, listId)}
-        className={`flex-1 w-full p-2 ${inputBg} backdrop-blur-md rounded-lg ${inputBorder} focus:outline-none focus:ring-1 ${inputFocusRing} text-sm ${inputText} ${placeholderText} transition-all duration-200 disabled:opacity-50 ${isAiPrimed
-            ? "ring-1 ring-blue-500 dark:ring-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:shadow-[0_0_15px_rgba(96,165,250,0.5)]"
-            : "" // AI Primed ring and glow overrides focus ring intentionally
+        maxLength={255}
+        className={`flex-1 min-w-0 p-2 box-border ${inputBg} backdrop-blur-md rounded-lg border ${inputBorder} focus:outline-none focus:ring-1 ${inputFocusRing} text-sm ${inputText} ${placeholderText} transition-all duration-200 disabled:opacity-50 ${isAiPrimed
+          ? "ring-1 ring-blue-500 dark:ring-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:shadow-[0_0_15px_rgba(96,165,250,0.5)]"
+          : ""
           }`}
         placeholder={
-          isAiPrimed ? "Enter goal for AI breakdown..." : "New task..."
+          isAiPrimed ? "Enter goal for AI breakdown... (Esc to cancel)" : "New task..."
         }
         disabled={isDisabled || isAiLoading}
         autoFocus

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { IconLoader2, IconSquareRoundedPlus2 } from "@tabler/icons-react";
 import PaywallPopup from "@/components/dashboard/PaywallPopup";
 import ListHeader from "./ListHeader";
@@ -11,6 +11,23 @@ import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 import { motion, AnimatePresence } from "motion/react";
 import { Skeleton } from "@/components/ui/Skeleton";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import type { Task } from "@/types/taskTypes";
 
 const TaskLogger: React.FC = () => {
   const {
@@ -53,6 +70,7 @@ const TaskLogger: React.FC = () => {
     toggleTaskExpansion,
     togglePriorityDropdown,
     handleAiBreakdown,
+    triggerListUpdate,
   } = useTaskLoggerState();
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -70,6 +88,15 @@ const TaskLogger: React.FC = () => {
       theme as (typeof specialSceneThemeNames)[number]
     );
 
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const headingColor = !isMounted
     ? "text-transparent"
@@ -130,6 +157,42 @@ const TaskLogger: React.FC = () => {
   const showSignInMessage =
     status === "unauthenticated" && taskLists.length === 0;
 
+  // Sort tasks: incomplete first (by priority desc), completed at bottom
+  const getSortedTasks = useCallback((tasks: Task[]): Task[] => {
+    const incomplete = tasks
+      .filter((t) => !t.completed)
+      .sort((a, b) => b.priority - a.priority);
+    const completed = tasks.filter((t) => t.completed);
+    return [...incomplete, ...completed];
+  }, []);
+
+  // Handle clear all tasks
+  const handleClearAllTasks = useCallback(
+    (listId: string) => {
+      const list = taskLists.find((l) => l._id === listId);
+      if (!list) return;
+      triggerListUpdate(listId, []);
+    },
+    [taskLists, triggerListUpdate]
+  );
+
+  // Handle drag end for reordering
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent, listId: string, tasks: Task[]) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = tasks.findIndex((t) => t.id === active.id);
+      const newIndex = tasks.findIndex((t) => t.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const reordered = arrayMove(tasks, oldIndex, newIndex);
+      triggerListUpdate(listId, reordered);
+    },
+    [triggerListUpdate]
+  );
+
+
   return (
     <div className="p-4 flex flex-col min-h-screen">
       <PaywallPopup
@@ -138,29 +201,39 @@ const TaskLogger: React.FC = () => {
       />
 
       <div className="flex justify-start items-center mb-4 flex-shrink-0 max-w-3xl mx-auto w-full h-4">
-        {updateListMutation.isPending && (
-          <span
-            className={`text-xs animate-pulse flex items-center gap-1 ${isSpecialTheme ? "text-blue-300" : "text-blue-500 dark:text-blue-400"
-              }`}
-          >
-            <IconLoader2 size={12} className="animate-spin" /> Saving...
-          </span>
-        )}
+        {/* Removed the old spinner — now using inline skeleton loaders */}
       </div>
 
       <div className="flex-1 overflow-y-auto pb-20">
         <div className="max-w-3xl mx-auto w-full px-2">
           {isLoadingLists && (
             <div className="space-y-6 mb-6">
-              <Skeleton className="h-40 w-full rounded-xl" />
-              <Skeleton className="h-40 w-full rounded-xl" />
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className={`${listContainerBaseClasses} ${isMounted ? listContainerPostMountClasses : listContainerPreMountClasses}`}
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <Skeleton className="h-6 w-32 rounded" />
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </div>
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((j) => (
+                      <div key={j} className={`flex items-center p-2 rounded-lg ${isSpecialTheme ? "bg-white/5" : "bg-slate-50/80 dark:bg-zinc-800/50"}`}>
+                        <Skeleton className="w-5 h-5 rounded mr-3 flex-shrink-0" />
+                        <Skeleton className="h-4 flex-1 rounded" />
+                        <Skeleton className="w-5 h-5 rounded ml-auto flex-shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
           {showNoListsMessage && (
-            // Wrap "No lists" message in a styled container
             <div
               className={`${listContainerBaseClasses} ${isMounted ? listContainerPostMountClasses : listContainerPreMountClasses
-                } flex items-center justify-center min-h-[100px]`} // Add flex centering and min-height
+                } flex items-center justify-center min-h-[100px]`}
             >
               <p
                 className={`text-center ${isSpecialTheme ? "text-white/50" : "text-slate-400 dark:text-slate-500"
@@ -171,7 +244,6 @@ const TaskLogger: React.FC = () => {
             </div>
           )}
           {showSignInMessage && (
-            // Wrap "Sign in" message similarly
             <div
               className={`${listContainerBaseClasses} ${isMounted ? listContainerPostMountClasses : listContainerPreMountClasses
                 } flex items-center justify-center min-h-[100px]`}
@@ -192,10 +264,10 @@ const TaskLogger: React.FC = () => {
                 aiBreakdownState.isLoading &&
                 aiBreakdownState.listId === list._id;
               const isDisabled =
-                isPlaceholder ||
-                (updateListMutation.isPending &&
-                  updateListMutation.variables?.id === list._id) ||
-                isAiProcessingList;
+                isPlaceholder || isAiProcessingList;
+
+              const sortedTasks = getSortedTasks(list.tasks || []);
+              const taskIds = sortedTasks.map((t) => t.id);
 
               return (
                 <motion.div
@@ -218,46 +290,63 @@ const TaskLogger: React.FC = () => {
                       deleteListMutation.variables === list._id
                     }
                     onDelete={() => handleDeleteList(list._id)}
+                    onClearAll={() => handleClearAllTasks(list._id!)}
+                    hasTasks={(list.tasks || []).length > 0}
                     isSpecialTheme={isSpecialTheme}
                   />
 
-                  <AnimatePresence initial={false}>
-                    {(list.tasks || [])
-                      .sort((a, b) => b.priority - a.priority)
-                      .map((task) => (
-                        <TaskItem
-                          key={task.id}
-                          task={task}
-                          listId={list._id!}
-                          level={0}
-                          expandedTasks={expandedTasks}
-                          toggleTaskExpansion={toggleTaskExpansion}
-                          editingTaskId={editingTaskId}
-                          editingTaskValue={editingTaskValue}
-                          editInputRef={taskInputRefs}
-                          handleStartEditing={handleStartEditing}
-                          setEditingTaskValue={setEditingTaskValue}
-                          handleEditInputKeyDown={handleEditInputKeyDown}
-                          handleSaveEditing={handleSaveEditing}
-                          handleCancelEditing={handleCancelEditing}
-                          openPriorityDropdown={openPriorityDropdown}
-                          togglePriorityDropdown={togglePriorityDropdown}
-                          handleToggleTaskCompletion={handleToggleTaskCompletion}
-                          handleDeleteTask={handleDeleteTask}
-                          handleSetPriority={handleSetPriority}
-                          addingSubtaskTo={addingSubtaskTo}
-                          setAddingSubtaskTo={setAddingSubtaskTo}
-                          subtaskInputRef={taskInputRefs}
-                          activeTaskInputValues={activeTaskInputValues}
-                          setActiveTaskInputValues={setActiveTaskInputValues}
-                          handleKeyDownTaskInput={handleKeyDownTaskInput}
-                          isPlaceholder={isPlaceholder}
-                          isDisabled={isDisabled}
-                          isSpecialTheme={isSpecialTheme}
-                          subscriptionStatus={subscriptionStatus}
-                        />
-                      ))}
-                  </AnimatePresence>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    modifiers={[restrictToVerticalAxis]}
+                    onDragEnd={(event) =>
+                      handleDragEnd(event, list._id!, list.tasks || [])
+                    }
+                  >
+                    <SortableContext
+                      items={taskIds}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <AnimatePresence initial={false}>
+                        {sortedTasks.map((task) => (
+                          <TaskItem
+                            key={task.id}
+                            task={task}
+                            listId={list._id!}
+                            level={0}
+                            expandedTasks={expandedTasks}
+                            toggleTaskExpansion={toggleTaskExpansion}
+                            editingTaskId={editingTaskId}
+                            editingTaskValue={editingTaskValue}
+                            editInputRef={taskInputRefs}
+                            handleStartEditing={handleStartEditing}
+                            setEditingTaskValue={setEditingTaskValue}
+                            handleEditInputKeyDown={handleEditInputKeyDown}
+                            handleSaveEditing={handleSaveEditing}
+                            handleCancelEditing={handleCancelEditing}
+                            openPriorityDropdown={openPriorityDropdown}
+                            togglePriorityDropdown={togglePriorityDropdown}
+                            handleToggleTaskCompletion={handleToggleTaskCompletion}
+                            handleDeleteTask={handleDeleteTask}
+                            handleSetPriority={handleSetPriority}
+                            addingSubtaskTo={addingSubtaskTo}
+                            setAddingSubtaskTo={setAddingSubtaskTo}
+                            subtaskInputRef={taskInputRefs}
+                            activeTaskInputValues={activeTaskInputValues}
+                            setActiveTaskInputValues={setActiveTaskInputValues}
+                            handleKeyDownTaskInput={handleKeyDownTaskInput}
+                            isPlaceholder={isPlaceholder}
+                            isDisabled={isDisabled}
+                            isSpecialTheme={isSpecialTheme}
+                            subscriptionStatus={subscriptionStatus}
+                            isDraggable={!isPlaceholder}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </SortableContext>
+                  </DndContext>
+
+
 
                   {listAddingTaskId === list._id && (
                     <AddTaskInput
