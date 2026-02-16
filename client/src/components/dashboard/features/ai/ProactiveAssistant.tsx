@@ -4,7 +4,10 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import { IconX, IconArrowRight } from "@tabler/icons-react";
+
 import { useDashboard } from "@/context/DashboardContext";
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
 import { toast } from "sonner";
 import logo from "../../../../assets/brand/lumo-logo.svg";
 import ReactMarkdown from "react-markdown";
@@ -29,7 +32,21 @@ export default function ProactiveAssistant() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [showActions, setShowActions] = useState(false);
+
     const { isFeatureSelected, addFeature, startDeepWork } = useDashboard();
+    const { theme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const isSpecialTheme =
+        mounted &&
+        !!theme &&
+        specialSceneThemeNames.includes(
+            theme as (typeof specialSceneThemeNames)[number]
+        );
 
     // Reset messages when opening
     useEffect(() => {
@@ -159,9 +176,13 @@ export default function ProactiveAssistant() {
                 <motion.div
                     variants={panelVariants}
                     initial="hidden"
+
                     animate="visible"
                     exit="exit"
-                    className="fixed bottom-20 md:bottom-6 left-3 right-3 md:left-auto md:right-6 z-50 w-auto md:w-full md:max-w-sm bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-2xl"
+                    className={`fixed bottom-20 md:bottom-6 left-3 right-3 md:left-auto md:right-6 z-50 w-auto md:w-full md:max-w-sm rounded-2xl overflow-hidden shadow-2xl border ${isSpecialTheme
+                        ? "bg-white/60 dark:bg-black/40 backdrop-blur-md border-white/20 dark:border-white/10"
+                        : "bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800"
+                        }`}
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 py-4">

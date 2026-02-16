@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { IconFlag, IconFlagFilled, IconCheck } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -80,6 +81,7 @@ interface PriorityDropdownProps {
   currentPriority: number;
   onSetPriority: (listId: string, taskId: string, priority: number) => void;
   onClose: () => void;
+  position: { top: number; left: number };
 }
 
 const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
@@ -88,27 +90,43 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
   currentPriority,
   onSetPriority,
   onClose,
+  position,
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onClose();
+      // If click is inside the dropdown, ignore
+      if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) {
+        return;
       }
+      // If it's outside, close
+      onClose();
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    // Use setTimeout to skip the initial click that opened the dropdown
+    const timeoutId = setTimeout(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+    }, 0);
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [onClose]);
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
       ref={dropdownRef}
-      className="absolute right-0 bottom-full mb-2 w-40 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-200/50 dark:border-zinc-700/50 rounded-lg z-[1000] py-1.5 transition-all duration-200 ease-out animate-fade-in"
+      style={{ top: position.top, left: position.left }}
+      className="fixed w-40 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-xl border border-slate-200/60 dark:border-zinc-700/60 rounded-lg z-[99999] py-1.5 animate-in fade-in slide-in-from-left-1 duration-150 shadow-xl"
     >
       {priorityLevels.map(({ level, label, icon: Icon, color }) => (
         <button
           key={level}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation(); // Stop propagation so we don't trigger outside click immediately
             onSetPriority(listId, taskId, level);
             onClose();
           }}
@@ -119,7 +137,8 @@ const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
           <span>{label}</span>
         </button>
       ))}
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -136,7 +155,12 @@ type UpdateTaskListVariables = {
 const Tasks: React.FC = () => {
   const queryClient = useQueryClient();
   const { status } = useSession();
-  const [openPriorityDropdown, setOpenPriorityDropdown] = useState<string | null>(null);
+  const [priorityDropdownState, setPriorityDropdownState] = useState<{
+    taskId: string;
+    listId: string;
+    priority: number;
+    position: { top: number; left: number };
+  } | null>(null);
   const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
   const MAX_PREVIEW_TASKS = 5;
 
@@ -254,11 +278,22 @@ const Tasks: React.FC = () => {
     if (taskFound) {
       updateListMutation.mutate({ id: listId, tasks: updatedTasks });
     }
-    setOpenPriorityDropdown(null);
+    setPriorityDropdownState(null);
   };
 
-  const togglePriorityDropdown = (taskId: string) => {
-    setOpenPriorityDropdown((prev) => (prev === taskId ? null : taskId));
+  const handleOpenDropdown = (e: React.MouseEvent, task: AggregatedTask) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const DROP_WIDTH = 160; // w-40
+    setPriorityDropdownState({
+      taskId: task.id,
+      listId: task.listId,
+      priority: task.priority,
+      position: {
+        top: rect.bottom + 5, // 5px gap
+        left: rect.right - DROP_WIDTH, // Align right edge
+      }
+    });
   };
 
   const calculateTotalIncomplete = (allLists: TaskList[] | undefined): number => {
@@ -289,7 +324,7 @@ const Tasks: React.FC = () => {
         const listId = list._id;
         const collectTasks = (tasks: Task[]) => {
           tasks.forEach((task) => {
-            if (!processedTaskIds.has(task.id)) {
+            if (!processedTaskIds.has(task.id) && !task.completed) {
               aggregatedTasks.push({ ...task, listId });
               processedTaskIds.add(task.id);
             }
@@ -306,7 +341,6 @@ const Tasks: React.FC = () => {
   };
 
   const renderTask = (task: AggregatedTask): React.ReactNode => {
-    const isPriorityDropdownOpen = openPriorityDropdown === task.id;
     const isPlaceholder = task.listId.startsWith("placeholder-");
     const isListMutating = updateListMutation.isPending && updateListMutation.variables?.id === task.listId;
 
@@ -339,27 +373,14 @@ const Tasks: React.FC = () => {
           <div className="relative ml-auto pl-2 flex-shrink-0">
             <div className="relative">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  togglePriorityDropdown(task.id);
-                }}
+                onClick={(e) => handleOpenDropdown(e, task)}
                 title={`Priority: ${priorityLevels.find((p) => p.level === task.priority)?.label || "None"}`}
                 className="p-1 rounded hover:bg-slate-100/80 dark:hover:bg-zinc-700/80 text-slate-500 dark:text-slate-400 transition-colors disabled:opacity-50"
                 aria-haspopup="true"
-                aria-expanded={isPriorityDropdownOpen}
                 disabled={isListMutating}
               >
                 <PriorityIconDisplay level={task.priority} />
               </button>
-              {isPriorityDropdownOpen && (
-                <PriorityDropdown
-                  taskId={task.id}
-                  listId={task.listId}
-                  currentPriority={task.priority}
-                  onSetPriority={handleSetPriority}
-                  onClose={() => setOpenPriorityDropdown(null)}
-                />
-              )}
             </div>
           </div>
         </div>
@@ -442,6 +463,17 @@ const Tasks: React.FC = () => {
           View all tasks
         </Link>
       </div>
+
+      {priorityDropdownState && (
+        <PriorityDropdown
+          taskId={priorityDropdownState.taskId}
+          listId={priorityDropdownState.listId}
+          currentPriority={priorityDropdownState.priority}
+          onSetPriority={handleSetPriority}
+          onClose={() => setPriorityDropdownState(null)}
+          position={priorityDropdownState.position}
+        />
+      )}
     </div>
   );
 };

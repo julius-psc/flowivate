@@ -12,6 +12,26 @@ import React, {
 import { toast } from "sonner";
 import { useGlobalStore } from "@/hooks/useGlobalStore";
 
+
+// Web Audio API Ping
+const playPing = () => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880; // A5
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } catch (e) {
+    console.error("Audio play failed", e);
+  }
+};
+
 export type PomodoroMode = "focus" | "shortBreak" | "longBreak";
 
 export interface PomodoroSettings {
@@ -248,7 +268,7 @@ export function PomodoroProvider({
       }
     };
     fetchData();
-  }, [enabled, session?.user?.id, settings.focusTime]);
+  }, [enabled, session?.user?.id]); // Removed settings.focusTime dependency to avoid reset loop
 
   useEffect(() => {
     if (!enabled) return;
@@ -282,82 +302,73 @@ export function PomodoroProvider({
       return;
     }
 
-    const rem = Math.floor((endTimeRef.current! - Date.now()) / 1000);
-    setTimeLeft(Math.max(0, rem));
-
     const interval = setInterval(() => {
-      const rem = Math.floor((endTimeRef.current! - Date.now()) / 1000);
+      const now = Date.now();
+      const rem = Math.ceil((endTimeRef.current! - now) / 1000);
 
-      if (rem < 0) {
+      if (rem <= 0) {
+        // Timer Finished
         setTimeLeft(0);
+        setIsActive(false);
+        endTimeRef.current = null;
         clearInterval(interval);
+
+        playPing();
+
+        if (mode === "focus") {
+          const nextCount = sessions + 1;
+          setSessions(nextCount);
+
+          // Increment daily sessions
+          const newDaily = dailySessions + 1;
+          setDailySessions(newDaily);
+          localStorage.setItem("pomodoroDailySessions", newDaily.toString());
+          localStorage.setItem("pomodoroDailyDate", new Date().toDateString());
+
+          triggerLumoEvent("POMO_FINISHED");
+
+          const isLongBreakDue = nextCount >= settings.longBreakAfter;
+          const nextMode = isLongBreakDue ? "longBreak" : "shortBreak";
+
+          toast.success("Focus session complete!");
+
+          if (session?.user?.id) {
+            fetch("/api/features/pomodoro", {
+              method: "PUT",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dailySessions: newDaily }),
+            }).catch(console.error);
+          }
+
+          // Auto-switch mode after a delay
+          setTimeout(() => {
+            setMode(nextMode);
+            toast.info(
+              isLongBreakDue
+                ? "Time for a long break!"
+                : "Time for a short break!"
+            );
+            if (isLongBreakDue) {
+              setSessions(0); // Reset round count
+            }
+          }, 1500);
+
+        } else {
+          // Break finished
+          toast.info("Break is over! Time to focus.");
+          setTimeout(() => {
+            setMode("focus");
+          }, 1500);
+        }
+
       } else {
         setTimeLeft(rem);
       }
     }, 250);
 
     return () => clearInterval(interval);
-  }, [enabled, isActive]);
-
-  useEffect(() => {
-    if (!enabled || timeLeft > 0) return;
-    setIsActive(false);
-    endTimeRef.current = null;
-
-    if (mode === "focus") {
-      const nextCount = sessions + 1;
-      setSessions(nextCount);
-
-      // Increment daily sessions and persist
-      const newDailySessions = dailySessions + 1;
-      setDailySessions(newDailySessions);
-      localStorage.setItem("pomodoroDailySessions", newDailySessions.toString());
-      localStorage.setItem("pomodoroDailyDate", new Date().toDateString());
-
-      triggerLumoEvent("POMO_FINISHED");
-
-      const isLongBreakDue = nextCount % settings.longBreakAfter === 0;
-      const nextMode = isLongBreakDue ? "longBreak" : "shortBreak";
-
-      setTimeout(() => {
-        setMode(nextMode);
-        toast.info(
-          isLongBreakDue
-            ? "Time for a long break!"
-            : "Time for a short break!"
-        );
-
-        // Auto-reset round after long break is due (reached longBreakAfter sessions)
-        if (isLongBreakDue) {
-          // Sessions will reset but dailySessions persists
-          setSessions(0);
-        }
-      }, 50);
-
-      if (session?.user?.id) {
-        fetch("/api/features/pomodoro", {
-          method: "PUT",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dailySessions: newDailySessions }),
-        }).catch(() => toast.error("Failed to sync focus session to server."));
-      }
-    } else {
-      setTimeout(() => {
-        setMode("focus");
-        toast.info("Back to focus!");
-      }, 50);
-    }
-  }, [
-    enabled,
-    timeLeft,
-    sessions,
-    dailySessions,
-    mode,
-    settings.longBreakAfter,
-    session?.user?.id,
-    triggerLumoEvent,
-  ]);
+  }, [enabled, isActive, mode, sessions, dailySessions, settings.longBreakAfter, session?.user?.id, triggerLumoEvent]);
 
   const formatTime = (sec = timeLeft) => {
     const m = Math.floor(sec / 60)

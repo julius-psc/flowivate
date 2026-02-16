@@ -179,8 +179,7 @@ const Pomodoro: React.FC = () => {
               <div className="mt-3 flex items-center">
                 <span className="text-xs text-secondary-black/60 dark:text-secondary-white/60 mr-2">
                   Session{" "}
-                  {sessions % settings.longBreakAfter ||
-                    settings.longBreakAfter}
+                  {sessions % settings.longBreakAfter}
                   /{settings.longBreakAfter}
                 </span>
                 <div className="flex space-x-1.5">

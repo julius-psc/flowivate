@@ -7,12 +7,14 @@ import {
   IconEdit,
   IconTrash,
   IconCopyPlus,
+  IconCopy,
   IconGripVertical,
 } from "@tabler/icons-react";
 import PriorityIconDisplay from "./PriorityIconDisplay";
 import PriorityDropdown from "./PriorityDropdown";
 import { priorityLevels } from "./priorityLevels";
 import Checkbox from "../../../recyclable/Checkbox";
+import { toast } from "sonner";
 import type { Task } from "@/types/taskTypes";
 import { motion, AnimatePresence } from "motion/react";
 import { useSortable } from "@dnd-kit/sortable";
@@ -247,6 +249,15 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   }, [addingSubtaskTo, task.id, subtaskInputRef]);
 
+  const handleCopyTask = async (listId: string, task: Task) => {
+    try {
+      await navigator.clipboard.writeText(task.name);
+      toast.success("Task copied to clipboard");
+    } catch (err) {
+      toast.error("Failed to copy task");
+    }
+  };
+
   // Sort subtasks: incomplete first (by priority desc), completed at bottom
   const sortedSubtasks = useMemo(() => {
     if (!task.subtasks) return [];
@@ -318,21 +329,21 @@ const TaskItem: React.FC<TaskItemProps> = ({
         transition={{ duration: 0.2, layout: { duration: 0.2 } }}
       >
         <div
-          className={`flex items-start p-2 rounded-lg border ${itemBg} ${itemBorder} ${itemHoverBorder} ${itemHoverShadow} backdrop-blur-md transition-all duration-200`}
+          className={`flex items-center p-2 rounded-lg border ${itemBg} ${itemBorder} ${itemHoverBorder} ${itemHoverShadow} backdrop-blur-md transition-all duration-200`}
         >
           {/* Drag handle */}
           {isDraggable && !isPlaceholder && (
             <div
               {...attributes}
               {...listeners}
-              className={`flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 mr-1 mt-1 rounded opacity-0 group-hover/task:opacity-60 hover:!opacity-100 transition-opacity ${iconColor}`}
+              className={`flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 mr-1 rounded opacity-0 group-hover/task:opacity-60 hover:!opacity-100 transition-opacity ${iconColor}`}
               aria-label="Drag to reorder"
             >
               <IconGripVertical size={14} />
             </div>
           )}
 
-          <div className="w-5 flex-shrink-0 flex items-center justify-center mr-2 mt-1">
+          <div className="w-5 flex-shrink-0 flex items-center justify-center mr-2">
             {hasSubtasks ? (
               <button
                 onClick={() => toggleTaskExpansion(task.id)}
@@ -374,6 +385,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
           {!isPlaceholder && (
             <div className="flex items-center gap-1 ml-auto pl-1 flex-shrink-0">
               <div className="flex items-center gap-1 opacity-0 group-hover/task:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                <button
+                  onClick={() => !isDisabled && handleCopyTask(listId, task)}
+                  title="Copy task"
+                  className={`p-1 rounded ${buttonHoverBg} ${iconColor} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                  disabled={isDisabled}
+                >
+                  <IconCopy size={14} />
+                </button>
                 <button
                   onClick={() => !isDisabled && handleStartEditing(listId, task)}
                   title="Edit task"

@@ -6,6 +6,9 @@ import { X, User, Palette, CreditCard, AlertTriangle } from "lucide-react";
 import StatusIndicator from "./StatusIndicator";
 import { useSettings } from "./useSettings";
 import { SettingsModalProps, Tab, TabId } from "./types";
+import { useTheme } from "next-themes";
+import { specialSceneThemeNames } from "@/lib/themeConfig";
+import ThemeBackground from "../../../../../themes/ThemeBackground";
 
 const AccountTab = React.lazy(() => import("./tabs/AccountTab"));
 const AppearanceTab = React.lazy(() => import("./tabs/AppearanceTab"));
@@ -54,6 +57,20 @@ export default function SettingsModal({
     dirtyTabs,
     clearDirtyForTab,
   } = useSettings();
+
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isSpecialTheme =
+    mounted &&
+    !!theme &&
+    specialSceneThemeNames.includes(
+      theme as (typeof specialSceneThemeNames)[number]
+    );
 
   const validActive: TabId = useMemo(
     () => (isTabId(activeTab) ? activeTab : "account"),
@@ -136,11 +153,20 @@ export default function SettingsModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-modal-title"
-        className="fixed inset-0 z-1000 bg-white dark:bg-[#09090B]"
+        className={`fixed inset-0 z-1000 ${isSpecialTheme ? "bg-transparent" : "bg-white dark:bg-[#09090B]"
+          }`}
       >
-        <div className="flex flex-col sm:grid w-full h-full sm:grid-cols-[220px_1fr]">
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <ThemeBackground />
+        </div>
+        <div className="relative z-10 flex flex-col sm:grid w-full h-full sm:grid-cols-[220px_1fr]">
           {/* Sidebar */}
-          <aside className="hidden sm:flex flex-col border-r border-zinc-200 dark:border-zinc-800/70 bg-zinc-50/50 dark:bg-zinc-900/30">
+          <aside
+            className={`hidden sm:flex flex-col border-r border-zinc-200 dark:border-zinc-800/70 ${isSpecialTheme
+              ? "bg-white/60 dark:bg-black/40 backdrop-blur-md"
+              : "bg-zinc-50/50 dark:bg-zinc-900/30"
+              }`}
+          >
             <nav className="flex-1 px-3 pt-6 pb-4">
               <h1 id="settings-modal-title" className="sr-only">Settings</h1>
               <div className="space-y-0.5">
@@ -190,7 +216,12 @@ export default function SettingsModal({
           </aside>
 
           {/* Mobile Tab Bar (visible below sm) */}
-          <div className="sm:hidden flex overflow-x-auto border-b border-zinc-200 dark:border-zinc-800/70 bg-zinc-50/50 dark:bg-zinc-900/30 px-2 pt-2">
+          <div
+            className={`sm:hidden flex overflow-x-auto border-b border-zinc-200 dark:border-zinc-800/70 px-2 pt-2 ${isSpecialTheme
+                ? "bg-white/60 dark:bg-black/40 backdrop-blur-md"
+                : "bg-zinc-50/50 dark:bg-zinc-900/30"
+              }`}
+          >
             {tabs.map((t) => {
               const active = validActive === t.id;
               const danger = t.id === "danger";
@@ -215,7 +246,12 @@ export default function SettingsModal({
           </div>
 
           {/* Main Content */}
-          <section className="relative flex flex-col h-full overflow-y-auto bg-white dark:bg-[#09090B]">
+          <section
+            className={`relative flex flex-col h-full overflow-y-auto ${isSpecialTheme
+              ? "bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-sm"
+              : "bg-white dark:bg-[#09090B]"
+              }`}
+          >
             {/* Close button */}
             <button
               onClick={onClose}

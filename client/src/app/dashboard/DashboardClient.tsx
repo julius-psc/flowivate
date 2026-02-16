@@ -30,7 +30,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import Masonry from "react-masonry-css";
 import type { FeatureKey } from "@/components/dashboard/features/featureMap";
-import WithProGuard from "@/components/dashboard/recyclable/withProGuard";
+
 import { motion } from "motion/react";
 
 interface DashboardClientProps {
@@ -271,12 +271,7 @@ function SortableFeature({
       </div>
 
       <div>
-        <WithProGuard
-          subscriptionStatus={subscriptionStatus}
-          isProOnly={!!isPro}
-        >
-          <FeatureComponent />
-        </WithProGuard>
+        <FeatureComponent />
       </div>
     </motion.div>
   );
