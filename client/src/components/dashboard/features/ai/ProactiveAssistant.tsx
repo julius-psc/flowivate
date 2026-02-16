@@ -161,7 +161,7 @@ export default function ProactiveAssistant() {
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    className="fixed bottom-6 right-6 z-50 w-full max-w-sm bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-2xl"
+                    className="fixed bottom-20 md:bottom-6 left-3 right-3 md:left-auto md:right-6 z-50 w-auto md:w-full md:max-w-sm bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-2xl"
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 py-4">

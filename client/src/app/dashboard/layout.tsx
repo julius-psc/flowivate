@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 
 import ClientProvider from "../providers/ClientProvider";
 import Sidebar from "../../components/dashboard/navigation/Sidebar";
+import MobileBottomNav from "../../components/dashboard/navigation/MobileBottomNav";
 import Navbar from "../../components/dashboard/navigation/Navbar";
 import { DashboardProvider, useDashboard } from "../../context/DashboardContext";
 import { PomodoroProvider } from "@/components/dashboard/features/pomodoro/PomodoroContext";
@@ -12,7 +13,6 @@ import ThemeBackground from "../../../themes/ThemeBackground";
 import Settings from "../../components/dashboard/privacy/settings";
 
 import ProactiveAssistant from "../../components/dashboard/features/ai/ProactiveAssistant";
-import MobileRestricted from "../../components/dashboard/MobileRestricted";
 import { AmbientProvider } from "@/context/AmbientContext";
 
 export default function DashboardLayout({
@@ -20,18 +20,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 700);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-  if (isMobile) {
-    return <MobileRestricted />;
-  }
-
   return (
     <ClientProvider>
       <div
@@ -106,15 +94,20 @@ function LayoutCore({ children }: { children: React.ReactNode }) {
           )}
         </div>
         <div className="flex flex-1 overflow-hidden z-10">
-          <Sidebar
-            isFullscreen={isFullscreen}
-            toggleFullscreen={toggleFullscreen}
-            openSettings={openSettings}
-          />
-          <main className="flex-1 overflow-y-auto relative z-10">
+          {/* Sidebar: hidden on mobile, shown on md+ */}
+          <div className="hidden md:flex">
+            <Sidebar
+              isFullscreen={isFullscreen}
+              toggleFullscreen={toggleFullscreen}
+              openSettings={openSettings}
+            />
+          </div>
+          <main className="flex-1 overflow-y-auto relative z-10 pb-20 md:pb-0">
             {children}
           </main>
         </div>
+        {/* Mobile bottom navigation: shown on mobile only */}
+        <MobileBottomNav openSettings={openSettings} />
       </div>
       {isSettingsOpen && (
         <Settings

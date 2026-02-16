@@ -7,8 +7,10 @@ interface CheckboxProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   label: string;
   disabled?: boolean;
-  variant?: 'default' | 'subtask'; // Keep the variants
+  variant?: 'default' | 'subtask';
   className?: string;
+  truncate?: boolean;
+  textRef?: React.RefObject<HTMLSpanElement | null>;
 }
 
 const Checkbox: React.FC<CheckboxProps> = ({
@@ -17,7 +19,9 @@ const Checkbox: React.FC<CheckboxProps> = ({
   label,
   disabled = false,
   variant = 'default',
-  className = ''
+  className = '',
+  truncate: shouldTruncate = true,
+  textRef,
 }) => {
 
   // Define base classes using CSS variables
@@ -44,7 +48,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
 
   return (
     // Use group for hover states on the container
-    <label className={`flex items-center select-none group min-w-0 transition-opacity duration-200 ${checked && !disabled ? 'opacity-50' : ''} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}>
+    <label className={`flex items-start select-none group min-w-0 overflow-hidden transition-opacity duration-200 ${checked && !disabled ? 'opacity-50' : ''} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}>
       <input
         type="checkbox"
         checked={checked}
@@ -55,7 +59,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
       />
       <span
         className={`
-          relative inline-block w-5 h-5 mr-3 flex-shrink-0
+          relative inline-block w-5 h-5 mr-3 mt-0.5 flex-shrink-0
           border-2 rounded
           transition-all duration-300
           ${colorClasses}
@@ -69,9 +73,9 @@ const Checkbox: React.FC<CheckboxProps> = ({
         )}
       </span>
       <span
+        ref={textRef}
         id={labelId}
-        // Use Tailwind text color utilities or CSS variables for text
-        className={`text-base text-gray-600 dark:text-gray-400 truncate ${disabled ? 'text-gray-400 dark:text-gray-500' : ''}`}
+        className={`text-base text-gray-600 dark:text-gray-400 min-w-0 transition-all duration-300 ease-in-out ${shouldTruncate ? 'block truncate' : 'block break-all overflow-hidden'} ${disabled ? 'text-gray-400 dark:text-gray-500' : ''}`}
       >
         {label}
       </span>

@@ -84,7 +84,6 @@ export const authConfig: NextAuthConfig = {
             username: user.username,
             name: user.name,
             image: user.image,
-            onboardingCompleted: user.onboardingCompleted ?? false,
             authProvider: user.authProvider ?? "credentials",
             subscriptionStatus: user.subscriptionStatus ?? "free",
           };
@@ -134,21 +133,14 @@ export const authConfig: NextAuthConfig = {
               image: user.image,
               username: uniqueUsername,
               authProvider: account.provider,
-              onboardingCompleted: false,
               subscriptionStatus: "free",
             });
 
-            return "/onboarding";
+            return "/dashboard";
           }
 
-          // Existing user: redirect based on onboarding status
-          // This prevents existing users from being looped back to /onboarding
-          // when they click social sign-in buttons on the onboarding page.
-          if (existingUser.onboardingCompleted) {
-            return "/dashboard";
-          } else {
-            return "/onboarding";
-          }
+          // Existing user: always go to dashboard
+          return "/dashboard";
         } catch (error) {
           console.error("Error during social sign in:", error);
           return false;
@@ -161,11 +153,10 @@ export const authConfig: NextAuthConfig = {
       await connectDB();
 
       if (trigger === "update") {
-        const dbUser = await User.findById(token.id).select("username image onboardingCompleted authProvider subscriptionStatus").lean().exec();
+        const dbUser = await User.findById(token.id).select("username image authProvider subscriptionStatus").lean().exec();
         if (dbUser) {
           token.username = dbUser.username;
           token.image = dbUser.image;
-          token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
           token.authProvider = dbUser.authProvider ?? null;
           token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
         }
@@ -184,20 +175,17 @@ export const authConfig: NextAuthConfig = {
               token.id = dbUser._id.toString();
               token.username = dbUser.username;
               token.image = dbUser.image || user.image;
-              token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
               token.authProvider = dbUser.authProvider as "google" | "github";
               token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
             }
           }
         } else {
-          // Credentials login — user object now includes onboardingCompleted
-          // and authProvider from the authorize() function
+          // Credentials login
           token.id = user.id;
           token.username = user.username ?? undefined;
           token.image = user.image ?? undefined;
           token.subscriptionStatus = (user as any).subscriptionStatus ?? "free";
           token.authProvider = (user as any).authProvider || "credentials";
-          token.onboardingCompleted = (user as any).onboardingCompleted ?? false;
         }
       }
 
@@ -222,7 +210,7 @@ export const authConfig: NextAuthConfig = {
       } else {
         session.user.image = null;
       }
-      session.user.onboardingCompleted = (token.onboardingCompleted as boolean) ?? false;
+
       session.user.authProvider = token.authProvider as "google" | "github" | "credentials" | null ?? null;
       session.user.subscriptionStatus = token.subscriptionStatus as string ?? "free";
       return session;

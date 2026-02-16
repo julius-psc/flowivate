@@ -192,7 +192,7 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
 
   // Define base classes that are always present
   const navBaseClasses =
-    "flex items-center justify-between z-30 py-2 px-2 mx-2 mt-2 backdrop-blur-md rounded-2xl transition-opacity duration-300";
+    "flex items-center justify-between z-30 py-2 px-2 mx-1 sm:mx-2 mt-1 sm:mt-2 backdrop-blur-md rounded-xl sm:rounded-2xl transition-opacity duration-300";
   // Define pre-mount classes (solid, maybe invisible to prevent flicker)
   const navPreMountClasses =
     "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
@@ -246,10 +246,10 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
                 {showStatusMenu && (
                   <div
                     className={`absolute right-0 mt-4 w-36 rounded-xl p-1.5 z-50 border transition-all duration-200 ${isMounted
-                        ? isSpecialTheme
-                          ? "bg-zinc-900/90 border-zinc-800 backdrop-blur-xl"
-                          : "bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800"
-                        : "opacity-0"
+                      ? isSpecialTheme
+                        ? "bg-zinc-900/90 border-zinc-800 backdrop-blur-xl"
+                        : "bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800"
+                      : "opacity-0"
                       }`}
                   >
                     {statusOptions.map((option) => (

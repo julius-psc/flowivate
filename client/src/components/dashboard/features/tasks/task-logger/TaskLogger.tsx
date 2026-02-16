@@ -71,6 +71,7 @@ const TaskLogger: React.FC = () => {
     togglePriorityDropdown,
     handleAiBreakdown,
     triggerListUpdate,
+    handleSubtaskReorder,
   } = useTaskLoggerState();
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -340,6 +341,9 @@ const TaskLogger: React.FC = () => {
                             isSpecialTheme={isSpecialTheme}
                             subscriptionStatus={subscriptionStatus}
                             isDraggable={!isPlaceholder}
+                            onSubtaskReorder={(parentTaskId, reorderedSubtasks) =>
+                              handleSubtaskReorder(list._id!, parentTaskId, reorderedSubtasks)
+                            }
                           />
                         ))}
                       </AnimatePresence>

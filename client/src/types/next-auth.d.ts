@@ -8,7 +8,6 @@ declare module "next-auth" {
     user: {
       id: string;
       username?: string | null;
-      onboardingCompleted?: boolean;
       authProvider?: AuthProvider;
       subscriptionStatus?: string;
     } & DefaultUser;
@@ -16,7 +15,6 @@ declare module "next-auth" {
 
   interface User extends DefaultUser {
     username?: string | null;
-    onboardingCompleted?: boolean;
     authProvider?: AuthProvider;
     subscriptionStatus?: string;
   }
@@ -26,7 +24,6 @@ declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id?: string;
     username?: string;
-    onboardingCompleted?: boolean;
     authProvider?: AuthProvider;
     subscriptionStatus?: string;
   }

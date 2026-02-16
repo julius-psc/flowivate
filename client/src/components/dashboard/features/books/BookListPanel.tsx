@@ -60,7 +60,7 @@ export const BookListPanel: React.FC<BookListPanelProps> = ({
 
   return (
     // Added rounded-l-xl for left corners
-    <div className={`w-1/3 flex flex-col border-r ${panelBorder} ${panelBg} backdrop-blur-md rounded-l-xl`}>
+    <div className={`w-full md:w-1/3 flex flex-col border-b md:border-b-0 md:border-r ${panelBorder} ${panelBg} backdrop-blur-md rounded-t-xl md:rounded-t-none md:rounded-l-xl max-h-[40vh] md:max-h-none`}>
       <div className={`p-4 border-b ${panelBorder}`}>
         <div className="relative mb-4">
           <input

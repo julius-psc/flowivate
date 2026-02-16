@@ -16,11 +16,6 @@ export async function POST(request: Request) {
       email,
       username,
       password,
-      persona,
-      goals,
-      workStyle,
-      challenge,
-      onboardingCompleted
     } = await request.json();
 
     if (!email || !username || !password) {
@@ -126,11 +121,6 @@ export async function POST(request: Request) {
       email: lowerEmail,
       username,
       password: hashedPassword,
-      persona,
-      goals,
-      workStyle,
-      challenge,
-      onboardingCompleted: onboardingCompleted ?? false,
     });
 
     return NextResponse.json(

@@ -138,7 +138,7 @@ export default function SettingsModal({
         aria-labelledby="settings-modal-title"
         className="fixed inset-0 z-1000 bg-white dark:bg-[#09090B]"
       >
-        <div className="grid w-full h-full grid-cols-1 sm:grid-cols-[220px_1fr]">
+        <div className="flex flex-col sm:grid w-full h-full sm:grid-cols-[220px_1fr]">
           {/* Sidebar */}
           <aside className="hidden sm:flex flex-col border-r border-zinc-200 dark:border-zinc-800/70 bg-zinc-50/50 dark:bg-zinc-900/30">
             <nav className="flex-1 px-3 pt-6 pb-4">
@@ -189,6 +189,31 @@ export default function SettingsModal({
             </nav>
           </aside>
 
+          {/* Mobile Tab Bar (visible below sm) */}
+          <div className="sm:hidden flex overflow-x-auto border-b border-zinc-200 dark:border-zinc-800/70 bg-zinc-50/50 dark:bg-zinc-900/30 px-2 pt-2">
+            {tabs.map((t) => {
+              const active = validActive === t.id;
+              const danger = t.id === "danger";
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => onChangeTab(t.id)}
+                  className={[
+                    "flex items-center gap-1.5 px-3 py-2.5 text-[12px] font-medium whitespace-nowrap border-b-2 transition-colors flex-shrink-0",
+                    active
+                      ? "border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100"
+                      : danger
+                        ? "border-transparent text-red-500 dark:text-red-400"
+                        : "border-transparent text-zinc-500 dark:text-zinc-400",
+                  ].join(" ")}
+                >
+                  <span className="[&>svg]:w-3.5 [&>svg]:h-3.5">{t.icon}</span>
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Main Content */}
           <section className="relative flex flex-col h-full overflow-y-auto bg-white dark:bg-[#09090B]">
             {/* Close button */}
@@ -201,7 +226,7 @@ export default function SettingsModal({
             </button>
 
             {/* Content Area */}
-            <div className="w-full px-6 sm:px-12 py-10">
+            <div className="w-full px-4 sm:px-12 py-10">
               <div className="max-w-2xl">
                 <Suspense
                   fallback={

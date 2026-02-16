@@ -267,7 +267,7 @@ const BookLogger: React.FC<BookLoggerProps> = ({ initialBookId }) => {
         </div>
       </div>
 
-      <div className={`flex flex-1 overflow-hidden max-w-screen-lg mx-auto w-full ${mainContainerBorder}`}>
+      <div className={`flex flex-col md:flex-row flex-1 overflow-hidden max-w-screen-lg mx-auto w-full ${mainContainerBorder}`}>
         <BookListPanel
           books={filteredBooks}
           loading={loading}

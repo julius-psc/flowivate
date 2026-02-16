@@ -583,6 +583,28 @@ export const useTaskLoggerState = () => {
     setOpenPriorityDropdown((prev) => (prev === taskId ? null : taskId));
   };
 
+  const handleSubtaskReorder = (
+    listId: string,
+    parentTaskId: string,
+    reorderedSubtasks: Task[]
+  ) => {
+    const list = taskLists.find((l) => l._id === listId);
+    if (!list) return;
+
+    const { updatedTasks, taskFound } = findAndUpdateTask(
+      [...list.tasks],
+      parentTaskId,
+      (task) => ({
+        ...task,
+        subtasks: reorderedSubtasks,
+      })
+    );
+
+    if (taskFound) {
+      triggerListUpdate(listId, updatedTasks);
+    }
+  };
+
   return {
     mounted,
     isAddingList,
@@ -634,5 +656,6 @@ export const useTaskLoggerState = () => {
     handleEditInputKeyDown,
     toggleTaskExpansion,
     togglePriorityDropdown,
+    handleSubtaskReorder,
   };
 };

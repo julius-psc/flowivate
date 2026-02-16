@@ -42,14 +42,7 @@ export default function LoginClient() {
         toast.error(result.error);
       } else if (result.ok && !result.error) {
         toast.success("Login successful! Redirecting...");
-        // Fetch updated session to check onboarding status
-        const { getSession } = await import("next-auth/react");
-        const session = await getSession();
-        if (session?.user?.onboardingCompleted === false) {
-          router.push("/onboarding");
-        } else {
-          router.push("/dashboard");
-        }
+        router.push("/dashboard");
         return;
       } else {
         toast.error("Unexpected login error. Please try again.");
@@ -175,7 +168,7 @@ export default function LoginClient() {
           {/* Bottom Links */}
           <div className="mt-5 w-full">
             <Link
-              href="/onboarding"
+              href="/register"
               className="flex items-center justify-center gap-1 w-full h-11 bg-transparent border border-[#2a2a2a] rounded-lg text-[#999999] hover:text-white hover:border-[#333333] transition-all duration-200 text-sm"
             >
               Don&apos;t have an account? Sign up

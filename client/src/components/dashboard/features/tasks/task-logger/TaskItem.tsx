@@ -17,6 +17,22 @@ import type { Task } from "@/types/taskTypes";
 import { motion, AnimatePresence } from "motion/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 interface TaskItemProps {
   task: Task;
@@ -61,6 +77,7 @@ interface TaskItemProps {
   subscriptionStatus?: "active" | "canceled" | "past_due" | "free";
   isSpecialTheme: boolean;
   isDraggable?: boolean;
+  onSubtaskReorder?: (parentTaskId: string, reorderedSubtasks: Task[]) => void;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -93,6 +110,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   subscriptionStatus = "free",
   isSpecialTheme,
   isDraggable = false,
+  onSubtaskReorder,
 }) => {
   const MAX_SUBTASKS = 6;
   const MAX_TASK_NAME_LENGTH = 255;
@@ -105,12 +123,44 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const subtaskLimitReached =
     isFreeUser && (task.subtasks?.length || 0) >= MAX_SUBTASKS;
 
-  const [isTextExpanded, setIsTextExpanded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
 
-  const indentSize = 1.5;
+  // Check if text overflows (is actually truncated)
+  useEffect(() => {
+    const el = textRef.current;
+    if (el) {
+      setIsTruncated(el.scrollWidth > el.clientWidth);
+    }
+  }, [task.name]);
+
+  const indentSize = 2.5;
   const indentStyle = { paddingLeft: `${level * indentSize}rem` };
   const addSubtaskIndentStyle = {
     paddingLeft: `${(level + 1) * indentSize}rem`,
+  };
+
+  // DnD sensors for subtask reordering
+  const subtaskSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleSubtaskDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !task.subtasks) return;
+
+    const oldIndex = task.subtasks.findIndex((t) => t.id === active.id);
+    const newIndex = task.subtasks.findIndex((t) => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(task.subtasks, oldIndex, newIndex);
+    onSubtaskReorder?.(task.id, reordered);
   };
 
   const taskItemRef = useRef<HTMLDivElement>(null);
@@ -268,21 +318,21 @@ const TaskItem: React.FC<TaskItemProps> = ({
         transition={{ duration: 0.2, layout: { duration: 0.2 } }}
       >
         <div
-          className={`flex items-center p-2 rounded-lg border ${itemBg} ${itemBorder} ${itemHoverBorder} ${itemHoverShadow} backdrop-blur-md transition-all duration-200`}
+          className={`flex items-start p-2 rounded-lg border ${itemBg} ${itemBorder} ${itemHoverBorder} ${itemHoverShadow} backdrop-blur-md transition-all duration-200`}
         >
           {/* Drag handle */}
           {isDraggable && !isPlaceholder && (
             <div
               {...attributes}
               {...listeners}
-              className={`flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 mr-1 rounded opacity-0 group-hover/task:opacity-60 hover:!opacity-100 transition-opacity ${iconColor}`}
+              className={`flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 mr-1 mt-1 rounded opacity-0 group-hover/task:opacity-60 hover:!opacity-100 transition-opacity ${iconColor}`}
               aria-label="Drag to reorder"
             >
               <IconGripVertical size={14} />
             </div>
           )}
 
-          <div className="w-5 flex-shrink-0 flex items-center justify-center mr-2">
+          <div className="w-5 flex-shrink-0 flex items-center justify-center mr-2 mt-1">
             {hasSubtasks ? (
               <button
                 onClick={() => toggleTaskExpansion(task.id)}
@@ -305,6 +355,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
           <div
             className="flex-1 mr-2 cursor-pointer min-w-0"
             onDoubleClick={() => !isDisabled && handleStartEditing(listId, task)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
           >
             <Checkbox
               checked={task.completed}
@@ -314,25 +366,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
               label={task.name}
               variant={isSubtask ? "subtask" : "default"}
               disabled={isDisabled}
-              className={isTextExpanded ? "" : ""}
+              truncate={!isHovered || !isTruncated}
+              textRef={textRef}
             />
-            {/* Show full text or truncated */}
-            {!isTextExpanded && task.name.length > 60 && (
-              <button
-                onClick={() => setIsTextExpanded(true)}
-                className={`text-xs ml-8 mt-0.5 ${isSpecialTheme ? "text-white/40 hover:text-white/60" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"} transition-colors`}
-              >
-                Show more
-              </button>
-            )}
-            {isTextExpanded && task.name.length > 60 && (
-              <button
-                onClick={() => setIsTextExpanded(false)}
-                className={`text-xs ml-8 mt-0.5 ${isSpecialTheme ? "text-white/40 hover:text-white/60" : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"} transition-colors`}
-              >
-                Show less
-              </button>
-            )}
           </div>
 
           {!isPlaceholder && (
@@ -398,40 +434,53 @@ const TaskItem: React.FC<TaskItemProps> = ({
               transition={{ duration: 0.2, overflow: { delay: 0.2 } }}
               className="mt-1 space-y-1"
             >
-              {sortedSubtasks.map((subtask: Task) => (
-                <TaskItem
-                  key={subtask.id}
-                  task={subtask}
-                  listId={listId}
-                  level={level + 1}
-                  expandedTasks={expandedTasks}
-                  toggleTaskExpansion={toggleTaskExpansion}
-                  editingTaskId={editingTaskId}
-                  editingTaskValue={editingTaskValue}
-                  editInputRef={editInputRef}
-                  handleStartEditing={handleStartEditing}
-                  setEditingTaskValue={setEditingTaskValue}
-                  handleEditInputKeyDown={handleEditInputKeyDown}
-                  handleSaveEditing={handleSaveEditing}
-                  handleCancelEditing={handleCancelEditing}
-                  openPriorityDropdown={openPriorityDropdown}
-                  togglePriorityDropdown={togglePriorityDropdown}
-                  handleToggleTaskCompletion={handleToggleTaskCompletion}
-                  handleDeleteTask={handleDeleteTask}
-                  handleSetPriority={handleSetPriority}
-                  addingSubtaskTo={addingSubtaskTo}
-                  setAddingSubtaskTo={setAddingSubtaskTo}
-                  subtaskInputRef={subtaskInputRef}
-                  activeTaskInputValues={activeTaskInputValues}
-                  setActiveTaskInputValues={setActiveTaskInputValues}
-                  handleKeyDownTaskInput={handleKeyDownTaskInput}
-                  isPlaceholder={isPlaceholder}
-                  isDisabled={isDisabled}
-                  subscriptionStatus={subscriptionStatus}
-                  isSpecialTheme={isSpecialTheme}
-                  isDraggable={false}
-                />
-              ))}
+              <DndContext
+                sensors={subtaskSensors}
+                collisionDetection={closestCenter}
+                modifiers={[restrictToVerticalAxis]}
+                onDragEnd={handleSubtaskDragEnd}
+              >
+                <SortableContext
+                  items={sortedSubtasks.map((s) => s.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {sortedSubtasks.map((subtask: Task) => (
+                    <TaskItem
+                      key={subtask.id}
+                      task={subtask}
+                      listId={listId}
+                      level={level + 1}
+                      expandedTasks={expandedTasks}
+                      toggleTaskExpansion={toggleTaskExpansion}
+                      editingTaskId={editingTaskId}
+                      editingTaskValue={editingTaskValue}
+                      editInputRef={editInputRef}
+                      handleStartEditing={handleStartEditing}
+                      setEditingTaskValue={setEditingTaskValue}
+                      handleEditInputKeyDown={handleEditInputKeyDown}
+                      handleSaveEditing={handleSaveEditing}
+                      handleCancelEditing={handleCancelEditing}
+                      openPriorityDropdown={openPriorityDropdown}
+                      togglePriorityDropdown={togglePriorityDropdown}
+                      handleToggleTaskCompletion={handleToggleTaskCompletion}
+                      handleDeleteTask={handleDeleteTask}
+                      handleSetPriority={handleSetPriority}
+                      addingSubtaskTo={addingSubtaskTo}
+                      setAddingSubtaskTo={setAddingSubtaskTo}
+                      subtaskInputRef={subtaskInputRef}
+                      activeTaskInputValues={activeTaskInputValues}
+                      setActiveTaskInputValues={setActiveTaskInputValues}
+                      handleKeyDownTaskInput={handleKeyDownTaskInput}
+                      isPlaceholder={isPlaceholder}
+                      isDisabled={isDisabled}
+                      subscriptionStatus={subscriptionStatus}
+                      isSpecialTheme={isSpecialTheme}
+                      isDraggable={!isPlaceholder && !isDisabled}
+                      onSubtaskReorder={onSubtaskReorder}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
             </motion.div>
           )}
         </AnimatePresence>

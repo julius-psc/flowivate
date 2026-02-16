@@ -21,7 +21,7 @@ export default function EarlyAccessPage() {
     });
 
     if (res.ok) {
-      router.push("/onboarding");
+      router.push("/register");
     } else {
       const data = await res.json();
       setError(data.message || "Access denied.");
