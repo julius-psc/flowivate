@@ -84,6 +84,9 @@ export const authConfig: NextAuthConfig = {
             username: user.username,
             name: user.name,
             image: user.image,
+            onboardingCompleted: user.onboardingCompleted ?? false,
+            authProvider: user.authProvider ?? "credentials",
+            subscriptionStatus: user.subscriptionStatus ?? "free",
           };
         } catch (err) {
           if (err instanceof Error) throw err;
@@ -133,17 +136,19 @@ export const authConfig: NextAuthConfig = {
               authProvider: account.provider,
               onboardingCompleted: false,
               subscriptionStatus: "free",
-              // createdAt/updatedAt handled by timestamps
             });
 
             return "/onboarding";
           }
 
-          // Existing User: Update info if needed (optional)
-          // We can sync image or name here if desired, but let's keep it simple.
-          // We do NOT force redirect to onboarding for existing users, as they might be logging in
-          // via a different methods or have completed it without the flag updating.
-          // By returning true, we allow the default redirection (e.g. to /dashboard).
+          // Existing user: redirect based on onboarding status
+          // This prevents existing users from being looped back to /onboarding
+          // when they click social sign-in buttons on the onboarding page.
+          if (existingUser.onboardingCompleted) {
+            return "/dashboard";
+          } else {
+            return "/onboarding";
+          }
         } catch (error) {
           console.error("Error during social sign in:", error);
           return false;
@@ -185,16 +190,14 @@ export const authConfig: NextAuthConfig = {
             }
           }
         } else {
-          // Credentials login returns correct user object with ID
+          // Credentials login — user object now includes onboardingCompleted
+          // and authProvider from the authorize() function
           token.id = user.id;
           token.username = user.username ?? undefined;
           token.image = user.image ?? undefined;
-          // @ts-ignore
-          token.subscriptionStatus = user.subscriptionStatus ?? "free";
-          // @ts-ignore
-          token.authProvider = user.authProvider || "credentials";
-          // @ts-ignore
-          token.onboardingCompleted = user.onboardingCompleted ?? false;
+          token.subscriptionStatus = (user as any).subscriptionStatus ?? "free";
+          token.authProvider = (user as any).authProvider || "credentials";
+          token.onboardingCompleted = (user as any).onboardingCompleted ?? false;
         }
       }
 

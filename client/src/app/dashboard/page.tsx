@@ -12,12 +12,18 @@ export default async function DashboardPage() {
 
   await connectToDB();
   const user = await User.findOne({ email: session.user.email })
-    .select("subscriptionStatus")
+    .select("subscriptionStatus onboardingCompleted")
     .lean();
+
+  // If the user hasn't completed onboarding, redirect them there
+  if (!user?.onboardingCompleted) {
+    redirect("/onboarding");
+  }
+
   const subscriptionStatus: "active" | "canceled" | "past_due" | "free" =
     user?.subscriptionStatus === "active" ||
-    user?.subscriptionStatus === "canceled" ||
-    user?.subscriptionStatus === "past_due"
+      user?.subscriptionStatus === "canceled" ||
+      user?.subscriptionStatus === "past_due"
       ? user.subscriptionStatus
       : "free";
 

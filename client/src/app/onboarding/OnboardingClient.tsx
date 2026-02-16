@@ -60,10 +60,15 @@ export default function OnboardingClient() {
 
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
+      // If already onboarded, don't show the onboarding flow again — go to dashboard
+      if (session.user.onboardingCompleted) {
+        router.push("/dashboard");
+        return;
+      }
       setIsOAuthUser(true);
       setCurrentStep(3); // Skip to persona step (step 3)
     }
-  }, [status, session]);
+  }, [status, session, router]);
 
   const [data, setData] = useState<OnboardingData>({
     username: "",

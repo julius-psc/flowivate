@@ -42,7 +42,14 @@ export default function LoginClient() {
         toast.error(result.error);
       } else if (result.ok && !result.error) {
         toast.success("Login successful! Redirecting...");
-        router.push("/dashboard");
+        // Fetch updated session to check onboarding status
+        const { getSession } = await import("next-auth/react");
+        const session = await getSession();
+        if (session?.user?.onboardingCompleted === false) {
+          router.push("/onboarding");
+        } else {
+          router.push("/dashboard");
+        }
         return;
       } else {
         toast.error("Unexpected login error. Please try again.");
