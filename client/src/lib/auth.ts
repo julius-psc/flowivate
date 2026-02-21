@@ -126,7 +126,6 @@ export const authConfig: NextAuthConfig = {
               uniqueUsername = `${baseUsername}${i}`;
             }
 
-            // Create user with Mongoose to ensure schema defaults and validation
             await User.create({
               email: user.email,
               name: user.name || uniqueUsername,
@@ -136,11 +135,11 @@ export const authConfig: NextAuthConfig = {
               subscriptionStatus: "free",
             });
 
-            return "/dashboard";
+            return true;
           }
 
-          // Existing user: always go to dashboard
-          return "/dashboard";
+          // Existing user: always allow sign in
+          return true;
         } catch (error) {
           console.error("Error during social sign in:", error);
           return false;
