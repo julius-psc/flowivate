@@ -354,24 +354,19 @@ export async function DELETE(request: NextRequest) {
       const deleted = await User.findByIdAndDelete(userObjectId, { session });
       if (!deleted) throw new Error("User not found");
 
-      await mongoose
-        .model("layouts")
-        .deleteOne({ userId: userObjectId }, { session });
-      await mongoose
-        .model("task_lists")
-        .deleteMany({ userId: userObjectId }, { session });
-      await mongoose
-        .model("journalEntries")
-        .deleteMany({ userId: userObjectId }, { session });
-      await mongoose
-        .model("sleep")
-        .deleteMany({ userId: userObjectId }, { session });
-      await mongoose
-        .model("moods")
-        .deleteMany({ userId: userObjectId }, { session });
-      await mongoose
-        .model("pomodoro")
-        .deleteOne({ userId: userObjectId }, { session });
+      const db = mongoose.connection.db;
+      if (db) {
+        await db.collection("layouts").deleteMany({ userId: userObjectId }, { session });
+        await db.collection("task_lists").deleteMany({ userId: userObjectId }, { session });
+        await db.collection("journalEntries").deleteMany({ userId: userObjectId }, { session });
+        await db.collection("sleep").deleteMany({ userId: userObjectId }, { session });
+        await db.collection("moods").deleteMany({ userId: userObjectId }, { session });
+        await db.collection("pomodoro").deleteMany({ userId: userObjectId }, { session });
+        await db.collection("waterIntake").deleteMany({ userId: userObjectId }, { session });
+        await db.collection("streaks").deleteMany({ userId: userObjectId }, { session });
+        await db.collection("books").deleteMany({ userId: userObjectId }, { session });
+        await db.collection("chats").deleteMany({ userId: userObjectId }, { session });
+      }
     });
   } finally {
     session.endSession();
