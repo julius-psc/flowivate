@@ -102,13 +102,18 @@ export const authConfig: NextAuthConfig = {
 
   callbacks: {
     async signIn({ user, account, profile }) {
+      console.log("[AUTH signIn] provider:", account?.provider, "email:", user?.email);
       if (account?.provider && ["github", "google"].includes(account.provider)) {
-        await connectDB();
-
-        if (!user.email) return false;
-
         try {
+          await connectDB();
+
+          if (!user.email) {
+            console.error("[AUTH signIn] No email from provider, rejecting");
+            return false;
+          }
+
           const existingUser = await User.findOne<IUser>({ email: user.email }).exec();
+          console.log("[AUTH signIn] existingUser found:", !!existingUser, "email:", user.email);
 
           if (!existingUser) {
             // New User Creation
@@ -125,6 +130,7 @@ export const authConfig: NextAuthConfig = {
               uniqueUsername = `${baseUsername}${i}`;
             }
 
+            console.log("[AUTH signIn] Creating new user:", user.email, uniqueUsername);
             await User.create({
               email: user.email,
               name: user.name || uniqueUsername,
@@ -133,14 +139,16 @@ export const authConfig: NextAuthConfig = {
               authProvider: account.provider,
               subscriptionStatus: "free",
             });
+            console.log("[AUTH signIn] New user created successfully");
 
             return true;
           }
 
           // Existing user: always allow sign in
+          console.log("[AUTH signIn] Existing user, allowing sign in");
           return true;
         } catch (error) {
-          console.error("Error during social sign in:", error);
+          console.error("[AUTH signIn] ERROR during social sign in:", error);
           return false;
         }
       }
@@ -148,51 +156,55 @@ export const authConfig: NextAuthConfig = {
     },
 
     async jwt({ token, user, account, trigger }): Promise<JWTType> {
-      await connectDB();
+      console.log("[AUTH jwt] trigger:", trigger, "hasUser:", !!user, "provider:", account?.provider);
+      try {
+        await connectDB();
 
-      if (trigger === "update") {
-        const dbUser = await User.findById(token.id).select("username image authProvider subscriptionStatus").lean().exec();
-        if (dbUser) {
-          token.username = dbUser.username;
-          token.image = dbUser.image;
-          token.authProvider = dbUser.authProvider ?? null;
-          token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
+        if (trigger === "update") {
+          const dbUser = await User.findById(token.id).select("username image authProvider subscriptionStatus").lean().exec();
+          if (dbUser) {
+            token.username = dbUser.username;
+            token.image = dbUser.image;
+            token.authProvider = dbUser.authProvider ?? null;
+            token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
+          }
+          return token;
         }
+
+        if (user) {
+          if (account && ["github", "google"].includes(account.provider)) {
+            if (user.email) {
+              token.email = user.email;
+              const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
+              console.log("[AUTH jwt] dbUser found:", !!dbUser, "email:", user.email);
+              if (dbUser) {
+                token.id = dbUser._id.toString();
+                token.username = dbUser.username;
+                token.email = dbUser.email || user.email;
+                token.image = dbUser.image || user.image;
+                token.authProvider = dbUser.authProvider as "google" | "github";
+                token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
+              } else {
+                console.warn("[AUTH jwt] dbUser not found, falling back to user object.", user.email);
+              }
+            }
+          } else {
+            // Credentials login
+            token.id = user.id;
+            token.email = user.email ?? undefined;
+            token.username = user.username ?? undefined;
+            token.image = user.image ?? undefined;
+            token.subscriptionStatus = (user as any).subscriptionStatus ?? "free";
+            token.authProvider = (user as any).authProvider || "credentials";
+          }
+        }
+
+        console.log("[AUTH jwt] final token keys:", Object.keys(token), "email:", token.email, "id:", token.id);
+        return token;
+      } catch (error) {
+        console.error("[AUTH jwt] ERROR:", error);
         return token;
       }
-
-      if (user) {
-        // This runs on sign in.
-        // User should already exist in DB due to signIn callback.
-        // But we might need to fetch the DB ID if 'user' object from provider doesn't have it (it usually doesn't for social login initially unless adapter is used).
-
-        if (account && ["github", "google"].includes(account.provider)) {
-          if (user.email) {
-            token.email = user.email; // Fallback guarantees token.email exists
-            const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
-            if (dbUser) {
-              token.id = dbUser._id.toString();
-              token.username = dbUser.username;
-              token.email = dbUser.email || user.email;
-              token.image = dbUser.image || user.image;
-              token.authProvider = dbUser.authProvider as "google" | "github";
-              token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
-            } else {
-              console.warn("dbUser not found in jwt callback, falling back to user object.", user.email);
-            }
-          }
-        } else {
-          // Credentials login
-          token.id = user.id;
-          token.email = user.email ?? undefined;
-          token.username = user.username ?? undefined;
-          token.image = user.image ?? undefined;
-          token.subscriptionStatus = (user as any).subscriptionStatus ?? "free";
-          token.authProvider = (user as any).authProvider || "credentials";
-        }
-      }
-
-      return token;
     },
 
     async session({
@@ -202,7 +214,7 @@ export const authConfig: NextAuthConfig = {
       session: Session;
       token: JWTType;
     }): Promise<Session> {
-      console.log("Token in session callback:", token);
+      console.log("[AUTH session] token.email:", token.email, "token.id:", token.id);
       if (token.id) {
         session.user.id = token.id as string;
       }
