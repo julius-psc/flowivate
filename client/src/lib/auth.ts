@@ -16,6 +16,7 @@ const MONGODB_DB = process.env.MONGODB_DB;
 if (!MONGODB_DB) throw new Error("❌ MONGODB_DB environment variable not set");
 
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   // Removed MongoDBAdapter to handle user creation manually with Mongoose validation
   // adapter: MongoDBAdapter(clientPromise, { databaseName: MONGODB_DB }),
 
@@ -167,14 +168,17 @@ export const authConfig: NextAuthConfig = {
 
         if (account && ["github", "google"].includes(account.provider)) {
           if (user.email) {
+            token.email = user.email; // Fallback guarantees token.email exists
             const dbUser = await User.findOne<IUser>({ email: user.email }).exec();
             if (dbUser) {
               token.id = dbUser._id.toString();
               token.username = dbUser.username;
-              token.email = dbUser.email;
+              token.email = dbUser.email || user.email;
               token.image = dbUser.image || user.image;
               token.authProvider = dbUser.authProvider as "google" | "github";
               token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
+            } else {
+              console.warn("dbUser not found in jwt callback, falling back to user object.", user.email);
             }
           }
         } else {
@@ -198,6 +202,7 @@ export const authConfig: NextAuthConfig = {
       session: Session;
       token: JWTType;
     }): Promise<Session> {
+      console.log("Token in session callback:", token);
       if (token.id) {
         session.user.id = token.id as string;
       }
