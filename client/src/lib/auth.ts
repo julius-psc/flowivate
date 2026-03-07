@@ -171,6 +171,7 @@ export const authConfig: NextAuthConfig = {
             if (dbUser) {
               token.id = dbUser._id.toString();
               token.username = dbUser.username;
+              token.email = dbUser.email;
               token.image = dbUser.image || user.image;
               token.authProvider = dbUser.authProvider as "google" | "github";
               token.subscriptionStatus = dbUser.subscriptionStatus ?? "free";
@@ -179,6 +180,7 @@ export const authConfig: NextAuthConfig = {
         } else {
           // Credentials login
           token.id = user.id;
+          token.email = user.email ?? undefined;
           token.username = user.username ?? undefined;
           token.image = user.image ?? undefined;
           token.subscriptionStatus = (user as any).subscriptionStatus ?? "free";
@@ -201,6 +203,9 @@ export const authConfig: NextAuthConfig = {
       }
       if (token.username) {
         session.user.username = token.username as string;
+      }
+      if (token.email) {
+        session.user.email = token.email as string;
       }
       if (token.image) {
         session.user.image = token.image as string;
