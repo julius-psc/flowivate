@@ -92,6 +92,20 @@ export const DashboardProvider: React.FC<DashboardProviderProps> = ({ children }
     return () => clearTimeout(timeout);
   }, [selectedFeatures, isLoading]);
 
+  // Save layout immediately on tab close / navigation to prevent data loss
+  useEffect(() => {
+    if (isLoading) return;
+
+    const handleBeforeUnload = () => {
+      // Use sendBeacon for reliable delivery during page unload
+      const payload = JSON.stringify({ features: selectedFeatures });
+      navigator.sendBeacon('/api/layout', new Blob([payload], { type: 'application/json' }));
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [selectedFeatures, isLoading]);
+
   const addFeature = useCallback((featureKey: FeatureKey) => {
     setSelectedFeatures((prevFeatures) => {
       if (prevFeatures.includes(featureKey)) {

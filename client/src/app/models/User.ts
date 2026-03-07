@@ -20,19 +20,12 @@ export interface IUser extends Document {
   lemonSqueezyVariantId?: string | null;
   lemonSqueezyRenewsAt?: Date | null;
 
-  stripeCustomerId?: string | null;
   subscriptionStatus?: "active" | "canceled" | "past_due" | "unpaid" | "free" | "on_trial" | "expired" | "paused";
-  subscriptionPriceId?: string | null;
 
   pendingEmail?: string | null;
   emailVerificationToken?: string | null;
   emailVerificationTokenExpires?: Date | null;
 
-  onboardingCompleted?: boolean;
-  persona?: string | null;
-  goals?: string[];
-  workStyle?: string | null;
-  challenge?: string | null;
   authProvider?: "google" | "github" | "credentials" | null;
 }
 
@@ -77,13 +70,11 @@ const UserSchema = new Schema<IUser>(
     lemonSqueezyVariantId: { type: String, default: null },
     lemonSqueezyRenewsAt: { type: Date, default: null },
 
-    stripeCustomerId: { type: String, default: null }, // Deprecated
     subscriptionStatus: {
       type: String,
-      enum: ["active", "canceled", "past_due", "unpaid", "free", "on_trial", "expired", "paused"], // Added LS statuses
+      enum: ["active", "canceled", "past_due", "unpaid", "free", "on_trial", "expired", "paused"],
       default: "free",
     },
-    subscriptionPriceId: { type: String, default: null }, // Deprecated
 
     pendingEmail: {
       type: String,
@@ -94,11 +85,6 @@ const UserSchema = new Schema<IUser>(
     emailVerificationToken: { type: String, default: null },
     emailVerificationTokenExpires: { type: Date, default: null },
 
-    onboardingCompleted: { type: Boolean, default: false },
-    persona: { type: String, default: null },
-    goals: { type: [String], default: [] },
-    workStyle: { type: String, default: null },
-    challenge: { type: String, default: null },
     authProvider: {
       type: String,
       enum: ["google", "github", "credentials", null],

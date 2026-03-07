@@ -29,10 +29,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
+  // NOTE: Stripe is deprecated in favor of LemonSqueezy.
+  // This route is kept for legacy support only.
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
-    customer: user.stripeCustomerId || undefined,
+    customer_email: session.user.email,
     line_items: [
       {
         price: priceId,
