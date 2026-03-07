@@ -4,6 +4,7 @@ import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { checkRateLimit } from "@/lib/checkRateLimit";
 import { sanitizeNotes } from "@/lib/sanitize";
+import { logDailyActivity } from "@/lib/activity";
 
 interface Book {
   _id: ObjectId;
@@ -229,6 +230,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    await logDailyActivity(userObjectId);
 
     return NextResponse.json(
       { book: transformBookForResponse(insertedBook) },

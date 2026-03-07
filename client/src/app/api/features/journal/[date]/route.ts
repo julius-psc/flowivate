@@ -5,6 +5,7 @@ import { ObjectId } from "mongodb";
 import { parse, isValid as isValidDateFn, format } from "date-fns";
 import { checkRateLimit } from "@/lib/checkRateLimit";
 import { sanitizeNotes } from "@/lib/sanitize";
+import { logDailyActivity } from "@/lib/activity";
 
 interface JournalEntry {
   _id: ObjectId;
@@ -279,6 +280,9 @@ export async function PUT(
     }
 
     const savedEntry = result as JournalEntry;
+
+    await logDailyActivity(userObjectId);
+
     const statusCode =
       Math.abs(
         savedEntry.createdAt.getTime() - savedEntry.updatedAt.getTime()

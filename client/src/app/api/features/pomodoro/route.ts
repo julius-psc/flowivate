@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
+import { logDailyActivity } from "@/lib/activity";
 
 interface PomodoroSettings {
   focusTime: number;
@@ -251,6 +252,9 @@ export async function PUT() {
     }
 
     const updatedData = updateResult as PomodoroData;
+
+    // Log the daily activity
+    await logDailyActivity(userObjectId);
 
     return NextResponse.json(
       {

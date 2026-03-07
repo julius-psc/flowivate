@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { logDailyActivity } from "@/lib/activity";
 
 const DB_NAME = process.env.MONGODB_DB || "Flowivate";
 const COLLECTION_NAME = "task_lists";
@@ -72,7 +73,7 @@ const transformTaskListForResponse = (
 ): TaskListResponse | null => {
   if (!doc) return null;
   const transformTask = (task: TaskItem): TaskListResponse["tasks"][number] => ({
-    _id: task._id.toString(),
+    _id: task._id ? task._id.toString() : new ObjectId().toString(),
     name: task.name,
     completed: task.completed,
     priority: task.priority || 0,
@@ -184,38 +185,38 @@ export async function POST(request: NextRequest) {
         const processedSubtasks =
           task.subtasks && Array.isArray(task.subtasks)
             ? task.subtasks.map(
-                (subtask: {
-                  _id?: string;
-                  name: string;
-                  completed?: boolean;
-                  priority?: number;
-                  subtasks?: TaskListResponse["tasks"];
-                }) => {
-                  if (
-                    !subtask ||
-                    typeof subtask.name !== "string" ||
-                    subtask.name.trim() === "" ||
-                    subtask.name.trim().length > MAX_TASK_NAME_LENGTH
-                  ) {
-                    throw new Error(
-                      `Invalid subtask structure: Subtask name is required, must be a non-empty string, and not exceed ${MAX_TASK_NAME_LENGTH} characters.`
-                    );
-                  }
-                  return {
-                    _id: new ObjectId(),
-                    name: subtask.name.trim(),
-                    completed:
-                      typeof subtask.completed === "boolean"
-                        ? subtask.completed
-                        : false,
-                    priority:
-                      typeof subtask.priority === "number"
-                        ? Math.max(0, Math.min(3, subtask.priority))
-                        : 0,
-                    subtasks: [],
-                  };
+              (subtask: {
+                _id?: string;
+                name: string;
+                completed?: boolean;
+                priority?: number;
+                subtasks?: TaskListResponse["tasks"];
+              }) => {
+                if (
+                  !subtask ||
+                  typeof subtask.name !== "string" ||
+                  subtask.name.trim() === "" ||
+                  subtask.name.trim().length > MAX_TASK_NAME_LENGTH
+                ) {
+                  throw new Error(
+                    `Invalid subtask structure: Subtask name is required, must be a non-empty string, and not exceed ${MAX_TASK_NAME_LENGTH} characters.`
+                  );
                 }
-              )
+                return {
+                  _id: new ObjectId(),
+                  name: subtask.name.trim(),
+                  completed:
+                    typeof subtask.completed === "boolean"
+                      ? subtask.completed
+                      : false,
+                  priority:
+                    typeof subtask.priority === "number"
+                      ? Math.max(0, Math.min(3, subtask.priority))
+                      : 0,
+                  subtasks: [],
+                };
+              }
+            )
             : [];
         return {
           _id: new ObjectId(),
@@ -249,6 +250,8 @@ export async function POST(request: NextRequest) {
     const createdTaskList = await taskListsCollection.findOne({
       _id: result.insertedId,
     });
+
+    await logDailyActivity(userObjectId);
 
     return NextResponse.json(transformTaskListForResponse(createdTaskList), {
       status: 201,
@@ -350,60 +353,60 @@ export async function PUT(request: NextRequest) {
           const processedSubtasks =
             task.subtasks && Array.isArray(task.subtasks)
               ? task.subtasks.map(
-                  (subtask: {
-                    _id?: string;
-                    name: string;
-                    completed?: boolean;
-                    priority?: number;
-                    subtasks?: TaskListResponse["tasks"];
-                  }) => {
-                    if (
-                      !subtask ||
-                      typeof subtask.name !== "string" ||
-                      subtask.name.trim() === "" ||
-                      subtask.name.trim().length > MAX_TASK_NAME_LENGTH
-                    ) {
-                      throw new Error(
-                        `Invalid subtask structure: Subtask name is required, must be a non-empty string, and not exceed ${MAX_TASK_NAME_LENGTH} characters.`
-                      );
-                    }
-                    const subtaskId =
-                      subtask._id && isValidObjectId(subtask._id)
-                        ? new ObjectId(subtask._id)
-                        : new ObjectId();
-                    return {
-                      _id: subtaskId,
-                      name: subtask.name.trim(),
-                      completed:
-                        typeof subtask.completed === "boolean"
-                          ? subtask.completed
-                          : false,
-                      priority:
-                        typeof subtask.priority === "number"
-                          ? Math.max(0, Math.min(3, subtask.priority))
-                          : 0,
-                      subtasks: subtask.subtasks
-                        ? subtask.subtasks.map((nestedSubtask) => ({
-                            _id:
-                              nestedSubtask._id &&
-                              isValidObjectId(nestedSubtask._id)
-                                ? new ObjectId(nestedSubtask._id)
-                                : new ObjectId(),
-                            name: nestedSubtask.name.trim(),
-                            completed:
-                              typeof nestedSubtask.completed === "boolean"
-                                ? nestedSubtask.completed
-                                : false,
-                            priority:
-                              typeof nestedSubtask.priority === "number"
-                                ? Math.max(0, Math.min(3, nestedSubtask.priority))
-                                : 0,
-                            subtasks: [],
-                          }))
-                        : [],
-                    };
+                (subtask: {
+                  _id?: string;
+                  name: string;
+                  completed?: boolean;
+                  priority?: number;
+                  subtasks?: TaskListResponse["tasks"];
+                }) => {
+                  if (
+                    !subtask ||
+                    typeof subtask.name !== "string" ||
+                    subtask.name.trim() === "" ||
+                    subtask.name.trim().length > MAX_TASK_NAME_LENGTH
+                  ) {
+                    throw new Error(
+                      `Invalid subtask structure: Subtask name is required, must be a non-empty string, and not exceed ${MAX_TASK_NAME_LENGTH} characters.`
+                    );
                   }
-                )
+                  const subtaskId =
+                    subtask._id && isValidObjectId(subtask._id)
+                      ? new ObjectId(subtask._id)
+                      : new ObjectId();
+                  return {
+                    _id: subtaskId,
+                    name: subtask.name.trim(),
+                    completed:
+                      typeof subtask.completed === "boolean"
+                        ? subtask.completed
+                        : false,
+                    priority:
+                      typeof subtask.priority === "number"
+                        ? Math.max(0, Math.min(3, subtask.priority))
+                        : 0,
+                    subtasks: subtask.subtasks
+                      ? subtask.subtasks.map((nestedSubtask) => ({
+                        _id:
+                          nestedSubtask._id &&
+                            isValidObjectId(nestedSubtask._id)
+                            ? new ObjectId(nestedSubtask._id)
+                            : new ObjectId(),
+                        name: nestedSubtask.name.trim(),
+                        completed:
+                          typeof nestedSubtask.completed === "boolean"
+                            ? nestedSubtask.completed
+                            : false,
+                        priority:
+                          typeof nestedSubtask.priority === "number"
+                            ? Math.max(0, Math.min(3, nestedSubtask.priority))
+                            : 0,
+                        subtasks: [],
+                      }))
+                      : [],
+                  };
+                }
+              )
               : [];
           return {
             _id: existingTaskId,
@@ -450,6 +453,8 @@ export async function PUT(request: NextRequest) {
       _id: taskListObjectId,
       userId: userObjectId,
     });
+
+    await logDailyActivity(userObjectId);
     return NextResponse.json(transformTaskListForResponse(updatedTaskList), {
       status: 200,
     });

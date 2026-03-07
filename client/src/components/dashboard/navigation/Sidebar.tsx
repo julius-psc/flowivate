@@ -15,6 +15,7 @@ import {
   IconSettings,
   IconBook,
   IconCircleDashedCheck,
+  IconChartHistogram,
 } from "@tabler/icons-react";
 
 import { Maximize2, Minimize2 } from "lucide-react";
@@ -61,11 +62,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     { name: "Tasks", icon: IconCircleDashedCheck, path: "/dashboard/tasks" },
     { name: "Journal", icon: IconNotes, path: "/dashboard/journal" },
     { name: "Books", icon: IconBook, path: "/dashboard/books" },
+    { name: "Stats", icon: IconChartHistogram, path: "/dashboard/stats" },
   ];
 
   // Define base classes
   const asideBaseClasses =
-    "flex flex-col z-30 px-2 py-4 ml-2 mx-2 my-1 mb-2 w-16 backdrop-blur-xl rounded-xl transition-opacity duration-300";
+    "flex flex-col z-30 px-2 py-4 ml-2 mx-2 mt-6 mb-2 w-16 backdrop-blur-xl rounded-xl transition-opacity duration-300";
   // Define pre-mount classes (solid, maybe invisible)
   const asidePreMountClasses =
     "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
@@ -110,8 +112,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     >
                       <item.icon
                         className={`w-5 h-5 ${pathname === item.path
-                            ? activeIconColor
-                            : inactiveIconColor // Use new color vars
+                          ? activeIconColor
+                          : inactiveIconColor // Use new color vars
                           }`}
                       />
                     </div>

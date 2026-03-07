@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
@@ -15,8 +16,6 @@ const ALWAYS_PUBLIC_PATHS = [
     '/favicon.ico',
 ];
 
-// Create a new ratelimiter, that allows 10 requests per 10 seconds
-// You can adjust this as needed.
 const ratelimit =
     process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
         ? new Ratelimit({
@@ -29,46 +28,73 @@ const ratelimit =
 
 export const config = {
     matcher: [
-        '/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)',
-        "/api/:path*"
+        "/((?!_next/static|_next/image|favicon.ico|icon.png|public|api/auth|api/lemonsqueezy/webhook|api/stripe/webhook).*)",
     ],
 };
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // --- Proxy/Waitlist Logic ---
+    // ── App lock / waitlist redirect ──────────────────────────────────────────
     const isAppLocked = process.env.NEXT_PUBLIC_APP_LOCKED === 'true';
+    const isAlwaysPublic = ALWAYS_PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 
-    const isAlwaysPublic = ALWAYS_PUBLIC_PATHS.some((path) =>
-        pathname.startsWith(path)
-    );
-
-    // If it's a public path, we generally allow it, 
-    // BUT we still might want to rate limit API calls even if they are public.
-    // However, the original proxy logic returned next() immediately.
-    // Let's preserve proxy logic first for non-API routes or stick to the original flow.
-
-    // Check for App Lock Redirection
     if (!isAlwaysPublic && isAppLocked) {
         const earlyAccessCookie = request.cookies.get('earlyAccess')?.value;
-        const hasAccess = earlyAccessCookie === 'granted';
-
-        if (!hasAccess) {
+        if (earlyAccessCookie !== 'granted') {
             const url = request.nextUrl.clone();
             url.pathname = WAITLIST_PATH;
             return NextResponse.redirect(url);
         }
     }
 
-    // --- Rate Limiting Logic (Only for API) ---
-    // Only rate limit API routes
-    if (!request.nextUrl.pathname.startsWith("/api")) {
+    // ── Auth protection (Edge-compatible via JWT decode, no bcrypt) ───────────
+    const token = await getToken({
+        req: request,
+        secret: process.env.AUTH_SECRET,
+    });
+    const isLoggedIn = !!token;
+
+    const isAuthPage =
+        pathname.startsWith("/login") ||
+        pathname.startsWith("/register") ||
+        pathname.startsWith("/forgot-password") ||
+        pathname.startsWith("/reset-password");
+
+    const isProtectedRoute = pathname.startsWith("/dashboard");
+
+    const isProtectedApi =
+        pathname.startsWith("/api/features") ||
+        pathname.startsWith("/api/stats") ||
+        pathname.startsWith("/api/layout") ||
+        pathname.startsWith("/api/user") ||
+        pathname.startsWith("/api/ai") ||
+        pathname.startsWith("/api/chats") ||
+        pathname.startsWith("/api/claude");
+
+    // Redirect authenticated users away from auth pages
+    if (isAuthPage && isLoggedIn) {
+        return NextResponse.redirect(new URL("/dashboard", request.nextUrl));
+    }
+
+    // Redirect unauthenticated users to login for protected routes
+    if (isProtectedRoute && !isLoggedIn) {
+        const callbackUrl = encodeURIComponent(pathname + request.nextUrl.search);
+        return NextResponse.redirect(
+            new URL(`/login?callbackUrl=${callbackUrl}`, request.nextUrl)
+        );
+    }
+
+    // Return 401 for unauthenticated API requests to protected endpoints
+    if (isProtectedApi && !isLoggedIn) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // ── Rate limiting (API routes only) ───────────────────────────────────────
+    if (!pathname.startsWith("/api")) {
         return NextResponse.next();
     }
 
-    // If Upstash is not configured, we just proceed without rate limiting
-    // Ideally, we should log this or handle it better in production
     if (!ratelimit) {
         if (process.env.NODE_ENV === "development") {
             console.warn("Upstash Redis not configured, skipping rate limiting.");
@@ -78,22 +104,14 @@ export async function proxy(request: NextRequest) {
 
     const forwardedFor = request.headers.get("x-forwarded-for");
     const ip = forwardedFor ? forwardedFor.split(",")[0] : "127.0.0.1";
-
-    // Use a constant string for localhost to avoid issues with varying IPs in dev
     const identifier = process.env.NODE_ENV === "development" ? "dev-user" : ip;
 
-    const { success, pending, limit, reset, remaining } = await ratelimit.limit(
-        identifier
-    );
-
+    const { success, pending, limit, reset, remaining } = await ratelimit.limit(identifier);
     await pending;
 
     const res = success
         ? NextResponse.next()
-        : NextResponse.json(
-            { message: "Too Many Requests" },
-            { status: 429 }
-        );
+        : NextResponse.json({ message: "Too Many Requests" }, { status: 429 });
 
     res.headers.set("X-RateLimit-Limit", limit.toString());
     res.headers.set("X-RateLimit-Remaining", remaining.toString());

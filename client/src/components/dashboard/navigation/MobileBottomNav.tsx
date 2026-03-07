@@ -12,6 +12,7 @@ import {
     IconNotes,
     IconBook,
     IconSettings,
+    IconChartHistogram,
 } from "@tabler/icons-react";
 
 interface MobileBottomNavProps {
@@ -46,6 +47,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ openSettings }) => {
         { name: "Tasks", icon: IconCircleDashedCheck, path: "/dashboard/tasks" },
         { name: "Journal", icon: IconNotes, path: "/dashboard/journal" },
         { name: "Books", icon: IconBook, path: "/dashboard/books" },
+        { name: "Stats", icon: IconChartHistogram, path: "/dashboard/stats" },
     ];
 
     const bgClasses = !isMounted

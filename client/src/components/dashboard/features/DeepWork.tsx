@@ -192,6 +192,7 @@ const DeepWork: React.FC = () => {
         `TODO: Mark task ${completedTask.id} (${completedTask.name}) as complete.`
       );
     }
+    fetch("/api/features/pomodoro", { method: "PUT" }).catch(console.error);
   }, [resetState, selectedTask]);
 
   const startTimer = useCallback(() => {

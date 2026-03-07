@@ -4,6 +4,7 @@ import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { checkRateLimit } from "@/lib/checkRateLimit";
 import { sanitizeNotes } from "@/lib/sanitize";
+import { logDailyActivity } from "@/lib/activity";
 
 interface Book {
   _id: ObjectId;
@@ -348,6 +349,9 @@ export async function PUT(
       _id: updatedBook._id.toString(),
       userId: updatedBook.userId.toString(),
     };
+
+    await logDailyActivity(userObjectId);
+
     return NextResponse.json({ book: responseUpdatedBook }, { status: 200 });
   } catch (error) {
     console.error(`Error in PUT /api/features/books/${bookId}:`, error);
