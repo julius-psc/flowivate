@@ -160,7 +160,7 @@ export async function GET() {
 
     const accountCreatedAt = (userDoc as unknown as { createdAt?: Date } | null)?.createdAt?.toISOString() ?? null;
     const subStatus = (userDoc as unknown as { subscriptionStatus?: string } | null)?.subscriptionStatus;
-    const isElite = subStatus === "active" || subStatus === "pro";
+    const isElite = subStatus === "active" || subStatus === "pro" || subStatus === "on_trial" || subStatus === "trialing";
 
     return NextResponse.json({
       isElite,

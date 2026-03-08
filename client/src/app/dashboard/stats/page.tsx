@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
@@ -232,20 +233,16 @@ export default function StatsPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState("your city");
-  const [showPaywall, setShowPaywall] = useState(false);
+  const { status: subscriptionStatus, loading: subLoading } = useSubscriptionStatus();
 
+  const showPaywall = !subLoading && subscriptionStatus !== "active";
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetch("/api/stats")
       .then((r) => r.json())
-      .then((data) => {
-        if (data.isElite === false) {
-          setShowPaywall(true);
-        }
-        setStats(data);
-      })
+      .then((data) => setStats(data))
       .catch(() => setStats(null))
       .finally(() => setLoading(false));
   }, []);
@@ -316,7 +313,7 @@ export default function StatsPage() {
 
   const currentInsight = insightPool[Math.floor(Date.now() / (1000 * 60 * 60 * 3)) % insightPool.length];
 
-  if (!mounted || loading) {
+  if (!mounted || loading || subLoading) {
     return (
       <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-4">
         <Skeleton className="h-8 w-48 mb-1" />
