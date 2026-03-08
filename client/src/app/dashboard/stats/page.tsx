@@ -234,16 +234,29 @@ export default function StatsPage() {
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState("your city");
   const { status: subscriptionStatus, loading: subLoading } = useSubscriptionStatus();
+  const [apiIsElite, setApiIsElite] = useState<boolean | null>(null);
 
-  const showPaywall = !subLoading && subscriptionStatus !== "active";
+  // Default to NOT showing paywall. Only show if we've confirmed from at least one source
+  // that the user is not elite, AND no source says they ARE elite.
+  const doneChecking = !subLoading && apiIsElite !== null;
+  const isEliteByHook = subscriptionStatus === "active";
+  const isEliteByApi = apiIsElite === true;
+  const showPaywall = doneChecking && !isEliteByHook && !isEliteByApi;
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetch("/api/stats")
       .then((r) => r.json())
-      .then((data) => setStats(data))
-      .catch(() => setStats(null))
+      .then((data) => {
+        console.log("[Stats] API response isElite:", data.isElite, "subscriptionStatus from hook:", subscriptionStatus);
+        setApiIsElite(data.isElite === true);
+        setStats(data);
+      })
+      .catch(() => {
+        setApiIsElite(false);
+        setStats(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -313,7 +326,7 @@ export default function StatsPage() {
 
   const currentInsight = insightPool[Math.floor(Date.now() / (1000 * 60 * 60 * 3)) % insightPool.length];
 
-  if (!mounted || loading || subLoading) {
+  if (!mounted || loading || subLoading || apiIsElite === null) {
     return (
       <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-4">
         <Skeleton className="h-8 w-48 mb-1" />
