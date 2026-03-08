@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { isEliteStatus } from "@/lib/subscription";
 
 const DB_NAME = process.env.MONGODB_DB || "Flowivate";
 
@@ -160,7 +161,7 @@ export async function GET() {
 
     const accountCreatedAt = (userDoc as unknown as { createdAt?: Date } | null)?.createdAt?.toISOString() ?? null;
     const subStatus = (userDoc as unknown as { subscriptionStatus?: string } | null)?.subscriptionStatus;
-    const isElite = subStatus === "active" || subStatus === "pro" || subStatus === "on_trial" || subStatus === "trialing";
+    const isElite = isEliteStatus(subStatus);
     console.log("[stats] userId:", userId, "userDoc found:", !!userDoc, "subStatus:", subStatus, "isElite:", isElite);
 
     return NextResponse.json({

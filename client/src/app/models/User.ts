@@ -20,7 +20,7 @@ export interface IUser extends Document {
   lemonSqueezyVariantId?: string | null;
   lemonSqueezyRenewsAt?: Date | null;
 
-  subscriptionStatus?: "active" | "canceled" | "past_due" | "unpaid" | "free" | "on_trial" | "expired" | "paused";
+  subscriptionStatus?: "active" | "paid" | "canceled" | "past_due" | "unpaid" | "free" | "on_trial" | "expired" | "paused";
 
   pendingEmail?: string | null;
   emailVerificationToken?: string | null;
@@ -72,7 +72,7 @@ const UserSchema = new Schema<IUser>(
 
     subscriptionStatus: {
       type: String,
-      enum: ["active", "canceled", "past_due", "unpaid", "free", "on_trial", "expired", "paused"],
+      enum: ["active", "paid", "canceled", "past_due", "unpaid", "free", "on_trial", "expired", "paused"],
       default: "free",
     },
 

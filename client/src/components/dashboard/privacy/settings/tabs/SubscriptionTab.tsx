@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useSettings } from "../useSettings";
 import { CreditCard, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { isEliteStatus } from "@/lib/subscription";
 
 type SubStatus = "active" | "canceled" | "past_due" | "free";
 
@@ -114,17 +115,17 @@ export default function SubscriptionTab(): React.JSX.Element {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-[13px] text-zinc-900 dark:text-zinc-100">
-                {subscriptionStatus === "free" ? "Free" : "Elite"}
+                {isEliteStatus(subscriptionStatus) ? "Elite" : "Free"}
               </span>
               <span
-                className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${subscriptionStatus === "active"
+                className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${isEliteStatus(subscriptionStatus)
                   ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                   : subscriptionStatus === "past_due"
                     ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                   }`}
               >
-                {subscriptionStatus === "active"
+                {isEliteStatus(subscriptionStatus)
                   ? "Active"
                   : subscriptionStatus === "past_due"
                     ? "Past due"
@@ -133,7 +134,7 @@ export default function SubscriptionTab(): React.JSX.Element {
                       : "Current"}
               </span>
             </div>
-            {subscriptionStatus === "free" ? (
+            {!isEliteStatus(subscriptionStatus) && subscriptionStatus !== "past_due" && subscriptionStatus !== "canceled" ? (
               <button
                 onClick={handleUpgradeToPro}
                 className={`${styling.buttonBaseClasses} ${styling.buttonPrimaryClasses}`}
@@ -153,7 +154,7 @@ export default function SubscriptionTab(): React.JSX.Element {
         </div>
 
         {/* Next billing date - only show for active subscriptions */}
-        {subscriptionStatus === "active" && nextInvoice && (
+        {isEliteStatus(subscriptionStatus) && nextInvoice && (
           <>
             <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
             <div className="grid grid-cols-[140px_1fr] gap-4 items-center">

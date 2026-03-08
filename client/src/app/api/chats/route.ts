@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { auth } from "@/lib/auth";
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { isEliteStatus } from '@/lib/subscription';
 
 interface ChatMessage {
   sender: 'user' | 'ai' | string;
@@ -139,9 +140,8 @@ export async function POST(request: NextRequest) {
     // Use the DB status if available, fallback to session, then "free"
     const subscriptionStatus = user?.subscriptionStatus || session.user?.subscriptionStatus || "free";
 
-    // Allow 'active' and maybe 'trialing' if you have that status.
-    // Adjust logic based on your exact status enum
-    if (subscriptionStatus !== "active" && subscriptionStatus !== "trialing") {
+    // Allow any elite/paid status.
+    if (!isEliteStatus(subscriptionStatus)) {
       logApiError('POST', endpoint, sessionUserId, new Error(`Restricted access attempted by user with status: ${subscriptionStatus}`));
       return NextResponse.json({ message: 'Upgrade to Elite to use Lumo.' }, { status: 403 });
     }

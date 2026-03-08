@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { IconPencil } from "@tabler/icons-react";
 import { Session } from "next-auth";
+import { isEliteStatus } from "@/lib/subscription";
 
 interface StatusOption {
   name: string;
@@ -119,11 +120,11 @@ const ProfilePopup: React.FC<ProfilePopupProps> = ({
                   {username}
                 </h3>
                 {/* Dynamic Badge - Black & White High Contrast */}
-                <span className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide rounded border ${(subscriptionStatus === "active" || subscriptionStatus === "pro")
+                <span className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide rounded border ${isEliteStatus(subscriptionStatus)
                   ? "bg-primary-blue border-primary-blue text-white"
                   : "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-gray-900"
                   }`}>
-                  {subscriptionStatus === "active" ? "ELITE" : subscriptionStatus}
+                  {isEliteStatus(subscriptionStatus) ? "ELITE" : subscriptionStatus}
                 </span>
               </div>
 

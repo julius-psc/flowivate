@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
+import { isEliteStatus } from "@/lib/subscription";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
@@ -239,7 +240,7 @@ export default function StatsPage() {
   // Default to NOT showing paywall. Only show if we've confirmed from at least one source
   // that the user is not elite, AND no source says they ARE elite.
   const doneChecking = !subLoading && apiIsElite !== null;
-  const isEliteByHook = subscriptionStatus === "active";
+  const isEliteByHook = isEliteStatus(subscriptionStatus);
   const isEliteByApi = apiIsElite === true;
   const showPaywall = doneChecking && !isEliteByHook && !isEliteByApi;
 

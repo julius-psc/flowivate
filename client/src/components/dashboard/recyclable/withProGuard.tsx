@@ -1,8 +1,9 @@
 "use client";
 import React from "react";
+import { isEliteStatus } from "@/lib/subscription";
 
 type WithProGuardProps = {
-  subscriptionStatus: "active" | "canceled" | "past_due" | "free";
+  subscriptionStatus: string;
   isProOnly: boolean;
   children: React.ReactNode;
 };
@@ -12,7 +13,7 @@ export default function WithProGuard({
   isProOnly,
   children,
 }: WithProGuardProps) {
-  const isLocked = isProOnly && subscriptionStatus !== "active";
+  const isLocked = isProOnly && !isEliteStatus(subscriptionStatus);
 
   if (isLocked) {
     return (

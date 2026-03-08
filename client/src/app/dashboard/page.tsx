@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import connectToDB from "@/lib/mongoose";
 import User from "@/app/models/User";
 import { auth } from "@/lib/auth";
+import { isEliteStatus } from "@/lib/subscription";
 import DashboardClient from "./DashboardClient";
 
 export default async function DashboardPage() {
@@ -15,12 +16,12 @@ export default async function DashboardPage() {
     .select("subscriptionStatus")
     .lean();
 
+  const rawStatus = user?.subscriptionStatus ?? "free";
   const subscriptionStatus: "active" | "canceled" | "past_due" | "free" =
-    user?.subscriptionStatus === "active" ||
-      user?.subscriptionStatus === "canceled" ||
-      user?.subscriptionStatus === "past_due"
-      ? user.subscriptionStatus
-      : "free";
+    isEliteStatus(rawStatus) ? "active"
+      : rawStatus === "canceled" || rawStatus === "past_due"
+        ? rawStatus
+        : "free";
 
   return <DashboardClient subscriptionStatus={subscriptionStatus} />;
 }
