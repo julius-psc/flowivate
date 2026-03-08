@@ -49,9 +49,18 @@ export async function proxy(request: NextRequest) {
     }
 
     // ── Auth protection (Edge-compatible via JWT decode, no bcrypt) ───────────
+    // NextAuth v5 uses "authjs.session-token" cookie (not "next-auth.session-token")
+    // In production (HTTPS), the cookie is prefixed with "__Secure-"
+    const isSecure = request.nextUrl.protocol === "https:";
+    const cookieName = isSecure
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token";
+
     const token = await getToken({
         req: request,
         secret: process.env.AUTH_SECRET,
+        cookieName,
+        salt: cookieName,
     });
     const isLoggedIn = !!token;
 
