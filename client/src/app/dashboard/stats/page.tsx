@@ -233,7 +233,6 @@ export default function StatsPage() {
   const [mounted, setMounted] = useState(false);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [city, setCity] = useState("your city");
   const { status: subscriptionStatus, loading: subLoading } = useSubscriptionStatus();
   const [apiIsElite, setApiIsElite] = useState<boolean | null>(null);
 
@@ -250,7 +249,6 @@ export default function StatsPage() {
     fetch("/api/stats")
       .then((r) => r.json())
       .then((data) => {
-        console.log("[Stats] API response isElite:", data.isElite, "subscriptionStatus from hook:", subscriptionStatus);
         setApiIsElite(data.isElite === true);
         setStats(data);
       })
@@ -261,13 +259,6 @@ export default function StatsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    fetch("https://ipapi.co/json/")
-      .then((r) => r.json())
-      .then((d: { city?: string }) => { if (d.city) setCity(d.city); })
-      .catch(() => { });
-  }, []);
-
   const isSpecialTheme = useMemo(
     () => mounted && !!theme && specialSceneThemeNames.includes(theme as (typeof specialSceneThemeNames)[number]),
     [mounted, theme]
@@ -275,57 +266,6 @@ export default function StatsPage() {
   const cardClass = isSpecialTheme
     ? "dark bg-zinc-900/70 border-zinc-800/50 shadow-none"
     : "shadow-none";
-
-  // Rotating insight — cycles every 3 hours
-  const insightPool = useMemo<{ headline: React.ReactNode; body: string; accent: string }[]>(() => [
-    {
-      headline: <>4.2h on <span className="text-orange-400">Netflix</span> this week</>,
-      body: "Enough for 2 full courses.",
-      accent: "border-l-[3px] border-l-orange-400",
-    },
-    {
-      headline: <><span className="text-yellow-400">14 tab switches</span> in 20 min</>,
-      body: "Each switch costs ~23 min of recovery.",
-      accent: "border-l-[3px] border-l-yellow-400",
-    },
-    {
-      headline: <><span className="text-blue-400">StackOverflow</span> → <span className="text-red-400">Reddit</span></>,
-      body: "You lost the thread. Close the tab.",
-      accent: "border-l-[3px] border-l-blue-400",
-    },
-    {
-      headline: <>3.1h on <span className="text-orange-400">YouTube</span> this week</>,
-      body: "186 min of passive content — what would you build instead?",
-      accent: "border-l-[3px] border-l-orange-400",
-    },
-    {
-      headline: <>Top 5% of focusers in <span className="text-green-500">{city}</span></>,
-      body: "Most people check their phone every 3 minutes.",
-      accent: "border-l-[3px] border-l-green-500",
-    },
-    {
-      headline: <><span className="text-yellow-400">22 context switches</span> today</>,
-      body: "You're sprinting between 22 starting lines.",
-      accent: "border-l-[3px] border-l-yellow-400",
-    },
-    {
-      headline: <><span className="text-blue-400">Twitter</span> → <span className="text-red-400">3 YouTube videos</span></>,
-      body: "Started with one tweet. The algorithm did the rest.",
-      accent: "border-l-[3px] border-l-blue-400",
-    },
-    {
-      headline: <><span className="text-green-500">3,500 ft</span> climbed today</>,
-      body: "12% of Everest, powered by focus alone.",
-      accent: "border-l-[3px] border-l-green-500",
-    },
-    {
-      headline: <>2.4h on <span className="text-orange-400">Instagram</span> this week</>,
-      body: "That's 80 pages of reading you didn't do.",
-      accent: "border-l-[3px] border-l-orange-400",
-    },
-  ], [city]);
-
-  const currentInsight = insightPool[Math.floor(Date.now() / (1000 * 60 * 60 * 3)) % insightPool.length];
 
   if (!mounted || loading || subLoading || apiIsElite === null) {
     return (
@@ -398,6 +338,107 @@ export default function StatsPage() {
     return isNew ? first.toLocaleString("default", { month: "short" }) : "";
   });
 
+  // ── Data-driven insights ──────────────────────────────────────────────────
+  const insightPool: { headline: React.ReactNode; body: string }[] = [];
+
+  // Focus sessions
+  if (stats.focusSessions > 0) {
+    const approxHours = Math.round((stats.focusSessions * 25) / 60 * 10) / 10;
+    insightPool.push({
+      headline: <><span className="text-violet-400">{stats.focusSessions} focus sessions</span> completed</>,
+      body: `That's roughly ${approxHours}h of deep work. Quality over quantity.`,
+    });
+  }
+
+  // Task completion rate
+  if (stats.tasks.total > 0) {
+    insightPool.push({
+      headline: <><span className="text-blue-400">{stats.tasks.completionRate}%</span> task completion rate</>,
+      body: `${stats.tasks.completed} of ${stats.tasks.total} tasks done. ${stats.tasks.completionRate >= 80 ? "You're on fire." : stats.tasks.completionRate >= 50 ? "Solid momentum — keep pushing." : "Small steps still count."}`,
+    });
+  }
+
+  // Books
+  if (stats.books.total > 0) {
+    const bookMsg = stats.books.completed > 0
+      ? `${stats.books.completed} finished${stats.books.inProgress > 0 ? `, ${stats.books.inProgress} in progress` : ""}. Knowledge compounds.`
+      : `${stats.books.inProgress} book${stats.books.inProgress !== 1 ? "s" : ""} in progress. Every page counts.`;
+    insightPool.push({
+      headline: <><span className="text-amber-400">{stats.books.total} book{stats.books.total !== 1 ? "s" : ""}</span> tracked</>,
+      body: bookMsg,
+    });
+  }
+
+  // Journal
+  if (stats.journal.total > 0) {
+    insightPool.push({
+      headline: <><span className="text-emerald-400">{stats.journal.total} journal entries</span> written</>,
+      body: stats.journal.thisMonth > 0
+        ? `${stats.journal.thisMonth} this month alone. Self-reflection is a superpower.`
+        : "Consistency in reflection builds clarity.",
+    });
+  }
+
+  // Streak
+  if (stats.streak > 0) {
+    insightPool.push({
+      headline: <><span className="text-orange-400">{stats.streak}-day</span> streak</>,
+      body: stats.streak >= 30
+        ? "A month of consistency. Discipline is freedom."
+        : stats.streak >= 7
+          ? "A full week of showing up. Habits are forming."
+          : "Every streak starts with day one. Keep going.",
+    });
+  }
+
+  // Sleep
+  if (sleepAvg !== null) {
+    insightPool.push({
+      headline: <>Averaging <span className="text-violet-400">{sleepAvg}h</span> of sleep</>,
+      body: sleepAvg >= 7 && sleepAvg <= 9
+        ? "Right in the sweet spot. Sleep fuels everything."
+        : sleepAvg < 7
+          ? "A little below the ideal 7–9h. Rest is productive too."
+          : "Generous rest. Make sure you feel energised.",
+    });
+  }
+
+  // Hydration
+  if (goalDays > 0) {
+    insightPool.push({
+      headline: <>Hydration goal hit <span className="text-sky-400">{goalDays} of 7</span> days</>,
+      body: goalDays >= 5
+        ? "Your body is thanking you. Keep it up."
+        : "Water is the simplest performance hack. Drink more.",
+    });
+  }
+
+  // Mood
+  if (bestMood && MOOD_LABELS[bestMood]) {
+    insightPool.push({
+      headline: <>Most frequent mood: <span className="text-green-400">{MOOD_LABELS[bestMood]}</span></>,
+      body: `${totalMoodEntries} mood check-in${totalMoodEntries !== 1 ? "s" : ""} this month. Awareness is the first step.`,
+    });
+  }
+
+  // Active days
+  if (activeDays > 0) {
+    insightPool.push({
+      headline: <><span className="text-green-500">{activeDays} active days</span> on Flowivate</>,
+      body: "Every green square is a day you chose growth.",
+    });
+  }
+
+  // Fallback if no data yet
+  if (insightPool.length === 0) {
+    insightPool.push({
+      headline: <>Your journey <span className="text-blue-400">starts now</span></>,
+      body: "Start a focus session, log a task, or write in your journal.",
+    });
+  }
+
+  const currentInsight = insightPool[Math.floor(Date.now() / (1000 * 60 * 60 * 3)) % insightPool.length];
+
   return (
     <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8 max-w-5xl mx-auto">
 
@@ -407,7 +448,7 @@ export default function StatsPage() {
           {currentInsight.headline}
         </h1>
         <p className="text-muted-foreground mt-1.5">
-          {currentInsight.body} Impressive, Julius!
+          {currentInsight.body}
         </p>
       </div>
 
