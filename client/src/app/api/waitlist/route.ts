@@ -1,67 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
-import clientPromise from "../../../lib/mongodb";
-import { ObjectId } from 'mongodb'; 
+import { createClient } from "@supabase/supabase-js";
 
-interface WaitlistEntryDocument {
-  _id: ObjectId; 
-  email: string;
-  createdAt: Date;
+const ipAttempts = new Map<string, { count: number; resetAt: number }>();
+const WINDOW_MS = 60 * 60 * 1000;
+const MAX_ATTEMPTS = 3;
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = ipAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    ipAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+  if (entry.count >= MAX_ATTEMPTS) return true;
+  entry.count++;
+  return false;
 }
 
-const DB_NAME = process.env.MONGODB_DB || "Flowivate";
-const COLLECTION_NAME = "waitlist_entries";
-const MAX_EMAIL_LENGTH = 254;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const isValidEmail = (email: string): boolean => {
-    if (!email || typeof email !== 'string') return false;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email) && email.length <= MAX_EMAIL_LENGTH;
-};
+const supabase =
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+    : null;
 
 export async function POST(request: NextRequest) {
-  try {
-    let body;
-    try {
-        body = await request.json();
-    } catch (jsonError) {
-        console.error("Error parsing JSON in POST /api/waitlist:", jsonError);
-        return NextResponse.json({ message: "Invalid request format." }, { status: 400 });
-    }
-
-    const { email } = body;
-
-    if (!email || typeof email !== 'string') {
-      return NextResponse.json({ message: "Email is required and must be a string." }, { status: 400 });
-    }
-
-    const trimmedEmail = email.trim();
-    if (!isValidEmail(trimmedEmail)) {
-      return NextResponse.json({ message: "Invalid email format or length." }, { status: 400 });
-    }
-
-    const lowercaseEmail = trimmedEmail.toLowerCase();
-
-    const client = await clientPromise;
-    const db = client.db(DB_NAME);
-    const waitlistCollection = db.collection<WaitlistEntryDocument>(COLLECTION_NAME);
-
-    const existingEntry = await waitlistCollection.findOne({ email: lowercaseEmail });
-
-    if (existingEntry) {
-      return NextResponse.json({ message: "You are already on the waitlist!" }, { status: 200 });
-    }
-
-    const newEntryData = {
-      email: lowercaseEmail,
-      createdAt: new Date(),
-    };
-
-    await waitlistCollection.insertOne(newEntryData as WaitlistEntryDocument);
-
-    return NextResponse.json({ message: "Successfully joined the waitlist! We'll be in touch soon." }, { status: 201 });
-
-  } catch (error) {
-    console.error("Error in POST /api/waitlist:", error);
-    return NextResponse.json({ message: "Internal server error. Please try again later." }, { status: 500 });
+  if (!supabase) {
+    console.error("Missing Supabase env vars");
+    return NextResponse.json({ message: "Server misconfiguration." }, { status: 500 });
   }
+
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { message: "Too many attempts. Try again later." },
+      { status: 429 }
+    );
+  }
+
+  let body: { email?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ message: "Invalid request." }, { status: 400 });
+  }
+
+  const email =
+    typeof body.email === "string" ? body.email.trim().toLowerCase() : null;
+
+  if (!email || !EMAIL_REGEX.test(email) || email.length > 254) {
+    return NextResponse.json({ message: "Invalid email." }, { status: 400 });
+  }
+
+  const { error } = await supabase.from("waitlist").insert({ email });
+
+  if (error) {
+    if (error.code === "23505") {
+      return NextResponse.json({ message: "duplicate" }, { status: 409 });
+    }
+    console.error("Supabase insert error:", error);
+    return NextResponse.json({ message: "Something went wrong." }, { status: 500 });
+  }
+
+  const { count } = await supabase
+    .from("waitlist")
+    .select("*", { count: "exact", head: true });
+
+  return NextResponse.json({ position: count ?? 1 }, { status: 201 });
 }

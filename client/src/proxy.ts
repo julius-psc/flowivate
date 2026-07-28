@@ -5,12 +5,13 @@ import { Redis } from "@upstash/redis";
 
 const WAITLIST_PATH = '/waitlist';
 const EARLY_ACCESS_PATH = '/early-access';
-const Q1_2027_PATH = '/q1-2027';
+const Q1_2027_PATH = '/q4-2026';
 
 const ALWAYS_PUBLIC_PATHS = [
     WAITLIST_PATH,
     EARLY_ACCESS_PATH,
     Q1_2027_PATH,
+    '/api/waitlist',
     '/api/early-access',
     '/api/auth',
     '/_next/static',
