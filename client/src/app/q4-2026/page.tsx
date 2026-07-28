@@ -30,7 +30,6 @@ export default function WaitlistPage() {
   const showToast = (next: Toast) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(next);
-    toastTimer.current = setTimeout(() => setToast(null), 4000);
   };
 
   const handleSubmit = async () => {
@@ -50,7 +49,7 @@ export default function WaitlistPage() {
       if (res.status === 409) {
         setSubmitState("error");
         setTimeout(() => setSubmitState("idle"), 2000);
-        showToast({ type: "duplicate", message: "You're already on the list — we'll be in touch." });
+        showToast({ type: "duplicate", message: "You're already signed up." });
         return;
       }
 
@@ -58,12 +57,12 @@ export default function WaitlistPage() {
 
       setPosition(data.position);
       setSubmitState("success");
-      showToast({ type: "success", message: "Thanks, releasing Q4 2026." });
+      showToast({ type: "success", message: "Releasing Q4 2026." });
     } catch (err) {
       console.error("Waitlist submit error:", err);
       setSubmitState("error");
       setTimeout(() => setSubmitState("idle"), 2000);
-      showToast({ type: "error", message: "Something went wrong — please try again." });
+      showToast({ type: "error", message: "Something went wrong. Please try again." });
     }
   };
 
@@ -130,6 +129,7 @@ export default function WaitlistPage() {
                     <input
                       ref={inputRef}
                       type="email"
+                      pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -149,11 +149,7 @@ export default function WaitlistPage() {
                     transition={{ scale: { type: "spring", duration: 0.15, bounce: 0 } }}
                     className="rounded-md shrink-0 flex items-center justify-center overflow-hidden disabled:pointer-events-none"
                     style={{
-                      backgroundColor: submitState === "success"
-                        ? isLight ? "#dcfce7" : "#14261a"
-                        : submitState === "error"
-                        ? isLight ? "#fee2e2" : "#2a1515"
-                        : isLight ? "#E8E6E1" : "#232326",
+                      backgroundColor: isLight ? "#E8E6E1" : "#232326",
                       padding: "6px",
                     }}
                   >
@@ -246,6 +242,7 @@ export default function WaitlistPage() {
           <AnimatePresence>
             {toast && (
               <motion.div
+                key={toast.type}
                 initial={{ y: "-100%" }}
                 animate={{ y: "0%" }}
                 exit={{ y: "-100%" }}
@@ -253,18 +250,14 @@ export default function WaitlistPage() {
                 className="absolute top-full z-0 px-3 py-2 rounded-b-xl"
                 style={{
                   backgroundColor: isLight ? "#FFFFFF" : "#0A0A0B",
-                  left: "5%",
-                  right: "5%",
+                  left: "10%",
+                  right: "10%",
                 }}
               >
                 <p
-                  className="text-xs text-left whitespace-nowrap truncate"
+                  className="text-xs text-center whitespace-nowrap truncate"
                   style={{
-                    color: toast.type === "error"
-                      ? "#f87171"
-                      : toast.type === "duplicate"
-                      ? isLight ? "#1E1E1E99" : "#ffffff60"
-                      : isLight ? "#16a34a" : "#4ade80",
+                    color: isLight ? "#1E1E1ECC" : "#ffffffBB",
                   }}
                 >
                   {toast.message}

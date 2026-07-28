@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 const ipAttempts = new Map<string, { count: number; resetAt: number }>();
-const WINDOW_MS = 60 * 60 * 1000;
-const MAX_ATTEMPTS = 3;
+const IS_DEV = process.env.NODE_ENV === "development";
+const WINDOW_MS = IS_DEV ? 5 * 60 * 1000 : 60 * 60 * 1000;
+const MAX_ATTEMPTS = IS_DEV ? 20 : 3;
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
