@@ -2,6 +2,11 @@
 @import "tw-animate-css";
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme inline {
+  --font-sans: var(--font-geist);
+  --font-mono: var(--font-geist-mono);
+}
+
 :root {
   button {
     cursor: pointer;

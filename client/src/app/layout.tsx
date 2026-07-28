@@ -1,12 +1,13 @@
 import "./globals.css";
-import ThemeProvider from "../../themes/ThemeProvider";
-import DarkModeInit from "../../themes/DarkModeInit";
+import { Geist, Geist_Mono } from "next/font/google";
 import { Metadata } from "next";
-import CookieConsent from "../components/CookieConsent";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
   title: "Flowivate",
-  description: "Your productivity and focus hub.",
+  description: "A native Mac agent that learns how you focus, one session at a time.",
 };
 
 export default function RootLayout({
@@ -15,39 +16,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link
-          href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap"
-          rel="stylesheet"
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                const theme = localStorage.getItem("theme") || "system";
-                const root = document.documentElement;
-                if (theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-                  root.classList.add("dark");
-                } else {
-                  root.classList.remove("dark");
-                }
-              } catch (e) {}
-            `,
-          }}
-        />
-      </head>
-      <body className="font-sans antialiased">
-        <CookieConsent />
-        <ThemeProvider
-          attribute="data-theme"
-          defaultTheme="default"
-          storageKey="background-theme"
-          disableTransitionOnChange
-        >
-          <DarkModeInit />
-          {children}
-        </ThemeProvider>
+    <html lang="en">
+      <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
+        {children}
       </body>
     </html>
   );
