@@ -34,7 +34,7 @@ import type { FeatureKey } from "@/components/dashboard/features/featureMap";
 import { motion } from "motion/react";
 
 interface DashboardClientProps {
-  subscriptionStatus: "active" | "canceled" | "past_due" | "free";
+  subscriptionStatus: string;
 }
 
 export default function DashboardClient({
@@ -175,7 +175,7 @@ interface SortableFeatureProps {
   isSpecialTheme: boolean;
   isHighlighted?: boolean;
   isPro?: boolean;
-  subscriptionStatus: "active" | "canceled" | "past_due" | "free";
+  subscriptionStatus: string;
 }
 
 

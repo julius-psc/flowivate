@@ -35,6 +35,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { isFreeStatus } from "@/lib/subscription";
 
 interface TaskItemProps {
   task: Task;
@@ -76,7 +77,7 @@ interface TaskItemProps {
   ) => void;
   isPlaceholder: boolean;
   isDisabled: boolean;
-  subscriptionStatus?: "active" | "canceled" | "past_due" | "free";
+  subscriptionStatus?: string | null;
   isSpecialTheme: boolean;
   isDraggable?: boolean;
   onSubtaskReorder?: (parentTaskId: string, reorderedSubtasks: Task[]) => void;
@@ -116,7 +117,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
 }) => {
   const MAX_SUBTASKS = 6;
   const MAX_TASK_NAME_LENGTH = 255;
-  const isFreeUser = subscriptionStatus === "free";
+  const isFreeUser = isFreeStatus(subscriptionStatus);
   const isEditing = editingTaskId === task.id;
   const isExpanded = !!expandedTasks[task.id];
   const hasSubtasks = task.subtasks && task.subtasks.length > 0;
@@ -249,11 +250,18 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   }, [addingSubtaskTo, task.id, subtaskInputRef]);
 
-  const handleCopyTask = async (listId: string, task: Task) => {
+  const handleCopyTask = async (_listId: string, task: Task) => {
     try {
-      await navigator.clipboard.writeText(task.name);
-      toast.success("Task copied to clipboard");
-    } catch (err) {
+      const selection = window.getSelection();
+      const selectedText =
+        selection?.anchorNode &&
+          taskItemRef.current?.contains(selection.anchorNode)
+          ? selection.toString().trim()
+          : "";
+      const textToCopy = selectedText || task.name;
+      await navigator.clipboard.writeText(textToCopy);
+      toast.success(selectedText ? "Selection copied to clipboard" : "Task copied to clipboard");
+    } catch {
       toast.error("Failed to copy task");
     }
   };
@@ -303,7 +311,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
             onKeyDown={(e) => handleEditInputKeyDown(e, listId)}
             onBlur={() => handleSaveEditing(listId)}
             maxLength={MAX_TASK_NAME_LENGTH}
-            className={`flex-1 min-w-0 bg-transparent focus:outline-none text-sm font-medium ${editInputText}`}
+            className={`flex-1 min-w-0 bg-transparent focus:outline-none text-sm font-normal ${editInputText}`}
             autoFocus
             disabled={isDisabled}
           />

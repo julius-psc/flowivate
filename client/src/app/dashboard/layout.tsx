@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import ClientProvider from "../providers/ClientProvider";
 import Sidebar from "../../components/dashboard/navigation/Sidebar";
@@ -48,16 +48,7 @@ function LayoutCore({ children }: { children: React.ReactNode }) {
     document.addEventListener("fullscreenchange", onFullChange);
     return () => document.removeEventListener("fullscreenchange", onFullChange);
   }, []);
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && document.fullscreenElement)
-        document.exitFullscreen();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((e) => {
         console.error(`Error attempting to enable fullscreen mode: ${e.message} (${e.name})`);
@@ -67,20 +58,19 @@ function LayoutCore({ children }: { children: React.ReactNode }) {
         document.exitFullscreen();
       }
     }
-  };
+  }, []);
 
-  const openSettings = (tab: string = "account") => {
+  const openSettings = useCallback((tab: string = "account") => {
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.set("tab", tab);
       window.history.replaceState({}, "", url.toString());
     }
     setIsSettingsOpen(true);
-  };
+  }, []);
 
   const { isFeatureSelected } = useDashboard();
   const pomoEnabled = isFeatureSelected("Pomodoro");
-
 
   return (
     <PomodoroProvider enabled={pomoEnabled}>

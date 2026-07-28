@@ -8,11 +8,11 @@
 
 /** All status strings that grant Elite ("paid") access. */
 const ELITE_STATUSES: ReadonlySet<string> = new Set([
-    "active",
-    "paid",
-    "pro",
-    "on_trial",
-    "trialing",
+  "active",
+  "paid",
+  "pro",
+  "on_trial",
+  "trialing",
 ]);
 
 /**
@@ -20,5 +20,14 @@ const ELITE_STATUSES: ReadonlySet<string> = new Set([
  * a paid / Elite tier.
  */
 export function isEliteStatus(status: string | null | undefined): boolean {
-    return !!status && ELITE_STATUSES.has(status);
+  return !!status && ELITE_STATUSES.has(status.trim().toLowerCase());
+}
+
+/**
+ * Returns `true` when the status is definitely a non-paid plan.
+ * `null` / `undefined` are treated as unknown so loading states do not
+ * accidentally show a paywall to paid users.
+ */
+export function isFreeStatus(status: string | null | undefined): boolean {
+  return !!status && !isEliteStatus(status);
 }

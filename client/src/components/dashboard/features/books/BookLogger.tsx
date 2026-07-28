@@ -13,6 +13,7 @@ import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
 import PaywallPopup from "@/components/dashboard/PaywallPopup";
+import { isFreeStatus } from "@/lib/subscription";
 
 interface BookLoggerProps {
   initialBookId?: string;
@@ -35,9 +36,9 @@ const BookLogger: React.FC<BookLoggerProps> = ({ initialBookId }) => {
     fetchBooks();
   }, []);
 
-  const { status: subscriptionStatus } = useSubscriptionStatus();
+  const { status: subscriptionStatus, loading: subscriptionLoading } = useSubscriptionStatus();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const isFreeUser = subscriptionStatus === "free";
+  const isFreeUser = !subscriptionLoading && isFreeStatus(subscriptionStatus);
 
   const isSpecialTheme =
     isMounted &&

@@ -1,0 +1,17 @@
+src/app/about/page.tsx(7,23): error TS2307: Cannot find module '@/assets/images/julius-pfp2.png' or its corresponding type declarations.
+src/app/register/RegisterClient.tsx(12,18): error TS2307: Cannot find module '../../assets/brand/logo-v1.5.svg' or its corresponding type declarations.
+src/app/waitlist/page.tsx(4,18): error TS2307: Cannot find module '../../assets/brand/logo-v1.5.svg' or its corresponding type declarations.
+src/components/dashboard/features/ai/Assistant.tsx(12,18): error TS2307: Cannot find module '../../../../assets/brand/lumo-logo.svg' or its corresponding type declarations.
+src/components/dashboard/features/ai/ProactiveAssistant.tsx(12,18): error TS2307: Cannot find module '../../../../assets/brand/lumo-logo.svg' or its corresponding type declarations.
+src/components/dashboard/MobileRestricted.tsx(3,18): error TS2307: Cannot find module '../../assets/brand/logo-v1.5.svg' or its corresponding type declarations.
+src/components/dashboard/navigation/Sidebar.tsx(22,18): error TS2307: Cannot find module '../../../assets/brand/logo-v1.5.svg' or its corresponding type declarations.
+src/components/landing-page/About.tsx(5,23): error TS2307: Cannot find module '../../assets/brand/logo-v1.5-white.svg' or its corresponding type declarations.
+src/components/landing-page/Cta.tsx(7,25): error TS2307: Cannot find module '../../../public/assets/illustrations/landing-gradient.png' or its corresponding type declarations.
+src/components/landing-page/Footer.tsx(6,18): error TS2307: Cannot find module '@/assets/brand/logo-v1.5.svg' or its corresponding type declarations.
+src/components/landing-page/Footer.tsx(7,19): error TS2307: Cannot find module '@/assets/icons/x-logo.svg' or its corresponding type declarations.
+src/components/landing-page/Footer.tsx(8,27): error TS2307: Cannot find module '@/assets/icons/instagram-logo.svg' or its corresponding type declarations.
+src/components/landing-page/Footer.tsx(9,24): error TS2307: Cannot find module '@/assets/icons/github-logo.svg' or its corresponding type declarations.
+src/components/landing-page/Hero.tsx(4,25): error TS2307: Cannot find module '../../../public/assets/illustrations/landing-gradient.png' or its corresponding type declarations.
+src/components/landing-page/Hero.tsx(5,28): error TS2307: Cannot find module '../../../public/assets/illustrations/desktop-preview.png' or its corresponding type declarations.
+src/components/landing-page/Navbar.tsx(7,18): error TS2307: Cannot find module '@/assets/brand/logo-v1.5.svg' or its corresponding type declarations.
+src/components/landing-page/Preview.tsx(3,25): error TS2307: Cannot find module '../../../public/assets/illustrations/desktop-preview.png' or its corresponding type declarations.

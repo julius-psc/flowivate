@@ -7,12 +7,11 @@ import JournalLog from "../../../components/dashboard/features/journal/Journal";
 import PaywallPopup from "@/components/dashboard/PaywallPopup";
 import { Skeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
+import { isEliteStatus } from "@/lib/subscription";
 
 export default function Journal() {
   const { status: sessionStatus } = useSession();
-  const [subscriptionStatus, setSubscriptionStatus] = useState<
-    "active" | "canceled" | "past_due" | "free"
-  >("free");
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [loadingSub, setLoadingSub] = useState(true);
   const [showPaywall, setShowPaywall] = useState(false);
 
@@ -21,7 +20,7 @@ export default function Journal() {
       fetch("/api/user/subscription")
         .then((res) => res.json())
         .then((data) => {
-          setSubscriptionStatus(data.subscriptionStatus);
+          setSubscriptionStatus(data.subscriptionStatus || "free");
         })
         .catch(() => {
           setSubscriptionStatus("free");
@@ -108,7 +107,12 @@ export default function Journal() {
     );
   }
 
-  if (subscriptionStatus === "free") {
+  if (
+    !isEliteStatus(subscriptionStatus) &&
+    subscriptionStatus !== "past_due" &&
+    subscriptionStatus !== "canceled" &&
+    subscriptionStatus !== "cancelled"
+  ) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full p-6">
         <p className="text-center text-lg text-secondary-black dark:text-secondary-white">
@@ -125,8 +129,7 @@ export default function Journal() {
     );
   }
 
-  // subscriptionStatus is "active", "past_due", or "canceled"
-  if (subscriptionStatus === "past_due" || subscriptionStatus === "canceled") {
+  if (subscriptionStatus === "past_due" || subscriptionStatus === "canceled" || subscriptionStatus === "cancelled") {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full p-6">
         <h2 className="text-xl font-semibold mb-4">

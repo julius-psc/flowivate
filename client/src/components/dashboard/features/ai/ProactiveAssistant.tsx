@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
-import { IconX, IconArrowRight } from "@tabler/icons-react";
+import { IconX } from "@tabler/icons-react";
 
 import { useDashboard } from "@/context/DashboardContext";
 import { useTheme } from "next-themes";
@@ -12,19 +12,20 @@ import { toast } from "sonner";
 import logo from "../../../../assets/brand/lumo-logo.svg";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useGlobalStore } from "@/hooks/useGlobalStore";
 
 interface Message {
     sender: "assistant" | "user";
     text: string;
 }
 
-const CHECK_IN_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
+const CHECK_IN_INTERVAL = 8 * 60 * 60 * 1000;
 
 const QUICK_SUGGESTIONS = [
-    "Feeling unmotivated 😞",
-    "Ready to work! 🚀",
-    "Need a break 😴",
-    "Just checking in 👋",
+    "Start focus timer",
+    "Start a break",
+    "Plan next task",
+    "I'm stuck",
 ];
 
 export default function ProactiveAssistant() {
@@ -33,7 +34,8 @@ export default function ProactiveAssistant() {
     const [isLoading, setIsLoading] = useState(false);
     const [showActions, setShowActions] = useState(false);
 
-    const { isFeatureSelected, addFeature, startDeepWork } = useDashboard();
+    const { isFeatureSelected, addFeature, startDeepWork, selectedFeatures } = useDashboard();
+    const triggerAppCommand = useGlobalStore((state) => state.triggerAppCommand);
     const { theme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
@@ -48,23 +50,28 @@ export default function ProactiveAssistant() {
             theme as (typeof specialSceneThemeNames)[number]
         );
 
-    // Reset messages when opening
-    useEffect(() => {
-        if (isOpen && messages.length === 0) {
-            // Initial check logic moved here or kept in checkTrigger
-        }
-    }, [isOpen]);
-
     useEffect(() => {
         const checkTrigger = () => {
             const lastCheck = localStorage.getItem("flowivate_proactive_last_check");
             const now = Date.now();
             if (!lastCheck || (now - parseInt(lastCheck)) > CHECK_IN_INTERVAL) {
                 const hour = new Date().getHours();
-                let greeting = "How's your day going? content?";
-                if (hour < 11) greeting = "Good morning! Ready for a quick recap of your work?";
-                else if (hour > 17) greeting = "Wrapping up? Want a summary of your day?";
-                else greeting = "Checking in! Need a quick recap of your progress?";
+                const hasTasks = selectedFeatures.includes("Tasks");
+                const hasPomo = selectedFeatures.includes("Pomodoro");
+                const hasJournal = selectedFeatures.includes("Journal");
+                let greeting = "Tiny focus check: pick one useful next move and keep it simple.";
+
+                if (hour < 11) {
+                    greeting = hasTasks
+                        ? "Morning nudge: choose the one task that would make today easier."
+                        : "Morning nudge: set one clear target before the day gets noisy.";
+                } else if (hour > 17) {
+                    greeting = hasJournal
+                        ? "Wrap-up nudge: capture the loose end, then let the day close."
+                        : "Wrap-up nudge: write down the next step so tomorrow starts cleaner.";
+                } else if (hasPomo) {
+                    greeting = "Midday nudge: one focused timer is probably enough to regain momentum.";
+                }
 
                 setMessages([{ sender: "assistant", text: greeting }]);
                 setIsOpen(true);
@@ -74,7 +81,7 @@ export default function ProactiveAssistant() {
 
         const timer = setTimeout(checkTrigger, 2000);
         return () => clearTimeout(timer);
-    }, []);
+    }, [selectedFeatures]);
 
     // ESC key to close
     useEffect(() => {
@@ -91,17 +98,43 @@ export default function ProactiveAssistant() {
         const textToSend = textOverride;
         if (!textToSend) return;
 
-        // If user asks for recap, send specific prompt
-        const promptToSend = textToSend.includes("Get my recap")
-            ? "Analyze my dashboard and give me a summary."
-            : textToSend;
+        if (textToSend === "Start focus timer") {
+            if (!isFeatureSelected("Pomodoro")) {
+                addFeature("Pomodoro");
+            }
+            triggerAppCommand("START_TIMER");
+            setMessages(prev => [
+                ...prev,
+                { sender: "user", text: textToSend },
+                { sender: "assistant", text: "Focus timer started. Keep the target small enough to finish." },
+            ]);
+            return;
+        }
+
+        if (textToSend === "Start a break") {
+            if (!isFeatureSelected("Pomodoro")) {
+                addFeature("Pomodoro");
+            }
+            triggerAppCommand("START_BREAK");
+            setMessages(prev => [
+                ...prev,
+                { sender: "user", text: textToSend },
+                { sender: "assistant", text: "Break started. Step away from the screen if you can." },
+            ]);
+            return;
+        }
+
+        const promptToSend =
+            textToSend === "Plan next task"
+                ? "Help me choose one concrete next task. Keep it practical and brief."
+                : textToSend;
 
         const newMessage: Message = { sender: "user", text: textToSend };
         setMessages(prev => [...prev, newMessage]);
         setIsLoading(true);
 
         try {
-            const contextInstruction = `(System Note: Keep response to 1 sentence max. If user is unmotivated or needs focus, offer Deep Work timer and end with <OFFER_DEEP_WORK>.)`;
+            const contextInstruction = `(System Note: Keep response to 1 sentence max. Be specific, low-pressure, and productivity-oriented. If user is stuck or needs focus, offer Deep Work timer and end with <OFFER_DEEP_WORK>.)`;
             const conversationHistory = [...messages, { sender: "user", text: promptToSend }];
 
             const response = await fetch("/api/claude", {
@@ -163,13 +196,6 @@ export default function ProactiveAssistant() {
         },
     };
 
-    const QUICK_SUGGESTIONS = [
-        "Get my recap 📊",
-        "Feeling unmotivated 😞",
-        "Ready to work! 🚀",
-        "Need a break 😴",
-    ];
-
     return (
         <AnimatePresence>
             {isOpen && (
@@ -214,14 +240,6 @@ export default function ProactiveAssistant() {
                                     <div className="prose prose-sm dark:prose-invert prose-p:my-1 prose-ul:my-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
-                                            components={{
-                                                p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                                                a: ({ node, ...props }) => <a className="text-primary hover:underline cursor-pointer" {...props} />,
-                                                ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 space-y-1" {...props} />,
-                                                ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2 space-y-1" {...props} />,
-                                                li: ({ node, ...props }) => <li className="pl-1" {...props} />,
-                                                strong: ({ node, ...props }) => <span className="font-semibold text-gray-900 dark:text-gray-100" {...props} />,
-                                            }}
                                         >
                                             {msg.text}
                                         </ReactMarkdown>
@@ -253,8 +271,7 @@ export default function ProactiveAssistant() {
                                 <button
                                     key={idx}
                                     onClick={() => handleSend(suggestion)}
-                                    className={`px-3 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-300 transition-colors border border-transparent hover:border-gray-300 dark:hover:border-zinc-600 ${suggestion.includes("recap") ? "bg-primary/5 text-primary dark:text-primary dark:bg-primary/10 border-primary/10" : ""
-                                        }`}
+                                    className="px-3 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-300 transition-colors border border-transparent hover:border-gray-300 dark:hover:border-zinc-600"
                                 >
                                     {suggestion}
                                 </button>

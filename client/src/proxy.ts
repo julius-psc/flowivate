@@ -5,10 +5,12 @@ import { Redis } from "@upstash/redis";
 
 const WAITLIST_PATH = '/waitlist';
 const EARLY_ACCESS_PATH = '/early-access';
+const Q1_2027_PATH = '/q1-2027';
 
 const ALWAYS_PUBLIC_PATHS = [
     WAITLIST_PATH,
     EARLY_ACCESS_PATH,
+    Q1_2027_PATH,
     '/api/early-access',
     '/api/auth',
     '/_next/static',
@@ -35,9 +37,17 @@ export const config = {
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
+    const isAlwaysPublic = ALWAYS_PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+
+    // ── Transforming redirect — send all visitors to the transforming page ─────
+    if (!isAlwaysPublic) {
+        const url = request.nextUrl.clone();
+        url.pathname = Q1_2027_PATH;
+        return NextResponse.redirect(url);
+    }
+
     // ── App lock / waitlist redirect ──────────────────────────────────────────
     const isAppLocked = process.env.NEXT_PUBLIC_APP_LOCKED === 'true';
-    const isAlwaysPublic = ALWAYS_PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 
     if (!isAlwaysPublic && isAppLocked) {
         const earlyAccessCookie = request.cookies.get('earlyAccess')?.value;

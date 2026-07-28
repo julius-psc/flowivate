@@ -17,9 +17,9 @@ export default async function DashboardPage() {
     .lean();
 
   const rawStatus = user?.subscriptionStatus ?? "free";
-  const subscriptionStatus: "active" | "canceled" | "past_due" | "free" =
+  const subscriptionStatus =
     isEliteStatus(rawStatus) ? "active"
-      : rawStatus === "canceled" || rawStatus === "past_due"
+      : typeof rawStatus === "string"
         ? rawStatus
         : "free";
 

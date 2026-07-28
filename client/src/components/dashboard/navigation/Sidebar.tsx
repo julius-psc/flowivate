@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
@@ -15,7 +15,7 @@ import {
   IconSettings,
   IconBook,
   IconCircleDashedCheck,
-  IconChartHistogram,
+  IconChartArcs3,
 } from "@tabler/icons-react";
 
 import { Maximize2, Minimize2 } from "lucide-react";
@@ -62,12 +62,26 @@ const Sidebar: React.FC<SidebarProps> = ({
     { name: "Tasks", icon: IconCircleDashedCheck, path: "/dashboard/tasks" },
     { name: "Journal", icon: IconNotes, path: "/dashboard/journal" },
     { name: "Books", icon: IconBook, path: "/dashboard/books" },
-    { name: "Stats", icon: IconChartHistogram, path: "/dashboard/stats" },
+    { name: "Stats", icon: IconChartArcs3, path: "/dashboard/stats" },
   ];
+
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => setIsExpanded(true), 150);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = null;
+    setIsExpanded(false);
+  };
 
   // Define base classes
   const asideBaseClasses =
-    "flex flex-col z-30 px-2 py-4 ml-2 mx-2 mt-6 mb-2 w-16 backdrop-blur-xl rounded-xl transition-opacity duration-300";
+    `flex flex-col z-30 px-2 py-4 ml-2 mx-2 mt-6 mb-2 backdrop-blur-xl rounded-xl transition-all duration-300 ease-in-out ${isExpanded ? 'w-48' : 'w-16'}`;
   // Define pre-mount classes (solid, maybe invisible)
   const asidePreMountClasses =
     "bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 opacity-0";
@@ -85,12 +99,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       <aside
-        className={`${asideBaseClasses} ${isMounted ? asidePostMountClasses : asidePreMountClasses // Apply conditional classes
-          }`}
+        className={`${asideBaseClasses} ${isMounted ? asidePostMountClasses : asidePreMountClasses}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-        <div className="flex flex-col items-center h-full">
+        <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="mb-8 flex-shrink-0 transition-transform duration-200 hover:scale-105">
+          <div className="mb-8 shrink-0 w-full flex justify-center transition-transform duration-200 hover:scale-105">
             <Image
               src={logo}
               alt="Flowivate's logo"
@@ -101,35 +116,33 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Navigation Items */}
-          <div className="flex-grow">
-            <ul className="space-y-2">
+          <div className="flex-grow w-full">
+            <ul className="space-y-1 w-full">
               {navItems.map((item) => (
-                <li key={item.name} className="relative group">
-                  <Link href={item.path}>
+                <li key={item.name} className="relative group w-full">
+                  <Link href={item.path} className="block w-full">
                     <div
-                      className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-200 ${pathname === item.path ? activeBgColor : hoverBgColor // Use new color vars
-                        }`}
+                      className={`flex items-center justify-start ${isExpanded ? 'gap-3' : ''} px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 ${pathname === item.path ? activeBgColor : hoverBgColor}`}
                     >
                       <item.icon
-                        className={`w-5 h-5 ${pathname === item.path
-                          ? activeIconColor
-                          : inactiveIconColor // Use new color vars
-                          }`}
+                        className={`w-5 h-5 shrink-0 ${pathname === item.path ? activeIconColor : inactiveIconColor}`}
                       />
+                      <span
+                        className={`text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                          isExpanded ? 'opacity-100 max-w-[120px]' : 'opacity-0 max-w-0 overflow-hidden'
+                        } ${pathname === item.path ? activeIconColor : inactiveIconColor}`}
+                      >
+                        {item.name}
+                      </span>
                     </div>
                   </Link>
-
-                  {/* Tooltip - Style remains the same */}
-                  <div className="absolute left-14 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs font-medium bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 px-2 py-1 rounded-md whitespace-nowrap shadow-sm border border-gray-100 dark:border-gray-800 z-10">
-                    {item.name}
-                  </div>
                 </li>
               ))}
             </ul>
           </div>
 
           {/* Bottom Controls */}
-          <div className="flex flex-col items-center space-y-2 mt-4">
+          <div className="flex flex-col items-center space-y-2 mt-4 w-full">
             <button
               onClick={toggleFullscreen}
               aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}

@@ -29,7 +29,7 @@ const Bubble: React.FC<BubbleProps> = ({ delay, size, xDrift, originX }) => {
 
   useEffect(() => {
     // --- FIX: Disable lint rule for this intentional client-side setup ---
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     const duration = 4 + Math.random() * 4; // Varying duration based on randomness (could be size based too)
     const wobble = Math.random() * 30 + 10; // Random wobble amplitude
 

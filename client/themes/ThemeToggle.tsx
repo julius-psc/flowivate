@@ -10,13 +10,14 @@ import {
 } from "@/lib/themeConfig";
 import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
 import PaywallPopup from "@/components/dashboard/PaywallPopup";
+import { isFreeStatus } from "@/lib/subscription";
 
 const ThemeToggle: React.FC = () => {
   const { theme, setTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
-  const { status: subscriptionStatus } = useSubscriptionStatus();
+  const { status: subscriptionStatus, loading: subscriptionLoading } = useSubscriptionStatus();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const isFreeUser = subscriptionStatus === "free";
+  const isFreeUser = !subscriptionLoading && isFreeStatus(subscriptionStatus);
 
   useEffect(() => {
     const timer = setTimeout(() => {

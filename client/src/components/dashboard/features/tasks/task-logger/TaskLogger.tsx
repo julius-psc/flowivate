@@ -11,6 +11,7 @@ import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 import { motion, AnimatePresence } from "motion/react";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { isFreeStatus } from "@/lib/subscription";
 import {
   DndContext,
   closestCenter,
@@ -35,6 +36,9 @@ const TaskLogger: React.FC = () => {
     setIsAddingList,
     newListName,
     setNewListName,
+    editingListId,
+    editingListValue,
+    setEditingListValue,
     activeTaskInputValues,
     setActiveTaskInputValues,
     aiBreakdownState,
@@ -51,6 +55,7 @@ const TaskLogger: React.FC = () => {
     editingTaskValue,
     setEditingTaskValue,
     subscriptionStatus,
+    subscriptionLoading,
     status,
     taskLists,
     isLoadingLists,
@@ -59,6 +64,10 @@ const TaskLogger: React.FC = () => {
     getCompletionRatio,
     handleAddList,
     handleDeleteList,
+    handleStartRenamingList,
+    handleCancelRenamingList,
+    handleSaveRenamingList,
+    handleListRenameKeyDown,
     handleKeyDownTaskInput,
     handleToggleTaskCompletion,
     handleDeleteTask,
@@ -144,7 +153,7 @@ const TaskLogger: React.FC = () => {
   const stickyFooterClasses = `sticky bottom-4 z-10 w-fit mx-auto mt-4 flex-shrink-0 backdrop-blur-md rounded-4xl p-2 transition-opacity duration-300 ${isMounted ? listContainerPostMountClasses.replace('mb-6', '').replace('p-4', '').replace('rounded-xl', '') : listContainerPreMountClasses
     }`;
 
-  const isFreeUser = subscriptionStatus === "free";
+  const isFreeUser = !subscriptionLoading && isFreeStatus(subscriptionStatus);
   const canAddList = !isFreeUser || taskLists.length < 3;
 
   const canAddTask = (list: (typeof taskLists)[number]) => true;
@@ -291,6 +300,13 @@ const TaskLogger: React.FC = () => {
                       deleteListMutation.variables === list._id
                     }
                     onDelete={() => handleDeleteList(list._id)}
+                    isRenaming={editingListId === list._id}
+                    renameValue={editingListValue}
+                    onStartRename={() => handleStartRenamingList(list._id, list.name)}
+                    onRenameChange={setEditingListValue}
+                    onRenameKeyDown={(e) => handleListRenameKeyDown(e, list._id)}
+                    onSaveRename={() => handleSaveRenamingList(list._id)}
+                    onCancelRename={handleCancelRenamingList}
                     onClearAll={() => handleClearAllTasks(list._id!)}
                     hasTasks={(list.tasks || []).length > 0}
                     isSpecialTheme={isSpecialTheme}

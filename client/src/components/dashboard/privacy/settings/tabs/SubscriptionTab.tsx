@@ -6,7 +6,7 @@ import { CreditCard, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { isEliteStatus } from "@/lib/subscription";
 
-type SubStatus = "active" | "canceled" | "past_due" | "free";
+type SubStatus = string;
 
 export default function SubscriptionTab(): React.JSX.Element {
   const { styling, sessionStatus, session, setStatusMessage } = useSettings();
@@ -129,12 +129,12 @@ export default function SubscriptionTab(): React.JSX.Element {
                   ? "Active"
                   : subscriptionStatus === "past_due"
                     ? "Past due"
-                    : subscriptionStatus === "canceled"
+                    : subscriptionStatus === "canceled" || subscriptionStatus === "cancelled"
                       ? "Canceled"
                       : "Current"}
               </span>
             </div>
-            {!isEliteStatus(subscriptionStatus) && subscriptionStatus !== "past_due" && subscriptionStatus !== "canceled" ? (
+            {!isEliteStatus(subscriptionStatus) && subscriptionStatus !== "past_due" && subscriptionStatus !== "canceled" && subscriptionStatus !== "cancelled" ? (
               <button
                 onClick={handleUpgradeToPro}
                 className={`${styling.buttonBaseClasses} ${styling.buttonPrimaryClasses}`}

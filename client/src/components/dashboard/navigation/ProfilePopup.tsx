@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { IconPencil } from "@tabler/icons-react";
+import { motion } from "motion/react";
 import { Session } from "next-auth";
 import { isEliteStatus } from "@/lib/subscription";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface StatusOption {
   name: string;
@@ -18,7 +20,6 @@ interface ProfilePopupProps {
   isSpecialTheme: boolean;
   isMounted: boolean;
   onEditProfile: () => void;
-  onShare: () => void;
 }
 
 const ProfilePopup: React.FC<ProfilePopupProps> = ({
@@ -27,126 +28,160 @@ const ProfilePopup: React.FC<ProfilePopupProps> = ({
   isSpecialTheme,
   isMounted,
   onEditProfile,
-  onShare,
 }) => {
-  const [subscriptionStatus, setSubscriptionStatus] = useState<string>("free");
-
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
         const subRes = await fetch("/api/user/subscription");
-
         if (subRes.ok) {
           const subData = await subRes.json();
           setSubscriptionStatus(subData.subscriptionStatus || "free");
+        } else {
+          setSubscriptionStatus("free");
         }
-      } catch (error) {
-        console.error("Failed to fetch profile data", error);
+      } catch {
+        setSubscriptionStatus("free");
       } finally {
         setLoading(false);
       }
     }
-
     fetchData();
   }, []);
 
   const username = session.user?.username || "User";
   const userInitial = username.charAt(0).toUpperCase();
+  const isElite = subscriptionStatus !== null && isEliteStatus(subscriptionStatus);
 
-  // Modern styling: Clean borders, no shadows, precise spacing
-  const containerClasses =
-    "profile-popup-container absolute right-0 mt-4 w-[320px] z-50";
+  if (!isMounted) return null;
 
-  const contentClasses = `
-    relative rounded-xl border overflow-hidden transition-all duration-200
-    ${isMounted
-      ? isSpecialTheme
-        ? "bg-zinc-900/90 border-zinc-800 backdrop-blur-xl"
-        : "bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800"
-      : "opacity-0"
-    }
-  `;
+  const cardBorder = isSpecialTheme
+    ? "border-white/[0.07]"
+    : "border-gray-200 dark:border-zinc-800";
 
+  const headerBg = isSpecialTheme
+    ? "bg-white/[0.03]"
+    : "bg-gray-50/80 dark:bg-zinc-900/60";
 
+  const bodyBg = isSpecialTheme
+    ? "bg-zinc-950/95"
+    : "bg-white dark:bg-zinc-950";
+
+  const divider = isSpecialTheme
+    ? "border-white/[0.06]"
+    : "border-gray-100 dark:border-zinc-800/80";
+
+  const primaryText = isSpecialTheme
+    ? "text-white"
+    : "text-gray-900 dark:text-white";
+
+  const mutedText = isSpecialTheme
+    ? "text-white/35"
+    : "text-gray-400 dark:text-zinc-500";
+
+  const statusText = isSpecialTheme
+    ? "text-white/50"
+    : "text-gray-500 dark:text-zinc-400";
+
+  const hoverRow = isSpecialTheme
+    ? "hover:bg-white/[0.05] active:bg-white/[0.08]"
+    : "hover:bg-gray-50 dark:hover:bg-zinc-900 active:bg-gray-100 dark:active:bg-zinc-800/60";
+
+  const iconCol = isSpecialTheme
+    ? "text-white/25"
+    : "text-gray-400/60 dark:text-zinc-600";
 
   return (
-    <div className={containerClasses}>
-      <div className={contentClasses}>
-        <div className="p-5">
-          {/* Header / Edit Button */}
-          <button
-            onClick={onEditProfile}
-            className="absolute top-4 right-4 p-1.5 rounded-md text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-            title="Edit profile"
-          >
-            <IconPencil size={16} />
-          </button>
-
-          {/* User Info Section */}
-          <div className="flex items-start gap-4">
+    <div className="profile-popup-container absolute right-0 mt-3 w-[256px] z-50">
+      <motion.div
+        initial={{ opacity: 0, y: -8, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+        className={`rounded-[13px] border overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.45)] ${bodyBg} ${cardBorder}`}
+      >
+        {/* ── Header ─────────────────────────── */}
+        <div className={`${headerBg} px-4 pt-[14px] pb-[13px]`}>
+          <div className="flex items-start gap-3">
             {/* Avatar */}
             <div className="relative shrink-0">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-semibold text-2xl overflow-hidden bg-gray-100 dark:bg-zinc-800 ring-1 ring-gray-100 dark:ring-zinc-800">
+              <div className="w-[44px] h-[44px] rounded-full overflow-hidden ring-1 ring-black/[0.06] dark:ring-white/[0.08]">
                 {session.user.image ? (
                   <Image
                     src={session.user.image}
-                    alt={session.user.username || "User Avatar"}
-                    width={64}
-                    height={64}
+                    alt={username}
+                    width={44}
+                    height={44}
                     className="object-cover w-full h-full"
                   />
                 ) : (
-                  <span className="flex items-center justify-center w-full h-full bg-primary-blue text-white">
+                  <div className="w-full h-full bg-primary-blue flex items-center justify-center text-white font-semibold">
                     {userInitial}
+                  </div>
+                )}
+              </div>
+              <div
+                className={`absolute -bottom-px -right-px w-[11px] h-[11px] rounded-full border-[2px] ${
+                  isSpecialTheme ? "border-zinc-950" : "border-gray-50 dark:border-zinc-900"
+                } ${currentStatus.color}`}
+              />
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0 pt-[1px]">
+              <div className="flex items-center gap-1.5 mb-[3px]">
+                <span className={`text-[13px] font-semibold truncate leading-none ${primaryText}`}>
+                  {username}
+                </span>
+                {loading ? (
+                  <Skeleton className="h-[14px] w-8 rounded" />
+                ) : isElite ? (
+                  <span className="shrink-0 inline-flex items-center px-[5px] py-[2px] text-[9px] font-bold uppercase tracking-[0.09em] rounded-[4px] text-primary-blue border border-primary-blue/25 bg-primary-blue/[0.08]">
+                    Elite
+                  </span>
+                ) : (
+                  <span className={`shrink-0 px-[5px] py-[2px] text-[9px] font-bold uppercase tracking-[0.09em] rounded-[4px] ${
+                    isSpecialTheme
+                      ? "border border-white/10 text-white/25"
+                      : "border border-gray-200 dark:border-zinc-700/60 text-gray-400 dark:text-zinc-600"
+                  }`}>
+                    Free
                   </span>
                 )}
               </div>
 
-              {/* Status Indicator */}
-              <div className="absolute -bottom-1 -right-1 p-0.5 bg-white dark:bg-zinc-950 rounded-full">
-                <div
-                  className={`w-3.5 h-3.5 rounded-full ${currentStatus.color} border-2 border-white dark:border-zinc-950`}
-                  title={`Status: ${currentStatus.name}`}
-                />
-              </div>
-            </div>
-
-            {/* Text Info */}
-            <div className="flex-1 min-w-0 pt-0.5 pr-8">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">
-                  {username}
-                </h3>
-                {/* Dynamic Badge - Black & White High Contrast */}
-                <span className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-wide rounded border ${isEliteStatus(subscriptionStatus)
-                  ? "bg-primary-blue border-primary-blue text-white"
-                  : "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                  }`}>
-                  {isEliteStatus(subscriptionStatus) ? "ELITE" : subscriptionStatus}
-                </span>
-              </div>
-
-              <p className="text-sm text-gray-500 dark:text-gray-400 truncate mb-2">
+              <p className={`text-[11px] truncate leading-none mb-[6px] ${mutedText}`}>
                 {session.user.email}
               </p>
 
-
+              {/* Status row */}
+              <div className="flex items-center gap-[5px]">
+                <div className={`w-[6px] h-[6px] rounded-full shrink-0 ${currentStatus.color}`} />
+                <span className={`text-[11px] leading-none ${statusText}`}>
+                  {currentStatus.name}
+                </span>
+              </div>
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="mt-6 pt-4 border-t border-gray-100 dark:border-zinc-800/50">
-            <button
-              onClick={onShare}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-800 transition-all"
-            >
-              Share Flowivate
-            </button>
-          </div>
         </div>
-      </div>
+
+        {/* ── Divider ────────────────────────── */}
+        <div className={`border-t ${divider}`} />
+
+        {/* ── Actions ────────────────────────── */}
+        <div className="p-[5px]">
+          <button
+            onClick={onEditProfile}
+            className={`w-full flex items-center gap-[10px] px-[10px] py-[8px] rounded-[8px] text-left transition-colors duration-100 ${hoverRow}`}
+          >
+            <IconPencil size={13} className={iconCol} strokeWidth={2} />
+            <span className={`text-[13px] font-medium ${primaryText}`}>
+              Edit profile
+            </span>
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 };

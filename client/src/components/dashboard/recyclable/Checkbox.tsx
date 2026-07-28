@@ -48,7 +48,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
 
   return (
     // Use group for hover states on the container
-    <label className={`flex items-start select-none group min-w-0 overflow-hidden transition-opacity duration-200 ${checked && !disabled ? 'opacity-50' : ''} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}>
+    <label className={`flex items-start group min-w-0 overflow-visible sm:overflow-hidden transition-opacity duration-200 ${checked && !disabled ? 'opacity-50' : ''} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}>
       <input
         type="checkbox"
         checked={checked}
@@ -75,7 +75,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
       <span
         ref={textRef}
         id={labelId}
-        className={`text-base text-gray-600 dark:text-gray-400 min-w-0 transition-all duration-300 ease-in-out ${shouldTruncate ? 'block truncate' : 'block break-all overflow-hidden'} ${disabled ? 'text-gray-400 dark:text-gray-500' : ''}`}
+        className={`text-base text-gray-600 dark:text-gray-400 min-w-0 select-text transition-all duration-300 ease-in-out ${shouldTruncate ? 'block whitespace-normal break-words sm:truncate' : 'block whitespace-normal break-words'} ${disabled ? 'text-gray-400 dark:text-gray-500' : ''}`}
       >
         {label}
       </span>

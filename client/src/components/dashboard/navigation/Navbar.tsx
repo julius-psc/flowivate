@@ -10,7 +10,6 @@ import { specialSceneThemeNames } from "@/lib/themeConfig";
 
 import ChatPanel from "../features/ai/ChatPanel";
 import ProfilePopup from "./ProfilePopup";
-import ShareModal from "./ShareModal";
 
 interface StatusOption {
   name: string;
@@ -26,7 +25,6 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
   const [showProfileComponent, setShowProfileComponent] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   const { data: session, status: sessionStatus } = useSession();
@@ -127,21 +125,6 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showStatusMenu, showProfileComponent]);
 
-  const handleOpenChat = useCallback(() => {
-    setIsChatPanelOpen(true);
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "f") {
-        event.preventDefault();
-        handleOpenChat();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleOpenChat]);
-
   const changeStatus = useCallback(
     async (statusOption: StatusOption) => {
       setCurrentStatus(statusOption);
@@ -206,11 +189,6 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
     openSettings("account");
   }, [openSettings]);
 
-  const handleShare = useCallback(() => {
-    setShowProfileComponent(false);
-    setIsShareModalOpen(true);
-  }, []);
-
   return (
     <>
       <nav
@@ -247,8 +225,8 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
                   <div
                     className={`absolute right-0 mt-4 w-36 rounded-xl p-1.5 z-50 border transition-all duration-200 ${isMounted
                       ? isSpecialTheme
-                        ? "bg-zinc-900/90 border-zinc-800 backdrop-blur-xl"
-                        : "bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800"
+                        ? "bg-zinc-900/50 border-zinc-800/50 backdrop-blur-xl"
+                        : "bg-white/80 dark:bg-zinc-900/80 border-slate-200/50 dark:border-zinc-800/50 backdrop-blur-xl"
                       : "opacity-0"
                       }`}
                   >
@@ -256,7 +234,11 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
                       <button
                         key={option.name}
                         onClick={() => changeStatus(option)}
-                        className="w-full flex items-center space-x-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-900 px-2 py-1.5 rounded-lg transition-colors"
+                        className={`w-full flex items-center space-x-2.5 text-left text-sm text-gray-700 dark:text-gray-200 px-2 py-1.5 rounded-lg transition-colors ${
+                          isSpecialTheme
+                            ? "hover:bg-white/10"
+                            : "hover:bg-gray-100/60 dark:hover:bg-zinc-800/60"
+                        }`}
                       >
                         <div
                           className={`w-3 h-3 rounded-full ${option.bgColor} flex items-center justify-center shrink-0 border border-transparent dark:border-zinc-800`}
@@ -317,7 +299,6 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
                     isSpecialTheme={isSpecialTheme}
                     isMounted={isMounted}
                     onEditProfile={handleEditProfile}
-                    onShare={handleShare}
                   />
                 )}
               </>
@@ -347,10 +328,6 @@ const Navbar: React.FC<NavbarProps> = ({ openSettings }) => {
         />
       )}
 
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-      />
     </>
   );
 };

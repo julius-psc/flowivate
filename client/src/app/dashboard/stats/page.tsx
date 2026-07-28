@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import useSubscriptionStatus from "@/hooks/useSubscriptionStatus";
 import { isEliteStatus } from "@/lib/subscription";
-import Image from "next/image";
 import { useTheme } from "next-themes";
 import { specialSceneThemeNames } from "@/lib/themeConfig";
 import { cn } from "@/lib/utils";
@@ -46,6 +45,8 @@ interface StatsData {
   accountCreatedAt: string | null;
   streak: number;
   focusSessions: number;
+  focusMinutesEstimate: number;
+  focusSessionDurationMinutes: number;
   tasks: { total: number; completed: number; completionRate: number };
   books: { total: number; completed: number; inProgress: number; avgRating: number | null };
   sleep: SleepRecord[];
@@ -81,31 +82,11 @@ const moodConfig = {
   count: { label: "Times", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
-// ─── Activity mock data ───────────────────────────────────────────────────────
-interface SiteEntry { domain: string; label: string; minutes: number; productive: boolean }
-
-const MOCK_DAILY: SiteEntry[] = [
-  { domain: "github.com", label: "GitHub", minutes: 94, productive: true },
-  { domain: "localhost", label: "localhost:3000", minutes: 71, productive: true },
-  { domain: "notion.so", label: "Notion", minutes: 42, productive: true },
-  { domain: "stackoverflow.com", label: "Stack Overflow", minutes: 38, productive: true },
-  { domain: "youtube.com", label: "YouTube", minutes: 28, productive: false },
-];
-
-function fmtMinutes(m: number) {
-  if (m >= 60) {
-    const h = Math.floor(m / 60);
-    const min = m % 60;
-    return min === 0 ? `${h}h` : `${h}h ${min}m`;
-  }
-  return `${m}m`;
-}
-
 // ─── Heatmap ──────────────────────────────────────────────────────────────────
 
 interface HeatCell { date: Date; count: number; future: boolean }
 
-function generateHeatmap(accountCreatedAt: Date | null, activities: { date: string; count: number }[]): HeatCell[][] {
+function generateHeatmap(activities: { date: string; count: number }[]): HeatCell[][] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -118,12 +99,6 @@ function generateHeatmap(accountCreatedAt: Date | null, activities: { date: stri
 
   const activityMap = new Map(activities.map(a => [a.date, a.count]));
 
-  let seed = 54321;
-  const rand = () => {
-    seed = ((seed * 1664525 + 1013904223) | 0) >>> 0;
-    return seed / 0xffffffff;
-  };
-
   const cursor = new Date(startMonday);
   const weeks: HeatCell[][] = [];
   for (let w = 0; w < numWeeks; w++) {
@@ -135,16 +110,6 @@ function generateHeatmap(accountCreatedAt: Date | null, activities: { date: stri
         const dateStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
         count = activityMap.get(dateStr) || 0;
 
-        // Add mock data for local testing as requested, strictly disappears when array is populated or in prod
-        if (process.env.NODE_ENV === "development" && activities.length === 0) {
-          const dow = (cursor.getDay() + 6) % 7;
-          const isWeekend = dow >= 5;
-          if (rand() > (isWeekend ? 0.55 : 0.2)) {
-            count = isWeekend ? Math.ceil(rand() * 3) : Math.ceil(rand() * 7);
-            const daysBack = Math.floor((today.getTime() - cursor.getTime()) / 86400000);
-            if (daysBack < 14) count = Math.min(8, count + 2);
-          }
-        }
       }
       week.push({ date: new Date(cursor), count, future: isFuture });
       cursor.setDate(cursor.getDate() + 1);
@@ -154,12 +119,13 @@ function generateHeatmap(accountCreatedAt: Date | null, activities: { date: stri
   return weeks;
 }
 
-function heatColor(count: number): string {
+function heatColor(count: number, maxCount: number): string {
   if (count === 0) return "bg-muted";
-  if (count <= 1) return "bg-green-200 dark:bg-green-900";
-  if (count <= 3) return "bg-green-300 dark:bg-green-800";
-  if (count <= 6) return "bg-green-500 dark:bg-green-600";
-  return "bg-green-700 dark:bg-green-400";
+  const ratio = maxCount > 0 ? count / maxCount : 0;
+  if (ratio <= 0.25) return "bg-emerald-200 dark:bg-emerald-950";
+  if (ratio <= 0.5) return "bg-emerald-300 dark:bg-emerald-800";
+  if (ratio <= 0.75) return "bg-emerald-500 dark:bg-emerald-600";
+  return "bg-emerald-700 dark:bg-emerald-400";
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -186,45 +152,6 @@ function waterGoalDays(records: WaterRecord[], goal = 2500) {
   return records.filter((r) => r.ml !== null && (r.ml ?? 0) >= goal).length;
 }
 
-
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function SiteRow({ site, maxMinutes }: { site: SiteEntry; maxMinutes: number }) {
-  const isLocal = site.domain === "localhost";
-  const faviconUrl = `https://www.google.com/s2/favicons?domain=${site.domain}&sz=16`;
-  const barClass = site.productive ? "bg-emerald-500/70" : "bg-orange-400/70";
-
-  return (
-    <div className="flex items-center gap-3">
-      <div className="w-4 h-4 shrink-0 flex items-center justify-center">
-        {isLocal ? (
-          <span className="text-[10px] font-mono text-muted-foreground">{"<>"}</span>
-        ) : (
-          <Image
-            src={faviconUrl}
-            alt={site.label}
-            width={16}
-            height={16}
-            className="rounded-sm"
-            unoptimized
-          />
-        )}
-      </div>
-      <span className="text-xs w-28 truncate shrink-0 text-muted-foreground">{site.label}</span>
-      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-        <div
-          className={cn("h-full rounded-full", barClass)}
-          style={{ width: `${(site.minutes / maxMinutes) * 100}%` }}
-        />
-      </div>
-      <span className="text-xs tabular-nums shrink-0 w-12 text-right text-muted-foreground">
-        {fmtMinutes(site.minutes)}
-      </span>
-    </div>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function StatsPage() {
@@ -243,7 +170,10 @@ export default function StatsPage() {
   const isEliteByApi = apiIsElite === true;
   const showPaywall = doneChecking && !isEliteByHook && !isEliteByApi;
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     fetch("/api/stats")
@@ -326,11 +256,10 @@ export default function StatsPage() {
 
 
 
-  const heatmapWeeks = generateHeatmap(
-    stats.accountCreatedAt ? new Date(stats.accountCreatedAt) : null,
-    stats.dailyActivities || []
-  );
-  const activeDays = heatmapWeeks.flat().filter((c) => !c.future && c.count > 0).length;
+  const heatmapWeeks = generateHeatmap(stats.dailyActivities || []);
+  const heatmapCells = heatmapWeeks.flat().filter((c) => !c.future);
+  const activeDays = heatmapCells.filter((c) => c.count > 0).length;
+  const maxActivityCount = Math.max(1, ...heatmapCells.map((c) => c.count));
 
   const monthLabelCols: string[] = heatmapWeeks.map((week, wi) => {
     const first = week[0].date;
@@ -338,106 +267,155 @@ export default function StatsPage() {
     return isNew ? first.toLocaleString("default", { month: "short" }) : "";
   });
 
-  // ── Data-driven insights ──────────────────────────────────────────────────
-  const insightPool: { headline: React.ReactNode; body: string }[] = [];
+  const totalTrackedSignals =
+    stats.focusSessions +
+    stats.tasks.completed +
+    stats.books.total +
+    stats.journal.total +
+    sleepLogged +
+    waterLogged +
+    totalMoodEntries +
+    activeDays;
+  const REQUIRED_SIGNALS = 10;
+  const hasEnoughStats = totalTrackedSignals >= REQUIRED_SIGNALS && activeDays >= 2;
+  const focusHoursEstimate = Math.round((stats.focusMinutesEstimate / 60) * 10) / 10;
 
-  // Focus sessions
-  if (stats.focusSessions > 0) {
-    const approxHours = Math.round((stats.focusSessions * 25) / 60 * 10) / 10;
-    insightPool.push({
-      headline: <><span className="text-violet-400">{stats.focusSessions} focus sessions</span> completed</>,
-      body: `That's roughly ${approxHours}h of deep work. Quality over quantity.`,
-    });
+  const primaryInsight =
+    stats.focusSessions > 0
+      ? {
+        headline: <><span className="text-violet-400">{stats.focusSessions} focus sessions</span> completed</>,
+        body: `${focusHoursEstimate}h estimated from your saved ${stats.focusSessionDurationMinutes}m focus length.`,
+      }
+      : stats.tasks.total > 0
+        ? {
+          headline: <><span className="text-blue-400">{stats.tasks.completionRate}%</span> task completion rate</>,
+          body: `${stats.tasks.completed} of ${stats.tasks.total} tasks done.`,
+        }
+        : {
+          headline: <>Stats need <span className="text-emerald-400">more signal</span></>,
+          body: "Track a few tasks, focus sessions, moods, water logs, or journal entries first.",
+        };
+
+  if (!hasEnoughStats) {
+    const remainingSignals = Math.max(0, REQUIRED_SIGNALS - totalTrackedSignals);
+
+    return (
+      <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div className="mb-8">
+          <p className="text-xs font-medium uppercase tracking-wider text-emerald-500 mb-2">
+            Stats warming up
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground/90">
+            Track a little more before your stats unlock
+          </h1>
+          <p className="text-muted-foreground mt-1.5 max-w-2xl">
+            Flowivate needs real history before it gives you charts. Add about {remainingSignals} more meaningful interactions across tasks, focus, journaling, mood, sleep, books, water, or app activity.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.35fr] gap-3">
+          <Card className={cardClass}>
+            <CardHeader>
+              <CardTitle>What counts</CardTitle>
+              <CardDescription>These are already contributing to your stats readiness.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[
+                ["Focus sessions", stats.focusSessions],
+                ["Completed tasks", stats.tasks.completed],
+                ["Journal entries", stats.journal.total],
+                ["Mood check-ins", totalMoodEntries],
+                ["Sleep logs", sleepLogged],
+                ["Water logs", waterLogged],
+                ["Books tracked", stats.books.total],
+                ["Active days", activeDays],
+              ].map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
+                  <span className="text-sm text-muted-foreground">{label}</span>
+                  <span className="text-sm font-semibold text-foreground">{value}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className={cardClass}>
+            <CardHeader>
+              <CardTitle>Consistency</CardTitle>
+              <CardDescription>Darker days mean more real interactions with Flowivate.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <div className="flex flex-col gap-1 pt-[18px] pr-1 shrink-0">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => (
+                    <div
+                      key={d}
+                      className="h-3 text-[9px] text-muted-foreground flex items-center"
+                      style={{ visibility: i % 2 === 0 ? "visible" : "hidden" }}
+                    >
+                      {d}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="min-w-0 overflow-x-auto pb-1">
+                  <div
+                    className="mb-1"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: `repeat(${heatmapWeeks.length}, 12px)`,
+                      columnGap: "4px",
+                    }}
+                  >
+                    {monthLabelCols.map((label, wi) => (
+                      <div
+                        key={wi}
+                        className="text-[9px] text-muted-foreground col-span-1"
+                        style={{ overflow: "visible", whiteSpace: "nowrap" }}
+                      >
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+
+                  {Array.from({ length: 7 }, (_, di) => (
+                    <div key={di} className="flex gap-1 mb-1">
+                      {heatmapWeeks.map((week, wi) => {
+                        const cell = week[di];
+                        return (
+                          <div
+                            key={wi}
+                            className={cn(
+                              "h-3 w-3 rounded-full",
+                              cell.future ? "opacity-0" : heatColor(cell.count, maxActivityCount)
+                            )}
+                            title={
+                              !cell.future
+                                ? `${cell.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}: ${cell.count} interaction${cell.count !== 1 ? "s" : ""}`
+                                : undefined
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="mt-5 text-xs text-muted-foreground">
+                Note: consistency is based on real logged app interactions, not placeholder browsing data.
+              </p>
+            </CardContent>
+            <CardFooter className="flex-col items-start gap-1 text-sm pt-0">
+              <p className="font-medium leading-none">{activeDays} active days recorded</p>
+              <p className="text-muted-foreground leading-none text-xs">
+                You need at least 2 active days and {REQUIRED_SIGNALS} total signals.
+              </p>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    );
   }
-
-  // Task completion rate
-  if (stats.tasks.total > 0) {
-    insightPool.push({
-      headline: <><span className="text-blue-400">{stats.tasks.completionRate}%</span> task completion rate</>,
-      body: `${stats.tasks.completed} of ${stats.tasks.total} tasks done. ${stats.tasks.completionRate >= 80 ? "You're on fire." : stats.tasks.completionRate >= 50 ? "Solid momentum — keep pushing." : "Small steps still count."}`,
-    });
-  }
-
-  // Books
-  if (stats.books.total > 0) {
-    const bookMsg = stats.books.completed > 0
-      ? `${stats.books.completed} finished${stats.books.inProgress > 0 ? `, ${stats.books.inProgress} in progress` : ""}. Knowledge compounds.`
-      : `${stats.books.inProgress} book${stats.books.inProgress !== 1 ? "s" : ""} in progress. Every page counts.`;
-    insightPool.push({
-      headline: <><span className="text-amber-400">{stats.books.total} book{stats.books.total !== 1 ? "s" : ""}</span> tracked</>,
-      body: bookMsg,
-    });
-  }
-
-  // Journal
-  if (stats.journal.total > 0) {
-    insightPool.push({
-      headline: <><span className="text-emerald-400">{stats.journal.total} journal entries</span> written</>,
-      body: stats.journal.thisMonth > 0
-        ? `${stats.journal.thisMonth} this month alone. Self-reflection is a superpower.`
-        : "Consistency in reflection builds clarity.",
-    });
-  }
-
-  // Streak
-  if (stats.streak > 0) {
-    insightPool.push({
-      headline: <><span className="text-orange-400">{stats.streak}-day</span> streak</>,
-      body: stats.streak >= 30
-        ? "A month of consistency. Discipline is freedom."
-        : stats.streak >= 7
-          ? "A full week of showing up. Habits are forming."
-          : "Every streak starts with day one. Keep going.",
-    });
-  }
-
-  // Sleep
-  if (sleepAvg !== null) {
-    insightPool.push({
-      headline: <>Averaging <span className="text-violet-400">{sleepAvg}h</span> of sleep</>,
-      body: sleepAvg >= 7 && sleepAvg <= 9
-        ? "Right in the sweet spot. Sleep fuels everything."
-        : sleepAvg < 7
-          ? "A little below the ideal 7–9h. Rest is productive too."
-          : "Generous rest. Make sure you feel energised.",
-    });
-  }
-
-  // Hydration
-  if (goalDays > 0) {
-    insightPool.push({
-      headline: <>Hydration goal hit <span className="text-sky-400">{goalDays} of 7</span> days</>,
-      body: goalDays >= 5
-        ? "Your body is thanking you. Keep it up."
-        : "Water is the simplest performance hack. Drink more.",
-    });
-  }
-
-  // Mood
-  if (bestMood && MOOD_LABELS[bestMood]) {
-    insightPool.push({
-      headline: <>Most frequent mood: <span className="text-green-400">{MOOD_LABELS[bestMood]}</span></>,
-      body: `${totalMoodEntries} mood check-in${totalMoodEntries !== 1 ? "s" : ""} this month. Awareness is the first step.`,
-    });
-  }
-
-  // Active days
-  if (activeDays > 0) {
-    insightPool.push({
-      headline: <><span className="text-green-500">{activeDays} active days</span> on Flowivate</>,
-      body: "Every green square is a day you chose growth.",
-    });
-  }
-
-  // Fallback if no data yet
-  if (insightPool.length === 0) {
-    insightPool.push({
-      headline: <>Your journey <span className="text-blue-400">starts now</span></>,
-      body: "Start a focus session, log a task, or write in your journal.",
-    });
-  }
-
-  const currentInsight = insightPool[Math.floor(Date.now() / (1000 * 60 * 60 * 3)) % insightPool.length];
 
   return (
     <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8 max-w-5xl mx-auto">
@@ -445,10 +423,10 @@ export default function StatsPage() {
       {/* Header & Motivational Message */}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground/90">
-          {currentInsight.headline}
+          {primaryInsight.headline}
         </h1>
         <p className="text-muted-foreground mt-1.5">
-          {currentInsight.body}
+          {primaryInsight.body}
         </p>
       </div>
 
@@ -549,6 +527,7 @@ export default function StatsPage() {
         <Card className={cn(cardClass, "flex flex-col flex-1")}>
           <CardHeader>
             <CardTitle>Consistency</CardTitle>
+            <CardDescription>Darker circles mean more real interactions that day.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col w-full flex-1">
             <div className="flex gap-2">
@@ -596,12 +575,12 @@ export default function StatsPage() {
                         <div
                           key={wi}
                           className={cn(
-                            "h-3 w-3 rounded-sm",
-                            cell.future ? "opacity-0" : heatColor(cell.count)
+                            "h-3 w-3 rounded-full",
+                            cell.future ? "opacity-0" : heatColor(cell.count, maxActivityCount)
                           )}
                           title={
                             !cell.future
-                              ? `${cell.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}: ${cell.count} session${cell.count !== 1 ? "s" : ""}`
+                              ? `${cell.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}: ${cell.count} interaction${cell.count !== 1 ? "s" : ""}`
                               : undefined
                           }
                         />
@@ -616,17 +595,20 @@ export default function StatsPage() {
             <div className="mt-auto pt-6 w-full flex items-center justify-end gap-2 opacity-80">
               <span className="text-xs text-muted-foreground mr-1">Less</span>
               <div className="flex gap-1 items-center">
-                <div className={cn("h-3 w-3 rounded-sm", heatColor(0))} />
-                <div className={cn("h-3 w-3 rounded-sm", heatColor(1))} />
-                <div className={cn("h-3 w-3 rounded-sm", heatColor(3))} />
-                <div className={cn("h-3 w-3 rounded-sm", heatColor(6))} />
-                <div className={cn("h-3 w-3 rounded-sm", heatColor(10))} />
+                <div className={cn("h-3 w-3 rounded-full", heatColor(0, maxActivityCount))} />
+                <div className={cn("h-3 w-3 rounded-full", heatColor(Math.max(1, Math.ceil(maxActivityCount * 0.25)), maxActivityCount))} />
+                <div className={cn("h-3 w-3 rounded-full", heatColor(Math.max(1, Math.ceil(maxActivityCount * 0.5)), maxActivityCount))} />
+                <div className={cn("h-3 w-3 rounded-full", heatColor(Math.max(1, Math.ceil(maxActivityCount * 0.75)), maxActivityCount))} />
+                <div className={cn("h-3 w-3 rounded-full", heatColor(maxActivityCount, maxActivityCount))} />
               </div>
               <span className="text-xs text-muted-foreground ml-1">More</span>
             </div>
           </CardContent>
           <CardFooter className="flex-col items-start gap-1 text-sm pt-0">
             <p className="font-medium leading-none">{activeDays} active days since you joined</p>
+            <p className="text-muted-foreground leading-none text-xs">
+              Note: this is built from app interactions, not placeholder activity data.
+            </p>
           </CardFooter>
         </Card>
 
@@ -673,28 +655,6 @@ export default function StatsPage() {
           )}
         </Card>
       </div>
-
-      {/* ── Recent Activity ── */}
-      <Card className={cn(cardClass, "mt-4 mb-4 relative overflow-hidden")}>
-        {/* Overlay showing Coming Soon */}
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/20 backdrop-blur-[2px]">
-          <div className={cn(cardClass, "px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-sm border-none")}>
-            <span className="text-lg">🔒</span>
-            <span className="font-semibold text-sm text-foreground">Coming Soon</span>
-          </div>
-        </div>
-
-        <CardHeader className="opacity-40">
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Activity tracking across your apps</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 opacity-30 select-none pointer-events-none pb-8">
-          {MOCK_DAILY.map((site) => (
-            <SiteRow key={site.domain} site={site} maxMinutes={94} />
-          ))}
-        </CardContent>
-      </Card>
-
     </div>
   );
 }

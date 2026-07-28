@@ -42,27 +42,36 @@ export const authConfig: NextAuthConfig = {
     Credentials({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        identifier: { label: "Email or username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials): Promise<NextAuthUser | null> {
         try {
-          if (!credentials?.email || !credentials?.password) {
-            throw new Error("Both email and password are required.");
+          const identifier = String(
+            credentials?.identifier ?? (credentials as { email?: unknown })?.email ?? ""
+          ).trim();
+
+          if (!identifier || !credentials?.password) {
+            throw new Error("Email/username and password are required.");
           }
 
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(credentials.email as string)) {
-            throw new Error("Invalid email format.");
-          }
+          const isEmailLogin = emailRegex.test(identifier);
 
           await connectDB();
-          const user = await User.findOne<IUser>({
-            email: credentials.email,
-          }).exec();
+          const user = await User.findOne<IUser>(
+            isEmailLogin
+              ? { email: identifier.toLowerCase() }
+              : {
+                $or: [
+                  { username: identifier },
+                  { email: identifier.toLowerCase() },
+                ],
+              }
+          ).exec();
 
           if (!user) {
-            throw new Error("No account found with this email.");
+            throw new Error("No account found for this email or username.");
           }
 
           if (!user.password) {
@@ -101,7 +110,7 @@ export const authConfig: NextAuthConfig = {
   session: { strategy: "jwt" },
 
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       console.log("[AUTH signIn] provider:", account?.provider, "email:", user?.email);
       if (account?.provider && ["github", "google"].includes(account.provider)) {
         try {
@@ -117,7 +126,7 @@ export const authConfig: NextAuthConfig = {
 
           if (!existingUser) {
             // New User Creation
-            let baseUsername =
+            const baseUsername =
               user.email.split("@")[0] ||
               user.name?.replace(/\s+/g, "").toLowerCase() ||
               `user${Date.now()}`;
@@ -190,12 +199,16 @@ export const authConfig: NextAuthConfig = {
             }
           } else {
             // Credentials login
+            const credentialsUser = user as NextAuthUser & {
+              authProvider?: "google" | "github" | "credentials" | null;
+              subscriptionStatus?: string;
+            };
             token.id = user.id;
             token.email = user.email ?? undefined;
             token.username = user.username ?? undefined;
             token.image = user.image ?? undefined;
-            token.subscriptionStatus = (user as any).subscriptionStatus ?? "free";
-            token.authProvider = (user as any).authProvider || "credentials";
+            token.subscriptionStatus = credentialsUser.subscriptionStatus ?? "free";
+            token.authProvider = credentialsUser.authProvider || "credentials";
           }
         }
 

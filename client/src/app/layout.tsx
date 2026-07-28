@@ -2,7 +2,6 @@ import "./globals.css";
 import ThemeProvider from "../../themes/ThemeProvider";
 import DarkModeInit from "../../themes/DarkModeInit";
 import { Metadata } from "next";
-import { Toaster } from "sonner";
 import CookieConsent from "../components/CookieConsent";
 
 export const metadata: Metadata = {
@@ -47,11 +46,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <DarkModeInit />
-          <Toaster
-            position="top-center"
-            richColors
-            theme="dark"
-          />
           {children}
         </ThemeProvider>
       </body>

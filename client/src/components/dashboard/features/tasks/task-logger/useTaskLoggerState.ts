@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import * as tasksApi from "../../../../../lib/tasksApi";
 import type { Task, TaskList } from "@/types/taskTypes";
 import useSubscriptionStatus from "../../../../../hooks/useSubscriptionStatus";
+import { isFreeStatus } from "@/lib/subscription";
 import {
   createNewTask,
   findAndUpdateTask,
@@ -24,7 +25,7 @@ import { useGlobalStore } from "@/hooks/useGlobalStore";
 export const useTaskLoggerState = () => {
   const queryClient = useQueryClient();
   const { data: session, status } = useSession();
-  const { status: subscriptionStatus } = useSubscriptionStatus();
+  const { status: subscriptionStatus, loading: subscriptionLoading } = useSubscriptionStatus();
   const triggerLumoEvent = useGlobalStore((state) => state.triggerLumoEvent);
   const queryKey: QueryKey = ["tasks"];
 
@@ -32,6 +33,8 @@ export const useTaskLoggerState = () => {
   const [mounted, setMounted] = useState(false);
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListName, setNewListName] = useState("");
+  const [editingListId, setEditingListId] = useState<string | null>(null);
+  const [editingListValue, setEditingListValue] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskValue, setEditingTaskValue] = useState("");
   const [addingSubtaskTo, setAddingSubtaskTo] = useState<string | null>(null);
@@ -228,9 +231,6 @@ export const useTaskLoggerState = () => {
     const list = taskLists.find((l) => l._id === listId);
     if (!list) return;
 
-    const isAddingTopLevelTask = !parentTaskId;
-    const isFreeUser = subscriptionStatus === "free";
-
     // Unlimited tasks for all users
     // if (isAddingTopLevelTask && isFreeUser && list.tasks.length >= 4) {
     //   toast.error(
@@ -412,7 +412,7 @@ export const useTaskLoggerState = () => {
   };
 
   const handleAddList = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const isFreeUser = subscriptionStatus === "free";
+    const isFreeUser = !subscriptionLoading && isFreeStatus(subscriptionStatus);
     const canAddList = !isFreeUser || taskLists.length < 3;
 
     if (
@@ -431,6 +431,52 @@ export const useTaskLoggerState = () => {
   const handleDeleteList = (listId: string | undefined) => {
     if (!listId || listId.startsWith("placeholder-")) return;
     deleteListMutation.mutate(listId);
+  };
+
+  const handleStartRenamingList = (listId: string | undefined, name: string) => {
+    if (!listId || listId.startsWith("placeholder-")) return;
+    setEditingListId(listId);
+    setEditingListValue(name);
+    setOpenPriorityDropdown(null);
+  };
+
+  const handleCancelRenamingList = () => {
+    setEditingListId(null);
+    setEditingListValue("");
+  };
+
+  const handleSaveRenamingList = (listId: string | undefined) => {
+    if (!listId || listId.startsWith("placeholder-")) {
+      handleCancelRenamingList();
+      return;
+    }
+
+    const trimmedValue = editingListValue.trim();
+    const currentList = taskLists.find((list) => list._id === listId);
+
+    if (!currentList || !trimmedValue) {
+      handleCancelRenamingList();
+      return;
+    }
+
+    if (trimmedValue !== currentList.name) {
+      updateListMutation.mutate({ id: listId, name: trimmedValue });
+    }
+
+    handleCancelRenamingList();
+  };
+
+  const handleListRenameKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    listId: string | undefined
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSaveRenamingList(listId);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      handleCancelRenamingList();
+    }
   };
 
   const triggerListUpdate = (listId: string, updatedTasks: Task[]) => {
@@ -611,6 +657,9 @@ export const useTaskLoggerState = () => {
     setIsAddingList,
     newListName,
     setNewListName,
+    editingListId,
+    editingListValue,
+    setEditingListValue,
     editingTaskId,
     setEditingTaskId,
     editingTaskValue,
@@ -637,6 +686,7 @@ export const useTaskLoggerState = () => {
     isErrorLists,
     errorLists,
     subscriptionStatus,
+    subscriptionLoading,
     status,
     addListMutation,
     updateListMutation,
@@ -644,6 +694,10 @@ export const useTaskLoggerState = () => {
     getCompletionRatio,
     handleAddList,
     handleDeleteList,
+    handleStartRenamingList,
+    handleCancelRenamingList,
+    handleSaveRenamingList,
+    handleListRenameKeyDown,
     triggerListUpdate,
     handleAiBreakdown,
     handleKeyDownTaskInput,

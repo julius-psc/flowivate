@@ -62,7 +62,8 @@ export default function SettingsModal({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const isSpecialTheme =
@@ -117,28 +118,15 @@ export default function SettingsModal({
     };
   }, [isOpen]);
 
-  // Keyboard shortcuts
+  // Close on Escape while the modal is open.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!isOpen) return;
       if (e.key === "Escape") onClose();
-      if ((e.metaKey || e.ctrlKey) && /^[1-4]$/.test(e.key)) {
-        const idx = Number(e.key) - 1;
-        const t = tabs[idx];
-        if (t) setActiveTab(t.id);
-      }
-      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-        const idx = tabs.findIndex((t) => t.id === validActive);
-        const next =
-          e.key === "ArrowRight"
-            ? tabs[(idx + 1) % tabs.length]
-            : tabs[(idx - 1 + tabs.length) % tabs.length];
-        setActiveTab(next.id);
-      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [isOpen, setActiveTab, validActive, onClose]);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !isClient) return null;
 

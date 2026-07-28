@@ -16,6 +16,11 @@ interface TaskItem {
   subtasks?: TaskItem[];
 }
 
+interface DailyActivityDocument {
+  date: string;
+  count?: number;
+}
+
 function countTasks(tasks: TaskItem[]): { total: number; completed: number } {
   let total = 0;
   let completed = 0;
@@ -98,7 +103,13 @@ export async function GET() {
     const streak = (streakDoc as { count?: number } | null)?.count ?? 0;
 
     // Focus sessions
+    const pomodoroSettings = (pomodoroDoc as { pomodoroSettings?: { focusTime?: number } } | null)?.pomodoroSettings;
     const focusSessions = (pomodoroDoc as { focusSessions?: number } | null)?.focusSessions ?? 0;
+    const focusSecondsPerSession =
+      typeof pomodoroSettings?.focusTime === "number" && pomodoroSettings.focusTime > 0
+        ? pomodoroSettings.focusTime
+        : 25 * 60;
+    const focusMinutesEstimate = Math.round((focusSessions * focusSecondsPerSession) / 60);
 
     // Tasks
     let totalTasks = 0;
@@ -169,6 +180,8 @@ export async function GET() {
       accountCreatedAt,
       streak,
       focusSessions,
+      focusMinutesEstimate,
+      focusSessionDurationMinutes: Math.round(focusSecondsPerSession / 60),
       tasks: {
         total: totalTasks,
         completed: completedTasks,
@@ -187,9 +200,9 @@ export async function GET() {
         thisMonth: journalMonthCount,
       },
       water: waterRecords,
-      dailyActivities: dailyActivitiesDocs.map((doc: any) => ({
+      dailyActivities: (dailyActivitiesDocs as unknown as DailyActivityDocument[]).map((doc) => ({
         date: doc.date,
-        count: doc.count
+        count: doc.count ?? 0,
       })),
     });
   } catch (error) {
